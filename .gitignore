@@ -1,0 +1,9 @@
+.DS_Store
+
+# Backend local secrets and installs
+/backend/.env
+/backend/node_modules
+
+# Frontend nested repo build artifacts
+/frontend/.next
+/frontend/node_modules
