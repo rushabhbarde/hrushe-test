@@ -26,6 +26,8 @@ export function AuthPanel({
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [view, setView] = useState<AuthView>("auth");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSignupOtpSubmitting, setIsSignupOtpSubmitting] = useState(false);
+  const [isForgotOtpSubmitting, setIsForgotOtpSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -141,7 +143,7 @@ export function AuthPanel({
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSignupOtpSubmitting(true);
     setError("");
     setSignupDevOtp("");
 
@@ -165,13 +167,13 @@ export function AuthPanel({
           : "Could not send signup OTP right now."
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSignupOtpSubmitting(false);
     }
   };
 
   const onRequestOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmitting(true);
+    setIsForgotOtpSubmitting(true);
     setError("");
     setDevOtp("");
 
@@ -195,7 +197,7 @@ export function AuthPanel({
           : "Could not send OTP right now."
       );
     } finally {
-      setIsSubmitting(false);
+      setIsForgotOtpSubmitting(false);
     }
   };
 
@@ -295,13 +297,13 @@ export function AuthPanel({
               required
             />
             {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "Sending OTP..." : "Send OTP"}
-            </button>
+              <button
+                type="submit"
+                disabled={isForgotOtpSubmitting}
+                className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
+              </button>
           </form>
         ) : (
           <form className="mt-8 grid gap-4" onSubmit={(event) => void onResetPassword(event)}>
@@ -434,10 +436,14 @@ export function AuthPanel({
             <button
               type="button"
               onClick={() => void onRequestSignupOtp()}
-              disabled={isSubmitting}
+              disabled={isSignupOtpSubmitting}
               className="button-secondary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {signupOtpRequested ? "Resend OTP" : "Send OTP"}
+              {isSignupOtpSubmitting
+                ? "Sending OTP..."
+                : signupOtpRequested
+                  ? "Resend OTP"
+                  : "Send OTP"}
             </button>
           </div>
           <input
