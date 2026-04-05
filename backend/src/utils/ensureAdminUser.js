@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
 
-const ADMIN_EMAIL = "admin@hrushe.local";
+const ADMIN_EMAIL = "team@hrushe.in";
 const ADMIN_PASSWORD = "admin";
 const ADMIN_NAME = "Admin";
 

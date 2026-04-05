@@ -3,19 +3,30 @@ const env = require("../config/env");
 
 let transporter;
 
+const normalizedSmtpUser = () => String(env.SMTP_USER || "").trim();
+
+const normalizedSmtpPass = () =>
+  String(env.SMTP_PASS || "")
+    .trim()
+    .replace(/\s+/g, "");
+
+const normalizedMailFrom = () => String(env.MAIL_FROM || "").trim();
+
 const getTransporter = () => {
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
+  if (!env.SMTP_HOST || !normalizedSmtpUser() || !normalizedSmtpPass()) {
     return null;
   }
 
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
+      host: String(env.SMTP_HOST).trim(),
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
       auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS,
+        user: normalizedSmtpUser(),
+        pass: normalizedSmtpPass(),
       },
     });
   }
@@ -31,7 +42,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
   }
 
   await mailer.sendMail({
-    from: env.MAIL_FROM,
+    from: normalizedMailFrom(),
     to,
     subject,
     text,

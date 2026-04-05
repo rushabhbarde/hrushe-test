@@ -13,6 +13,16 @@ const OTP_EXPIRY_MINUTES = 10;
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
+const logEmailFailure = (label, error) => {
+  console.error(`${label} email failed`, {
+    message: error?.message,
+    code: error?.code,
+    response: error?.response,
+    responseCode: error?.responseCode,
+    command: error?.command,
+  });
+};
+
 const cookieOptions = {
   sameSite: env.COOKIE_SAME_SITE,
   httpOnly: true,
@@ -93,12 +103,16 @@ const signup = asyncHandler(async (req, res) => {
   await VerificationCode.deleteMany({ email: normalizedEmail, purpose: "signup" });
   await Cart.create({ userId: user._id, items: [] });
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: "Welcome to HRUSHE",
-    text: `Hi ${name.trim()}, your HRUSHE account has been created successfully.`,
-    html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
-  });
+  try {
+    await sendEmail({
+      to: normalizedEmail,
+      subject: "Welcome to HRUSHE",
+      text: `Hi ${name.trim()}, your HRUSHE account has been created successfully.`,
+      html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
+    });
+  } catch (error) {
+    logEmailFailure("Welcome", error);
+  }
 
   return sendAuthResponse(res, user, "User created successfully", 201);
 });
@@ -107,7 +121,7 @@ const login = asyncHandler(async (req, res) => {
   const { email, phone, identifier, password, username } = req.body;
 
   if (username === "admin" && password === "admin") {
-    const adminEmail = "admin@hrushe.local";
+    const adminEmail = "team@hrushe.in";
     let adminUser = await User.findOne({ email: adminEmail });
 
     if (!adminUser) {
@@ -236,12 +250,16 @@ const changePassword = asyncHandler(async (req, res) => {
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
-  await sendEmail({
-    to: user.email,
-    subject: "Your HRUSHE password was changed",
-    text: "Your HRUSHE account password has been changed successfully.",
-    html: "<p>Your <strong>HRUSHE</strong> account password has been changed successfully.</p>",
-  });
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Your HRUSHE password was changed",
+      text: "Your HRUSHE account password has been changed successfully.",
+      html: "<p>Your <strong>HRUSHE</strong> account password has been changed successfully.</p>",
+    });
+  } catch (error) {
+    logEmailFailure("Password change", error);
+  }
 
   return res.json({ message: "Password changed successfully" });
 });
@@ -271,12 +289,21 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
   user.passwordResetOtpExpiresAt = expiresAt;
   await user.save();
 
-  const delivery = await sendEmail({
-    to: email,
-    subject: "Your HRUSHE password reset OTP",
-    text: `${otp} is your HRUSHE password reset OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
-    html: `<p><strong>${otp}</strong> is your HRUSHE password reset OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
-  });
+  let delivery;
+  try {
+    delivery = await sendEmail({
+      to: email,
+      subject: "Your HRUSHE password reset OTP",
+      text: `${otp} is your HRUSHE password reset OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
+      html: `<p><strong>${otp}</strong> is your HRUSHE password reset OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+    });
+  } catch (error) {
+    logEmailFailure("Password reset OTP", error);
+    throw new AppError(
+      "OTP email could not be sent. Please check mail settings and try again.",
+      502
+    );
+  }
 
   const response = {
     message: "OTP sent successfully",
@@ -315,12 +342,21 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     expiresAt,
   });
 
-  const delivery = await sendEmail({
-    to: email,
-    subject: "Your HRUSHE signup OTP",
-    text: `${otp} is your HRUSHE signup OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
-    html: `<p><strong>${otp}</strong> is your HRUSHE signup OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
-  });
+  let delivery;
+  try {
+    delivery = await sendEmail({
+      to: email,
+      subject: "Your HRUSHE signup OTP",
+      text: `${otp} is your HRUSHE signup OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
+      html: `<p><strong>${otp}</strong> is your HRUSHE signup OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+    });
+  } catch (error) {
+    logEmailFailure("Signup OTP", error);
+    throw new AppError(
+      "OTP email could not be sent. Please check mail settings and try again.",
+      502
+    );
+  }
 
   const response = {
     message: "Signup OTP sent successfully",
