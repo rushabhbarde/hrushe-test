@@ -1,55 +1,50 @@
-const nodemailer = require("nodemailer");
 const env = require("../config/env");
 
-let transporter;
-
-const normalizedSmtpUser = () => String(env.SMTP_USER || "").trim();
-
-const normalizedSmtpPass = () =>
-  String(env.SMTP_PASS || "")
-    .trim()
-    .replace(/\s+/g, "");
-
 const normalizedMailFrom = () => String(env.MAIL_FROM || "").trim();
+const normalizedMailFromName = () => String(env.MAIL_FROM_NAME || "Hrushe").trim();
+const normalizedZeptoMailApiKey = () => String(env.ZEPTOMAIL_API_KEY || "").trim();
+const normalizedZeptoMailUrl = () =>
+  String(env.ZEPTOMAIL_API_URL || "https://api.zeptomail.com/v1.1/email").trim();
 
-const getTransporter = () => {
-  if (!env.SMTP_HOST || !normalizedSmtpUser() || !normalizedSmtpPass()) {
-    return null;
+const buildFromAddress = () => ({
+  address: normalizedMailFrom(),
+  name: normalizedMailFromName(),
+});
+
+const sendEmail = async ({ to, subject, html }) => {
+  if (!normalizedZeptoMailApiKey()) {
+    return { delivered: false, reason: "missing_zeptomail_api_key" };
   }
 
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: String(env.SMTP_HOST).trim(),
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      auth: {
-        user: normalizedSmtpUser(),
-        pass: normalizedSmtpPass(),
-      },
-    });
+  if (!normalizedMailFrom()) {
+    return { delivered: false, reason: "missing_mail_from" };
   }
 
-  return transporter;
-};
-
-const sendEmail = async ({ to, subject, text, html }) => {
-  const mailer = getTransporter();
-
-  if (!mailer) {
-    return { delivered: false, reason: "missing_smtp_config" };
-  }
-
-  await mailer.sendMail({
-    from: normalizedMailFrom(),
-    to,
-    subject,
-    text,
-    html,
+  const response = await fetch(normalizedZeptoMailUrl(), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Zoho-enczapikey ${normalizedZeptoMailApiKey()}`,
+    },
+    body: JSON.stringify({
+      from: buildFromAddress(),
+      to: [{ email_address: { address: to } }],
+      subject,
+      htmlbody: html,
+    }),
   });
 
-  return { delivered: true, provider: "smtp" };
+  if (!response.ok) {
+    const errorText = await response.text();
+    const error = new Error(`ZeptoMail request failed with status ${response.status}`);
+    error.code = "ZEPTOMAIL_REQUEST_FAILED";
+    error.response = errorText;
+    error.responseCode = response.status;
+    throw error;
+  }
+
+  return { delivered: true, provider: "zeptomail" };
 };
 
 module.exports = { sendEmail };

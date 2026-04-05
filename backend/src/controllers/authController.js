@@ -104,12 +104,15 @@ const signup = asyncHandler(async (req, res) => {
   await Cart.create({ userId: user._id, items: [] });
 
   try {
-    await sendEmail({
+    const delivery = await sendEmail({
       to: normalizedEmail,
       subject: "Welcome to HRUSHE",
       text: `Hi ${name.trim()}, your HRUSHE account has been created successfully.`,
       html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
     });
+    if (!delivery.delivered) {
+      logEmailFailure("Welcome", new Error(delivery.reason || "Mail delivery failed"));
+    }
   } catch (error) {
     logEmailFailure("Welcome", error);
   }
@@ -251,12 +254,18 @@ const changePassword = asyncHandler(async (req, res) => {
   await user.save();
 
   try {
-    await sendEmail({
+    const delivery = await sendEmail({
       to: user.email,
       subject: "Your HRUSHE password was changed",
       text: "Your HRUSHE account password has been changed successfully.",
       html: "<p>Your <strong>HRUSHE</strong> account password has been changed successfully.</p>",
     });
+    if (!delivery.delivered) {
+      logEmailFailure(
+        "Password change",
+        new Error(delivery.reason || "Mail delivery failed")
+      );
+    }
   } catch (error) {
     logEmailFailure("Password change", error);
   }
@@ -299,6 +308,17 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logEmailFailure("Password reset OTP", error);
+    throw new AppError(
+      "OTP email could not be sent. Please check mail settings and try again.",
+      502
+    );
+  }
+
+  if (!delivery.delivered) {
+    logEmailFailure(
+      "Password reset OTP",
+      new Error(delivery.reason || "Mail delivery failed")
+    );
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -352,6 +372,14 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logEmailFailure("Signup OTP", error);
+    throw new AppError(
+      "OTP email could not be sent. Please check mail settings and try again.",
+      502
+    );
+  }
+
+  if (!delivery.delivered) {
+    logEmailFailure("Signup OTP", new Error(delivery.reason || "Mail delivery failed"));
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502

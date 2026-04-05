@@ -34,12 +34,11 @@ const env = {
   MSG91_DLT_TEMPLATE_ID: process.env.MSG91_DLT_TEMPLATE_ID || "",
   MSG91_COUNTRY_CODE: process.env.MSG91_COUNTRY_CODE || "91",
   MSG91_OTP_MESSAGE: process.env.MSG91_OTP_MESSAGE || "",
-  SMTP_HOST: process.env.SMTP_HOST || "",
-  SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
-  SMTP_SECURE: process.env.SMTP_SECURE === "true",
-  SMTP_USER: process.env.SMTP_USER || "",
-  SMTP_PASS: process.env.SMTP_PASS || "",
   MAIL_FROM: process.env.MAIL_FROM || "team@hrushe.in",
+  MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || "Hrushe",
+  ZEPTOMAIL_API_KEY: process.env.ZEPTOMAIL_API_KEY || "",
+  ZEPTOMAIL_API_URL:
+    process.env.ZEPTOMAIL_API_URL || "https://api.zeptomail.com/v1.1/email",
 };
 
 module.exports = env;
