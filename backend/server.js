@@ -10,6 +10,7 @@ const cartRoutes = require("./src/routes/cartRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
 const contentRoutes = require("./src/routes/contentRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
+const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
 
 const app = express();
 const isAllowedDevOrigin = (origin) => {
@@ -73,8 +74,14 @@ app.use("/content", contentRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-connectDB().then(() => {
-  app.listen(env.PORT, () => {
-    console.log(`Server running on port ${env.PORT}`);
+connectDB()
+  .then(async () => {
+    await ensureAdminUser();
+    app.listen(env.PORT, () => {
+      console.log(`Server running on port ${env.PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Server startup failed", error);
+    process.exit(1);
   });
-});
