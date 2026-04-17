@@ -17,6 +17,9 @@ type AuthModalContextValue = {
   openLogin: (nextPath?: string) => void;
   openSignup: (nextPath?: string) => void;
   closeAuthModal: () => void;
+  suppressAuthPrompt: boolean;
+  suppressNextAuthPrompt: () => void;
+  clearAuthPromptSuppression: () => void;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | undefined>(
@@ -29,17 +32,30 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const [nextPath, setNextPath] = useState<string | null>(null);
+  const [suppressAuthPrompt, setSuppressAuthPrompt] = useState(false);
 
   const isProtectedAccountPath =
     pathname.startsWith("/account") || pathname.startsWith("/my-orders");
 
   const closeAuthModal = useCallback(() => {
+    if (isProtectedAccountPath) {
+      setSuppressAuthPrompt(true);
+    }
+
     setIsOpen(false);
 
     if (isProtectedAccountPath) {
       router.push("/");
     }
   }, [isProtectedAccountPath, router]);
+
+  const suppressNextAuthPrompt = useCallback(() => {
+    setSuppressAuthPrompt(true);
+  }, []);
+
+  const clearAuthPromptSuppression = useCallback(() => {
+    setSuppressAuthPrompt(false);
+  }, []);
 
   const openLogin = useCallback((targetPath?: string) => {
     setMode("login");
@@ -75,8 +91,19 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       openLogin,
       openSignup,
       closeAuthModal,
+      suppressAuthPrompt,
+      suppressNextAuthPrompt,
+      clearAuthPromptSuppression,
     }),
-    [closeAuthModal, isOpen, openLogin, openSignup]
+    [
+      clearAuthPromptSuppression,
+      closeAuthModal,
+      isOpen,
+      openLogin,
+      openSignup,
+      suppressAuthPrompt,
+      suppressNextAuthPrompt,
+    ]
   );
 
   return (

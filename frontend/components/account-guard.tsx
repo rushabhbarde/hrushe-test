@@ -16,14 +16,32 @@ function useHydrated() {
 export function AccountGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isChecking } = useCustomerAuth();
   const pathname = usePathname();
-  const { openLogin, isOpen } = useAuthModal();
+  const {
+    openLogin,
+    isOpen,
+    suppressAuthPrompt,
+    clearAuthPromptSuppression,
+  } = useAuthModal();
   const isHydrated = useHydrated();
 
   useEffect(() => {
     if (isHydrated && !isChecking && !isAuthenticated && !isOpen) {
+      if (suppressAuthPrompt) {
+        clearAuthPromptSuppression();
+        return;
+      }
       openLogin(pathname);
     }
-  }, [isAuthenticated, isChecking, isHydrated, isOpen, openLogin, pathname]);
+  }, [
+    clearAuthPromptSuppression,
+    isAuthenticated,
+    isChecking,
+    isHydrated,
+    isOpen,
+    openLogin,
+    pathname,
+    suppressAuthPrompt,
+  ]);
 
   if (!isHydrated || isChecking || !isAuthenticated) {
     return null;
