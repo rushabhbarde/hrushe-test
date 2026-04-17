@@ -107,8 +107,12 @@ const signup = asyncHandler(async (req, res) => {
     const delivery = await sendEmail({
       to: normalizedEmail,
       subject: "Welcome to HRUSHE",
-      text: `Hi ${name.trim()}, your HRUSHE account has been created successfully.`,
       html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
+      templateKey: env.ZEPTOMAIL_TEMPLATE_WELCOME || undefined,
+      mergeInfo: {
+        name: name.trim(),
+        email: normalizedEmail,
+      },
     });
     if (!delivery.delivered) {
       logEmailFailure("Welcome", new Error(delivery.reason || "Mail delivery failed"));
@@ -257,8 +261,12 @@ const changePassword = asyncHandler(async (req, res) => {
     const delivery = await sendEmail({
       to: user.email,
       subject: "Your HRUSHE password was changed",
-      text: "Your HRUSHE account password has been changed successfully.",
       html: "<p>Your <strong>HRUSHE</strong> account password has been changed successfully.</p>",
+      templateKey: env.ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED || undefined,
+      mergeInfo: {
+        name: user.name,
+        email: user.email,
+      },
     });
     if (!delivery.delivered) {
       logEmailFailure(
@@ -303,8 +311,14 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
     delivery = await sendEmail({
       to: email,
       subject: "Your HRUSHE password reset OTP",
-      text: `${otp} is your HRUSHE password reset OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
       html: `<p><strong>${otp}</strong> is your HRUSHE password reset OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+      templateKey: env.ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP || undefined,
+      mergeInfo: {
+        otp,
+        email,
+        expiry_minutes: OTP_EXPIRY_MINUTES,
+        expiryMinutes: OTP_EXPIRY_MINUTES,
+      },
     });
   } catch (error) {
     logEmailFailure("Password reset OTP", error);
@@ -367,8 +381,14 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     delivery = await sendEmail({
       to: email,
       subject: "Your HRUSHE signup OTP",
-      text: `${otp} is your HRUSHE signup OTP. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`,
       html: `<p><strong>${otp}</strong> is your HRUSHE signup OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+      templateKey: env.ZEPTOMAIL_TEMPLATE_SIGNUP_OTP || undefined,
+      mergeInfo: {
+        otp,
+        email,
+        expiry_minutes: OTP_EXPIRY_MINUTES,
+        expiryMinutes: OTP_EXPIRY_MINUTES,
+      },
     });
   } catch (error) {
     logEmailFailure("Signup OTP", error);
