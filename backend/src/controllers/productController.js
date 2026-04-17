@@ -62,6 +62,14 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.featured = Boolean(payload.featured);
   }
 
+  if (!partial || payload.bestSeller !== undefined) {
+    normalized.bestSeller = Boolean(payload.bestSeller);
+  }
+
+  if (!partial || payload.newIn !== undefined) {
+    normalized.newIn = Boolean(payload.newIn);
+  }
+
   if (!partial || payload.newArrival !== undefined) {
     normalized.newArrival = Boolean(payload.newArrival);
   }
@@ -74,9 +82,11 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
 };
 
 const getProducts = asyncHandler(async (req, res) => {
-  const { category, featured, newArrival, q } = req.query;
+  const { category, featured, bestSeller, newIn, newArrival, q } = req.query;
   const query = {};
   const featuredFilter = parseBooleanQuery(featured);
+  const bestSellerFilter = parseBooleanQuery(bestSeller);
+  const newInFilter = parseBooleanQuery(newIn);
   const newArrivalFilter = parseBooleanQuery(newArrival);
 
   if (category) {
@@ -85,6 +95,14 @@ const getProducts = asyncHandler(async (req, res) => {
 
   if (featuredFilter !== undefined) {
     query.featured = featuredFilter;
+  }
+
+  if (bestSellerFilter !== undefined) {
+    query.bestSeller = bestSellerFilter;
+  }
+
+  if (newInFilter !== undefined) {
+    query.newIn = newInFilter;
   }
 
   if (newArrivalFilter !== undefined) {

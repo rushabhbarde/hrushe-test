@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { Product } from "@/lib/catalog";
+import { categories, type Product } from "@/lib/catalog";
 
 const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL"];
 const namedColorMap: Record<string, string> = {
@@ -58,6 +58,8 @@ type AdminProductFormValues = {
   colors: string;
   accent: string;
   featured: boolean;
+  bestSeller: boolean;
+  newIn: boolean;
   newArrival: boolean;
 };
 
@@ -80,6 +82,8 @@ const emptyForm: AdminProductFormValues = {
   colors: "",
   accent: "#111111",
   featured: false,
+  bestSeller: false,
+  newIn: false,
   newArrival: false,
 };
 
@@ -185,6 +189,8 @@ function buildInitialForm(product?: Product): AdminProductFormValues {
     colors: product.colors.join(", "),
     accent: product.accent,
     featured: Boolean(product.featured),
+    bestSeller: Boolean(product.bestSeller),
+    newIn: Boolean(product.newIn),
     newArrival: Boolean(product.newArrival),
   };
 }
@@ -248,7 +254,9 @@ export function AdminProductForm({
     });
   };
 
-  const onToggleBoolean = (name: "featured" | "newArrival") => {
+  const onToggleBoolean = (
+    name: "featured" | "bestSeller" | "newIn" | "newArrival"
+  ) => {
     setForm((current) => ({ ...current, [name]: !current[name] }));
   };
 
@@ -315,6 +323,8 @@ export function AdminProductForm({
           initialProduct?.imageLabel || "Admin uploaded product image",
         accent: form.accent,
         featured: form.featured,
+        bestSeller: form.bestSeller,
+        newIn: form.newIn,
         newArrival: form.newArrival,
       });
 
@@ -411,14 +421,22 @@ export function AdminProductForm({
               placeholder="Description"
               required
             />
-            <input
+            <select
               name="category"
               value={form.category}
-              onChange={onChange}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, category: event.target.value }))
+              }
               className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="Category"
               required
-            />
+            >
+              <option value="">Select category</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </section>
 
           <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
@@ -569,6 +587,34 @@ export function AdminProductForm({
                   type="checkbox"
                   checked={form.featured}
                   onChange={() => onToggleBoolean("featured")}
+                  className="mt-4 h-5 w-5"
+                />
+              </label>
+              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  Best seller
+                </span>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Highlight this product in the best-sellers edit instead of relying on price order.
+                </p>
+                <input
+                  type="checkbox"
+                  checked={form.bestSeller}
+                  onChange={() => onToggleBoolean("bestSeller")}
+                  className="mt-4 h-5 w-5"
+                />
+              </label>
+              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
+                <span className="text-sm font-medium text-[var(--foreground)]">
+                  New in
+                </span>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Push this item into the New In edit used for the main navigation and launch merchandising.
+                </p>
+                <input
+                  type="checkbox"
+                  checked={form.newIn}
+                  onChange={() => onToggleBoolean("newIn")}
                   className="mt-4 h-5 w-5"
                 />
               </label>

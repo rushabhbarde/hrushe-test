@@ -58,6 +58,16 @@ export default function AdminProductsPage() {
                               Featured
                             </span>
                           ) : null}
+                          {product.bestSeller ? (
+                            <span className="rounded-full border border-[var(--accent)] px-3 py-1 text-xs text-[var(--accent)]">
+                              Best seller
+                            </span>
+                          ) : null}
+                          {product.newIn ? (
+                            <span className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--foreground)]">
+                              New in
+                            </span>
+                          ) : null}
                           {product.newArrival ? (
                             <span className="rounded-full border border-[var(--accent)] px-3 py-1 text-xs text-[var(--accent)]">
                               New arrival

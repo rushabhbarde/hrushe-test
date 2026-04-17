@@ -28,10 +28,14 @@ export default function Home() {
   const { featuredProducts, homepageBanner, products } = useStorefrontData();
   const [availableBannerImages, setAvailableBannerImages] = useState<string[]>([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const newInProducts = products.filter((product) => product.newIn).slice(0, 4);
   const newArrivals = products.filter((product) => product.newArrival).slice(0, 4);
-  const bestSellers = [...products]
-    .sort((first, second) => second.price - first.price)
-    .slice(0, 4);
+  const bestSellerProducts = products.filter((product) => product.bestSeller).slice(0, 4);
+  const bestSellers = (
+    bestSellerProducts.length > 0
+      ? bestSellerProducts
+      : [...products].sort((first, second) => second.price - first.price)
+  ).slice(0, 4);
   const categoryHighlights = Array.from(
     new Map(products.map((product) => [product.category, product])).values()
   ).slice(0, 4);
@@ -238,7 +242,7 @@ export default function Home() {
             description="Newness stays front and center with a dedicated edit for the latest silhouettes, colors, and graphics."
           />
           <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            {(newArrivals.length > 0 ? newArrivals : products.slice(0, 4)).map((product) => (
+            {(newArrivals.length > 0 ? newArrivals : newInProducts.length > 0 ? newInProducts : products.slice(0, 4)).map((product) => (
               <ProductCard key={`new-${product.id}`} product={product} />
             ))}
           </div>

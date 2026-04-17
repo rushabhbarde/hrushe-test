@@ -21,7 +21,7 @@ export default function AddProductPage() {
           <AdminProductForm
             submitLabel="Save product"
             title="Create the next product drop."
-            description="Upload multiple product images, choose available sizes, and decide whether the item should appear in featured or new-arrival sections."
+            description="Upload multiple product images, choose available sizes, pick a storefront category, and decide whether the item should appear in featured, best-seller, new-in, or new-arrival sections."
             onSubmit={handleSubmit}
           />
         </main>

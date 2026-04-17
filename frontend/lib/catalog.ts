@@ -19,6 +19,8 @@ export type Product = {
   imageLabel: string;
   accent: string;
   featured?: boolean;
+  bestSeller?: boolean;
+  newIn?: boolean;
   newArrival?: boolean;
   images: string[];
   compareAtPrice?: number;
@@ -26,10 +28,15 @@ export type Product = {
 };
 
 export const categories = [
-  "New Arrival",
+  "T-Shirts",
   "Oversized",
   "Essential",
   "Outerwear",
+  "Shirts",
+  "Graphic Tees",
+  "Polos",
+  "Bottomwear",
+  "Accessories",
 ];
 
 export const brandHighlights = [
