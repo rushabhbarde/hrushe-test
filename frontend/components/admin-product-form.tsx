@@ -108,7 +108,7 @@ function loadImage(source: string) {
 async function compressImage(file: File) {
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImage(dataUrl);
-  const maxDimension = 960;
+  const maxDimension = 720;
   const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
   const width = Math.max(1, Math.round(image.width * scale));
   const height = Math.max(1, Math.round(image.height * scale));
@@ -125,10 +125,10 @@ async function compressImage(file: File) {
 
   context.drawImage(image, 0, 0, width, height);
 
-  const compressed = canvas.toDataURL("image/jpeg", 0.58);
+  const compressed = canvas.toDataURL("image/jpeg", 0.5);
 
-  if (compressed.length > 900_000) {
-    return canvas.toDataURL("image/jpeg", 0.45);
+  if (compressed.length > 650_000) {
+    return canvas.toDataURL("image/jpeg", 0.4);
   }
 
   return compressed;
@@ -292,7 +292,7 @@ export function AdminProductForm({
         0
       );
 
-      if (totalPayloadSize > 2_500_000) {
+      if (totalPayloadSize > 1_800_000) {
         throw new Error("Selected images are still too large after optimization.");
       }
 
