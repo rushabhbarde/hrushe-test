@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ProductCard } from "@/components/product-card";
+import { ProductCardScroller } from "@/components/product-card-scroller";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -227,11 +227,7 @@ export default function Home() {
             title="Selected styles for the current edit."
             description="This keeps the cleaner fashion-retail feel from the reference while still letting us drive into a curated launch collection."
           />
-          <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ProductCardScroller products={featuredProducts} />
         </section>
 
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
@@ -241,11 +237,15 @@ export default function Home() {
             title="Fresh pieces landing for the first launch."
             description="Newness stays front and center with a dedicated edit for the latest silhouettes, colors, and graphics."
           />
-          <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            {(newArrivals.length > 0 ? newArrivals : newInProducts.length > 0 ? newInProducts : products.slice(0, 4)).map((product) => (
-              <ProductCard key={`new-${product.id}`} product={product} />
-            ))}
-          </div>
+          <ProductCardScroller
+            products={
+              newArrivals.length > 0
+                ? newArrivals
+                : newInProducts.length > 0
+                  ? newInProducts
+                  : products.slice(0, 4)
+            }
+          />
         </section>
 
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
@@ -255,11 +255,7 @@ export default function Home() {
             title="The strongest pieces in the current catalog."
             description="A premium-looking storefront still needs commercial focus, so this section spotlights the biggest-value styles."
           />
-          <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            {bestSellers.map((product) => (
-              <ProductCard key={`best-${product.id}`} product={product} />
-            ))}
-          </div>
+          <ProductCardScroller products={bestSellers} />
         </section>
 
         <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">

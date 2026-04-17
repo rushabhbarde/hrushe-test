@@ -12,6 +12,15 @@ import { getAdminAuthHeaders } from "@/lib/admin-auth";
 
 type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
+type StorefrontCache = {
+  products: Product[];
+  homepageBanner: HomepageBanner;
+  timestamp: number;
+};
+
+const STOREFRONT_CACHE_TTL = 60_000;
+let storefrontCache: StorefrontCache | null = null;
+let storefrontRequest: Promise<StorefrontCache> | null = null;
 
 function mergeProductsWithDefaults(products: Product[]) {
   if (products.length === 0) {
@@ -21,28 +30,62 @@ function mergeProductsWithDefaults(products: Product[]) {
   return products;
 }
 
+function isStorefrontCacheFresh() {
+  return (
+    storefrontCache &&
+    Date.now() - storefrontCache.timestamp < STOREFRONT_CACHE_TTL
+  );
+}
+
+async function fetchStorefrontData() {
+  if (isStorefrontCacheFresh()) {
+    return storefrontCache as StorefrontCache;
+  }
+
+  if (!storefrontRequest) {
+    storefrontRequest = Promise.all([
+      apiRequest<Product[]>("/products"),
+      apiRequest<HomepageBanner>("/content/homepage"),
+    ])
+      .then(([productsData, bannerData]) => {
+        storefrontCache = {
+          products: mergeProductsWithDefaults(productsData),
+          homepageBanner: bannerData,
+          timestamp: Date.now(),
+        };
+
+        return storefrontCache;
+      })
+      .finally(() => {
+        storefrontRequest = null;
+      });
+  }
+
+  return storefrontRequest;
+}
+
 export function useStorefrontData() {
-  const [products, setProducts] = useState<Product[]>(defaultProducts);
-  const [homepageBanner, setHomepageBannerState] =
-    useState<HomepageBanner>(defaultHomepageBanner);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(
+    storefrontCache?.products || defaultProducts
+  );
+  const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
+    storefrontCache?.homepageBanner || defaultHomepageBanner
+  );
+  const [loading, setLoading] = useState(!storefrontCache);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       try {
-        const [productsData, bannerData] = await Promise.all([
-          apiRequest<Product[]>("/products"),
-          apiRequest<HomepageBanner>("/content/homepage"),
-        ]);
+        const data = await fetchStorefrontData();
 
         if (!active) {
           return;
         }
 
-        setProducts(mergeProductsWithDefaults(productsData));
-        setHomepageBannerState(bannerData);
+        setProducts(data.products);
+        setHomepageBannerState(data.homepageBanner);
       } catch {
         if (!active) {
           return;
@@ -76,7 +119,15 @@ export function useStorefrontData() {
       headers: getAdminAuthHeaders(),
     });
 
-    setProducts((current) => [created, ...current]);
+    setProducts((current) => {
+      const next = [created, ...current];
+      storefrontCache = {
+        products: next,
+        homepageBanner,
+        timestamp: Date.now(),
+      };
+      return next;
+    });
     return created;
   };
 
@@ -87,9 +138,15 @@ export function useStorefrontData() {
       headers: getAdminAuthHeaders(),
     });
 
-    setProducts((current) =>
-      current.map((item) => (item.id === productId ? updated : item))
-    );
+    setProducts((current) => {
+      const next = current.map((item) => (item.id === productId ? updated : item));
+      storefrontCache = {
+        products: next,
+        homepageBanner,
+        timestamp: Date.now(),
+      };
+      return next;
+    });
 
     return updated;
   };
@@ -100,7 +157,15 @@ export function useStorefrontData() {
       headers: getAdminAuthHeaders(),
     });
 
-    setProducts((current) => current.filter((product) => product.id !== productId));
+    setProducts((current) => {
+      const next = current.filter((product) => product.id !== productId);
+      storefrontCache = {
+        products: next,
+        homepageBanner,
+        timestamp: Date.now(),
+      };
+      return next;
+    });
   };
 
   const addProductReview = async (
@@ -113,9 +178,15 @@ export function useStorefrontData() {
         body: JSON.stringify(review),
       });
 
-      setProducts((current) =>
-        current.map((item) => (item.id === productId ? updated : item))
-      );
+      setProducts((current) => {
+        const next = current.map((item) => (item.id === productId ? updated : item));
+        storefrontCache = {
+          products: next,
+          homepageBanner,
+          timestamp: Date.now(),
+        };
+        return next;
+      });
 
       return updated;
     } catch (error) {
@@ -130,8 +201,8 @@ export function useStorefrontData() {
 
       let fallbackProduct: Product | null = null;
 
-      setProducts((current) =>
-        current.map((item) => {
+      setProducts((current) => {
+        const next = current.map((item) => {
           if (item.id !== productId) {
             return item;
           }
@@ -142,8 +213,16 @@ export function useStorefrontData() {
           };
 
           return fallbackProduct;
-        })
-      );
+        });
+
+        storefrontCache = {
+          products: next,
+          homepageBanner,
+          timestamp: Date.now(),
+        };
+
+        return next;
+      });
 
       if (fallbackProduct) {
         return fallbackProduct;
@@ -161,6 +240,11 @@ export function useStorefrontData() {
     });
 
     setHomepageBannerState(updated);
+    storefrontCache = {
+      products,
+      homepageBanner: updated,
+      timestamp: Date.now(),
+    };
     return updated;
   };
 

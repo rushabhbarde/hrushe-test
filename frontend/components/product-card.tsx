@@ -4,14 +4,34 @@ import { getCompareAtPrice } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
 
 const swatchColors: Record<string, string> = {
+  black: "#111111",
+  white: "#f5f5f5",
+  offwhite: "#f1efe8",
+  "off white": "#f1efe8",
   coffee: "#6f5847",
   bone: "#ded8cc",
+  beige: "#d8cbb6",
+  begie: "#d8cbb6",
+  cream: "#ede2d2",
   stone: "#c8c7c2",
+  brown: "#6b4f3a",
+  maroon: "#74263f",
+  burgundy: "#6f2137",
+  red: "#a63131",
+  green: "#3f6a4a",
+  forest: "#465742",
+  sage: "#9aa28d",
   ink: "#2c3440",
   midnight: "#181a20",
+  navy: "#24344d",
   slate: "#7f8794",
   sand: "#d7c6a8",
   olive: "#767863",
+  charcoal: "#3c3c3c",
+  grey: "#7a7a7a",
+  gray: "#7a7a7a",
+  ash: "#90949b",
+  silver: "#b7bcc3",
 };
 
 export function ProductCard({ product }: { product: Product }) {
@@ -57,7 +77,9 @@ export function ProductCard({ product }: { product: Product }) {
               className="h-2.5 w-2.5 border border-black/30"
               style={{
                 backgroundColor:
-                  swatchColors[color.toLowerCase()] || product.accent || "#d9d9d9",
+                  swatchColors[color.toLowerCase().trim()] ||
+                  product.accent ||
+                  "#d9d9d9",
               }}
             />
           ))}
