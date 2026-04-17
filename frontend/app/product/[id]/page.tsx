@@ -6,10 +6,13 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
+import { LoadingState } from "@/components/loading-state";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WishlistButton } from "@/components/wishlist-button";
+import { apiRequest } from "@/lib/api";
+import type { Product } from "@/lib/catalog";
 import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -30,10 +33,12 @@ const productInfoSections = [
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
-  const { products, addProductReview } = useStorefrontData();
-  const product = products.find(
+  const { products, addProductReview, loading } = useStorefrontData();
+  const matchedProduct = products.find(
     (item) => item.id === params.id || item.slug === params.id
   );
+  const [product, setProduct] = useState<Product | null>(matchedProduct || null);
+  const [productLoading, setProductLoading] = useState(!matchedProduct);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -48,11 +53,69 @@ export default function ProductDetailPage() {
     useState<(typeof productInfoSections)[number]["key"]>("description");
 
   useEffect(() => {
+    if (matchedProduct) {
+      setProduct(matchedProduct);
+      setProductLoading(false);
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    let active = true;
+    setProductLoading(true);
+
+    const loadProduct = async () => {
+      try {
+        const fetchedProduct = await apiRequest<Product>(`/products/${params.id}`);
+
+        if (!active) {
+          return;
+        }
+
+        setProduct(fetchedProduct);
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setProduct(null);
+      } finally {
+        if (active) {
+          setProductLoading(false);
+        }
+      }
+    };
+
+    void loadProduct();
+
+    return () => {
+      active = false;
+    };
+  }, [loading, matchedProduct, params.id]);
+
+  useEffect(() => {
     if (reviewSaved) {
       const timerId = window.setTimeout(() => setReviewSaved(false), 2000);
       return () => window.clearTimeout(timerId);
     }
   }, [reviewSaved]);
+
+  if (loading || productLoading) {
+    return (
+      <div className="page-shell">
+        <SiteHeader />
+        <main className="mx-auto max-w-5xl px-5 py-16 sm:px-8">
+          <LoadingState
+            title="Loading product"
+            description="We are preparing the full product page, gallery, sizing, and details."
+          />
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
