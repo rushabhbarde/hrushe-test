@@ -11,7 +11,7 @@ const founders = [
   },
   {
     name: "Kshitij Jogi",
-    image: "/uploads/founders/kshitijjogi.jpeg",
+    image: "/uploads/founders/KshitijJogi.jpeg",
     description:
       "Shaping the brand with a focus on quality, durability, and wearable minimal design.",
   },
