@@ -202,6 +202,13 @@ export function AdminProductForm({
   description,
   onSubmit,
 }: AdminProductFormProps) {
+  const categoryOptions = Array.from(
+    new Set(
+      [...categories, initialProduct?.category || ""]
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
   const [form, setForm] = useState<AdminProductFormValues>(() =>
     buildInitialForm(initialProduct)
   );
@@ -421,22 +428,20 @@ export function AdminProductForm({
               placeholder="Description"
               required
             />
-            <select
+            <input
+              list="admin-category-options"
               name="category"
               value={form.category}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, category: event.target.value }))
-              }
+              onChange={onChange}
               className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+              placeholder="Type or choose a category"
               required
-            >
-              <option value="">Select category</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+            />
+            <datalist id="admin-category-options">
+              {categoryOptions.map((category) => (
+                <option key={category} value={category} />
               ))}
-            </select>
+            </datalist>
           </section>
 
           <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
