@@ -9,6 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { apiRequest } from "@/lib/api";
+import {
+  clearAdminToken,
+  getAdminAuthHeaders,
+  setAdminToken,
+} from "@/lib/admin-auth";
 
 type AdminAuthContextValue = {
   isAuthenticated: boolean;
@@ -19,6 +24,7 @@ type AdminAuthContextValue = {
 const AdminAuthContext = createContext<AdminAuthContextValue | undefined>(undefined);
 
 type AuthResponse = {
+  token?: string;
   user: {
     role: string;
   };
@@ -33,13 +39,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
-        const response = await apiRequest<AuthResponse>("/auth/me");
+        const response = await apiRequest<AuthResponse>("/auth/me", {
+          headers: getAdminAuthHeaders(),
+        });
         if (active) {
           setIsAuthenticated(response.user.role === "admin");
         }
       } catch {
         if (active) {
           setIsAuthenticated(false);
+          clearAdminToken();
         }
       } finally {
         if (active) {
@@ -64,21 +73,28 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify({ username, password }),
           });
+          setAdminToken(response.token || "");
           setIsAuthenticated(response.user.role === "admin");
           if (response.user.role !== "admin") {
+            clearAdminToken();
             return false;
           }
           return true;
         } catch {
           setIsAuthenticated(false);
+          clearAdminToken();
           return false;
         }
       },
       logout: async () => {
         try {
-          await apiRequest("/auth/logout", { method: "POST" });
+          await apiRequest("/auth/logout", {
+            method: "POST",
+            headers: getAdminAuthHeaders(),
+          });
         } finally {
           setIsAuthenticated(false);
+          clearAdminToken();
         }
       },
     }),

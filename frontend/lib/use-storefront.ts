@@ -8,6 +8,7 @@ import {
   type HomepageBanner,
 } from "@/lib/storefront-data";
 import { apiRequest } from "@/lib/api";
+import { getAdminAuthHeaders } from "@/lib/admin-auth";
 
 type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
@@ -81,6 +82,7 @@ export function useStorefrontData() {
     const created = await apiRequest<Product>("/products", {
       method: "POST",
       body: JSON.stringify(product),
+      headers: getAdminAuthHeaders(),
     });
 
     setProducts((current) => [created, ...current]);
@@ -91,6 +93,7 @@ export function useStorefrontData() {
     const updated = await apiRequest<Product>(`/products/${productId}`, {
       method: "PUT",
       body: JSON.stringify(product),
+      headers: getAdminAuthHeaders(),
     });
 
     setProducts((current) =>
@@ -103,6 +106,7 @@ export function useStorefrontData() {
   const deleteProduct = async (productId: string) => {
     await apiRequest(`/products/${productId}`, {
       method: "DELETE",
+      headers: getAdminAuthHeaders(),
     });
 
     setProducts((current) => current.filter((product) => product.id !== productId));
@@ -162,6 +166,7 @@ export function useStorefrontData() {
     const updated = await apiRequest<HomepageBanner>("/content/homepage", {
       method: "PUT",
       body: JSON.stringify(payload),
+      headers: getAdminAuthHeaders(),
     });
 
     setHomepageBannerState(updated);
