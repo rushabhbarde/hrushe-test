@@ -23,10 +23,6 @@ let storefrontCache: StorefrontCache | null = null;
 let storefrontRequest: Promise<StorefrontCache> | null = null;
 
 function mergeProductsWithDefaults(products: Product[]) {
-  if (products.length === 0) {
-    return defaultProducts;
-  }
-
   return products;
 }
 
@@ -66,7 +62,7 @@ async function fetchStorefrontData() {
 
 export function useStorefrontData() {
   const [products, setProducts] = useState<Product[]>(
-    storefrontCache?.products || defaultProducts
+    storefrontCache?.products || []
   );
   const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
     storefrontCache?.homepageBanner || defaultHomepageBanner
@@ -91,7 +87,7 @@ export function useStorefrontData() {
           return;
         }
 
-        setProducts(defaultProducts);
+        setProducts([]);
         setHomepageBannerState(defaultHomepageBanner);
       } finally {
         if (active) {
