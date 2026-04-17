@@ -75,7 +75,15 @@ export default function AdminPage() {
     () =>
       Object.entries(
         products.reduce<Record<string, number>>((accumulator, product) => {
-          accumulator[product.category] = (accumulator[product.category] || 0) + 1;
+          const productCategories =
+            product.categories && product.categories.length > 0
+              ? product.categories
+              : [product.category];
+
+          productCategories.forEach((category) => {
+            accumulator[category] = (accumulator[category] || 0) + 1;
+          });
+
           return accumulator;
         }, {})
       )

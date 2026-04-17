@@ -12,7 +12,15 @@ export default function ShopPage() {
   const { products, loading } = useStorefrontData();
   const [activeTab, setActiveTab] = useState("ALL");
   const categoryTabs = useMemo(() => {
-    const categories = Array.from(new Set(products.map((product) => product.category)));
+    const categories = Array.from(
+      new Set(
+        products.flatMap((product) =>
+          product.categories && product.categories.length > 0
+            ? product.categories
+            : [product.category]
+        )
+      )
+    );
     return ["ALL", "NEW ARRIVALS", ...categories];
   }, [products]);
   const visibleProducts = useMemo(() => {
@@ -21,10 +29,15 @@ export default function ShopPage() {
     }
 
     if (activeTab === "NEW ARRIVALS") {
-      return products.filter((product) => product.newArrival);
+      return products.filter((product) => product.newArrival || product.newIn);
     }
 
-    return products.filter((product) => product.category === activeTab);
+    return products.filter((product) =>
+      (product.categories && product.categories.length > 0
+        ? product.categories
+        : [product.category]
+      ).includes(activeTab)
+    );
   }, [activeTab, products]);
 
   return (

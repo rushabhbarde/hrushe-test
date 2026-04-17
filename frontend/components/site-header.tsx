@@ -13,7 +13,7 @@ import { useWishlist } from "@/components/wishlist-provider";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const navItems = [
-  { href: "/product/coffee-oversized-tee", label: "NEW IN" },
+  { href: "/new-in", label: "NEW IN" },
   { href: "/shop", label: "SHOP" },
   { href: "/story", label: "STORY" },
 ];

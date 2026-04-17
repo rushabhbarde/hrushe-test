@@ -37,7 +37,14 @@ export default function Home() {
       : [...products].sort((first, second) => second.price - first.price)
   ).slice(0, 4);
   const categoryHighlights = Array.from(
-    new Map(products.map((product) => [product.category, product])).values()
+    new Map(
+      products.flatMap((product) =>
+        (product.categories && product.categories.length > 0
+          ? product.categories
+          : [product.category]
+        ).map((category) => [category, { ...product, category }])
+      )
+    ).values()
   ).slice(0, 4);
   const reviewTestimonials = useMemo(
     () =>

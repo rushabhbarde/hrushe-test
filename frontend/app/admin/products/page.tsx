@@ -75,7 +75,9 @@ export default function AdminProductsPage() {
                           ) : null}
                         </div>
                         <p className="mt-2 text-sm text-[var(--muted)]">
-                          {product.category} · {product.slug || product.id}
+                          {(product.categories && product.categories.length > 0
+                            ? product.categories.join(", ")
+                            : product.category) || "Uncategorized"} · {product.slug || product.id}
                         </p>
                         <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">
                           {product.description}

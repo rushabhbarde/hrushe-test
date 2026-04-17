@@ -26,6 +26,7 @@ export default function SearchPage() {
       const fields = [
         product.name,
         product.category,
+        product.categories?.join(" ") || "",
         product.description,
         product.colors.join(" "),
       ]

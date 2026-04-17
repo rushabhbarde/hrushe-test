@@ -53,7 +53,7 @@ type AdminProductFormValues = {
   description: string;
   price: string;
   compareAtPrice: string;
-  category: string;
+  categoriesInput: string;
   sizes: string[];
   colors: string;
   accent: string;
@@ -77,7 +77,7 @@ const emptyForm: AdminProductFormValues = {
   description: "",
   price: "",
   compareAtPrice: "",
-  category: "",
+  categoriesInput: "",
   sizes: [],
   colors: "",
   accent: "#111111",
@@ -184,7 +184,10 @@ function buildInitialForm(product?: Product): AdminProductFormValues {
     description: product.description,
     price: String(product.price),
     compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
-    category: product.category,
+    categoriesInput:
+      product.categories && product.categories.length > 0
+        ? product.categories.join(", ")
+        : product.category,
     sizes: product.sizes,
     colors: product.colors.join(", "),
     accent: product.accent,
@@ -204,7 +207,11 @@ export function AdminProductForm({
 }: AdminProductFormProps) {
   const categoryOptions = Array.from(
     new Set(
-      [...categories, initialProduct?.category || ""]
+      [
+        ...categories,
+        ...(initialProduct?.categories || []),
+        initialProduct?.category || "",
+      ]
         .map((item) => item.trim())
         .filter(Boolean)
     )
@@ -228,6 +235,10 @@ export function AdminProductForm({
   }, [initialProduct]);
 
   const parsedColors = form.colors
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const parsedCategories = form.categoriesInput
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
@@ -319,7 +330,8 @@ export function AdminProductForm({
         compareAtPrice: form.compareAtPrice
           ? Number(form.compareAtPrice)
           : undefined,
-        category: form.category,
+        category: parsedCategories[0] || "",
+        categories: parsedCategories,
         sizes: form.sizes,
         colors: form.colors
           .split(",")
@@ -376,7 +388,7 @@ export function AdminProductForm({
                 {form.name || "New product draft"}
               </p>
               <p className="text-xs text-[var(--muted)]">
-                {form.category || "Category pending"} · {formatCurrency(form.price)}
+                {parsedCategories[0] || "Category pending"} · {formatCurrency(form.price)}
               </p>
             </div>
           </div>
@@ -393,7 +405,7 @@ export function AdminProductForm({
               <div>
                 <p className="text-sm font-semibold">Core details</p>
                 <p className="mt-1 text-sm text-[var(--muted)]">
-                  Name, slug, description, and category for the storefront.
+                  Name, slug, description, and category placement for the storefront.
                 </p>
               </div>
               <span className="rounded-full bg-black/5 px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -430,11 +442,11 @@ export function AdminProductForm({
             />
             <input
               list="admin-category-options"
-              name="category"
-              value={form.category}
+              name="categoriesInput"
+              value={form.categoriesInput}
               onChange={onChange}
               className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="Type or choose a category"
+              placeholder="Type categories separated by commas"
               required
             />
             <datalist id="admin-category-options">
@@ -442,6 +454,18 @@ export function AdminProductForm({
                 <option key={category} value={category} />
               ))}
             </datalist>
+            {parsedCategories.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {parsedCategories.map((category) => (
+                  <span
+                    key={category}
+                    className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs text-[var(--muted)]"
+                  >
+                    {category}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">

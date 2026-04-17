@@ -14,12 +14,23 @@ export default function CollectionPage() {
   const params = useParams<{ slug: string }>();
   const { products } = useStorefrontData();
 
-  const matchedCategory = Array.from(new Set(products.map((product) => product.category))).find(
-    (category) => toCollectionSlug(category) === params.slug
-  );
+  const matchedCategory = Array.from(
+    new Set(
+      products.flatMap((product) =>
+        product.categories && product.categories.length > 0
+          ? product.categories
+          : [product.category]
+      )
+    )
+  ).find((category) => toCollectionSlug(category) === params.slug);
 
   const visibleProducts = matchedCategory
-    ? products.filter((product) => product.category === matchedCategory)
+    ? products.filter((product) =>
+        (product.categories && product.categories.length > 0
+          ? product.categories
+          : [product.category]
+        ).includes(matchedCategory)
+      )
     : [];
 
   return (

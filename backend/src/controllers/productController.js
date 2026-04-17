@@ -5,6 +5,34 @@ const mongoose = require("mongoose");
 const productListCache = new Map();
 const PRODUCT_LIST_CACHE_TTL = 60 * 1000;
 
+const escapeRegex = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeCategories = (value) => {
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .map((item) => String(item || "").trim())
+          .filter(Boolean)
+      )
+    );
+  }
+
+  if (typeof value === "string") {
+    return Array.from(
+      new Set(
+        value
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      )
+    );
+  }
+
+  return [];
+};
+
 const parseBooleanQuery = (value) => {
   if (value === undefined) {
     return undefined;
@@ -44,8 +72,20 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.compareAtPrice = payload.compareAtPrice;
   }
 
-  if (!partial || payload.category !== undefined) {
-    normalized.category = payload.category;
+  if (
+    !partial ||
+    payload.category !== undefined ||
+    payload.categories !== undefined
+  ) {
+    const normalizedCategories =
+      payload.categories !== undefined
+        ? normalizeCategories(payload.categories)
+        : normalizeCategories(payload.category);
+
+    normalized.categories = normalizedCategories;
+    normalized.category =
+      normalizedCategories[0] ||
+      (typeof payload.category === "string" ? payload.category.trim() : payload.category);
   }
 
   if (!partial || payload.sizes !== undefined) {
@@ -91,6 +131,12 @@ const mapProductListItem = (product) => ({
   price: product.price,
   compareAtPrice: product.compareAtPrice,
   category: product.category,
+  categories:
+    Array.isArray(product.categories) && product.categories.length > 0
+      ? product.categories
+      : product.category
+        ? [product.category]
+        : [],
   sizes: Array.isArray(product.sizes) ? product.sizes : [],
   colors: Array.isArray(product.colors) ? product.colors : [],
   images: Array.isArray(product.images) ? product.images.slice(0, 1) : [],
@@ -127,13 +173,20 @@ const getProducts = asyncHandler(async (req, res) => {
   }
 
   const query = {};
+  const andConditions = [];
   const featuredFilter = parseBooleanQuery(featured);
   const bestSellerFilter = parseBooleanQuery(bestSeller);
   const newInFilter = parseBooleanQuery(newIn);
   const newArrivalFilter = parseBooleanQuery(newArrival);
 
   if (category) {
-    query.category = { $regex: `^${category}$`, $options: "i" };
+    const categoryRegex = new RegExp(`^${escapeRegex(category)}$`, "i");
+    andConditions.push({
+      $or: [
+        { category: categoryRegex },
+        { categories: { $elemMatch: { $regex: categoryRegex } } },
+      ],
+    });
   }
 
   if (featuredFilter !== undefined) {
@@ -154,13 +207,22 @@ const getProducts = asyncHandler(async (req, res) => {
 
   if (q) {
     const searchRegex = new RegExp(q.trim(), "i");
-    query.$or = [
-      { name: searchRegex },
-      { description: searchRegex },
-      { category: searchRegex },
-      { colors: searchRegex },
-      { slug: searchRegex },
-    ];
+    andConditions.push({
+      $or: [
+        { name: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { categories: searchRegex },
+        { colors: searchRegex },
+        { slug: searchRegex },
+      ],
+    });
+  }
+
+  if (andConditions.length === 1) {
+    Object.assign(query, andConditions[0]);
+  } else if (andConditions.length > 1) {
+    query.$and = andConditions;
   }
 
   const products = await Product.find(query)

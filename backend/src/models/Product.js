@@ -68,6 +68,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    categories: {
+      type: [String],
+      default: [],
+    },
     sizes: {
       type: [String],
       default: [],
@@ -121,6 +125,7 @@ productSchema.index({
   name: "text",
   description: "text",
   category: "text",
+  categories: "text",
   colors: "text",
 });
 
