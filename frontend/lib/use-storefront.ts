@@ -14,20 +14,11 @@ type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
 
 function mergeProductsWithDefaults(products: Product[]) {
-  const merged = [...products];
-  const existingKeys = new Set(
-    products.map((product) => product.slug || product.id)
-  );
-
-  for (const fallbackProduct of defaultProducts) {
-    const key = fallbackProduct.slug || fallbackProduct.id;
-
-    if (!existingKeys.has(key)) {
-      merged.push(fallbackProduct);
-    }
+  if (products.length === 0) {
+    return defaultProducts;
   }
 
-  return merged;
+  return products;
 }
 
 export function useStorefrontData() {
