@@ -13,6 +13,16 @@ const buildFromAddress = () => ({
   name: normalizedMailFromName(),
 });
 
+const buildAuthorizationHeader = () => {
+  const token = normalizedZeptoMailApiKey();
+
+  if (!token) {
+    return "";
+  }
+
+  return token.startsWith("Zoho-enczapikey ") ? token : token;
+};
+
 const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
   if (!normalizedZeptoMailApiKey()) {
     return { delivered: false, reason: "missing_zeptomail_api_key" };
@@ -30,7 +40,7 @@ const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Zoho-enczapikey ${normalizedZeptoMailApiKey()}`,
+        Authorization: buildAuthorizationHeader(),
       },
       body: JSON.stringify({
         from: buildFromAddress(),
@@ -54,6 +64,12 @@ const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
     error.code = "ZEPTOMAIL_REQUEST_FAILED";
     error.response = errorText;
     error.responseCode = response.status;
+    error.meta = {
+      url: isTemplateSend ? normalizedZeptoMailTemplateUrl() : normalizedZeptoMailUrl(),
+      from: buildFromAddress().address,
+      to,
+      templateKey: isTemplateSend ? String(templateKey).trim() : "",
+    };
     throw error;
   }
 

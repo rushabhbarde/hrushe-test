@@ -38,10 +38,10 @@ const env = {
   MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || "Hrushe",
   ZEPTOMAIL_API_KEY: process.env.ZEPTOMAIL_API_KEY || "",
   ZEPTOMAIL_API_URL:
-    process.env.ZEPTOMAIL_API_URL || "https://api.zeptomail.com/v1.1/email",
+    process.env.ZEPTOMAIL_API_URL || "https://api.zeptomail.in/v1.1/email",
   ZEPTOMAIL_TEMPLATE_API_URL:
     process.env.ZEPTOMAIL_TEMPLATE_API_URL ||
-    "https://api.zeptomail.com/v1.1/email/template",
+    "https://api.zeptomail.in/v1.1/email/template",
   ZEPTOMAIL_TEMPLATE_SIGNUP_OTP:
     process.env.ZEPTOMAIL_TEMPLATE_SIGNUP_OTP || "",
   ZEPTOMAIL_TEMPLATE_WELCOME:
