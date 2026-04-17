@@ -33,10 +33,10 @@ export function getAdminAuthHeaders() {
   const token = getAdminToken();
 
   if (!token) {
-    return {};
+    return {} as Record<string, string>;
   }
 
   return {
     Authorization: `Bearer ${token}`,
-  };
+  } as Record<string, string>;
 }
