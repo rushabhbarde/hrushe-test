@@ -1,4 +1,13 @@
 const CUSTOMER_TOKEN_KEY = "hrushe_customer_token";
+export const CUSTOMER_SESSION_CHANGED_EVENT = "hrushe_customer_session_changed";
+
+function dispatchCustomerSessionChanged() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(CUSTOMER_SESSION_CHANGED_EVENT));
+}
 
 export function getCustomerToken() {
   if (typeof window === "undefined") {
@@ -15,10 +24,12 @@ export function setCustomerToken(token: string) {
 
   if (!token) {
     window.localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    dispatchCustomerSessionChanged();
     return;
   }
 
   window.localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+  dispatchCustomerSessionChanged();
 }
 
 export function clearCustomerToken() {
@@ -27,6 +38,7 @@ export function clearCustomerToken() {
   }
 
   window.localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  dispatchCustomerSessionChanged();
 }
 
 export function getCustomerAuthHeaders(): Record<string, string> {

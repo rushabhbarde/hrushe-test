@@ -10,10 +10,13 @@ import {
 } from "react";
 import { apiRequest } from "@/lib/api";
 import {
+  ADMIN_SESSION_CHANGED_EVENT,
   clearAdminToken,
   getAdminAuthHeaders,
+  getAdminToken,
   setAdminToken,
 } from "@/lib/admin-auth";
+import { clearCustomerToken } from "@/lib/customer-auth";
 
 type AdminAuthContextValue = {
   isAuthenticated: boolean;
@@ -64,6 +67,24 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncAdminSession = () => {
+      if (!getAdminToken()) {
+        setIsAuthenticated(false);
+      }
+    };
+
+    window.addEventListener(ADMIN_SESSION_CHANGED_EVENT, syncAdminSession);
+
+    return () => {
+      window.removeEventListener(ADMIN_SESSION_CHANGED_EVENT, syncAdminSession);
+    };
+  }, []);
+
   const value = useMemo(
     () => ({
       isAuthenticated,
@@ -73,12 +94,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify({ username, password }),
           });
-          setAdminToken(response.token || "");
-          setIsAuthenticated(response.user.role === "admin");
+
           if (response.user.role !== "admin") {
             clearAdminToken();
+            setIsAuthenticated(false);
             return false;
           }
+
+          clearCustomerToken();
+          setAdminToken(response.token || "");
+          setIsAuthenticated(true);
           return true;
         } catch {
           setIsAuthenticated(false);

@@ -77,6 +77,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const isAdminRoute = pathname.startsWith("/admin");
+  const isStorefrontRoute = !isAdminRoute;
   const accountInitial = user?.name?.trim().charAt(0).toUpperCase() || "H";
   const announcementText =
     homepageBanner.announcementText || "FREE SHIPPING ON SELECTED STYLES";
@@ -182,87 +183,91 @@ export function SiteHeader() {
               <path d="M20 20l-4.2-4.2" />
             </svg>
           </HeaderIcon>
-          {isAuthenticated ? (
-            <div ref={accountMenuRef} className="relative">
+          {isStorefrontRoute ? (
+            <>
+              {isAuthenticated ? (
+                <div ref={accountMenuRef} className="relative">
+                  <HeaderIcon
+                    onClick={() => setIsAccountMenuOpen((current) => !current)}
+                    label="Account"
+                    className="h-9 w-9 border border-[var(--border)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/14 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+                  >
+                    <span className="text-base font-semibold uppercase sm:text-[1.05rem] lg:text-[1.1rem]">
+                      {accountInitial}
+                    </span>
+                  </HeaderIcon>
+                  {isAccountMenuOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-white/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+                      <Link
+                        href="/account"
+                        onClick={() => setIsAccountMenuOpen(false)}
+                        className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-black/5"
+                      >
+                        My account
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountMenuOpen(false);
+                          void logout();
+                        }}
+                        className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-black/5"
+                      >
+                        <LogoutIcon />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <HeaderIcon
+                  onClick={() => openLogin(pathname)}
+                  label="Account"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
+                  </svg>
+                </HeaderIcon>
+              )}
               <HeaderIcon
-                onClick={() => setIsAccountMenuOpen((current) => !current)}
-                label="Account"
-                className="h-9 w-9 border border-[var(--border)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/14 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+                onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}
+                label="Wishlist"
               >
-                <span className="text-base font-semibold uppercase sm:text-[1.05rem] lg:text-[1.1rem]">
-                  {accountInitial}
+                <span className="relative inline-flex">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                  </svg>
+                  {wishlistCount > 0 ? (
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                      {wishlistCount}
+                    </span>
+                  ) : null}
                 </span>
               </HeaderIcon>
-              {isAccountMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-white/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-                  <Link
-                    href="/account"
-                    onClick={() => setIsAccountMenuOpen(false)}
-                    className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-black/5"
-                  >
-                    My account
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      void logout();
-                    }}
-                    className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-black/5"
-                  >
-                    <LogoutIcon />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <HeaderIcon
-              onClick={() => openLogin(pathname)}
-              label="Account"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-              </svg>
-            </HeaderIcon>
-          )}
-          <HeaderIcon
-            onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}
-            label="Wishlist"
-          >
-            <span className="relative inline-flex">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-              </svg>
-              {wishlistCount > 0 ? (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
-                  {wishlistCount}
-                </span>
-              ) : null}
-            </span>
-          </HeaderIcon>
-          <button
-            type="button"
-            onClick={openCart}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12"
-            aria-label="Cart"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" aria-hidden="true">
-              <path
-                d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
-                stroke="#000000"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {itemCount > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
-                {itemCount}
-              </span>
-            ) : null}
-          </button>
+              <button
+                type="button"
+                onClick={openCart}
+                className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+                aria-label="Cart"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" aria-hidden="true">
+                  <path
+                    d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
+                    stroke="#000000"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {itemCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                    {itemCount}
+                  </span>
+                ) : null}
+              </button>
+            </>
+          ) : null}
           {isAdminAuthenticated && isAdminRoute ? (
             <HeaderIcon
               onClick={() => {
@@ -300,7 +305,7 @@ export function SiteHeader() {
               ADMIN
             </button>
           )}
-          {isAuthenticated ? (
+          {isStorefrontRoute && isAuthenticated ? (
             <span className="whitespace-nowrap text-xs uppercase tracking-[0.14em] text-[var(--accent)]">
               {user?.name}
             </span>

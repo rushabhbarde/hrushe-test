@@ -10,9 +10,12 @@ import {
 } from "react";
 import { apiRequest } from "@/lib/api";
 import {
+  CUSTOMER_SESSION_CHANGED_EVENT,
   clearCustomerToken,
+  getCustomerToken,
   setCustomerToken,
 } from "@/lib/customer-auth";
+import { clearAdminToken } from "@/lib/admin-auth";
 
 type AuthUser = {
   id: string;
@@ -65,6 +68,13 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     const response = await apiRequest<AuthResponse>("/auth/me");
+
+    if (response.user.role === "admin") {
+      clearCustomerToken();
+      setUser(null);
+      return;
+    }
+
     setUser(response.user);
   };
 
@@ -76,6 +86,12 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         const response = await apiRequest<AuthResponse>("/auth/me");
 
         if (active) {
+          if (response.user.role === "admin") {
+            clearCustomerToken();
+            setUser(null);
+            return;
+          }
+
           if (response.token) {
             setCustomerToken(response.token);
           }
@@ -100,6 +116,24 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncCustomerSession = () => {
+      if (!getCustomerToken()) {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener(CUSTOMER_SESSION_CHANGED_EVENT, syncCustomerSession);
+
+    return () => {
+      window.removeEventListener(CUSTOMER_SESSION_CHANGED_EVENT, syncCustomerSession);
+    };
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -111,6 +145,14 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify(payload),
           });
+
+          if (response.user.role === "admin") {
+            clearCustomerToken();
+            setUser(null);
+            return false;
+          }
+
+          clearAdminToken();
           if (response.token) {
             setCustomerToken(response.token);
           }
@@ -128,6 +170,14 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify({ identifier, password }),
           });
+
+          if (response.user.role === "admin") {
+            clearCustomerToken();
+            setUser(null);
+            return false;
+          }
+
+          clearAdminToken();
           if (response.token) {
             setCustomerToken(response.token);
           }
