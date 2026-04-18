@@ -359,16 +359,42 @@ const createCheckout = asyncHandler(async (req, res) => {
   );
 
   const razorpay = getRazorpayClient();
-  const razorpayOrder = await razorpay.orders.create({
-    amount: Math.round(totalAmount * 100),
-    currency: env.RAZORPAY_CURRENCY,
-    receipt: `hrushe_${Date.now().toString(36)}`,
-    notes: {
-      customerName: fullName,
-      customerEmail: email,
-      customerPhone: phone,
-    },
-  });
+  let razorpayOrder;
+
+  try {
+    razorpayOrder = await razorpay.orders.create({
+      amount: Math.round(totalAmount * 100),
+      currency: env.RAZORPAY_CURRENCY,
+      receipt: `hrushe_${Date.now().toString(36)}`,
+      notes: {
+        customerName: fullName,
+        customerEmail: email,
+        customerPhone: phone,
+      },
+    });
+  } catch (error) {
+    console.error("Razorpay order creation failed", {
+      message:
+        error?.error?.description ||
+        error?.description ||
+        error?.message ||
+        "Unknown Razorpay error",
+      code: error?.error?.code || error?.code,
+      field: error?.error?.field,
+      source: error?.error?.source,
+      step: error?.error?.step,
+      reason: error?.error?.reason,
+      statusCode: error?.statusCode || error?.error?.statusCode,
+      metadata: error?.error?.metadata,
+    });
+
+    throw new AppError(
+      error?.error?.description ||
+        error?.description ||
+        "Could not create Razorpay order. Please verify Razorpay keys and account setup.",
+      502
+    );
+  }
 
   const order = await Order.create({
     userId: req.user._id,
