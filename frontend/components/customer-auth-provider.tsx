@@ -9,6 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import { apiRequest } from "@/lib/api";
+import {
+  clearCustomerToken,
+  setCustomerToken,
+} from "@/lib/customer-auth";
 
 type AuthUser = {
   id: string;
@@ -51,6 +55,7 @@ const CustomerAuthContext = createContext<CustomerAuthContextValue | undefined>(
 );
 
 type AuthResponse = {
+  token?: string;
   user: AuthUser;
 };
 
@@ -71,10 +76,14 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         const response = await apiRequest<AuthResponse>("/auth/me");
 
         if (active) {
+          if (response.token) {
+            setCustomerToken(response.token);
+          }
           setUser(response.user);
         }
       } catch {
         if (active) {
+          clearCustomerToken();
           setUser(null);
         }
       } finally {
@@ -102,9 +111,13 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify(payload),
           });
+          if (response.token) {
+            setCustomerToken(response.token);
+          }
           setUser(response.user);
           return true;
         } catch {
+          clearCustomerToken();
           setUser(null);
           return false;
         }
@@ -115,9 +128,13 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             method: "POST",
             body: JSON.stringify({ identifier, password }),
           });
+          if (response.token) {
+            setCustomerToken(response.token);
+          }
           setUser(response.user);
           return true;
         } catch {
+          clearCustomerToken();
           setUser(null);
           return false;
         }
@@ -126,6 +143,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         try {
           await apiRequest("/auth/logout", { method: "POST" });
         } finally {
+          clearCustomerToken();
           setUser(null);
         }
       },
@@ -133,6 +151,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
         try {
           await refreshUser();
         } catch {
+          clearCustomerToken();
           setUser(null);
         }
       },
