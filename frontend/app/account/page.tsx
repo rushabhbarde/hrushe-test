@@ -240,7 +240,7 @@ export default function AccountPage() {
     }
 
     contentStartRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
       block: "start",
     });
   }, [activeSection]);

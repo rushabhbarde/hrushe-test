@@ -128,65 +128,93 @@ export function AccountShell({
   children,
 }: AccountShellProps) {
   const nav = useMemo(() => navigationItems, []);
+  const activeItem =
+    nav.find((item) => item.id === activeSection) || navigationItems[0];
 
   return (
     <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
       <div className="space-y-5 lg:hidden">
-        <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,#111111_0%,#1d1d1d_38%,rgba(214,31,38,0.86)_140%)] px-5 py-6 text-white shadow-[0_18px_45px_rgba(17,17,17,0.16)]">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/70">My account</p>
-          <h1 className="display-font mt-3 text-[2rem] leading-[1.05]">
-            Hello, {(userName || "member").split(" ")[0]}.
-          </h1>
-          <p className="mt-3 max-w-[28ch] text-sm leading-6 text-white/78">
-            Keep orders, addresses, saved pieces, and support in one premium workspace.
-          </p>
-        </section>
+        {activeSection === "dashboard" ? (
+          <>
+            <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,#111111_0%,#1d1d1d_38%,rgba(214,31,38,0.86)_140%)] px-5 py-6 text-white shadow-[0_18px_45px_rgba(17,17,17,0.16)]">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-white/70">My account</p>
+              <h1 className="display-font mt-3 text-[2rem] leading-[1.05]">
+                Hello, {(userName || "member").split(" ")[0]}.
+              </h1>
+              <p className="mt-3 max-w-[28ch] text-sm leading-6 text-white/78">
+                Keep orders, addresses, saved pieces, and support in one premium workspace.
+              </p>
+            </section>
 
-        <section className="overflow-hidden rounded-[1.7rem] border border-[var(--border)] bg-white shadow-[0_14px_34px_rgba(17,17,17,0.06)]">
-          <nav>
-            {nav.map((item, index) => {
-              const isActive = activeSection === item.id;
-              const badge = summaryBadges?.[item.id];
+            <section className="overflow-hidden rounded-[1.7rem] border border-[var(--border)] bg-white shadow-[0_14px_34px_rgba(17,17,17,0.06)]">
+              <nav>
+                {nav
+                  .filter((item) => item.id !== "dashboard")
+                  .map((item, index, items) => {
+                    const badge = summaryBadges?.[item.id];
 
-              return (
-                <button
-                  key={`mobile-list-${item.id}`}
-                  type="button"
-                  onClick={() => onSectionChange(item.id)}
-                  className={`flex w-full items-center gap-3 px-4 py-4 text-left transition ${
-                    index !== nav.length - 1 ? "border-b border-[var(--border)]" : ""
-                  } ${isActive ? "bg-black/[0.03]" : "bg-white"}`}
-                >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
-                      isActive
-                        ? "border-black bg-black text-white"
-                        : "border-[var(--border)] bg-white text-[var(--foreground)]"
-                    }`}
-                  >
-                    <AccountNavIcon id={item.id} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="block text-[0.96rem] font-semibold tracking-tight text-[var(--foreground)]">
-                        {item.label}
-                      </span>
-                      {badge ? (
-                        <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--accent)]">
-                          {badge}
+                    return (
+                      <button
+                        key={`mobile-list-${item.id}`}
+                        type="button"
+                        onClick={() => onSectionChange(item.id)}
+                        className={`flex w-full items-center gap-3 px-4 py-4 text-left transition ${
+                          index !== items.length - 1 ? "border-b border-[var(--border)]" : ""
+                        } bg-white`}
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--foreground)]">
+                          <AccountNavIcon id={item.id} />
                         </span>
-                      ) : null}
-                    </span>
-                    <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">
-                      {item.description}
-                    </span>
-                  </span>
-                  <span className="text-lg text-[var(--muted)]">›</span>
-                </button>
-              );
-            })}
-          </nav>
-        </section>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="block text-[0.96rem] font-semibold tracking-tight text-[var(--foreground)]">
+                              {item.label}
+                            </span>
+                            {badge ? (
+                              <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--accent)]">
+                                {badge}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">
+                            {item.description}
+                          </span>
+                        </span>
+                        <span className="text-lg text-[var(--muted)]">›</span>
+                      </button>
+                    );
+                  })}
+              </nav>
+            </section>
+          </>
+        ) : (
+          <section className="rounded-[1.7rem] border border-[var(--border)] bg-white px-4 py-4 shadow-[0_14px_34px_rgba(17,17,17,0.06)]">
+            <button
+              type="button"
+              onClick={() => onSectionChange("dashboard")}
+              className="flex items-center gap-2 text-sm font-medium text-[var(--muted)]"
+            >
+              <span className="text-lg">‹</span>
+              <span>Back to account</span>
+            </button>
+            <div className="mt-4 flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-black text-white">
+                <AccountNavIcon id={activeItem.id} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--accent)]">
+                  My account
+                </p>
+                <p className="mt-1 text-lg font-semibold tracking-tight text-[var(--foreground)]">
+                  {activeItem.label}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                  {activeItem.description}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       <aside className="hidden grain-card h-fit rounded-[2rem] p-5 sm:p-6 lg:block lg:sticky lg:top-24">
