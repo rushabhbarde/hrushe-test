@@ -17,7 +17,7 @@ export default function NewInPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <SectionHeading
           eyebrow="New in"
           eyebrowClassName="text-[var(--accent)]"
@@ -25,7 +25,7 @@ export default function NewInPage() {
           description="The newest styles added to the collection, gathered into one clean edit."
         />
 
-        <section className="mt-10">
+        <section className="mt-8 sm:mt-10">
           {loading ? (
             <LoadingState
               title="Loading new in"
@@ -39,7 +39,7 @@ export default function NewInPage() {
               ctaLabel="Browse the shop"
             />
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {newInProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

@@ -46,8 +46,8 @@ export function AccountShell({
   const nav = useMemo(() => navigationItems, []);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="grain-card h-fit rounded-[2rem] p-5 sm:p-6 xl:sticky xl:top-24">
+    <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="grain-card h-fit rounded-[2rem] p-5 sm:p-6 lg:sticky lg:top-24">
         <p className="eyebrow text-[var(--accent)]">My account</p>
         <h1 className="display-font mt-3 text-3xl sm:text-4xl">{userName || "HRUSHE member"}.</h1>
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
@@ -55,7 +55,7 @@ export function AccountShell({
           and post-purchase care.
         </p>
 
-        <nav className="mt-6 flex gap-3 overflow-x-auto pb-2 xl:block xl:space-y-2 xl:overflow-visible xl:pb-0">
+        <nav className="mt-6 flex gap-3 overflow-x-auto pb-2 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
           {nav.map((item) => {
             const isActive = activeSection === item.id;
             const badge = summaryBadges?.[item.id];
@@ -65,7 +65,7 @@ export function AccountShell({
                 key={item.id}
                 type="button"
                 onClick={() => onSectionChange(item.id)}
-                className={`min-w-[210px] rounded-[1.4rem] border px-4 py-4 text-left transition xl:w-full ${
+                className={`min-w-[220px] rounded-[1.4rem] border px-4 py-4 text-left transition lg:w-full ${
                   isActive
                     ? "border-black bg-black text-white shadow-[0_16px_30px_rgba(0,0,0,0.14)]"
                     : "border-[var(--border)] bg-white/70 text-[var(--foreground)] hover:border-black/30"
@@ -114,7 +114,7 @@ export function AccountShell({
         </div>
       </aside>
 
-      <div className="space-y-6">{children}</div>
+      <div className="min-w-0 space-y-6">{children}</div>
     </div>
   );
 }

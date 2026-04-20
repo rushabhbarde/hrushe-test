@@ -18,7 +18,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { useToast } from "@/components/toast-provider";
 import { useWishlist } from "@/components/wishlist-provider";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, downloadApiFile } from "@/lib/api";
 import type {
   AccountPreferences,
   AccountSummary,
@@ -28,6 +28,7 @@ import type {
   SupportCategory,
   WishlistProduct,
 } from "@/lib/account";
+import { compressSingleImage } from "@/lib/image-upload";
 import { formatOrderDate, type OrderRecord } from "@/lib/orders";
 
 type WishlistResponse = {
@@ -63,6 +64,7 @@ const emptyProfileForm = {
   phone: "",
   gender: "",
   dateOfBirth: "",
+  profilePictureUrl: "",
 };
 
 const emptyAddressForm = {
@@ -131,6 +133,7 @@ function buildProfileForm(user: AccountUser | null) {
     phone: user?.phone || "",
     gender: user?.gender || "",
     dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.slice(0, 10) : "",
+    profilePictureUrl: user?.profilePictureUrl || "",
   };
 }
 
@@ -180,6 +183,7 @@ export default function AccountPage() {
     confirmPassword: "",
   });
   const [profileEditing, setProfileEditing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [addressEditing, setAddressEditing] = useState(false);
   const [submitting, setSubmitting] = useState<string>("");
   const [error, setError] = useState("");
@@ -285,6 +289,38 @@ export default function AccountPage() {
       setSubmitting("");
     }
   }, [loadAccountData, profileForm, pushToast, refreshUser]);
+
+  const uploadProfilePhoto = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      setUploadingPhoto(true);
+
+      try {
+        const profilePictureUrl = await compressSingleImage(file, 420);
+        setProfileForm((current) => ({
+          ...current,
+          profilePictureUrl,
+        }));
+        pushToast("Profile photo ready");
+      } catch (uploadError) {
+        setError(
+          uploadError instanceof Error
+            ? uploadError.message
+            : "Could not process profile photo."
+        );
+        pushToast("Could not process profile photo", "error");
+      } finally {
+        setUploadingPhoto(false);
+        event.target.value = "";
+      }
+    },
+    [pushToast]
+  );
 
   const saveAddress = useCallback(async () => {
     setSubmitting("address");
@@ -542,6 +578,26 @@ export default function AccountPage() {
     }
   }, [changePassword, passwordForm, pushToast]);
 
+  const downloadInvoice = useCallback(
+    async (orderId: string, orderNumber?: number | null) => {
+      try {
+        await downloadApiFile(
+          `/order/${orderId}/invoice`,
+          `hrushe-invoice-${orderNumber || orderId}.pdf`
+        );
+        pushToast("Invoice downloaded");
+      } catch (downloadError) {
+        setError(
+          downloadError instanceof Error
+            ? downloadError.message
+            : "Could not download invoice."
+        );
+        pushToast("Could not download invoice", "error");
+      }
+    },
+    [pushToast]
+  );
+
   if (isChecking || loading) {
     return (
       <div className="page-shell">
@@ -762,8 +818,20 @@ export default function AccountPage() {
               >
                 <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
                   <div className="rounded-[1.8rem] border border-[var(--border)] bg-white/70 p-5 text-center">
-                    <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[var(--accent)] text-3xl font-semibold uppercase text-white">
-                      {(summary?.user.name || user?.name || "H").charAt(0)}
+                    <div className="relative mx-auto h-24 w-24 overflow-hidden rounded-full border border-[var(--border)] bg-[#f4f4f4]">
+                      {profileForm.profilePictureUrl ? (
+                        <Image
+                          src={profileForm.profilePictureUrl}
+                          alt={summary?.user.name || user?.name || "Profile"}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-[var(--accent)] text-3xl font-semibold uppercase text-white">
+                          {(summary?.user.name || user?.name || "H").charAt(0)}
+                        </div>
+                      )}
                     </div>
                     <p className="mt-4 text-xl font-semibold">{summary?.user.name || user?.name}</p>
                     <p className="mt-2 text-sm text-[var(--muted)]">
@@ -776,6 +844,17 @@ export default function AccountPage() {
                           }).format(new Date(summary.user.dateOfBirth))
                         : "Date of birth not added"}
                     </p>
+                    {profileEditing ? (
+                      <label className="button-secondary mt-4 inline-flex cursor-pointer rounded-full px-4 py-2 text-sm transition">
+                        {uploadingPhoto ? "Processing..." : "Upload photo"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => void uploadProfilePhoto(event)}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
@@ -1189,7 +1268,7 @@ export default function AccountPage() {
                           )}
                           <button
                             type="button"
-                            onClick={() => pushToast("Invoice download will be connected next")}
+                            onClick={() => void downloadInvoice(order.id, order.orderNumber)}
                             className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
                           >
                             Download invoice

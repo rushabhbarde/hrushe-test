@@ -44,18 +44,18 @@ export default function ShopPage() {
     <div className="page-shell">
       <SiteHeader />
       <main>
-        <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-semibold uppercase tracking-tight sm:text-5xl lg:text-7xl">
+        <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <h1 className="text-3xl font-semibold uppercase tracking-tight sm:text-4xl lg:text-6xl xl:text-7xl">
             T-Shirts
           </h1>
 
-          <div className="mt-6 flex flex-wrap gap-2 sm:mt-10 sm:gap-3">
+          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 sm:mt-10 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-3">
             {categoryTabs.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`border px-3 py-2 text-sm uppercase tracking-[0.04em] transition sm:px-4 sm:text-base ${
+                className={`shrink-0 border px-3 py-2.5 text-xs uppercase tracking-[0.08em] transition sm:px-4 sm:text-sm lg:text-base ${
                   activeTab === tab
                     ? "border-black bg-black text-white"
                     : "border-black text-black hover:bg-black/5"
@@ -66,12 +66,12 @@ export default function ShopPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-b border-[var(--border)] pb-4 sm:mt-8 sm:pb-6">
-            <button type="button" className="flex items-center gap-2 text-lg uppercase tracking-tight sm:gap-3 sm:text-2xl">
-              <span className="text-sm sm:text-base">Sort by</span>
-              <span className="text-3xl leading-none sm:text-4xl">+</span>
+          <div className="mt-6 flex items-center justify-between gap-4 border-b border-[var(--border)] pb-4 sm:mt-8 sm:pb-6">
+            <button type="button" className="flex items-center gap-2 text-base uppercase tracking-tight sm:gap-3 sm:text-xl">
+              <span className="text-xs sm:text-sm">Sort by</span>
+              <span className="text-2xl leading-none sm:text-3xl">+</span>
             </button>
-            <button type="button" className="flex items-center gap-2 text-sm uppercase tracking-[0.12em] sm:gap-3 sm:text-base">
+            <button type="button" className="flex items-center gap-2 text-xs uppercase tracking-[0.12em] sm:gap-3 sm:text-sm">
               <span>Filter</span>
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 7h16" />
@@ -96,7 +96,7 @@ export default function ShopPage() {
               ctaLabel="View all products"
             />
           ) : (
-            <div className="grid gap-x-3 gap-y-6 sm:gap-y-8 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {visibleProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

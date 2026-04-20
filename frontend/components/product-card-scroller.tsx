@@ -42,13 +42,13 @@ export function ProductCardScroller({ products }: ProductCardScrollerProps) {
   return (
     <div
       ref={scrollerRef}
-      className="product-row-scroll mt-8 flex gap-4 overflow-x-auto pb-3 sm:mt-10 xl:gap-6"
+      className="product-row-scroll mt-8 flex gap-3 overflow-x-auto pb-3 sm:mt-10 sm:gap-4 xl:gap-6"
     >
       {products.map((product) => (
         <div
           key={product.id}
           data-product-card
-          className="min-w-[260px] flex-[0_0_260px] sm:min-w-[300px] sm:flex-[0_0_300px] xl:min-w-[320px] xl:flex-[0_0_320px]"
+          className="min-w-[44vw] flex-[0_0_44vw] sm:min-w-[280px] sm:flex-[0_0_280px] lg:min-w-[300px] lg:flex-[0_0_300px] xl:min-w-[320px] xl:flex-[0_0_320px]"
         >
           <ProductCard product={product} />
         </div>

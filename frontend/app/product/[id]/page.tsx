@@ -221,16 +221,16 @@ export default function ProductDetailPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr] xl:gap-8">
-          <div className="grid gap-3 lg:grid-cols-[96px_1fr] xl:grid-cols-[112px_1fr]">
+          <div className="grid gap-3 lg:grid-cols-[88px_1fr] xl:grid-cols-[112px_1fr]">
             <div className="order-2 flex gap-2 overflow-x-auto pb-1 lg:order-1 lg:flex-col lg:gap-3">
               {images.map((image, index) => (
                 <button
                   key={`${product.id}-${index}`}
                   type="button"
                   onClick={() => setActiveImageIndex(index)}
-                  className={`relative h-20 w-16 shrink-0 overflow-hidden border sm:h-24 sm:w-20 xl:h-28 xl:w-[5.5rem] ${
+                  className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-[1rem] border sm:h-24 sm:w-20 xl:h-28 xl:w-[5.5rem] ${
                     activeImageIndex === index
                       ? "border-black"
                       : "border-[var(--border)]"
@@ -251,7 +251,7 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            <div className="order-1 overflow-hidden border border-[var(--border)] bg-[#f4f4f1] lg:order-2">
+            <div className="order-1 overflow-hidden rounded-[1.4rem] border border-[var(--border)] bg-[#f4f4f1] lg:order-2 lg:rounded-[1.8rem]">
               <div className="relative aspect-[4/5]">
                 {activeImage ? (
                   <Image
@@ -307,7 +307,7 @@ export default function ProductDetailPage() {
                       key={size}
                       type="button"
                       onClick={() => setSelectedSize(size)}
-                      className={`rounded-full border px-4 py-2 text-xs transition sm:text-sm ${
+                    className={`min-h-11 rounded-full border px-4 py-2 text-xs transition sm:text-sm ${
                         isActive
                           ? "border-black bg-black text-white"
                           : "border-[var(--border)]"
@@ -328,7 +328,7 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                  className="px-4 py-3"
+                  className="min-h-11 px-4 py-3"
                 >
                   -
                 </button>
@@ -336,7 +336,7 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={() => setQuantity((current) => current + 1)}
-                  className="px-4 py-3"
+                  className="min-h-11 px-4 py-3"
                 >
                   +
                 </button>
@@ -360,7 +360,7 @@ export default function ProductDetailPage() {
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <div
-                  className="button-secondary inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm transition sm:px-5"
+                  className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm transition sm:px-5"
                 >
                   <WishlistButton
                     productId={product.id}
@@ -492,14 +492,14 @@ export default function ProductDetailPage() {
               </div>
 
               <form className="mt-6 grid gap-5" onSubmit={(event) => void onReviewSubmit(event)}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <input
-                    value={reviewerName}
-                    onChange={(event) => setReviewerName(event.target.value)}
-                    className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-                    placeholder="Your name"
-                    required
-                  />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <input
+                        value={reviewerName}
+                        onChange={(event) => setReviewerName(event.target.value)}
+                        className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                        placeholder="Your name"
+                        required
+                      />
                   <div className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                       Rating

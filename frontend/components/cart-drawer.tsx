@@ -34,10 +34,10 @@ export function CartDrawer() {
         className="absolute inset-0 bg-black/35"
         onClick={closeCart}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-white p-5 shadow-2xl sm:p-6">
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-white p-4 shadow-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="eyebrow text-[var(--muted)]">Cart drawer</p>
+            <p className="eyebrow text-[var(--accent)]">Cart</p>
             <h2 className="mt-2 text-2xl font-semibold">Your bag</h2>
           </div>
           <button
@@ -69,8 +69,8 @@ export function CartDrawer() {
                 key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
                 className="grain-card rounded-[1.75rem] p-4"
               >
-                <div className="flex gap-4">
-                  <div className="relative h-20 w-20 overflow-hidden rounded-[1rem] bg-[#f6f6f6]">
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="relative h-20 w-[4.5rem] shrink-0 overflow-hidden rounded-[1rem] bg-[#f6f6f6] sm:w-20">
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -102,7 +102,7 @@ export function CartDrawer() {
                             item.fit
                           )
                         }
-                        className="h-8 w-8 rounded-full border border-[var(--border)]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
                       >
                         -
                       </button>
@@ -118,7 +118,7 @@ export function CartDrawer() {
                             item.fit
                           )
                         }
-                        className="h-8 w-8 rounded-full border border-[var(--border)]"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
                       >
                         +
                       </button>

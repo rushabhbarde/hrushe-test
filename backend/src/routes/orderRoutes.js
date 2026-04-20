@@ -3,6 +3,7 @@ const {
   placeOrder,
   getMyOrders,
   getOrderById,
+  downloadInvoice,
   trackOrder,
   getAllOrders,
   updateOrderStatus,
@@ -26,6 +27,7 @@ router.post("/track", trackOrder);
 router.post("/place", protect, placeOrder);
 router.get("/myorders", protect, getMyOrders);
 router.post("/:id/reorder", protect, reorderOrder);
+router.get("/:id/invoice", protect, downloadInvoice);
 router.get("/all", protect, adminOnly, getAllOrders);
 router.put("/status/:id", protect, adminOnly, updateOrderStatus);
 router.get("/:id", protect, getOrderById);

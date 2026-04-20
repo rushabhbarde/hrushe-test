@@ -74,3 +74,23 @@ export type SupportCategory =
   | "return-request"
   | "exchange-request"
   | "contact-support";
+
+export type SupportRequestRecord = {
+  id?: string;
+  _id?: string;
+  userId?: {
+    id?: string;
+    _id?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  category: SupportCategory;
+  orderId?: string;
+  subject: string;
+  message: string;
+  status: "open" | "in-progress" | "resolved";
+  resolutionNote?: string;
+  createdAt: string;
+  updatedAt: string;
+};

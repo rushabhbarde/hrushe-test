@@ -82,10 +82,12 @@ export function SiteHeader() {
   const announcementText =
     homepageBanner.announcementText || "FREE SHIPPING ON SELECTED STYLES";
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!isAccountMenuOpen) {
+    if (!isAccountMenuOpen && !isMobileMenuOpen) {
       return;
     }
 
@@ -93,11 +95,16 @@ export function SiteHeader() {
       if (!accountMenuRef.current?.contains(event.target as Node)) {
         setIsAccountMenuOpen(false);
       }
+
+      if (!mobileMenuRef.current?.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsAccountMenuOpen(false);
+        setIsMobileMenuOpen(false);
       }
     };
 
@@ -108,7 +115,7 @@ export function SiteHeader() {
       window.removeEventListener("mousedown", onPointerDown);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isAccountMenuOpen]);
+  }, [isAccountMenuOpen, isMobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-30 bg-white">
@@ -122,196 +129,256 @@ export function SiteHeader() {
           </div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:px-8 lg:py-4">
-        <div className="flex min-w-0 items-center gap-4 sm:gap-6 lg:gap-8">
-          <Link href="/" className="flex min-w-0 items-center lg:hidden">
+      <div className="mx-auto max-w-[1600px] px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 sm:gap-4 lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-8">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] transition hover:bg-black/5 lg:hidden"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="site-mobile-menu"
+            >
+              <span className="relative flex h-[18px] w-5 items-center justify-center">
+                <span
+                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    isMobileMenuOpen ? "translate-y-0 rotate-45" : "-translate-y-[6px]"
+                  }`}
+                />
+                <span
+                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+                <span
+                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    isMobileMenuOpen ? "translate-y-0 -rotate-45" : "translate-y-[6px]"
+                  }`}
+                />
+              </span>
+            </button>
+            <Link href="/" className="flex min-w-0 items-center justify-center lg:hidden">
+              <Image
+                src="/HRUSHE-LOGO.png"
+                alt="Hrushe logo"
+                width={220}
+                height={72}
+                className="h-9 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[170px]"
+              />
+            </Link>
+            <nav className="hidden items-center gap-6 text-[0.92rem] text-[var(--muted)] lg:flex xl:gap-8">
+              {navItems.map((item) => (
+                <Link
+                  key={`${item.href}-${item.label}`}
+                  href={item.href}
+                  className={`transition hover:text-[var(--accent)] ${
+                    pathname === item.href ? "nav-link-active" : ""
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              {isAdminAuthenticated ? (
+                <Link
+                  href="/admin"
+                  className={`transition hover:text-[var(--accent)] ${
+                    pathname === "/admin" ? "nav-link-active" : ""
+                  }`}
+                >
+                  ADMIN
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAdminLogin("/admin")}
+                  className="transition hover:text-[var(--accent)]"
+                >
+                  ADMIN
+                </button>
+              )}
+            </nav>
+          </div>
+
+          <Link href="/" className="hidden items-center justify-center lg:flex">
             <Image
               src="/HRUSHE-LOGO.png"
               alt="Hrushe logo"
               width={220}
               height={72}
-              className="h-9 w-auto max-w-[150px] object-contain sm:h-11 sm:max-w-[180px] lg:h-14 lg:max-w-[220px]"
+              className="h-14 w-auto max-w-[220px] object-contain"
             />
           </Link>
-          <nav className="hidden items-center gap-6 text-[0.92rem] text-[var(--muted)] lg:flex xl:gap-8">
-            {navItems.map((item) => (
-              <Link
-                key={`${item.href}-${item.label}`}
-                href={item.href}
-                className={`transition hover:text-[var(--accent)] ${
-                  pathname === item.href ? "nav-link-active" : ""
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {isAdminAuthenticated ? (
-              <Link
-                href="/admin"
-                className={`transition hover:text-[var(--accent)] ${
-                  pathname === "/admin" ? "nav-link-active" : ""
-                }`}
-              >
-                ADMIN
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openAdminLogin("/admin")}
-                className="transition hover:text-[var(--accent)]"
-              >
-                ADMIN
-              </button>
-            )}
-          </nav>
-        </div>
 
-        <Link href="/" className="hidden items-center justify-center lg:flex">
-          <Image
-            src="/HRUSHE-LOGO.png"
-            alt="Hrushe logo"
-            width={220}
-            height={72}
-            className="h-14 w-auto max-w-[220px] object-contain"
-          />
-        </Link>
-
-        <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1 lg:gap-2">
-          <HeaderIcon href="/search" label="Search">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="6" />
-              <path d="M20 20l-4.2-4.2" />
-            </svg>
-          </HeaderIcon>
-          {isStorefrontRoute ? (
-            <>
-              {isAuthenticated ? (
-                <div ref={accountMenuRef} className="relative">
-                  <HeaderIcon
-                    onClick={() => setIsAccountMenuOpen((current) => !current)}
-                    label="Account"
-                    className="h-9 w-9 border border-[var(--border)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/14 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
-                  >
-                    <span className="text-base font-semibold uppercase sm:text-[1.05rem] lg:text-[1.1rem]">
-                      {accountInitial}
-                    </span>
-                  </HeaderIcon>
-                  {isAccountMenuOpen ? (
-                    <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-white/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
-                      <Link
-                        href="/account"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-black/5"
-                      >
-                        My account
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAccountMenuOpen(false);
-                          void logout();
-                        }}
-                        className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-black/5"
-                      >
-                        <LogoutIcon />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <HeaderIcon
-                  onClick={() => openLogin(pathname)}
-                  label="Account"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-                  </svg>
-                </HeaderIcon>
-              )}
-              <HeaderIcon
-                onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}
-                label="Wishlist"
-              >
-                <span className="relative inline-flex">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-                  </svg>
-                  {wishlistCount > 0 ? (
-                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
-                      {wishlistCount}
-                    </span>
-                  ) : null}
-                </span>
-              </HeaderIcon>
-              <button
-                type="button"
-                onClick={openCart}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12"
-                aria-label="Cart"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" aria-hidden="true">
-                  <path
-                    d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
-                    stroke="#000000"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {itemCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
-                    {itemCount}
-                  </span>
-                ) : null}
-              </button>
-            </>
-          ) : null}
-          {isAdminAuthenticated && isAdminRoute ? (
-            <HeaderIcon
-              onClick={() => {
-                void (async () => {
-                  suppressNextAdminPrompt();
-                  await adminLogout();
-                  router.push("/");
-                })();
-              }}
-              label="Logout"
-            >
-              <LogoutIcon />
+          <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1 lg:gap-2">
+            <HeaderIcon href="/search" label="Search">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="6" />
+                <path d="M20 20l-4.2-4.2" />
+              </svg>
             </HeaderIcon>
-          ) : null}
+            {isStorefrontRoute ? (
+              <>
+                {isAuthenticated ? (
+                  <div ref={accountMenuRef} className="relative">
+                    <HeaderIcon
+                      onClick={() => setIsAccountMenuOpen((current) => !current)}
+                      label="Account"
+                      className="h-9 w-9 border border-[var(--border)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/14 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+                    >
+                      <span className="text-base font-semibold uppercase sm:text-[1.05rem] lg:text-[1.1rem]">
+                        {accountInitial}
+                      </span>
+                    </HeaderIcon>
+                    {isAccountMenuOpen ? (
+                      <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-white/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+                        <Link
+                          href="/account"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                          className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-black/5"
+                        >
+                          My account
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAccountMenuOpen(false);
+                            void logout();
+                          }}
+                          className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-black/5"
+                        >
+                          <LogoutIcon />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <HeaderIcon
+                    onClick={() => openLogin(pathname)}
+                    label="Account"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
+                    </svg>
+                  </HeaderIcon>
+                )}
+                <HeaderIcon
+                  onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}
+                  label="Wishlist"
+                >
+                  <span className="relative inline-flex">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                    </svg>
+                    {wishlistCount > 0 ? (
+                      <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                        {wishlistCount}
+                      </span>
+                    ) : null}
+                  </span>
+                </HeaderIcon>
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+                  aria-label="Cart"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" aria-hidden="true">
+                    <path
+                      d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
+                      stroke="#000000"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {itemCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-semibold text-white">
+                      {itemCount}
+                    </span>
+                  ) : null}
+                </button>
+              </>
+            ) : null}
+            {isAdminAuthenticated && isAdminRoute ? (
+              <HeaderIcon
+                onClick={() => {
+                  void (async () => {
+                    suppressNextAdminPrompt();
+                    await adminLogout();
+                    router.push("/");
+                  })();
+                }}
+                label="Logout"
+              >
+                <LogoutIcon />
+              </HeaderIcon>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-[var(--border)] lg:hidden">
-        <nav className="mx-auto flex max-w-[1600px] items-center gap-4 overflow-x-auto px-4 py-2.5 text-xs text-[var(--muted)] sm:px-6 sm:text-sm">
-          {navItems.map((item) => (
-            <Link key={`mobile-${item.label}`} href={item.href} className="whitespace-nowrap">
-              {item.label}
-            </Link>
-          ))}
-          {isAdminAuthenticated ? (
-            <Link href="/admin" className="whitespace-nowrap">
-              ADMIN
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openAdminLogin("/admin")}
-              className="whitespace-nowrap"
-            >
-              ADMIN
-            </button>
-          )}
-          {isStorefrontRoute && isAuthenticated ? (
-            <span className="whitespace-nowrap text-xs uppercase tracking-[0.14em] text-[var(--accent)]">
-              {user?.name}
-            </span>
-          ) : null}
-        </nav>
-      </div>
+      {isMobileMenuOpen ? (
+        <div className="border-t border-[var(--border)] lg:hidden">
+          <div
+            id="site-mobile-menu"
+            ref={mobileMenuRef}
+            className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 pb-4 pt-3 sm:px-6"
+          >
+            <nav className="grain-card flex flex-col gap-2 rounded-[1.5rem] p-3">
+              {navItems.map((item) => (
+                <Link
+                  key={`mobile-${item.label}`}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`rounded-[1rem] px-4 py-3 text-sm font-medium tracking-[0.08em] transition ${
+                    pathname === item.href
+                      ? "bg-black text-white"
+                      : "text-[var(--foreground)]"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              {isAdminAuthenticated ? (
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`rounded-[1rem] px-4 py-3 text-sm font-medium tracking-[0.08em] transition ${
+                    pathname === "/admin"
+                      ? "bg-black text-white"
+                      : "text-[var(--foreground)]"
+                  }`}
+                >
+                  ADMIN
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openAdminLogin("/admin");
+                  }}
+                  className="rounded-[1rem] px-4 py-3 text-left text-sm font-medium tracking-[0.08em] text-[var(--foreground)]"
+                >
+                  ADMIN
+                </button>
+              )}
+              {isStorefrontRoute && isAuthenticated ? (
+                <Link
+                  href="/account"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-[1rem] border border-[var(--border)] px-4 py-3 text-sm text-[var(--muted)]"
+                >
+                  Signed in as {user?.name}
+                </Link>
+              ) : null}
+            </nav>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

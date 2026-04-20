@@ -6,6 +6,7 @@ const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
+const { buildInvoicePdf } = require("../utils/invoicePdf");
 
 const allowedStatuses = [
   "Pending",
@@ -299,6 +300,35 @@ const getOrderById = asyncHandler(async (req, res) => {
   }
 
   return res.json(order);
+});
+
+const downloadInvoice = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id).populate(
+    "userId",
+    "name email phone address"
+  );
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  const isOwner = order.userId?._id?.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new AppError("Not authorized to download this invoice", 403);
+  }
+
+  const invoiceRef = order.orderNumber || order._id.toString();
+  const pdfBuffer = buildInvoicePdf(order);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="hrushe-invoice-${invoiceRef}.pdf"`
+  );
+
+  return res.send(pdfBuffer);
 });
 
 const trackOrder = asyncHandler(async (req, res) => {
@@ -707,6 +737,7 @@ module.exports = {
   placeOrder,
   getMyOrders,
   getOrderById,
+  downloadInvoice,
   trackOrder,
   getAllOrders,
   updateOrderStatus,

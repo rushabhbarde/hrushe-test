@@ -159,7 +159,7 @@ export default function Home() {
             <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
               <div className="max-w-3xl text-white">
                 <p className="eyebrow hidden text-[var(--accent)] sm:block">{homepageBanner.eyebrow}</p>
-                <h1 className="mt-2 max-w-[12ch] text-[1.65rem] font-medium uppercase leading-[1.05] tracking-[-0.03em] sm:mt-3 sm:max-w-none sm:text-4xl lg:text-5xl">
+                <h1 className="mt-2 max-w-[13ch] text-[1.7rem] font-medium uppercase leading-[1.05] tracking-[-0.03em] sm:mt-3 sm:max-w-none sm:text-4xl lg:text-5xl xl:text-6xl">
                   {homepageBanner.title}
                 </h1>
                 <p className="mt-2 max-w-[30ch] text-[0.78rem] leading-5 text-white/84 sm:hidden">
@@ -205,7 +205,7 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-[1600px] px-4 pb-8 pt-2 text-center sm:px-6 sm:pb-10 lg:px-8">
-          <div className="mt-6 grid gap-3 text-left sm:mt-10 sm:grid-cols-3 sm:gap-4">
+          <div className="mt-6 grid gap-3 text-left sm:mt-10 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
             <div className="grain-card rounded-[1.75rem] p-5">
               <p className="eyebrow text-[var(--accent)]">Fabric first</p>
               <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
@@ -272,7 +272,7 @@ export default function Home() {
             title="Explore the wardrobe by how you actually dress."
             description="A cleaner storefront gets stronger when category discovery feels intentional, not crowded."
           />
-          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-4">
             {categoryHighlights.map((product) => (
               <Link
                 key={`category-${product.category}`}
@@ -329,7 +329,7 @@ export default function Home() {
             title="Designed to feel dependable before it ever feels loud."
             description="Early community feedback and brand principles that reinforce the premium everyday direction."
           />
-          <div className="mt-10 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+          <div className="mt-8 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
             <div>
               <div className="hero-panel rounded-[2rem] p-6 sm:p-8">
                 <p className="eyebrow text-[var(--accent)]">Why customers trust the brand</p>
@@ -447,7 +447,7 @@ export default function Home() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-white px-5 py-3"
+                className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-white px-5 py-3.5"
               />
               <button
                 type="submit"
