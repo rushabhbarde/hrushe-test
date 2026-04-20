@@ -42,11 +42,11 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group/product block min-w-0">
       <div
-        className="shop-card-image relative flex aspect-[3/4] items-end overflow-hidden rounded-[1.15rem] bg-[#f3f3f0] sm:rounded-[1.35rem] lg:rounded-[1.55rem]"
+        className="shop-card-image relative flex aspect-square items-end overflow-hidden rounded-[1.15rem] bg-[#f3f3f0] sm:rounded-[1.35rem] lg:rounded-[1.55rem]"
         style={{
           backgroundImage: hasImage ? `url(${product.images[0]})` : undefined,
           backgroundSize: hasImage ? "cover" : undefined,
-          backgroundPosition: hasImage ? "center" : undefined,
+          backgroundPosition: hasImage ? "center top" : undefined,
           backgroundColor: !hasImage ? product.accent : undefined,
         }}
       >

@@ -49,13 +49,15 @@ export function AccountShell({
     <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="grain-card h-fit rounded-[2rem] p-5 sm:p-6 lg:sticky lg:top-24">
         <p className="eyebrow text-[var(--accent)]">My account</p>
-        <h1 className="display-font mt-3 text-3xl sm:text-4xl">{userName || "HRUSHE member"}.</h1>
+        <h1 className="display-font mt-3 text-[2rem] leading-tight sm:text-4xl">
+          {userName || "HRUSHE member"}.
+        </h1>
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
           A single premium workspace for profile updates, repeat buying, saved delivery details,
           and post-purchase care.
         </p>
 
-        <nav className="mt-6 flex gap-3 overflow-x-auto pb-2 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
+        <nav className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:block lg:space-y-2">
           {nav.map((item) => {
             const isActive = activeSection === item.id;
             const badge = summaryBadges?.[item.id];
@@ -65,7 +67,7 @@ export function AccountShell({
                 key={item.id}
                 type="button"
                 onClick={() => onSectionChange(item.id)}
-                className={`min-w-[220px] rounded-[1.4rem] border px-4 py-4 text-left transition lg:w-full ${
+                className={`min-h-[122px] rounded-[1.4rem] border px-4 py-4 text-left transition lg:w-full lg:min-h-0 ${
                   isActive
                     ? "border-black bg-black text-white shadow-[0_16px_30px_rgba(0,0,0,0.14)]"
                     : "border-[var(--border)] bg-white/70 text-[var(--foreground)] hover:border-black/30"
@@ -73,9 +75,11 @@ export function AccountShell({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold tracking-tight">{item.label}</p>
+                    <p className="text-sm font-semibold tracking-tight sm:text-[0.95rem]">
+                      {item.label}
+                    </p>
                     <p
-                      className={`mt-1 text-xs leading-5 ${
+                      className={`mt-1 text-[11px] leading-4 sm:text-xs sm:leading-5 ${
                         isActive ? "text-white/70" : "text-[var(--muted)]"
                       }`}
                     >
@@ -107,7 +111,7 @@ export function AccountShell({
           </p>
           <Link
             href="/track-order"
-            className="button-secondary mt-4 inline-flex rounded-full px-4 py-2.5 text-sm transition"
+            className="button-secondary mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full px-4 py-2.5 text-sm transition sm:w-auto"
           >
             Open track order
           </Link>

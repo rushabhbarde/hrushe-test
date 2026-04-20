@@ -639,7 +639,7 @@ export default function AccountPage() {
                   title={`Welcome back, ${(summary?.user.name || user?.name || "member").split(" ")[0]}.`}
                   description="Scan your recent activity, jump back into repeat buying, and keep the essentials of your account within quick reach."
                 >
-                  <div className="grid gap-4 lg:grid-cols-4">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <AccountMetric
                       label="Recent orders"
                       value={`${orders.length}`}
@@ -705,7 +705,7 @@ export default function AccountPage() {
                                 {order.orderStatus}
                               </span>
                             </div>
-                            <div className="mt-4 flex flex-wrap gap-3">
+                            <div className="mt-4 flex flex-wrap gap-2.5 sm:gap-3">
                               <Link
                                 href={`/my-orders/${order.id}`}
                                 className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
