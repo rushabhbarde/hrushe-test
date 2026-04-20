@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AccountGuard } from "@/components/account-guard";
 import {
@@ -187,6 +187,7 @@ export default function AccountPage() {
   const [addressEditing, setAddressEditing] = useState(false);
   const [submitting, setSubmitting] = useState<string>("");
   const [error, setError] = useState("");
+  const contentStartRef = useRef<HTMLDivElement | null>(null);
 
   const loadAccountData = useCallback(async () => {
     setLoading(true);
@@ -228,6 +229,21 @@ export default function AccountPage() {
 
     void loadAccountData();
   }, [isChecking, loadAccountData, user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!window.matchMedia("(max-width: 1023px)").matches) {
+      return;
+    }
+
+    contentStartRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [activeSection]);
 
   const changeSection = (section: AccountSectionId) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -632,6 +648,7 @@ export default function AccountPage() {
             userName={summary?.user.name || user?.name || "HRUSHE member"}
             summaryBadges={dashboardBadges}
           >
+            <div ref={contentStartRef} />
             {activeSection === "dashboard" ? (
               <>
                 <AccountSectionCard

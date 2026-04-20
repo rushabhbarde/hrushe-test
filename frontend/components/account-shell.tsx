@@ -57,7 +57,50 @@ export function AccountShell({
           and post-purchase care.
         </p>
 
-        <nav className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:block lg:space-y-2">
+        <div className="mt-6 lg:hidden">
+          <label
+            htmlFor="account-section-selector"
+            className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--accent)]"
+          >
+            Open section
+          </label>
+          <div className="mt-2 rounded-[1.3rem] border border-[var(--border)] bg-white/85 p-1.5">
+            <select
+              id="account-section-selector"
+              value={activeSection}
+              onChange={(event) => onSectionChange(event.target.value as AccountSectionId)}
+              className="min-h-12 w-full rounded-[1rem] bg-transparent px-3 text-sm font-medium text-[var(--foreground)] outline-none"
+            >
+              {nav.map((item) => (
+                <option key={`mobile-selector-${item.id}`} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {nav.slice(0, 4).map((item) => {
+              const isActive = activeSection === item.id;
+
+              return (
+                <button
+                  key={`mobile-chip-${item.id}`}
+                  type="button"
+                  onClick={() => onSectionChange(item.id)}
+                  className={`rounded-full px-3 py-2 text-xs font-medium transition ${
+                    isActive
+                      ? "bg-black text-white"
+                      : "border border-[var(--border)] bg-white/70 text-[var(--foreground)]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <nav className="mt-6 hidden lg:block lg:space-y-2">
           {nav.map((item) => {
             const isActive = activeSection === item.id;
             const badge = summaryBadges?.[item.id];
@@ -103,8 +146,8 @@ export function AccountShell({
           })}
         </nav>
 
-        <div className="section-divider mt-6" />
-        <div className="mt-6 rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4">
+        <div className="section-divider mt-6 hidden lg:block" />
+        <div className="mt-6 hidden rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4 lg:block">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">Need quick help?</p>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
             You can still use the public tracking flow any time if you just need shipment updates.
