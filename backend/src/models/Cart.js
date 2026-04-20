@@ -18,6 +18,16 @@ const cartItemSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    color: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    fit: {
+      type: String,
+      enum: ["", "Oversize", "Regular"],
+      default: "",
+    },
   },
   { _id: false }
 );

@@ -9,7 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { apiRequest } from "@/lib/api";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
+import type { WishlistProduct } from "@/lib/account";
 
 type WishlistContextValue = {
   wishlistIds: string[];
@@ -20,6 +22,7 @@ type WishlistContextValue = {
   removeWishlistItem: (productId: string) => void;
   openWishlist: () => void;
   closeWishlist: () => void;
+  refreshWishlist: () => Promise<void>;
 };
 
 const GUEST_WISHLIST_KEY = "hrushetest-wishlist-guest";
@@ -54,12 +57,16 @@ function writeWishlist(key: string, value: string[]) {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Prevent wishlist storage issues from breaking the UI.
+    // Keep wishlist working even if storage is blocked.
   }
 }
 
+type WishlistResponse = {
+  products: WishlistProduct[];
+};
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const { user } = useCustomerAuth();
+  const { user, isAuthenticated, isChecking } = useCustomerAuth();
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
 
@@ -67,37 +74,77 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     ? `hrushetest-wishlist-${user.id}`
     : GUEST_WISHLIST_KEY;
 
-  useEffect(() => {
-    let cancelled = false;
-    const syncWishlist = (nextIds: string[]) => {
-      window.setTimeout(() => {
-        if (!cancelled) {
-          setWishlistIds(nextIds);
-        }
-      }, 0);
-    };
-
-    const nextIds = readWishlist(storageKey);
-
-    if (user?.id && typeof window !== "undefined") {
-      const guestIds = readWishlist(GUEST_WISHLIST_KEY);
-      const mergedIds = Array.from(new Set([...guestIds, ...nextIds]));
-      syncWishlist(mergedIds);
-      writeWishlist(storageKey, mergedIds);
-
-      if (guestIds.length > 0) {
-        window.localStorage.removeItem(GUEST_WISHLIST_KEY);
-      }
-      return () => {
-        cancelled = true;
-      };
+  const refreshWishlist = useCallback(async () => {
+    if (!isAuthenticated) {
+      const nextIds = readWishlist(storageKey);
+      setWishlistIds(nextIds);
+      return;
     }
 
-    syncWishlist(nextIds);
+    try {
+      const response = await apiRequest<WishlistResponse>("/account/wishlist", {
+        cache: "no-store",
+      });
+      const nextIds = response.products.map((product) => product.id);
+      setWishlistIds(nextIds);
+      writeWishlist(storageKey, nextIds);
+    } catch {
+      // Keep existing wishlist state.
+    }
+  }, [isAuthenticated, storageKey]);
+
+  useEffect(() => {
+    if (isChecking) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncWishlist = async () => {
+      if (!isAuthenticated || !user?.id) {
+        const guestIds = readWishlist(GUEST_WISHLIST_KEY);
+        if (!cancelled) {
+          setWishlistIds(guestIds);
+        }
+        return;
+      }
+
+      const guestIds = readWishlist(GUEST_WISHLIST_KEY);
+
+      try {
+        if (guestIds.length > 0) {
+          await Promise.all(
+            guestIds.map((productId) =>
+              apiRequest(`/account/wishlist/${productId}`, {
+                method: "POST",
+              }).catch(() => null)
+            )
+          );
+          window.localStorage.removeItem(GUEST_WISHLIST_KEY);
+        }
+
+        const response = await apiRequest<WishlistResponse>("/account/wishlist", {
+          cache: "no-store",
+        });
+
+        if (!cancelled) {
+          const nextIds = response.products.map((product) => product.id);
+          setWishlistIds(nextIds);
+          writeWishlist(storageKey, nextIds);
+        }
+      } catch {
+        if (!cancelled) {
+          setWishlistIds(guestIds);
+        }
+      }
+    };
+
+    void syncWishlist();
+
     return () => {
       cancelled = true;
     };
-  }, [storageKey, user?.id]);
+  }, [isAuthenticated, isChecking, storageKey, user?.id]);
 
   useEffect(() => {
     writeWishlist(storageKey, wishlistIds);
@@ -111,25 +158,44 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const openWishlist = useCallback(() => setIsWishlistOpen(true), []);
   const closeWishlist = useCallback(() => setIsWishlistOpen(false), []);
 
-  const toggleWishlist = useCallback((productId: string) => {
-    let nextActive = false;
+  const toggleWishlist = useCallback(
+    (productId: string) => {
+      const currentlyWishlisted = wishlistIds.includes(productId);
+      const nextActive = !currentlyWishlisted;
 
-    setWishlistIds((current) => {
-      if (current.includes(productId)) {
-        nextActive = false;
-        return current.filter((id) => id !== productId);
+      setWishlistIds((current) =>
+        current.includes(productId)
+          ? current.filter((id) => id !== productId)
+          : [productId, ...current]
+      );
+
+      if (isAuthenticated) {
+        void apiRequest(`/account/wishlist/${productId}`, {
+          method: currentlyWishlisted ? "DELETE" : "POST",
+        }).catch(() => {
+          void refreshWishlist();
+        });
       }
 
-      nextActive = true;
-      return [productId, ...current];
-    });
+      return nextActive;
+    },
+    [isAuthenticated, refreshWishlist, wishlistIds]
+  );
 
-    return nextActive;
-  }, []);
+  const removeWishlistItem = useCallback(
+    (productId: string) => {
+      setWishlistIds((current) => current.filter((id) => id !== productId));
 
-  const removeWishlistItem = useCallback((productId: string) => {
-    setWishlistIds((current) => current.filter((id) => id !== productId));
-  }, []);
+      if (isAuthenticated) {
+        void apiRequest(`/account/wishlist/${productId}`, {
+          method: "DELETE",
+        }).catch(() => {
+          void refreshWishlist();
+        });
+      }
+    },
+    [isAuthenticated, refreshWishlist]
+  );
 
   const value = useMemo(
     () => ({
@@ -141,15 +207,17 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       removeWishlistItem,
       openWishlist,
       closeWishlist,
+      refreshWishlist,
     }),
     [
       closeWishlist,
       isWishlistOpen,
       isWishlisted,
       openWishlist,
+      refreshWishlist,
       removeWishlistItem,
-      wishlistIds,
       toggleWishlist,
+      wishlistIds,
     ]
   );
 

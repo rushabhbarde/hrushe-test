@@ -11,6 +11,7 @@ const {
   failCheckout,
   cancelCheckout,
   razorpayWebhook,
+  reorderOrder,
 } = require("../controllers/orderController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
@@ -24,6 +25,7 @@ router.post("/checkout", protect, createCheckout);
 router.post("/track", trackOrder);
 router.post("/place", protect, placeOrder);
 router.get("/myorders", protect, getMyOrders);
+router.post("/:id/reorder", protect, reorderOrder);
 router.get("/all", protect, adminOnly, getAllOrders);
 router.put("/status/:id", protect, adminOnly, updateOrderStatus);
 router.get("/:id", protect, getOrderById);

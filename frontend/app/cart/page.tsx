@@ -36,7 +36,7 @@ export default function CartPage() {
               ) : (
                 items.map((item) => (
                   <div
-                    key={`${item.productId}-${item.size}-${item.color}`}
+                    key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
                     className="grain-card rounded-[2rem] p-5 sm:p-6"
                   >
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -63,6 +63,9 @@ export default function CartPage() {
                           <p className="mt-1 text-sm text-[var(--muted)]">
                             Color: {item.color || "Default"}
                           </p>
+                          {item.fit ? (
+                            <p className="mt-1 text-sm text-[var(--muted)]">Fit: {item.fit}</p>
+                          ) : null}
                           <p className="mt-2 text-sm font-semibold">Rs. {item.price}</p>
                         </div>
                       </div>
@@ -75,7 +78,8 @@ export default function CartPage() {
                                 item.productId,
                                 item.size,
                                 item.color,
-                                item.quantity - 1
+                                item.quantity - 1,
+                                item.fit
                               );
                               pushToast("Cart updated");
                             }}
@@ -93,7 +97,8 @@ export default function CartPage() {
                                 item.productId,
                                 item.size,
                                 item.color,
-                                item.quantity + 1
+                                item.quantity + 1,
+                                item.fit
                               );
                               pushToast("Cart updated");
                             }}
@@ -105,7 +110,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            removeItem(item.productId, item.size, item.color);
+                            removeItem(item.productId, item.size, item.color, item.fit);
                             pushToast("Item removed", "error");
                           }}
                           className="rounded-full px-4 py-2 text-sm text-[var(--accent)]"

@@ -9,6 +9,7 @@ const productRoutes = require("./src/routes/productRoutes");
 const cartRoutes = require("./src/routes/cartRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
 const contentRoutes = require("./src/routes/contentRoutes");
+const accountRoutes = require("./src/routes/accountRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
 
@@ -70,6 +71,7 @@ app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
 app.use("/content", contentRoutes);
+app.use("/account", accountRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

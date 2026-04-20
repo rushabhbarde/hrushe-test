@@ -36,10 +36,12 @@ const adminLinks = [
 const statusToneMap = {
   Pending: "bg-[#fff5eb] text-[#b95d19]",
   Confirmed: "bg-[#edf7ff] text-[#145ea8]",
+  Packed: "bg-[#f4f4ff] text-[#4b47b8]",
   Shipped: "bg-[#f4f0ff] text-[#6c3dc8]",
   "Out for delivery": "bg-[#fff3f7] text-[#b8326e]",
   Delivered: "bg-[#effaf2] text-[#1f7a39]",
   Cancelled: "bg-[#fff0f0] text-[#c63a3a]",
+  Returned: "bg-[#f5f5f5] text-[#575757]",
 } as const;
 
 export default function AdminPage() {
@@ -51,7 +53,7 @@ export default function AdminPage() {
   const newArrivalCount = products.filter((product) => product.newArrival).length;
   const orderCount = orders.length;
   const pendingOrders = orders.filter((order) =>
-    ["Pending", "Confirmed", "Shipped", "Out for delivery"].includes(
+    ["Pending", "Confirmed", "Packed", "Shipped", "Out for delivery"].includes(
       order.orderStatus
     )
   ).length;

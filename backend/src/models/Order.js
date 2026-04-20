@@ -23,6 +23,11 @@ const orderProductSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    fit: {
+      type: String,
+      enum: ["", "Oversize", "Regular"],
+      default: "",
+    },
     price: {
       type: Number,
       required: true,
@@ -40,6 +45,59 @@ const orderProductSchema = new mongoose.Schema(
     },
   },
   { _id: false }
+);
+
+const shippingAddressDetailsSchema = new mongoose.Schema(
+  {
+    label: {
+      type: String,
+      enum: ["Home", "Work", "Other"],
+      default: "Home",
+    },
+    fullName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    mobile: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    pincode: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    city: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    state: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    house: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    area: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    landmark: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
 );
 
 const checkoutLogSchema = new mongoose.Schema(
@@ -91,6 +149,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    shippingAddressDetails: {
+      type: shippingAddressDetailsSchema,
+      default: () => ({}),
     },
     customerName: {
       type: String,
@@ -153,10 +215,12 @@ const orderSchema = new mongoose.Schema(
       enum: [
         "Pending",
         "Confirmed",
+        "Packed",
         "Shipped",
         "Out for delivery",
         "Delivered",
         "Cancelled",
+        "Returned",
       ],
       default: "Pending",
     },

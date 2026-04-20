@@ -10,16 +10,19 @@ const { sendEmail } = require("../utils/mailer");
 const allowedStatuses = [
   "Pending",
   "Confirmed",
+  "Packed",
   "Shipped",
   "Out for delivery",
   "Delivered",
   "Cancelled",
+  "Returned",
 ];
 
 const buildTrackingTimeline = (order) => {
   const baseSteps = [
     { key: "placed", label: "Order placed", status: "completed" },
     { key: "confirmed", label: "Confirmed", status: "upcoming" },
+    { key: "packed", label: "Packed", status: "upcoming" },
     { key: "shipped", label: "Shipped", status: "upcoming" },
     { key: "out-for-delivery", label: "Out for delivery", status: "upcoming" },
     { key: "delivered", label: "Delivered", status: "upcoming" },
@@ -28,15 +31,23 @@ const buildTrackingTimeline = (order) => {
   const statusIndexMap = {
     Pending: 0,
     Confirmed: 1,
-    Shipped: 2,
-    "Out for delivery": 3,
-    Delivered: 4,
+    Packed: 2,
+    Shipped: 3,
+    "Out for delivery": 4,
+    Delivered: 5,
   };
 
   if (order.orderStatus === "Cancelled") {
     return [
       { key: "placed", label: "Order placed", status: "completed" },
       { key: "cancelled", label: "Cancelled", status: "current" },
+    ];
+  }
+
+  if (order.orderStatus === "Returned") {
+    return [
+      { key: "placed", label: "Order placed", status: "completed" },
+      { key: "returned", label: "Returned", status: "current" },
     ];
   }
 
@@ -52,6 +63,9 @@ const buildTrackingTimeline = (order) => {
           : "upcoming",
   }));
 };
+
+const getCartItemProductId = (item) =>
+  item?.productId?._id?.toString?.() || item?.productId?.toString?.() || "";
 
 const buildPublicTrackingResponse = (order) => ({
   id: order.id || order._id.toString(),
@@ -80,10 +94,56 @@ const sanitizeCartItems = (items = []) =>
       quantity: Number(item.quantity),
       size: item.size || "",
       color: item.color || "",
+      fit: item.fit || "",
       price: Number(item.price),
       name: item.name,
       image: item.image || "",
     }));
+
+const normalizeShippingAddress = (shippingInfo = {}) => {
+  if (typeof shippingInfo.address === "string") {
+    return {
+      shippingAddress: shippingInfo.address.trim(),
+      shippingAddressDetails: {
+        label: "Home",
+        fullName: shippingInfo.fullName || "",
+        mobile: shippingInfo.phone || "",
+        pincode: "",
+        city: "",
+        state: "",
+        house: shippingInfo.address || "",
+        area: "",
+        landmark: "",
+      },
+    };
+  }
+
+  const addressDetails = {
+    label: shippingInfo.address?.label || "Home",
+    fullName: shippingInfo.address?.fullName || shippingInfo.fullName || "",
+    mobile: shippingInfo.address?.mobile || shippingInfo.phone || "",
+    pincode: shippingInfo.address?.pincode || "",
+    city: shippingInfo.address?.city || "",
+    state: shippingInfo.address?.state || "",
+    house: shippingInfo.address?.house || "",
+    area: shippingInfo.address?.area || "",
+    landmark: shippingInfo.address?.landmark || "",
+  };
+
+  return {
+    shippingAddress: [
+      addressDetails.house,
+      addressDetails.area,
+      addressDetails.landmark,
+      addressDetails.city,
+      addressDetails.state,
+      addressDetails.pincode,
+    ]
+      .filter(Boolean)
+      .join(", "),
+    shippingAddressDetails: addressDetails,
+  };
+};
 
 const buildRedirectUrl = (path, orderId) =>
   `${env.CLIENT_URL}${path}?orderId=${encodeURIComponent(orderId)}`;
@@ -341,9 +401,10 @@ const createCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Shipping information is required", 400);
   }
 
-  const { fullName, email, phone, address, paymentMethod = "Razorpay" } = shippingInfo;
+  const { fullName, email, phone, paymentMethod = "Razorpay" } = shippingInfo;
+  const { shippingAddress, shippingAddressDetails } = normalizeShippingAddress(shippingInfo);
 
-  if (!fullName || !email || !phone || !address) {
+  if (!fullName || !email || !phone || !shippingAddress) {
     throw new AppError("Full name, email, phone, and address are required", 400);
   }
 
@@ -400,7 +461,8 @@ const createCheckout = asyncHandler(async (req, res) => {
     userId: req.user._id,
     products: normalizedItems,
     totalAmount,
-    shippingAddress: address,
+    shippingAddress,
+    shippingAddressDetails,
     customerName: fullName,
     customerEmail: email,
     customerPhone: phone,
@@ -414,7 +476,7 @@ const createCheckout = asyncHandler(async (req, res) => {
         event: "checkout_created",
         source: "backend",
         payload: {
-          shippingInfo: { fullName, email, phone, address },
+          shippingInfo: { ...shippingInfo, shippingAddress, shippingAddressDetails },
           items: normalizedItems,
           razorpayOrderId: razorpayOrder.id,
         },
@@ -480,6 +542,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     razorpayPaymentId,
   });
   await order.save();
+  await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
   await sendOrderEmail(
     order,
     "Your HRUSHE order is confirmed",
@@ -571,6 +634,7 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
   if (event === "payment.captured") {
     order.paymentStatus = "paid";
     order.orderStatus = "Confirmed";
+    await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
   } else if (event === "payment.failed") {
     order.paymentStatus = "failed";
   }
@@ -579,6 +643,64 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
   await order.save();
 
   return res.json({ received: true });
+});
+
+const reorderOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  if (order.userId.toString() !== req.user._id.toString()) {
+    throw new AppError("Not authorized to reorder this order", 403);
+  }
+
+  let cart = await Cart.findOne({ userId: req.user._id }).populate("items.productId");
+
+  if (!cart) {
+    cart = await Cart.create({ userId: req.user._id, items: [] });
+  }
+
+  for (const product of order.products) {
+    const existingItem = cart.items.find(
+      (item) =>
+        getCartItemProductId(item) === product.productId.toString() &&
+        item.size === (product.size || "") &&
+        item.color === (product.color || "") &&
+        item.fit === (product.fit || "")
+    );
+
+    if (existingItem) {
+      existingItem.quantity += product.quantity;
+    } else {
+      cart.items.push({
+        productId: product.productId,
+        quantity: product.quantity,
+        size: product.size || "",
+        color: product.color || "",
+        fit: product.fit || "",
+      });
+    }
+  }
+
+  await cart.save();
+  await cart.populate("items.productId");
+
+  return res.json({
+    message: "Items added to cart",
+    cart: cart.items.map((item) => ({
+      productId: item.productId._id.toString(),
+      name: item.productId.name,
+      price: item.productId.price,
+      size: item.size || "",
+      color: item.color || "",
+      fit: item.fit || "",
+      quantity: item.quantity,
+      image: item.productId.images?.[0] || "",
+      accent: "#111111",
+    })),
+  });
 });
 
 module.exports = {
@@ -593,4 +715,5 @@ module.exports = {
   failCheckout,
   cancelCheckout,
   razorpayWebhook,
+  reorderOrder,
 };

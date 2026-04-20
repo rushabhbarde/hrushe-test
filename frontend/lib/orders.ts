@@ -1,10 +1,12 @@
 export const orderStatuses = [
   "Pending",
   "Confirmed",
+  "Packed",
   "Shipped",
   "Out for delivery",
   "Delivered",
   "Cancelled",
+  "Returned",
 ] as const;
 
 export type OrderStatus = (typeof orderStatuses)[number];
@@ -16,7 +18,20 @@ export type OrderProductSnapshot = {
   quantity: number;
   size: string;
   color?: string;
+  fit?: string;
   image?: string;
+};
+
+export type ShippingAddressDetails = {
+  label?: "Home" | "Work" | "Other";
+  fullName?: string;
+  mobile?: string;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  house?: string;
+  area?: string;
+  landmark?: string;
 };
 
 export type OrderRecord = {
@@ -33,6 +48,7 @@ export type OrderRecord = {
   customerEmail: string;
   customerPhone?: string;
   shippingAddress: string;
+  shippingAddressDetails?: ShippingAddressDetails;
   paymentMethod: string;
   paymentStatus: string;
   courierName?: string;
@@ -42,6 +58,7 @@ export type OrderRecord = {
   totalAmount: number;
   products: OrderProductSnapshot[];
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type TrackingTimelineStep = {

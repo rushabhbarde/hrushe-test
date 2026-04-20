@@ -9,12 +9,17 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import { formatOrderDate, type OrderRecord } from "@/lib/orders";
+import { useCart } from "@/components/cart-provider";
+import { useToast } from "@/components/toast-provider";
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
+  const { refreshCart } = useCart();
+  const { pushToast } = useToast();
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reordering, setReordering] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -48,6 +53,30 @@ export default function OrderDetailPage() {
     };
   }, [params.id]);
 
+  const handleReorder = async () => {
+    if (!order) {
+      return;
+    }
+
+    setReordering(true);
+
+    try {
+      await apiRequest(`/order/${order.id}/reorder`, {
+        method: "POST",
+      });
+      await refreshCart();
+      pushToast("Items added to cart");
+      window.location.href = "/cart";
+    } catch (reorderError) {
+      setError(
+        reorderError instanceof Error ? reorderError.message : "Could not reorder this order."
+      );
+      pushToast("Could not reorder", "error");
+    } finally {
+      setReordering(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <SiteHeader />
@@ -61,7 +90,7 @@ export default function OrderDetailPage() {
               </h1>
             </div>
             <Link
-              href="/account#my-orders"
+              href="/account?section=orders"
               className="button-secondary rounded-full px-5 py-3 transition"
             >
               Back to orders
@@ -102,8 +131,10 @@ export default function OrderDetailPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold">{product.name}</p>
-                          <p className="mt-1 text-sm text-[var(--muted)]">
-                            Size {product.size || "Default"} · Color {product.color || "Default"}
+                            <p className="mt-1 text-sm text-[var(--muted)]">
+                            Size {product.size || "Default"}
+                            {product.color ? ` · ${product.color}` : ""}
+                            {product.fit ? ` · ${product.fit}` : ""}
                           </p>
                           <p className="mt-1 text-sm text-[var(--muted)]">
                             Quantity {product.quantity}
@@ -122,6 +153,11 @@ export default function OrderDetailPage() {
                   <p className="mt-4 leading-7 text-[var(--foreground)]">
                     {order.shippingAddress}
                   </p>
+                  {order.shippingAddressDetails?.label ? (
+                    <p className="mt-3 text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
+                      {order.shippingAddressDetails.label}
+                    </p>
+                  ) : null}
                 </div>
               </section>
 
@@ -162,6 +198,22 @@ export default function OrderDetailPage() {
                       </span>
                     </p>
                   </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleReorder()}
+                      className="button-primary rounded-full px-4 py-2.5 text-sm transition"
+                    >
+                      {reordering ? "Adding..." : "Reorder"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => pushToast("Invoice download will be connected next")}
+                      className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
+                    >
+                      Download invoice
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grain-card rounded-[2rem] p-6">
@@ -194,6 +246,65 @@ export default function OrderDetailPage() {
                     ) : (
                       <p className="text-sm">Tracking link will appear once your order is shipped.</p>
                     )}
+                  </div>
+                </div>
+
+                <div className="grain-card rounded-[2rem] p-6">
+                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
+                    Order journey
+                  </p>
+                  <div className="mt-5 space-y-4">
+                    {[
+                      "Pending",
+                      "Confirmed",
+                      "Packed",
+                      "Shipped",
+                      "Out for delivery",
+                      "Delivered",
+                    ].map((step) => {
+                      const completed =
+                        [
+                          "Pending",
+                          "Confirmed",
+                          "Packed",
+                          "Shipped",
+                          "Out for delivery",
+                          "Delivered",
+                        ].indexOf(order.orderStatus) >=
+                        [
+                          "Pending",
+                          "Confirmed",
+                          "Packed",
+                          "Shipped",
+                          "Out for delivery",
+                          "Delivered",
+                        ].indexOf(step);
+
+                      return (
+                        <div key={step} className="flex items-center gap-3">
+                          <span
+                            className={`h-3 w-3 rounded-full ${
+                              completed ? "bg-[var(--accent)]" : "bg-black/10"
+                            }`}
+                          />
+                          <span
+                            className={`text-sm ${
+                              completed ? "text-[var(--foreground)]" : "text-[var(--muted)]"
+                            }`}
+                          >
+                            {step}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {order.orderStatus === "Cancelled" || order.orderStatus === "Returned" ? (
+                      <div className="flex items-center gap-3">
+                        <span className="h-3 w-3 rounded-full bg-[var(--accent)]" />
+                        <span className="text-sm text-[var(--foreground)]">
+                          {order.orderStatus}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </aside>

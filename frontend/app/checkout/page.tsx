@@ -241,13 +241,14 @@ export default function CheckoutPage() {
               <div className="mt-6 space-y-4">
                 {items.map((item) => (
                   <div
-                    key={`${item.productId}-${item.size}-${item.color}`}
+                    key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
                     className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-4"
                   >
                     <div>
                       <p className="font-semibold">{item.name}</p>
                       <p className="mt-1 text-sm text-[var(--muted)]">
                         Size {item.size || "Default"} · Color {item.color || "Default"}
+                        {item.fit ? ` · Fit ${item.fit}` : ""}
                       </p>
                       <p className="mt-1 text-sm text-[var(--muted)]">
                         Qty {item.quantity}

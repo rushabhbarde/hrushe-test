@@ -66,7 +66,7 @@ export function CartDrawer() {
           ) : (
             items.map((item) => (
               <div
-                key={`${item.productId}-${item.size}-${item.color}`}
+                key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
                 className="grain-card rounded-[1.75rem] p-4"
               >
                 <div className="flex gap-4">
@@ -87,13 +87,20 @@ export function CartDrawer() {
                     <p className="font-semibold">{item.name}</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
                       {item.size || "Default"} · {item.color || "Default"}
+                      {item.fit ? ` · ${item.fit}` : ""}
                     </p>
                     <p className="mt-2 text-sm font-semibold">Rs. {item.price}</p>
                     <div className="mt-3 flex items-center gap-3">
                       <button
                         type="button"
                         onClick={() =>
-                          updateQuantity(item.productId, item.size, item.color, item.quantity - 1)
+                          updateQuantity(
+                            item.productId,
+                            item.size,
+                            item.color,
+                            item.quantity - 1,
+                            item.fit
+                          )
                         }
                         className="h-8 w-8 rounded-full border border-[var(--border)]"
                       >
@@ -103,7 +110,13 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() =>
-                          updateQuantity(item.productId, item.size, item.color, item.quantity + 1)
+                          updateQuantity(
+                            item.productId,
+                            item.size,
+                            item.color,
+                            item.quantity + 1,
+                            item.fit
+                          )
                         }
                         className="h-8 w-8 rounded-full border border-[var(--border)]"
                       >
@@ -111,7 +124,7 @@ export function CartDrawer() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.productId, item.size, item.color)}
+                        onClick={() => removeItem(item.productId, item.size, item.color, item.fit)}
                         className="ml-auto text-sm text-[var(--accent)]"
                       >
                         Remove

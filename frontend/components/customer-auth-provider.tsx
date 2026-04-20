@@ -9,6 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { apiRequest } from "@/lib/api";
+import type {
+  AccountPreferences,
+  AddressRecord,
+  CommunicationPreferences,
+} from "@/lib/account";
 import {
   CUSTOMER_SESSION_CHANGED_EVENT,
   clearCustomerToken,
@@ -23,7 +28,14 @@ type AuthUser = {
   email: string;
   phone?: string;
   address?: string;
+  gender?: string;
+  dateOfBirth?: string | null;
+  profilePictureUrl?: string;
   role: string;
+  addresses?: AddressRecord[];
+  preferences?: AccountPreferences;
+  communicationPreferences?: CommunicationPreferences;
+  wishlistCount?: number;
 };
 
 type SignupPayload = {

@@ -8,6 +8,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendMsg91Otp } = require("../utils/sendMsg91Otp");
 const { sendEmail } = require("../utils/mailer");
+const { serializeUser } = require("../utils/serializeUser");
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -40,14 +41,7 @@ const sendAuthResponse = (res, user, message, statusCode = 200) => {
   return res.status(statusCode).json({
     message,
     token,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      role: user.role,
-    },
+    user: serializeUser(user),
   });
 };
 
@@ -179,7 +173,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const me = asyncHandler(async (req, res) => {
-  return res.json({ user: req.user });
+  return res.json({ user: serializeUser(req.user) });
 });
 
 const updateMe = asyncHandler(async (req, res) => {
@@ -226,7 +220,7 @@ const updateMe = asyncHandler(async (req, res) => {
 
   return res.json({
     message: "Profile updated successfully",
-    user: updatedUser,
+    user: serializeUser(updatedUser),
   });
 });
 
