@@ -41,20 +41,23 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="group/product block min-w-0">
-      <div
-        className="shop-card-image relative flex aspect-square items-end overflow-hidden rounded-[1.15rem] bg-[#f3f3f0] sm:rounded-[1.35rem] lg:rounded-[1.55rem]"
-        style={{
-          backgroundImage: hasImage ? `url(${product.images[0]})` : undefined,
-          backgroundSize: hasImage ? "cover" : undefined,
-          backgroundPosition: hasImage ? "center top" : undefined,
-          backgroundColor: !hasImage ? product.accent : undefined,
-        }}
-      >
+      <div className="shop-card-image relative aspect-square overflow-hidden bg-[#f5f5f5]">
         <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
+        {hasImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="h-full w-full object-contain transition duration-500 md:group-hover/product:scale-[1.015]"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-full w-full" style={{ backgroundColor: product.accent || "#f5f5f5" }} />
+        )}
         <WishlistButton
           productId={product.id}
           label={`Save ${product.name}`}
-          className="absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/94 text-black shadow-[0_8px_20px_rgba(17,17,17,0.12)] transition md:h-10 md:w-10"
+          className="absolute bottom-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/94 text-black shadow-[0_8px_20px_rgba(17,17,17,0.12)] transition md:h-10 md:w-10"
         />
       </div>
 
