@@ -38,6 +38,10 @@ export function ProductCard({ product }: { product: Product }) {
   const hasImage = Boolean(product.images[0]);
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
+  const hasDiscount = compareAtPrice > product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((compareAtPrice - product.price) / compareAtPrice) * 100)
+    : 0;
 
   return (
     <article className="group/product block min-w-0">
@@ -48,12 +52,17 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-contain transition duration-500 md:group-hover/product:scale-[1.015]"
+            className="h-full w-full object-cover object-top transition duration-500 md:group-hover/product:scale-[1.015]"
             loading="lazy"
           />
         ) : (
           <div className="h-full w-full" style={{ backgroundColor: product.accent || "#f5f5f5" }} />
         )}
+        {hasDiscount ? (
+          <span className="absolute left-0 top-0 z-10 bg-black px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white sm:text-[11px]">
+            -{discountPercent}%
+          </span>
+        ) : null}
         <WishlistButton
           productId={product.id}
           label={`Save ${product.name}`}
@@ -62,16 +71,18 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       <Link href={productHref} className="block px-0 pb-1 pt-3 sm:pt-4">
-        <p className="line-clamp-2 min-h-[2.9rem] text-[0.88rem] font-medium uppercase leading-5 tracking-[-0.01em] sm:min-h-[3.2rem] sm:text-[0.96rem] sm:leading-6">
+        <p className="line-clamp-2 min-h-[2.6rem] text-[0.82rem] font-medium uppercase leading-5 tracking-[-0.01em] sm:min-h-[2.9rem] sm:text-[0.92rem] sm:leading-6">
           {product.name}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-[0.96rem] font-semibold leading-none sm:text-[1rem]">
+          <p className="text-[0.92rem] font-semibold leading-none sm:text-[1rem]">
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
-          <p className="text-[0.8rem] text-[var(--muted)] line-through sm:text-[0.88rem]">
-            Rs.{compareAtPrice.toLocaleString("en-IN")}.00
-          </p>
+          {hasDiscount ? (
+            <p className="text-[0.78rem] text-[var(--muted)] line-through sm:text-[0.86rem]">
+              Rs.{compareAtPrice.toLocaleString("en-IN")}.00
+            </p>
+          ) : null}
         </div>
         <div className="mt-3 flex min-h-4 items-center gap-1">
           {product.colors.slice(0, 4).map((color) => (

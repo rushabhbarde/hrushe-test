@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
-import { ProductCard } from "@/components/product-card";
+import { ProductListingGrid } from "@/components/product-listing-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -52,10 +52,8 @@ export default function CollectionPage() {
                 Search products
               </Link>
             </div>
-            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {visibleProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+            <div className="mt-10">
+              <ProductListingGrid products={visibleProducts} />
             </div>
           </>
         ) : (

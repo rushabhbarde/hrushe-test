@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
-import { ProductCard } from "@/components/product-card";
+import { ProductListingGrid } from "@/components/product-listing-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { useStorefrontData } from "@/lib/use-storefront";
@@ -88,10 +88,8 @@ export default function SearchPage() {
               <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
                 {results.length} results for &ldquo;{initialQuery}&rdquo;
               </p>
-              <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                {results.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+              <div className="mt-6">
+                <ProductListingGrid products={results} />
               </div>
             </>
           )}
