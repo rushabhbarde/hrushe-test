@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
@@ -15,10 +16,16 @@ import { customerStatusTone, formatAdminCurrency, formatAdminDate, type AdminCus
 import { apiRequest } from "@/lib/api";
 
 export default function AdminCustomersPage() {
+  const searchParams = useSearchParams();
+  const queryParam = searchParams.get("query") || "";
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(queryParam);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+
+  useEffect(() => {
+    setQuery(queryParam);
+  }, [queryParam]);
 
   useEffect(() => {
     let active = true;

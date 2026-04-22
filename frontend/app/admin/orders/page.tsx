@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
@@ -23,10 +24,21 @@ const orderStatusFilters = [
 ] as const;
 
 export default function AdminOrdersPage() {
+  const searchParams = useSearchParams();
+  const queryParam = searchParams.get("query") || "";
+  const statusParam = searchParams.get("status") || "all";
   const [orders, setOrders] = useState<OrderRecord[]>([]);
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [query, setQuery] = useState(queryParam);
+  const [statusFilter, setStatusFilter] = useState(statusParam);
   const [paymentFilter, setPaymentFilter] = useState("all");
+
+  useEffect(() => {
+    setQuery(queryParam);
+  }, [queryParam]);
+
+  useEffect(() => {
+    setStatusFilter(statusParam);
+  }, [statusParam]);
 
   useEffect(() => {
     let active = true;
@@ -59,6 +71,8 @@ export default function AdminOrdersPage() {
           order.customerName,
           order.customerEmail,
           order.customerPhone || "",
+          order.orderStatus,
+          order.paymentStatus,
           order.id,
         ]
           .join(" ")

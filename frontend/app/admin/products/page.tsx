@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminActionButton,
@@ -26,11 +27,22 @@ const sortOptions = [
 ];
 
 export default function AdminProductsPage() {
+  const searchParams = useSearchParams();
+  const queryParam = searchParams.get("query") || "";
+  const statusParam = searchParams.get("status") || "all";
   const { products, deleteProduct } = useStorefrontData();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(queryParam);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(statusParam);
   const [sortBy, setSortBy] = useState("newest");
+
+  useEffect(() => {
+    setQuery(queryParam);
+  }, [queryParam]);
+
+  useEffect(() => {
+    setStatusFilter(statusParam);
+  }, [statusParam]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

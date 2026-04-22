@@ -4,6 +4,10 @@ import { useParams } from "next/navigation";
 import { AdminModulePage } from "@/components/admin-module-page";
 
 const settingsConfig = {
+  store: {
+    title: "Store settings.",
+    description: "Brand identity, public contact details, currency, shipping defaults, policy links, and storefront metadata.",
+  },
   general: {
     title: "General store settings.",
     description: "Brand identity, public contact details, currency, taxes, shipping defaults, and store metadata.",
@@ -16,6 +20,10 @@ const settingsConfig = {
     title: "Roles and permissions.",
     description: "Admin users, team access, permission groups, and operational accountability controls.",
   },
+  "admin-users": {
+    title: "Admin users.",
+    description: "Team access, operational roles, password resets, and permission groups for staff accounts.",
+  },
   integrations: {
     title: "Integrations.",
     description: "Razorpay, ZeptoMail, webhooks, analytics, shipping partners, and future automation surfaces.",
@@ -24,7 +32,7 @@ const settingsConfig = {
 
 export default function AdminSettingsSectionPage() {
   const params = useParams<{ section: keyof typeof settingsConfig }>();
-  const config = settingsConfig[params.section] || settingsConfig.general;
+  const config = settingsConfig[params.section] || settingsConfig.store;
 
   return (
     <AdminModulePage

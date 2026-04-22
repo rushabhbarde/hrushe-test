@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminGuard } from "@/components/admin-guard";
-import { AdminBadge } from "@/components/admin-ui";
 import { adminNavigation } from "@/lib/admin";
 import { useAdminAuth } from "@/components/admin-auth-provider";
 
@@ -54,9 +53,11 @@ export function AdminShell({
   contextualActions?: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { logout } = useAdminAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [globalQuery, setGlobalQuery] = useState("");
   const grouped = useMemo(() => groupNavigation(), []);
 
   const crumbs = pathname
@@ -65,7 +66,30 @@ export function AdminShell({
     .slice(1)
     .map((segment) => segment.replace(/-/g, " "));
 
-  const activeItem = adminNavigation.find((item) => pathname === item.href);
+  const activeItem = adminNavigation.find(
+    (item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`)),
+  );
+
+  function handleGlobalSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = globalQuery.trim();
+    if (!query) {
+      return;
+    }
+
+    const encodedQuery = encodeURIComponent(query);
+    if (query.includes("@") || /^\+?\d{8,}$/.test(query.replace(/\s/g, ""))) {
+      router.push(`/admin/customers?query=${encodedQuery}`);
+      return;
+    }
+
+    if (/^#?\d+$/.test(query)) {
+      router.push(`/admin/orders?query=${encodedQuery.replace(/^%23/, "")}`);
+      return;
+    }
+
+    router.push(`/admin/products?query=${encodedQuery}`);
+  }
 
   return (
     <AdminGuard>
@@ -140,15 +164,27 @@ export function AdminShell({
                     <p className="truncate text-lg font-semibold tracking-[-0.03em]">
                       {activeItem?.label || "Dashboard"}
                     </p>
-                    <AdminBadge tone="accent">Live</AdminBadge>
+                    {activeItem?.group ? (
+                      <span className="rounded-full border border-[rgba(17,17,17,0.08)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+                        {activeItem.group}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="hidden flex-1 items-center justify-end gap-3 lg:flex">
-                  <div className="flex min-w-[240px] items-center gap-2 rounded-full border border-[rgba(17,17,17,0.08)] bg-white px-4 py-2.5 text-sm text-[var(--muted)]">
+                  <form
+                    onSubmit={handleGlobalSearch}
+                    className="flex min-w-[280px] items-center gap-2 rounded-full border border-[rgba(17,17,17,0.08)] bg-white px-4 py-2.5 text-sm text-[var(--muted)] transition focus-within:border-[rgba(17,17,17,0.28)]"
+                  >
                     <SearchIcon />
-                    <span>Search products, orders, customers</span>
-                  </div>
+                    <input
+                      value={globalQuery}
+                      onChange={(event) => setGlobalQuery(event.target.value)}
+                      placeholder="Search product, order, customer"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
+                    />
+                  </form>
                   {contextualActions}
                   <Link
                     href="/admin/add-product"
@@ -156,13 +192,13 @@ export function AdminShell({
                   >
                     Quick create
                   </Link>
-                  <button
-                    type="button"
+                  <Link
+                    href="/admin/support"
                     className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(17,17,17,0.08)] bg-white"
                     aria-label="Notifications"
                   >
                     <BellIcon />
-                  </button>
+                  </Link>
                   <div className="relative">
                     <button
                       type="button"
@@ -176,7 +212,7 @@ export function AdminShell({
                     </button>
                     {profileOpen ? (
                       <div className="absolute right-0 top-[calc(100%+0.75rem)] w-56 rounded-[1.5rem] border border-[rgba(17,17,17,0.08)] bg-white p-3 shadow-[0_22px_50px_rgba(17,17,17,0.12)]">
-                        <Link href="/admin/settings" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(17,17,17,0.04)]">
+                        <Link href="/admin/settings/store" className="block rounded-xl px-3 py-2 text-sm hover:bg-[rgba(17,17,17,0.04)]">
                           Settings
                         </Link>
                         <button
