@@ -9,6 +9,22 @@ const { sendEmail } = require("../utils/mailer");
 const { serializeUser, serializeAddress } = require("../utils/serializeUser");
 
 const FAVORITE_COLOR_LIMIT = 8;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
+
+const validateEmail = (email) => {
+  if (!EMAIL_PATTERN.test(email)) {
+    throw new AppError("Enter a valid email address", 400);
+  }
+};
+
+const validateIndianPhone = (phone) => {
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw new AppError("Enter a valid 10-digit Indian phone number", 400);
+  }
+};
 
 const formatAddressText = (address) =>
   [
@@ -48,6 +64,12 @@ const validateAddressPayload = (address) => {
       "Full name, mobile, pincode, city, state, house/building, and area are required",
       400
     );
+  }
+
+  validateIndianPhone(address.mobile);
+
+  if (!/^\d{6}$/.test(address.pincode)) {
+    throw new AppError("Enter a valid 6-digit pincode", 400);
   }
 };
 
@@ -138,8 +160,16 @@ const updateProfile = asyncHandler(async (req, res) => {
     throw new AppError("Name, email, and phone are required", 400);
   }
 
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const normalizedPhone = String(phone).trim();
+  const normalizedName = String(name).trim();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPhone = normalizePhone(phone);
+
+  if (normalizedName.length < 2) {
+    throw new AppError("Full name must be at least 2 characters long", 400);
+  }
+
+  validateEmail(normalizedEmail);
+  validateIndianPhone(normalizedPhone);
 
   const [existingEmailUser, existingPhoneUser, user] = await Promise.all([
     User.findOne({ email: normalizedEmail, _id: { $ne: req.user._id } }),
@@ -159,7 +189,7 @@ const updateProfile = asyncHandler(async (req, res) => {
     throw new AppError("Phone number is already in use", 409);
   }
 
-  user.name = String(name).trim();
+  user.name = normalizedName;
   user.email = normalizedEmail;
   user.phone = normalizedPhone;
   user.gender = String(gender || "").trim();

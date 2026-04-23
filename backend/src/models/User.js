@@ -123,6 +123,18 @@ const userSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
     gender: {
       type: String,
       enum: ["", "Male", "Female", "Non-binary", "Prefer not to say"],
@@ -169,6 +181,10 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
     passwordResetOtpExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    passwordResetOtpRequestedAt: {
       type: Date,
       default: null,
     },

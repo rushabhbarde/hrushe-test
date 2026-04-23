@@ -20,7 +20,7 @@ const buildAuthorizationHeader = () => {
     return "";
   }
 
-  return token.startsWith("Zoho-enczapikey ") ? token : token;
+  return token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
 };
 
 const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {

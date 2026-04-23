@@ -15,6 +15,8 @@ async function ensureAdminUser() {
       email: ADMIN_EMAIL,
       password: await bcrypt.hash(ADMIN_PASSWORD, 10),
       role: "admin",
+      isVerified: true,
+      emailVerifiedAt: new Date(),
     });
     console.log("Admin user created in database.");
   } else {
@@ -27,6 +29,12 @@ async function ensureAdminUser() {
 
     if (!adminUser.name) {
       adminUser.name = ADMIN_NAME;
+      shouldSave = true;
+    }
+
+    if (adminUser.isVerified !== true) {
+      adminUser.isVerified = true;
+      adminUser.emailVerifiedAt = adminUser.emailVerifiedAt || new Date();
       shouldSave = true;
     }
 

@@ -11,8 +11,39 @@ const { sendEmail } = require("../utils/mailer");
 const { serializeUser } = require("../utils/serializeUser");
 
 const OTP_EXPIRY_MINUTES = 10;
+const PASSWORD_HASH_ROUNDS = 12;
+const OTP_REQUEST_COOLDOWN_MS = 60 * 1000;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+
+const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
+
+const validateEmail = (email) => {
+  if (!email || !EMAIL_PATTERN.test(email)) {
+    throw new AppError("Enter a valid email address", 400);
+  }
+};
+
+const validateIndianPhone = (phone) => {
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw new AppError("Enter a valid 10-digit Indian phone number", 400);
+  }
+};
+
+const validatePasswordStrength = (password, label = "Password") => {
+  const value = String(password || "");
+
+  if (value.length < 8) {
+    throw new AppError(`${label} must be at least 8 characters long`, 400);
+  }
+
+  if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
+    throw new AppError(`${label} must include at least one letter and one number`, 400);
+  }
+};
 
 const logEmailFailure = (label, error) => {
   console.error(`${label} email failed`, {
@@ -52,8 +83,17 @@ const signup = asyncHandler(async (req, res) => {
     throw new AppError("Name, email, phone, password, and OTP are required", 400);
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const normalizedPhone = phone.trim();
+  const normalizedName = String(name).trim();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPhone = normalizePhone(phone);
+
+  if (normalizedName.length < 2) {
+    throw new AppError("Full name must be at least 2 characters long", 400);
+  }
+
+  validateEmail(normalizedEmail);
+  validateIndianPhone(normalizedPhone);
+  validatePasswordStrength(password);
 
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
@@ -85,13 +125,16 @@ const signup = asyncHandler(async (req, res) => {
     throw new AppError("Invalid signup OTP", 400);
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
   const user = await User.create({
-    name,
+    name: normalizedName,
     email: normalizedEmail,
     password: hashedPassword,
     phone: normalizedPhone,
     address,
+    isVerified: true,
+    emailVerifiedAt: new Date(),
+    lastLoginAt: new Date(),
   });
 
   await VerificationCode.deleteMany({ email: normalizedEmail, purpose: "signup" });
@@ -104,7 +147,7 @@ const signup = asyncHandler(async (req, res) => {
       html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
       templateKey: env.ZEPTOMAIL_TEMPLATE_WELCOME || undefined,
       mergeInfo: {
-        name: name.trim(),
+        name: normalizedName,
         email: normalizedEmail,
       },
     });
@@ -129,13 +172,15 @@ const login = asyncHandler(async (req, res) => {
       adminUser = await User.create({
         name: "Admin",
         email: adminEmail,
-        password: await bcrypt.hash("admin", 10),
+        password: await bcrypt.hash("admin", PASSWORD_HASH_ROUNDS),
         role: "admin",
+        isVerified: true,
+        emailVerifiedAt: new Date(),
       });
       await Cart.create({ userId: adminUser._id, items: [] });
     } else if (adminUser.role !== "admin") {
       adminUser.role = "admin";
-      adminUser.password = await bcrypt.hash("admin", 10);
+      adminUser.password = await bcrypt.hash("admin", PASSWORD_HASH_ROUNDS);
       adminUser.name = adminUser.name || "Admin";
       await adminUser.save();
     }
@@ -144,6 +189,13 @@ const login = asyncHandler(async (req, res) => {
     if (!existingCart) {
       await Cart.create({ userId: adminUser._id, items: [] });
     }
+
+    adminUser.lastLoginAt = new Date();
+    if (adminUser.isVerified !== true) {
+      adminUser.isVerified = true;
+      adminUser.emailVerifiedAt = adminUser.emailVerifiedAt || new Date();
+    }
+    await adminUser.save();
 
     return sendAuthResponse(res, adminUser, "Login successful");
   }
@@ -169,6 +221,13 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid credentials", 401);
   }
 
+  if (user.isVerified === false) {
+    throw new AppError("Please verify your email before logging in", 403);
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
   return sendAuthResponse(res, user, "Login successful");
 });
 
@@ -183,8 +242,11 @@ const updateMe = asyncHandler(async (req, res) => {
     throw new AppError("Name, email, and phone are required", 400);
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const normalizedPhone = phone.trim();
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPhone = normalizePhone(phone);
+
+  validateEmail(normalizedEmail);
+  validateIndianPhone(normalizedPhone);
 
   const existingEmailUser = await User.findOne({
     email: normalizedEmail,
@@ -232,9 +294,7 @@ const changePassword = asyncHandler(async (req, res) => {
     throw new AppError("Current password and new password are required", 400);
   }
 
-  if (newPassword.length < 6) {
-    throw new AppError("New password must be at least 6 characters long", 400);
-  }
+  validatePasswordStrength(newPassword, "New password");
 
   const user = await User.findById(req.user._id);
 
@@ -248,7 +308,7 @@ const changePassword = asyncHandler(async (req, res) => {
     throw new AppError("Current password is incorrect", 400);
   }
 
-  user.password = await bcrypt.hash(newPassword, 10);
+  user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS);
   await user.save();
 
   try {
@@ -281,16 +341,28 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const requestPasswordResetOtp = asyncHandler(async (req, res) => {
-  const email = String(req.body.email || "").trim().toLowerCase();
+  const email = normalizeEmail(req.body.email);
 
   if (!email) {
     throw new AppError("Email is required", 400);
   }
 
+  validateEmail(email);
+
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new AppError("No account found for this email", 404);
+    return res.json({
+      message: "If an account exists, a password reset OTP has been sent.",
+      expiresInMinutes: OTP_EXPIRY_MINUTES,
+    });
+  }
+
+  if (
+    user.passwordResetOtpRequestedAt &&
+    Date.now() - user.passwordResetOtpRequestedAt.getTime() < OTP_REQUEST_COOLDOWN_MS
+  ) {
+    throw new AppError("Please wait a minute before requesting another OTP", 429);
   }
 
   const otp = generateOtp();
@@ -298,6 +370,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
 
   user.passwordResetOtp = await bcrypt.hash(otp, 10);
   user.passwordResetOtpExpiresAt = expiresAt;
+  user.passwordResetOtpRequestedAt = new Date();
   await user.save();
 
   let delivery;
@@ -334,7 +407,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
   }
 
   const response = {
-    message: "OTP sent successfully",
+    message: "If an account exists, a password reset OTP has been sent.",
     expiresInMinutes: OTP_EXPIRY_MINUTES,
     deliveryMethod: delivery.delivered ? "email" : "dev",
   };
@@ -347,16 +420,28 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
 });
 
 const requestSignupOtp = asyncHandler(async (req, res) => {
-  const email = String(req.body.email || "").trim().toLowerCase();
+  const email = normalizeEmail(req.body.email);
 
   if (!email) {
     throw new AppError("Email is required", 400);
   }
 
+  validateEmail(email);
+
   const existingEmailUser = await User.findOne({ email });
 
   if (existingEmailUser) {
     throw new AppError("Email is already in use", 409);
+  }
+
+  const recentOtp = await VerificationCode.findOne({
+    email,
+    purpose: "signup",
+    createdAt: { $gt: new Date(Date.now() - OTP_REQUEST_COOLDOWN_MS) },
+  });
+
+  if (recentOtp) {
+    throw new AppError("Please wait a minute before requesting another OTP", 429);
   }
 
   const otp = generateOtp();
@@ -414,7 +499,7 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
 });
 
 const resetPasswordWithOtp = asyncHandler(async (req, res) => {
-  const email = String(req.body.email || "").trim().toLowerCase();
+  const email = normalizeEmail(req.body.email);
   const otp = String(req.body.otp || "").trim();
   const newPassword = String(req.body.newPassword || "");
 
@@ -422,9 +507,8 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
     throw new AppError("Email, OTP, and new password are required", 400);
   }
 
-  if (newPassword.length < 6) {
-    throw new AppError("Password must be at least 6 characters long", 400);
-  }
+  validateEmail(email);
+  validatePasswordStrength(newPassword);
 
   const user = await User.findOne({ email });
 
@@ -445,9 +529,10 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
     throw new AppError("Invalid OTP", 400);
   }
 
-  user.password = await bcrypt.hash(newPassword, 10);
+  user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS);
   user.passwordResetOtp = "";
   user.passwordResetOtpExpiresAt = null;
+  user.passwordResetOtpRequestedAt = null;
   await user.save();
 
   return res.json({ message: "Password reset successful" });

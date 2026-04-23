@@ -21,6 +21,9 @@ const serializeUser = (user) => ({
   gender: user.gender || "",
   dateOfBirth: user.dateOfBirth || null,
   profilePictureUrl: user.profilePictureUrl || "",
+  isVerified: user.isVerified !== false,
+  emailVerifiedAt: user.emailVerifiedAt || null,
+  lastLoginAt: user.lastLoginAt || null,
   role: user.role,
   addresses: Array.isArray(user.addresses) ? user.addresses.map(serializeAddress) : [],
   preferences: {

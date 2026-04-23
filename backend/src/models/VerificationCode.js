@@ -30,4 +30,6 @@ const verificationCodeSchema = new mongoose.Schema(
   }
 );
 
+verificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 module.exports = mongoose.model("VerificationCode", verificationCodeSchema);

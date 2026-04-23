@@ -15,6 +15,21 @@ type AuthPanelProps = {
   className?: string;
 };
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const normalizePhone = (value: string) => value.replace(/\D/g, "").slice(-10);
+
+function validatePassword(password: string) {
+  if (password.length < 8) {
+    return "Password must be at least 8 characters long.";
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return "Password must include at least one letter and one number.";
+  }
+
+  return "";
+}
+
 export function AuthPanel({
   initialMode = "login",
   onSuccess,
@@ -78,6 +93,12 @@ export function AuthPanel({
 
   const onLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!loginIdentifier.trim() || !loginPassword) {
+      setError("Enter your email or phone and password.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
@@ -100,6 +121,29 @@ export function AuthPanel({
 
   const onSignupSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedEmail = signupEmail.trim().toLowerCase();
+    const normalizedPhone = normalizePhone(signupPhone);
+    const passwordError = validatePassword(signupPassword);
+
+    if (signupName.trim().length < 2) {
+      setError("Enter your full name.");
+      return;
+    }
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(normalizedPhone)) {
+      setError("Enter a valid 10-digit Indian phone number.");
+      return;
+    }
+
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
 
     if (signupPassword !== signupConfirmPassword) {
       setError("Password and confirm password must match.");
@@ -116,9 +160,9 @@ export function AuthPanel({
 
     try {
       const success = await signup({
-        name: signupName,
-        email: signupEmail,
-        phone: signupPhone,
+        name: signupName.trim(),
+        email: normalizedEmail,
+        phone: normalizedPhone,
         password: signupPassword,
         otp: signupOtp,
       });
@@ -138,8 +182,15 @@ export function AuthPanel({
   };
 
   const onRequestSignupOtp = async () => {
-    if (!signupEmail.trim()) {
+    const normalizedEmail = signupEmail.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       setError("Enter your email address first.");
+      return;
+    }
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
       return;
     }
 
@@ -154,7 +205,7 @@ export function AuthPanel({
         devOtp?: string;
       }>("/auth/signup/request-otp", {
         method: "POST",
-        body: JSON.stringify({ email: signupEmail }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       setSignupOtpRequested(true);
@@ -173,6 +224,13 @@ export function AuthPanel({
 
   const onRequestOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedEmail = forgotEmail.trim().toLowerCase();
+
+    if (!emailPattern.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     setIsForgotOtpSubmitting(true);
     setError("");
     setDevOtp("");
@@ -184,9 +242,10 @@ export function AuthPanel({
         devOtp?: string;
       }>("/auth/forgot-password/request-otp", {
         method: "POST",
-        body: JSON.stringify({ email: forgotEmail }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
+      setForgotEmail(normalizedEmail);
       setForgotStep("verify");
       setDevOtp(response.devOtp || "");
       pushToast("OTP sent to your email.");
@@ -203,6 +262,13 @@ export function AuthPanel({
 
   const onResetPassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const passwordError = validatePassword(forgotPassword);
+
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 

@@ -35,6 +35,10 @@ const protect = async (req, res, next) => {
       return next(new AppError("User not found", 401));
     }
 
+    if (user.role !== "admin" && user.isVerified === false) {
+      return next(new AppError("Please verify your email before accessing your account", 403));
+    }
+
     req.user = user;
     return next();
   } catch (error) {

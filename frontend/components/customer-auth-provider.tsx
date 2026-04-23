@@ -31,6 +31,9 @@ type AuthUser = {
   gender?: string;
   dateOfBirth?: string | null;
   profilePictureUrl?: string;
+  isVerified?: boolean;
+  emailVerifiedAt?: string | null;
+  lastLoginAt?: string | null;
   role: string;
   addresses?: AddressRecord[];
   preferences?: AccountPreferences;
