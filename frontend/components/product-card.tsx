@@ -70,11 +70,11 @@ export function ProductCard({ product }: { product: Product }) {
         />
       </div>
 
-      <Link href={productHref} className="block px-0 pb-1 pt-2.5 sm:pt-3">
-        <p className="line-clamp-2 min-h-[2.3rem] text-[0.76rem] font-medium uppercase leading-[1.15] tracking-[-0.015em] sm:min-h-[2.45rem] sm:text-[0.86rem]">
+      <Link href={productHref} className="block px-0 pb-1 pt-2 sm:pt-2.5">
+        <p className="line-clamp-2 min-h-[1.85rem] text-[0.76rem] font-medium uppercase leading-[1.1] tracking-[-0.015em] sm:min-h-[2rem] sm:text-[0.86rem]">
           {product.name}
         </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           <p className="text-[0.9rem] font-semibold leading-none sm:text-[0.98rem]">
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
@@ -84,7 +84,7 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
           ) : null}
         </div>
-        <div className="mt-2.5 flex min-h-4 items-center gap-1">
+        <div className="mt-2 flex min-h-4 items-center gap-1">
           {product.colors.slice(0, 4).map((color) => (
             <span
               key={color}
