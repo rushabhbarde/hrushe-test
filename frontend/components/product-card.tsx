@@ -63,7 +63,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       <Link href={productHref} className="block px-0 pb-1 pt-1.5">
-        <p className="line-clamp-1 text-[0.72rem] font-medium uppercase leading-none tracking-[-0.01em] text-black sm:text-[0.78rem]">
+        <p className="line-clamp-1 text-[0.78rem] font-medium uppercase leading-none tracking-[-0.01em] text-black sm:text-[0.84rem]">
           {product.name}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -71,7 +71,7 @@ export function ProductCard({ product }: { product: Product }) {
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
           {hasDiscount ? (
-            <p className="text-[0.72rem] text-[var(--muted)] line-through sm:text-[0.78rem]">
+            <p className="text-[0.72rem] text-[var(--accent)] line-through sm:text-[0.78rem]">
               Rs.{compareAtPrice.toLocaleString("en-IN")}.00
             </p>
           ) : null}
