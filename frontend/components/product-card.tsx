@@ -43,7 +43,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group/product block min-w-0">
       <div
-        className="shop-card-image relative aspect-[3/4] overflow-hidden"
+        className="shop-card-image relative aspect-[18/25] overflow-hidden"
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
         <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-cover object-top transition duration-500 md:group-hover/product:scale-[1.015]"
+            className="h-full w-full object-cover object-top transition duration-500 md:group-hover/product:scale-[1.012]"
             loading="lazy"
           />
         ) : (
@@ -64,25 +64,25 @@ export function ProductCard({ product }: { product: Product }) {
         <WishlistButton
           productId={product.id}
           label={`Save ${product.name}`}
-          className="absolute bottom-3 right-3 z-10 flex h-8 w-8 items-center justify-center text-[var(--foreground)] transition md:bottom-3.5 md:right-3.5"
+          className="absolute bottom-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center text-[var(--foreground)] transition md:bottom-3 md:right-3"
         />
       </div>
 
-      <Link href={productHref} className="block px-0 pb-1 pt-1.5">
-        <p className="line-clamp-1 text-[0.78rem] font-medium uppercase leading-none tracking-[-0.01em] text-[var(--foreground)] sm:text-[0.84rem]">
+      <Link href={productHref} className="block px-0 pb-1 pt-1">
+        <p className="line-clamp-2 text-[0.84rem] font-medium uppercase leading-[1.12] tracking-[-0.015em] text-[var(--foreground)] sm:text-[0.88rem]">
           {product.name}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <p className="text-[0.88rem] font-semibold leading-none text-[var(--foreground)] sm:text-[0.94rem]">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <p className="text-[0.94rem] font-semibold leading-none text-[var(--foreground)] sm:text-[0.98rem]">
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
           {hasDiscount ? (
-            <p className="text-[0.72rem] text-[var(--accent)] line-through sm:text-[0.78rem]">
+            <p className="text-[0.74rem] leading-none text-[var(--accent)] line-through sm:text-[0.78rem]">
               Rs.{compareAtPrice.toLocaleString("en-IN")}.00
             </p>
           ) : null}
         </div>
-        <div className="mt-1 flex min-h-3 items-center gap-1">
+        <div className="mt-0.75 flex min-h-3 items-center gap-1">
           {product.colors.slice(0, 4).map((color) => (
             <span
               key={color}

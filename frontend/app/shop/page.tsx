@@ -93,24 +93,27 @@ export default function ShopPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--accent)]">
             Shop
           </p>
-          <div className="theme-spotlight mt-4 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-6 sm:px-7 sm:py-8 lg:px-10 lg:py-10">
-            <div className="relative z-[1] max-w-3xl">
-              <h1 className="text-4xl font-semibold uppercase tracking-[-0.06em] sm:text-6xl lg:text-7xl">
-                T-Shirts.
+          <div className="mt-4 grid gap-4 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="max-w-4xl">
+              <h1 className="text-[2.35rem] font-semibold uppercase tracking-[-0.07em] sm:text-5xl lg:text-6xl">
+                T-Shirts
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-base sm:leading-7">
-                A sharper storefront inspired by premium essentials, graphic streetwear attitude, and high-clarity fashion merchandising.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-[0.95rem]">
+                Elevated everyday silhouettes built with cleaner fits, stronger fabric feel, and a sharper premium retail presentation.
               </p>
             </div>
+            <p className="text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)] lg:text-right">
+              {visibleProducts.length} products
+            </p>
           </div>
 
-          <div className="mt-7 flex gap-2 overflow-x-auto pb-1 sm:mt-10 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-3">
+          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 sm:mt-7 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-2.5">
             {categoryTabs.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`min-h-11 shrink-0 border px-4 text-xs uppercase tracking-[0.12em] transition sm:px-5 ${
+                className={`min-h-10 shrink-0 border px-3.5 text-[0.72rem] uppercase tracking-[0.08em] transition sm:px-4 ${
                   activeTab === tab
                     ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
                     : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--hover-fill)]"
@@ -121,10 +124,10 @@ export default function ShopPage() {
             ))}
           </div>
 
-          <div className="theme-panel mt-7 rounded-[1.5rem] px-4 py-4 sm:mt-8 sm:px-5">
+          <div className="mt-5 border-b border-[var(--border)] py-4 sm:mt-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                {visibleProducts.length} styles
+              <p className="text-[0.72rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                Curated filters
               </p>
               <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:items-center">
                 <ListingSelect label="Size" value={sizeFilter} onChange={setSizeFilter}>
@@ -200,12 +203,12 @@ function ListingSelect({
   children: ReactNode;
 }) {
   return (
-    <label className="flex min-h-11 items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)] lg:min-w-[150px]">
+    <label className="flex min-h-10 items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 text-[0.72rem] uppercase tracking-[0.12em] text-[var(--muted)] lg:min-w-[150px]">
       <span>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="max-w-[130px] bg-transparent text-right text-xs uppercase tracking-[0.08em] text-[var(--foreground)] outline-none"
+        className="max-w-[130px] bg-transparent text-right text-[0.72rem] uppercase tracking-[0.08em] text-[var(--foreground)] outline-none"
       >
         {children}
       </select>

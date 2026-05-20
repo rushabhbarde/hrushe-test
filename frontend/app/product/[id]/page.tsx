@@ -157,6 +157,11 @@ export default function ProductDetailPage() {
     )
     .slice(0, 4);
   const reviews = product.reviews || [];
+  const productNotes = [
+    "Premium everyday cotton selected for a softer hand feel and cleaner fall.",
+    "Relaxed silhouette designed for repeat wear across casual and elevated styling.",
+    "Limited launch batch with straightforward pricing and minimal visual noise.",
+  ];
 
   const readPhoto = async (file: File) => {
     const result = await new Promise<string>((resolve, reject) => {
@@ -222,7 +227,17 @@ export default function ProductDetailPage() {
     <div className="page-shell">
       <SiteHeader />
       <main className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-        <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr] xl:gap-8">
+        <div className="mb-6 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+          <Link href="/shop" className="hover:text-[var(--foreground)]">
+            Shop
+          </Link>
+          <span className="mx-2">/</span>
+          <span>{product.category}</span>
+          <span className="mx-2">/</span>
+          <span className="text-[var(--foreground)]">{product.name}</span>
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr] xl:gap-10">
           <div className="grid gap-3 lg:grid-cols-[88px_1fr] xl:grid-cols-[112px_1fr]">
             <div className="order-2 flex gap-2 overflow-x-auto pb-1 lg:order-1 lg:flex-col lg:gap-3">
               {images.map((image, index) => (
@@ -230,7 +245,7 @@ export default function ProductDetailPage() {
                   key={`${product.id}-${index}`}
                   type="button"
                   onClick={() => setActiveImageIndex(index)}
-                  className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-[1rem] border sm:h-24 sm:w-20 xl:h-28 xl:w-[5.5rem] ${
+                  className={`relative h-20 w-16 shrink-0 overflow-hidden border sm:h-24 sm:w-20 xl:h-28 xl:w-[5.5rem] ${
                     activeImageIndex === index
                       ? "border-black"
                       : "border-[var(--border)]"
@@ -251,8 +266,8 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            <div className="order-1 overflow-hidden rounded-[1.4rem] border border-[var(--border)] bg-[#f4f4f1] lg:order-2 lg:rounded-[1.8rem]">
-              <div className="relative aspect-[4/5]">
+            <div className="order-1 overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)] lg:order-2">
+              <div className="relative aspect-[0.92/1]">
                 {activeImage ? (
                   <Image
                     src={activeImage}
@@ -270,28 +285,42 @@ export default function ProductDetailPage() {
 
           <div className="px-0 sm:px-1 xl:px-2">
             <div>
-              <p className="text-sm uppercase tracking-[0.16em] text-[var(--muted)]">
+              <p className="text-[0.72rem] uppercase tracking-[0.18em] text-[var(--muted)]">
                 {product.category}
               </p>
-              <h1 className="mt-2 text-2xl font-medium tracking-[-0.02em] sm:text-3xl xl:text-4xl">
+              <h1 className="display-font mt-3 text-[2.1rem] leading-[1.02] tracking-[-0.05em] sm:text-4xl xl:text-[4rem]">
                 {product.name}
               </h1>
+              <p className="mt-4 max-w-2xl text-[0.98rem] leading-8 text-[var(--muted)]">
+                {product.description}
+              </p>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-end gap-2 sm:mt-5 sm:gap-3">
-              <p className="text-xl font-semibold sm:text-2xl">
+            <div className="mt-6 flex flex-wrap items-end gap-2 sm:gap-3">
+              <p className="text-2xl font-semibold sm:text-[2rem]">
                 Rs. {product.price.toLocaleString("en-IN")}.00
               </p>
-              <p className="pb-0.5 text-sm text-[var(--muted)] line-through sm:text-base">
+              <p className="pb-0.5 text-sm text-[var(--accent)] line-through sm:text-base">
                 Rs. {compareAtPrice.toLocaleString("en-IN")}.00
               </p>
-              <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white">
+              <span className="border border-[var(--accent)] bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white">
                 {discountPercent}% OFF
               </span>
             </div>
             <p className="mt-2 text-sm text-[var(--muted)]">MRP inclusive of all taxes</p>
 
-            <div className="mt-6 border-t border-[var(--border)] pt-5 sm:mt-8 sm:pt-6">
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {productNotes.map((note) => (
+                <div
+                  key={note}
+                  className="border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]"
+                >
+                  {note}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 border-t border-[var(--border)] pt-6">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                   Size
@@ -307,7 +336,7 @@ export default function ProductDetailPage() {
                       key={size}
                       type="button"
                       onClick={() => setSelectedSize(size)}
-                    className={`min-h-11 rounded-full border px-4 py-2 text-xs transition sm:text-sm ${
+                      className={`min-h-11 border px-4 py-2 text-xs uppercase tracking-[0.08em] transition sm:text-sm ${
                         isActive
                           ? "border-black bg-black text-white"
                           : "border-[var(--border)]"
@@ -318,13 +347,16 @@ export default function ProductDetailPage() {
                   );
                 })}
               </div>
+              <p className="mt-3 text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
+                Need help with sizing? Start with your usual fit for a regular tee and size up for an oversized fall.
+              </p>
             </div>
 
-            <div className="mt-6 sm:mt-8">
+            <div className="mt-6 border-t border-[var(--border)] pt-6 sm:mt-8">
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Quantity
               </p>
-              <div className="mt-3 inline-flex items-center rounded-full border border-[var(--border)]">
+              <div className="mt-3 inline-flex items-center border border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
@@ -360,7 +392,7 @@ export default function ProductDetailPage() {
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <div
-                  className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm transition sm:px-5"
+                  className="button-secondary inline-flex min-h-11 items-center justify-center gap-2 px-4 py-3 text-sm transition sm:px-5"
                 >
                   <WishlistButton
                     productId={product.id}
@@ -371,7 +403,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="mt-6 border-t border-[var(--border)] sm:mt-8">
+            <div className="mt-8 border-t border-[var(--border)]">
               {productInfoSections.map((section) => {
                 const isOpen = openSection === section.key;
 

@@ -19,10 +19,12 @@ export default function CartPage() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
           <section>
             <p className="eyebrow text-[var(--accent)]">Cart</p>
-            <h1 className="display-font mt-3 text-3xl sm:text-4xl lg:text-5xl">Your selected pieces.</h1>
-            <p className="mt-4 max-w-xl text-[var(--muted)]">
-              Keep the first checkout flow simple: review products, adjust quantity, and move to
-              checkout.
+            <h1 className="display-font mt-3 text-3xl tracking-[-0.05em] sm:text-4xl lg:text-[3.7rem]">
+              Your selected pieces.
+            </h1>
+            <p className="mt-4 max-w-xl text-[0.98rem] leading-8 text-[var(--muted)]">
+              Review the pieces, refine quantities, and move into a cleaner checkout flow without
+              losing momentum.
             </p>
 
             <div className="mt-8 space-y-4">
@@ -37,11 +39,11 @@ export default function CartPage() {
                 items.map((item) => (
                   <div
                     key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-                    className="grain-card rounded-[2rem] p-5 sm:p-6"
+                    className="border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6"
                   >
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                       <div className="flex items-start gap-4">
-                        <div className="relative h-[5.5rem] w-20 shrink-0 overflow-hidden rounded-[1.25rem] bg-[#f5f1ea] sm:h-24 sm:w-24 sm:rounded-[1.5rem]">
+                        <div className="relative h-[5.5rem] w-20 shrink-0 overflow-hidden bg-[var(--surface-strong)] sm:h-24 sm:w-24">
                           {item.image ? (
                             <Image
                               src={item.image}
@@ -52,25 +54,25 @@ export default function CartPage() {
                             />
                           ) : (
                             <div
-                              className="h-full w-full rounded-[1.5rem]"
+                              className="h-full w-full"
                               style={{ background: item.accent }}
                             />
                           )}
                         </div>
                         <div>
-                          <p className="text-lg font-semibold sm:text-xl">{item.name}</p>
-                          <p className="mt-1 text-sm text-[var(--muted)]">Size: {item.size}</p>
+                          <p className="text-lg font-semibold tracking-[-0.02em] sm:text-xl">{item.name}</p>
                           <p className="mt-1 text-sm text-[var(--muted)]">
-                            Color: {item.color || "Default"}
+                            Size {item.size}
                           </p>
                           {item.fit ? (
-                            <p className="mt-1 text-sm text-[var(--muted)]">Fit: {item.fit}</p>
+                            <p className="mt-1 text-sm text-[var(--muted)]">Fit {item.fit}</p>
                           ) : null}
-                          <p className="mt-2 text-sm font-semibold">Rs. {item.price}</p>
+                          <p className="mt-1 text-sm text-[var(--muted)]">Color {item.color || "Default"}</p>
+                          <p className="mt-3 text-sm font-semibold">Rs. {item.price}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center overflow-hidden rounded-full border border-[var(--border)] bg-white">
+                        <div className="flex items-center overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
                           <button
                             type="button"
                             onClick={() => {
@@ -113,7 +115,7 @@ export default function CartPage() {
                             removeItem(item.productId, item.size, item.color, item.fit);
                             pushToast("Item removed", "error");
                           }}
-                          className="rounded-full px-4 py-2.5 text-sm text-[var(--accent)]"
+                          className="px-4 py-2.5 text-sm text-[var(--accent)]"
                         >
                           Remove
                         </button>
@@ -125,16 +127,13 @@ export default function CartPage() {
             </div>
 
             {items.length > 0 ? (
-              <Link
-                href="/shop"
-                className="button-secondary mt-8 inline-flex rounded-full px-5 py-3 transition"
-              >
+              <Link href="/shop" className="button-secondary mt-8 inline-flex px-5 py-3 transition">
                 Continue shopping
               </Link>
             ) : null}
           </section>
 
-          <aside className="grain-card h-fit rounded-[2rem] p-5 sm:sticky sm:top-24 sm:p-8">
+          <aside className="h-fit border border-[var(--border)] bg-[var(--surface)] p-5 sm:sticky sm:top-24 sm:p-8">
             <p className="eyebrow text-[var(--accent)]">Summary</p>
             <div className="mt-6 space-y-3 text-[var(--muted)]">
               <div className="flex items-center justify-between">
@@ -155,9 +154,12 @@ export default function CartPage() {
               <span>Total</span>
               <span>Rs. {subtotal}</span>
             </div>
+            <div className="mt-6 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+              Free shipping on current launch orders and a cleaner, faster Razorpay checkout flow.
+            </div>
             <Link
               href="/checkout"
-              className="button-primary mt-8 inline-flex w-full justify-center rounded-full px-5 py-3 transition"
+              className="button-primary mt-8 inline-flex w-full justify-center px-5 py-3 transition"
             >
               Proceed to checkout
             </Link>

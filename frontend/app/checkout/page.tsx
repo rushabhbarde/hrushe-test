@@ -269,10 +269,12 @@ export default function CheckoutPage() {
             />
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-              <section className="grain-card rounded-[2rem] p-6 sm:p-8">
+              <section className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
                 <p className="eyebrow text-[var(--accent)]">Checkout</p>
-                <h1 className="display-font mt-3 text-3xl sm:text-4xl">Finish your order.</h1>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--muted)]">
+                <h1 className="display-font mt-3 text-3xl tracking-[-0.05em] sm:text-4xl lg:text-[3.5rem]">
+                  Finish your order.
+                </h1>
+                <p className="mt-4 max-w-xl text-[0.98rem] leading-8 text-[var(--muted)]">
                   Select a saved address or fill in a fresh delivery address, then continue to
                   Razorpay secure checkout.
                 </p>
@@ -289,7 +291,7 @@ export default function CheckoutPage() {
                           setSelectedAddressId("manual");
                           setForm(buildFormFromAddress(null, user));
                         }}
-                        className="button-secondary rounded-full px-4 py-2 text-xs"
+                        className="button-secondary px-4 py-2 text-xs"
                       >
                         Use manual entry
                       </button>
@@ -303,7 +305,7 @@ export default function CheckoutPage() {
                             setSelectedAddressId(address.id);
                             setForm(buildFormFromAddress(address, user));
                           }}
-                          className={`rounded-[1.4rem] border p-4 text-left transition ${
+                          className={`border p-4 text-left transition ${
                             selectedAddressId === address.id
                               ? "border-black bg-black text-white"
                               : "border-[var(--border)] bg-white/70 hover:border-black/20"
@@ -335,7 +337,7 @@ export default function CheckoutPage() {
                     name="fullName"
                     value={form.fullName}
                     onChange={onChange}
-                    className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                    className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     placeholder="Full name"
                     required
                   />
@@ -343,7 +345,7 @@ export default function CheckoutPage() {
                     name="email"
                     value={form.email}
                     onChange={onChange}
-                    className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                    className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     placeholder="Email address"
                     type="email"
                     required
@@ -353,7 +355,7 @@ export default function CheckoutPage() {
                       name="phone"
                       value={form.phone}
                       onChange={onChange}
-                      className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                      className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                       placeholder="Phone number"
                       required
                     />
@@ -361,7 +363,7 @@ export default function CheckoutPage() {
                       name="label"
                       value={form.label}
                       onChange={onChange}
-                      className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                      className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     >
                       <option value="Home">Home</option>
                       <option value="Work">Work</option>
@@ -372,7 +374,7 @@ export default function CheckoutPage() {
                     name="house"
                     value={form.house}
                     onChange={onChange}
-                    className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                    className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     placeholder="House / Flat / Building"
                     required
                   />
@@ -380,7 +382,7 @@ export default function CheckoutPage() {
                     name="area"
                     value={form.area}
                     onChange={onChange}
-                    className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                    className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     placeholder="Area / Road / Locality"
                     required
                   />
@@ -388,7 +390,7 @@ export default function CheckoutPage() {
                     name="landmark"
                     value={form.landmark}
                     onChange={onChange}
-                    className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                    className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                     placeholder="Landmark (optional)"
                   />
                   <div className="grid gap-4 sm:grid-cols-3">
@@ -396,7 +398,7 @@ export default function CheckoutPage() {
                       name="city"
                       value={form.city}
                       onChange={onChange}
-                      className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                      className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                       placeholder="City"
                       required
                     />
@@ -404,7 +406,7 @@ export default function CheckoutPage() {
                       name="state"
                       value={form.state}
                       onChange={onChange}
-                      className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                      className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                       placeholder="State"
                       required
                     />
@@ -412,27 +414,27 @@ export default function CheckoutPage() {
                       name="pincode"
                       value={form.pincode}
                       onChange={onChange}
-                      className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+                      className="min-h-12 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3"
                       placeholder="Pincode"
                       required
                     />
                   </div>
                   {error ? (
-                    <div className="rounded-[1.5rem] border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
+                    <div className="border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
                       {error}
                     </div>
                   ) : null}
                   <button
                     type="submit"
                     disabled={submitting || items.length === 0}
-                    className="button-primary mt-2 w-full rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                    className="button-primary mt-2 w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? "Opening Razorpay..." : "Continue to Razorpay"}
                   </button>
                 </form>
               </section>
 
-              <aside className="grain-card rounded-[2rem] p-6 sm:p-8">
+              <aside className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
                 <p className="eyebrow text-[var(--accent)]">Order summary</p>
                 <div className="mt-6 space-y-4">
                   {items.map((item) => (
@@ -475,8 +477,12 @@ export default function CheckoutPage() {
                     <span>Total</span>
                     <span>Rs. {subtotal.toLocaleString("en-IN")}</span>
                   </div>
+                  <div className="mt-6 border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+                    Secure Razorpay checkout, current launch free shipping, and address details saved
+                    back to your account after purchase.
+                  </div>
                   <div className="mt-6">
-                    <Link href="/cart" className="button-secondary rounded-full px-5 py-3">
+                    <Link href="/cart" className="button-secondary px-5 py-3">
                       Back to cart
                     </Link>
                   </div>

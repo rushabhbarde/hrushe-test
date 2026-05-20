@@ -204,25 +204,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1600px] px-4 pb-8 pt-2 text-center sm:px-6 sm:pb-10 lg:px-8">
-          <div className="mt-6 grid gap-3 text-left sm:mt-10 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
-            <div className="grain-card rounded-[1.75rem] p-5">
-              <p className="eyebrow text-[var(--accent)]">Fabric first</p>
-              <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                Premium everyday fabric with a softer hand feel, cleaner fall, and quality built to stay in rotation well beyond the first wear.
-              </p>
+        <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-4 sm:px-6 sm:pb-12 lg:px-8">
+          <div className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-14 lg:pb-14">
+            <div className="max-w-xl">
+              <p className="eyebrow text-[var(--accent)]">Luxury essentials</p>
+              <h2 className="display-font mt-4 text-[2.15rem] leading-[1.04] tracking-[-0.05em] sm:text-5xl lg:text-[3.8rem]">
+                Elevated silhouettes with softer fabric feel and a cleaner everyday rhythm.
+              </h2>
             </div>
-            <div className="grain-card rounded-[1.75rem] p-5">
-              <p className="eyebrow text-[var(--accent)]">Effortless fit</p>
-              <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                Relaxed silhouettes shaped for everyday confidence, with a balanced fit that feels easy, modern, and wearable across body types.
-              </p>
-            </div>
-            <div className="grain-card rounded-[1.75rem] p-5">
-              <p className="eyebrow text-[var(--accent)]">Launch ready</p>
-              <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                A focused edit of elevated essentials designed to introduce HRUSHE with clarity, versatility, and a stronger premium point of view.
-              </p>
+            <div className="grid gap-3 text-left sm:grid-cols-3">
+              <div className="border border-[var(--border)] bg-[var(--surface)] px-4 py-5">
+                <p className="eyebrow text-[var(--accent)]">Fabric first</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                  Softer hand feel, cleaner fall, and pieces made to stay in rotation.
+                </p>
+              </div>
+              <div className="border border-[var(--border)] bg-[var(--surface)] px-4 py-5">
+                <p className="eyebrow text-[var(--accent)]">Effortless fit</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                  Relaxed proportions with wearable shapes across different body types.
+                </p>
+              </div>
+              <div className="border border-[var(--border)] bg-[var(--surface)] px-4 py-5">
+                <p className="eyebrow text-[var(--accent)]">Launch ready</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                  A focused edit of elevated basics with a sharper premium point of view.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -277,42 +285,60 @@ export default function Home() {
               <Link
                 key={`category-${product.category}`}
                 href="/shop"
-                className="hero-panel theme-spotlight rounded-[2rem] p-6 transition hover:-translate-y-1"
+                className="group relative overflow-hidden border border-[var(--border)] transition hover:-translate-y-1"
               >
-                <p className="eyebrow text-[var(--accent)]">{product.category}</p>
-                <h3 className="display-font mt-4 text-3xl">{product.name}</h3>
-                <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-                  {product.description}
-                </p>
-                <span className="mt-6 inline-flex text-sm font-semibold underline">
-                  Shop this category
-                </span>
+                <div className="relative aspect-[4/5] bg-[var(--surface-strong)]">
+                  {product.images[0] ? (
+                    <Image
+                      src={product.images[0]}
+                      alt={product.category}
+                      fill
+                      unoptimized
+                      className="object-cover transition duration-500 group-hover:scale-[1.02]"
+                    />
+                  ) : (
+                    <div className="h-full w-full" style={{ background: product.accent }} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/18 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6">
+                    <p className="eyebrow text-white/72">{product.category}</p>
+                    <h3 className="display-font mt-3 text-3xl leading-none tracking-[-0.04em]">
+                      {product.name}
+                    </h3>
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/76">
+                      {product.description}
+                    </p>
+                    <span className="mt-5 inline-flex text-sm font-semibold tracking-[0.06em] text-white">
+                      Explore collection
+                    </span>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
         </section>
 
         <section className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="grain-card rounded-[2rem] px-6 py-8 sm:px-8">
+          <div className="grid gap-5 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8">
+            <div className="border border-[var(--border)] bg-[var(--surface)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
               <p className="eyebrow text-[var(--accent)]">Brand statement</p>
-              <h2 className="display-font mt-4 text-3xl leading-tight sm:text-4xl">
+              <h2 className="display-font mt-4 text-3xl leading-tight tracking-[-0.05em] sm:text-4xl lg:text-[3.3rem]">
                 Built for everyday confidence, not disposable trends.
               </h2>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">
+              <p className="mt-5 max-w-2xl text-[0.98rem] leading-8 text-[var(--muted)]">
                 HRUSHE exists between cheap fast fashion and overpriced basics. We focus on
                 minimal design, comfortable fits, durable fabric, and straightforward honesty in
                 what we make and how we price it.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="grain-card rounded-[2rem] p-6">
+              <div className="border border-[var(--border)] bg-[var(--surface)] p-6">
                 <p className="eyebrow text-[var(--accent)]">Comfort first</p>
                 <p className="mt-3 text-lg leading-7 text-[var(--foreground)]">
                   Relaxed silhouettes, soft fabric feel, and wearable shapes across body types.
                 </p>
               </div>
-              <div className="grain-card rounded-[2rem] p-6">
+              <div className="border border-[var(--border)] bg-[var(--surface)] p-6">
                 <p className="eyebrow text-[var(--accent)]">Clean design</p>
                 <p className="mt-3 text-lg leading-7 text-[var(--foreground)]">
                   Strong graphics when needed, but always grounded in a neutral everyday wardrobe.
@@ -434,10 +460,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="hero-panel theme-dot-grid rounded-[2rem] px-6 py-10 text-center sm:px-8">
+        <section className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
+          <div className="border border-[var(--border)] bg-[var(--surface)] px-6 py-10 text-center sm:px-8 lg:px-14 lg:py-14">
             <p className="eyebrow text-[var(--accent)]">Newsletter</p>
-            <h2 className="display-font mt-4 text-3xl sm:text-4xl">
+            <h2 className="display-font mt-4 text-3xl tracking-[-0.05em] sm:text-4xl lg:text-5xl">
               Join the list for launches, early access, and drop updates.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
@@ -447,11 +473,11 @@ export default function Home() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5"
+                className="min-w-0 flex-1 border border-[var(--border)] bg-[var(--surface-strong)] px-5 py-3.5"
               />
               <button
                 type="submit"
-                className="button-primary rounded-full px-6 py-3 text-sm tracking-[0.08em] transition"
+                className="button-primary px-6 py-3 text-sm tracking-[0.08em] transition"
               >
                 Join newsletter
               </button>
