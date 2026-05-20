@@ -162,6 +162,11 @@ export default function ProductDetailPage() {
     "Relaxed silhouette designed for repeat wear across casual and elevated styling.",
     "Limited launch batch with straightforward pricing and minimal visual noise.",
   ];
+  const fitLabel = product.name.toLowerCase().includes("oversize")
+    ? "Oversize fit"
+    : product.name.toLowerCase().includes("regular")
+      ? "Regular fit"
+      : "Signature fit";
 
   const readPhoto = async (file: File) => {
     const result = await new Promise<string>((resolve, reject) => {
@@ -283,7 +288,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="px-0 sm:px-1 xl:px-2">
+          <div className="px-0 sm:px-1 xl:sticky xl:top-28 xl:self-start xl:px-2">
             <div>
               <p className="text-[0.72rem] uppercase tracking-[0.18em] text-[var(--muted)]">
                 {product.category}
@@ -291,6 +296,16 @@ export default function ProductDetailPage() {
               <h1 className="display-font mt-3 text-[2.1rem] leading-[1.02] tracking-[-0.05em] sm:text-4xl xl:text-[4rem]">
                 {product.name}
               </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-[0.66rem] font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
+                  {fitLabel}
+                </span>
+                {product.colors[0] ? (
+                  <span className="border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-[0.66rem] font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
+                    Tone {product.colors[0]}
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-4 max-w-2xl text-[0.98rem] leading-8 text-[var(--muted)]">
                 {product.description}
               </p>
@@ -313,7 +328,7 @@ export default function ProductDetailPage() {
               {productNotes.map((note) => (
                 <div
                   key={note}
-                  className="border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]"
+                  className="theme-panel px-4 py-4 text-sm leading-7 text-[var(--muted)]"
                 >
                   {note}
                 </div>
@@ -356,7 +371,7 @@ export default function ProductDetailPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                 Quantity
               </p>
-              <div className="mt-3 inline-flex items-center border border-[var(--border)]">
+              <div className="mt-3 inline-flex items-center border border-[var(--border)] bg-[var(--surface)]">
                 <button
                   type="button"
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
@@ -400,6 +415,9 @@ export default function ProductDetailPage() {
                   />
                   <span>Add to favourites</span>
                 </div>
+              </div>
+              <div className="border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+                Ships across India. Launch stock is limited, and the smoothest sizes usually move first.
               </div>
             </div>
 

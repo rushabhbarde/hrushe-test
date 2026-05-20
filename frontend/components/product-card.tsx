@@ -39,20 +39,36 @@ export function ProductCard({ product }: { product: Product }) {
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const hasDiscount = compareAtPrice > product.price;
+  const statusLabel = product.newArrival || product.newIn
+    ? "New in"
+    : product.bestSeller
+      ? "Best seller"
+      : null;
 
   return (
-    <article className="group/product block min-w-0">
+    <article className="group/product reveal-up-soft block min-w-0">
       <div
         className="shop-card-image relative aspect-[18/25] overflow-hidden"
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
         <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
+        <div className="product-veil" />
+        {statusLabel ? (
+          <span className="absolute left-2.5 top-2.5 z-10 border border-white/30 bg-black/60 px-2.5 py-1 text-[0.58rem] font-medium uppercase tracking-[0.16em] text-white backdrop-blur-md md:left-3 md:top-3">
+            {statusLabel}
+          </span>
+        ) : null}
+        {hasDiscount ? (
+          <span className="absolute left-2.5 top-11 z-10 border border-white/24 bg-white/12 px-2.5 py-1 text-[0.58rem] font-medium uppercase tracking-[0.14em] text-white backdrop-blur-md md:left-3 md:top-12">
+            -{Math.round(((compareAtPrice - product.price) / compareAtPrice) * 100)}%
+          </span>
+        ) : null}
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-cover object-top transition duration-500 md:group-hover/product:scale-[1.012]"
+            className="h-full w-full object-cover object-top transition duration-700 md:group-hover/product:scale-[1.03]"
             loading="lazy"
           />
         ) : (
@@ -66,23 +82,24 @@ export function ProductCard({ product }: { product: Product }) {
           label={`Save ${product.name}`}
           className="absolute bottom-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center text-[var(--foreground)] transition md:bottom-3 md:right-3"
         />
+        <div className="product-hover-caption">View product</div>
       </div>
 
-      <Link href={productHref} className="block px-0 pb-1 pt-1">
-        <p className="line-clamp-2 text-[0.84rem] font-medium uppercase leading-[1.12] tracking-[-0.015em] text-[var(--foreground)] sm:text-[0.88rem]">
+      <Link href={productHref} className="shop-card-copy block px-0 pb-1 pt-1.5">
+        <p className="line-clamp-2 text-[0.92rem] font-medium uppercase leading-[1.08] tracking-[-0.02em] text-[var(--foreground)] sm:text-[0.98rem]">
           {product.name}
         </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <p className="text-[0.94rem] font-semibold leading-none text-[var(--foreground)] sm:text-[0.98rem]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <p className="text-[1rem] font-semibold leading-none text-[var(--foreground)] sm:text-[1.04rem]">
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
           {hasDiscount ? (
-            <p className="text-[0.74rem] leading-none text-[var(--accent)] line-through sm:text-[0.78rem]">
+            <p className="text-[0.76rem] leading-none text-[var(--accent)] line-through sm:text-[0.8rem]">
               Rs.{compareAtPrice.toLocaleString("en-IN")}.00
             </p>
           ) : null}
         </div>
-        <div className="mt-0.75 flex min-h-3 items-center gap-1">
+        <div className="mt-1.5 flex min-h-3 items-center gap-1">
           {product.colors.slice(0, 4).map((color) => (
             <span
               key={color}

@@ -24,6 +24,15 @@ const trustPoints = [
   },
 ];
 
+const campaignWords = [
+  "Oversize essentials",
+  "Regular fit staples",
+  "Clean graphics",
+  "Everyday cotton",
+  "Launch edition",
+  "Minimal wardrobe",
+];
+
 export default function Home() {
   const { featuredProducts, homepageBanner, products } = useStorefrontData();
   const [availableBannerImages, setAvailableBannerImages] = useState<string[]>([]);
@@ -157,7 +166,7 @@ export default function Home() {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/68 via-black/18 to-transparent sm:from-black/56 sm:via-black/12" />
             <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
-              <div className="max-w-3xl text-white">
+              <div className="reveal-up max-w-3xl text-white">
                 <p className="eyebrow hidden text-[var(--accent)] sm:block">{homepageBanner.eyebrow}</p>
                 <h1 className="mt-2 max-w-[13ch] text-[1.7rem] font-medium uppercase leading-[1.05] tracking-[-0.03em] sm:mt-3 sm:max-w-none sm:text-4xl lg:text-5xl xl:text-6xl">
                   {homepageBanner.title}
@@ -204,15 +213,28 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="brand-marquee">
+          <div className="brand-marquee-track py-3">
+            <div className="brand-marquee-content text-[0.7rem] font-medium uppercase tracking-[0.18em] text-[var(--muted)] sm:text-[0.76rem]">
+              {[...campaignWords, ...campaignWords, ...campaignWords].map((word, index) => (
+                <span key={`${word}-${index}`} className="inline-flex items-center gap-3">
+                  <span>{word}</span>
+                  <span className="h-1 w-1 rounded-full bg-[var(--accent)]/80" />
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-4 sm:px-6 sm:pb-12 lg:px-8">
           <div className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-14 lg:pb-14">
-            <div className="max-w-xl">
+            <div className="reveal-up max-w-xl">
               <p className="eyebrow text-[var(--accent)]">Luxury essentials</p>
               <h2 className="display-font mt-4 text-[2.15rem] leading-[1.04] tracking-[-0.05em] sm:text-5xl lg:text-[3.8rem]">
                 Elevated silhouettes with softer fabric feel and a cleaner everyday rhythm.
               </h2>
             </div>
-            <div className="grid gap-3 text-left sm:grid-cols-3">
+            <div className="reveal-up-delayed grid gap-3 text-left sm:grid-cols-3">
               <div className="border border-[var(--border)] bg-[var(--surface)] px-4 py-5">
                 <p className="eyebrow text-[var(--accent)]">Fabric first</p>
                 <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
@@ -285,7 +307,7 @@ export default function Home() {
               <Link
                 key={`category-${product.category}`}
                 href="/shop"
-                className="group relative overflow-hidden border border-[var(--border)] transition hover:-translate-y-1"
+                className="group reveal-up-soft relative overflow-hidden border border-[var(--border)] transition hover:-translate-y-1"
               >
                 <div className="relative aspect-[4/5] bg-[var(--surface-strong)]">
                   {product.images[0] ? (
@@ -320,7 +342,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-5 lg:grid-cols-[1.12fr_0.88fr] lg:gap-8">
-            <div className="border border-[var(--border)] bg-[var(--surface)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+            <div className="reveal-up border border-[var(--border)] bg-[var(--surface)] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
               <p className="eyebrow text-[var(--accent)]">Brand statement</p>
               <h2 className="display-font mt-4 text-3xl leading-tight tracking-[-0.05em] sm:text-4xl lg:text-[3.3rem]">
                 Built for everyday confidence, not disposable trends.
@@ -331,14 +353,14 @@ export default function Home() {
                 what we make and how we price it.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="border border-[var(--border)] bg-[var(--surface)] p-6">
+            <div className="reveal-up-delayed grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="theme-panel p-6">
                 <p className="eyebrow text-[var(--accent)]">Comfort first</p>
                 <p className="mt-3 text-lg leading-7 text-[var(--foreground)]">
                   Relaxed silhouettes, soft fabric feel, and wearable shapes across body types.
                 </p>
               </div>
-              <div className="border border-[var(--border)] bg-[var(--surface)] p-6">
+              <div className="theme-panel p-6">
                 <p className="eyebrow text-[var(--accent)]">Clean design</p>
                 <p className="mt-3 text-lg leading-7 text-[var(--foreground)]">
                   Strong graphics when needed, but always grounded in a neutral everyday wardrobe.

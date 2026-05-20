@@ -260,6 +260,15 @@ export default function CheckoutPage() {
       <SiteHeader />
       <AccountGuard>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <div className="reveal-up mb-8 flex flex-wrap items-center gap-3 border-b border-[var(--border)] pb-5 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+            <Link href="/cart" className="transition hover:text-[var(--foreground)]">
+              Cart
+            </Link>
+            <span>/</span>
+            <span className="text-[var(--foreground)]">Shipping</span>
+            <span>/</span>
+            <span>Payment</span>
+          </div>
           {items.length === 0 ? (
             <EmptyState
               title="Your checkout is waiting for products."
@@ -269,7 +278,7 @@ export default function CheckoutPage() {
             />
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-              <section className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
+              <section className="reveal-up border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
                 <p className="eyebrow text-[var(--accent)]">Checkout</p>
                 <h1 className="display-font mt-3 text-3xl tracking-[-0.05em] sm:text-4xl lg:text-[3.5rem]">
                   Finish your order.
@@ -434,7 +443,7 @@ export default function CheckoutPage() {
                 </form>
               </section>
 
-              <aside className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
+              <aside className="reveal-up-delayed border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8">
                 <p className="eyebrow text-[var(--accent)]">Order summary</p>
                 <div className="mt-6 space-y-4">
                   {items.map((item) => (

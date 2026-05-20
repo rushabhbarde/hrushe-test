@@ -90,10 +90,10 @@ export default function ShopPage() {
       <SiteHeader />
       <main>
         <section className="mx-auto max-w-[1600px] px-4 pb-4 pt-7 sm:px-6 sm:pb-6 sm:pt-10 lg:px-8">
-          <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--accent)]">
+          <p className="reveal-up text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--accent)]">
             Shop
           </p>
-          <div className="mt-4 grid gap-4 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="reveal-up mt-4 grid gap-4 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-4xl">
               <h1 className="text-[2.35rem] font-semibold uppercase tracking-[-0.07em] sm:text-5xl lg:text-6xl">
                 T-Shirts
@@ -102,12 +102,17 @@ export default function ShopPage() {
                 Elevated everyday silhouettes built with cleaner fits, stronger fabric feel, and a sharper premium retail presentation.
               </p>
             </div>
-            <p className="text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)] lg:text-right">
-              {visibleProducts.length} products
-            </p>
+            <div className="space-y-2 lg:text-right">
+              <p className="text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                {visibleProducts.length} products
+              </p>
+              <p className="text-xs uppercase tracking-[0.16em] text-[var(--accent)]">
+                Curated by fit, colour, and launch intent
+              </p>
+            </div>
           </div>
 
-          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 sm:mt-7 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-2.5">
+          <div className="reveal-up-delayed mt-6 flex gap-2 overflow-x-auto pb-1 sm:mt-7 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-2.5">
             {categoryTabs.map((tab) => (
               <button
                 key={tab}
@@ -124,11 +129,22 @@ export default function ShopPage() {
             ))}
           </div>
 
-          <div className="mt-5 border-b border-[var(--border)] py-4 sm:mt-6">
+          <div className="reveal-up-delayed mt-5 border-b border-[var(--border)] py-4 sm:mt-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <p className="text-[0.72rem] uppercase tracking-[0.12em] text-[var(--muted)]">
-                Curated filters
-              </p>
+              <div className="space-y-1">
+                <p className="text-[0.72rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                  Curated filters
+                </p>
+                {hasFilters ? (
+                  <p className="text-xs text-[var(--muted)]">
+                    Filters applied for a tighter shortlist.
+                  </p>
+                ) : (
+                  <p className="text-xs text-[var(--muted)]">
+                    Use filters to narrow by fit, colour, and sizing.
+                  </p>
+                )}
+              </div>
               <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:items-center">
                 <ListingSelect label="Size" value={sizeFilter} onChange={setSizeFilter}>
                   <option value="all">All sizes</option>

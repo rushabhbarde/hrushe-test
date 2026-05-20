@@ -16,8 +16,15 @@ export default function CartPage() {
     <div className="page-shell">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="reveal-up mb-8 flex flex-wrap items-center gap-3 border-b border-[var(--border)] pb-5 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+          <span className="text-[var(--foreground)]">Cart</span>
+          <span>/</span>
+          <span>Shipping</span>
+          <span>/</span>
+          <span>Payment</span>
+        </div>
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
-          <section>
+          <section className="reveal-up">
             <p className="eyebrow text-[var(--accent)]">Cart</p>
             <h1 className="display-font mt-3 text-3xl tracking-[-0.05em] sm:text-4xl lg:text-[3.7rem]">
               Your selected pieces.
@@ -133,7 +140,7 @@ export default function CartPage() {
             ) : null}
           </section>
 
-          <aside className="h-fit border border-[var(--border)] bg-[var(--surface)] p-5 sm:sticky sm:top-24 sm:p-8">
+          <aside className="reveal-up-delayed h-fit border border-[var(--border)] bg-[var(--surface)] p-5 sm:sticky sm:top-24 sm:p-8">
             <p className="eyebrow text-[var(--accent)]">Summary</p>
             <div className="mt-6 space-y-3 text-[var(--muted)]">
               <div className="flex items-center justify-between">
