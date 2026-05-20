@@ -42,7 +42,10 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="group/product block min-w-0">
-      <div className="shop-card-image relative aspect-[3/4] overflow-hidden bg-[#f5f5f5]">
+      <div
+        className="shop-card-image relative aspect-[3/4] overflow-hidden"
+        style={{ backgroundColor: "var(--surface-strong)" }}
+      >
         <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -53,21 +56,24 @@ export function ProductCard({ product }: { product: Product }) {
             loading="lazy"
           />
         ) : (
-          <div className="h-full w-full" style={{ backgroundColor: product.accent || "#f5f5f5" }} />
+          <div
+            className="h-full w-full"
+            style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
+          />
         )}
         <WishlistButton
           productId={product.id}
           label={`Save ${product.name}`}
-          className="absolute bottom-3 right-3 z-10 flex h-8 w-8 items-center justify-center bg-white/0 text-black transition hover:bg-white/0 md:bottom-3.5 md:right-3.5"
+          className="absolute bottom-3 right-3 z-10 flex h-8 w-8 items-center justify-center text-[var(--foreground)] transition md:bottom-3.5 md:right-3.5"
         />
       </div>
 
       <Link href={productHref} className="block px-0 pb-1 pt-1.5">
-        <p className="line-clamp-1 text-[0.78rem] font-medium uppercase leading-none tracking-[-0.01em] text-black sm:text-[0.84rem]">
+        <p className="line-clamp-1 text-[0.78rem] font-medium uppercase leading-none tracking-[-0.01em] text-[var(--foreground)] sm:text-[0.84rem]">
           {product.name}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <p className="text-[0.88rem] font-semibold leading-none text-black sm:text-[0.94rem]">
+          <p className="text-[0.88rem] font-semibold leading-none text-[var(--foreground)] sm:text-[0.94rem]">
             Rs.{product.price.toLocaleString("en-IN")}.00
           </p>
           {hasDiscount ? (
@@ -80,7 +86,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.colors.slice(0, 4).map((color) => (
             <span
               key={color}
-              className="h-2.5 w-2.5 rounded-[1px] border border-black/25 sm:h-2.5 sm:w-2.5"
+              className="h-2.5 w-2.5 rounded-[1px] border border-[var(--border)] sm:h-2.5 sm:w-2.5"
               style={{
                 backgroundColor:
                   swatchColors[color.toLowerCase().trim()] ||

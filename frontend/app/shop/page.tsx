@@ -93,12 +93,16 @@ export default function ShopPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--accent)]">
             Shop
           </p>
-          <h1 className="mt-3 text-4xl font-semibold uppercase tracking-[-0.06em] sm:text-6xl lg:text-7xl">
-            T-Shirts.
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-base">
-            Clean everyday silhouettes, built around fit, fabric, and a minimal black-white-red rhythm.
-          </p>
+          <div className="theme-spotlight mt-4 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-6 sm:px-7 sm:py-8 lg:px-10 lg:py-10">
+            <div className="relative z-[1] max-w-3xl">
+              <h1 className="text-4xl font-semibold uppercase tracking-[-0.06em] sm:text-6xl lg:text-7xl">
+                T-Shirts.
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-base sm:leading-7">
+                A sharper storefront inspired by premium essentials, graphic streetwear attitude, and high-clarity fashion merchandising.
+              </p>
+            </div>
+          </div>
 
           <div className="mt-7 flex gap-2 overflow-x-auto pb-1 sm:mt-10 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:gap-3">
             {categoryTabs.map((tab) => (
@@ -108,8 +112,8 @@ export default function ShopPage() {
                 onClick={() => setActiveTab(tab)}
                 className={`min-h-11 shrink-0 border px-4 text-xs uppercase tracking-[0.12em] transition sm:px-5 ${
                   activeTab === tab
-                    ? "border-black bg-black text-white"
-                    : "border-black text-black hover:bg-black/5"
+                    ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--hover-fill)]"
                 }`}
               >
                 {tab}
@@ -117,7 +121,7 @@ export default function ShopPage() {
             ))}
           </div>
 
-          <div className="mt-7 border-y border-[var(--border)] py-3 sm:mt-8">
+          <div className="theme-panel mt-7 rounded-[1.5rem] px-4 py-4 sm:mt-8 sm:px-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
                 {visibleProducts.length} styles
@@ -196,12 +200,12 @@ function ListingSelect({
   children: ReactNode;
 }) {
   return (
-    <label className="flex min-h-11 items-center justify-between gap-3 border border-[var(--border)] bg-white px-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)] lg:min-w-[150px]">
+    <label className="flex min-h-11 items-center justify-between gap-3 border border-[var(--border)] bg-[var(--surface)] px-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)] lg:min-w-[150px]">
       <span>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="max-w-[130px] bg-transparent text-right text-xs uppercase tracking-[0.08em] text-black outline-none"
+        className="max-w-[130px] bg-transparent text-right text-xs uppercase tracking-[0.08em] text-[var(--foreground)] outline-none"
       >
         {children}
       </select>
