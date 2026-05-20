@@ -112,8 +112,10 @@ export function AuthPanel({
 
       pushToast("Welcome back.");
       onSuccess?.();
-    } catch {
-      setError("Could not sign you in right now.");
+    } catch (loginError) {
+      setError(
+        loginError instanceof Error ? loginError.message : "Could not sign you in right now."
+      );
     } finally {
       setIsSubmitting(false);
     }

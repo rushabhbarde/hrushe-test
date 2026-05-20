@@ -5,6 +5,7 @@ import { AuthModalProvider } from "@/components/auth-modal-provider";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CustomerAuthProvider } from "@/components/customer-auth-provider";
 import { ToastProvider } from "@/components/toast-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { WishlistDrawer } from "@/components/wishlist-drawer";
 import { WishlistProvider } from "@/components/wishlist-provider";
 import { Manrope, Playfair_Display } from "next/font/google";
@@ -38,26 +39,40 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeBootScript = `
+    try {
+      var storedTheme = localStorage.getItem("hrushe-theme");
+      var theme = storedTheme === "dark" ? "dark" : "light";
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+    } catch (error) {}
+  `;
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
-        <CustomerAuthProvider>
-          <AdminAuthProvider>
-            <ToastProvider>
-              <AdminAuthModalProvider>
-                <AuthModalProvider>
-                  <WishlistProvider>
-                    <CartProvider>
-                      {children}
-                      <CartDrawer />
-                      <WishlistDrawer />
-                    </CartProvider>
-                  </WishlistProvider>
-                </AuthModalProvider>
-              </AdminAuthModalProvider>
-            </ToastProvider>
-          </AdminAuthProvider>
-        </CustomerAuthProvider>
+        <ThemeProvider>
+          <CustomerAuthProvider>
+            <AdminAuthProvider>
+              <ToastProvider>
+                <AdminAuthModalProvider>
+                  <AuthModalProvider>
+                    <WishlistProvider>
+                      <CartProvider>
+                        {children}
+                        <CartDrawer />
+                        <WishlistDrawer />
+                      </CartProvider>
+                    </WishlistProvider>
+                  </AuthModalProvider>
+                </AdminAuthModalProvider>
+              </ToastProvider>
+            </AdminAuthProvider>
+          </CustomerAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

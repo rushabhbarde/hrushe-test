@@ -3,28 +3,39 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="mt-16">
-      <section className="bg-[#2f2d2b] text-white">
+      <section
+        className="text-[var(--footer-foreground)]"
+        style={{ backgroundColor: "var(--footer-background)" }}
+      >
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:py-16">
           <div className="max-w-3xl">
-            <p className="eyebrow text-white/55">Community & collaborations</p>
+            <p
+              className="eyebrow"
+              style={{ color: "color-mix(in srgb, var(--footer-foreground) 55%, transparent)" }}
+            >
+              Community & collaborations
+            </p>
             <p className="display-font mt-3 text-3xl leading-tight sm:mt-4 sm:text-4xl lg:text-5xl">
               Want To Become A Fashion Influencer?
             </p>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-white/78 sm:mt-4 sm:text-lg sm:leading-8">
+            <p
+              className="mt-3 max-w-2xl text-base leading-7 sm:mt-4 sm:text-lg sm:leading-8"
+              style={{ color: "color-mix(in srgb, var(--footer-foreground) 78%, transparent)" }}
+            >
               We help creators, stylists, and fashion-forward communities build a stronger
               personal style through premium everyday essentials.
             </p>
           </div>
           <Link
             href="/contact"
-            className="inline-flex min-h-12 w-full items-center justify-center border border-white/8 bg-black px-8 py-4 text-base font-semibold text-white transition hover:bg-[#171717] sm:w-auto sm:py-5"
+            className="inline-flex min-h-12 w-full items-center justify-center border border-white/8 bg-black px-8 py-4 text-base font-semibold text-white transition hover:bg-[var(--accent)] sm:w-auto sm:py-5"
           >
             Get in touch with us
           </Link>
         </div>
       </section>
 
-      <section className="border-t border-black/5 bg-white">
+      <section className="border-t border-[var(--border)] bg-[var(--surface)]">
         <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-4 py-12 sm:px-6 lg:px-8 lg:grid-cols-[1.05fr_1fr_0.9fr] lg:gap-12 lg:py-16">
           <div className="space-y-6 sm:space-y-8">
             <div>
@@ -74,13 +85,13 @@ export function SiteFooter() {
               </Link>
               <Link
                 href="/shop"
-                className="inline-flex rounded-full border border-black/12 bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-black/5"
+                className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--hover-fill)]"
               >
                 Shop collection
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex rounded-full border border-black/12 bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-black/5"
+                className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--hover-fill)]"
               >
                 Contact
               </Link>
@@ -109,7 +120,7 @@ export function SiteFooter() {
               </div>
             </div>
 
-            <div className="rounded-[1.75rem] border border-black/8 bg-white/70 p-5">
+            <div className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5">
               <p className="eyebrow text-[var(--accent)]">Support hours</p>
               <p className="mt-4 text-base leading-8 text-[var(--foreground)]">
                 Monday to Saturday
@@ -123,7 +134,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-t border-black/6">
+        <div className="border-t border-[var(--border)]">
           <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-5 text-xs uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
             <span>Modern everyday style by HRUSHE</span>
             <span>Clean essentials. Honest comfort. Everyday confidence.</span>

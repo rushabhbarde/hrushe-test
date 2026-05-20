@@ -198,10 +198,10 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
           }
           setUser(response.user);
           return true;
-        } catch {
+        } catch (error) {
           clearCustomerToken();
           setUser(null);
-          return false;
+          throw error;
         }
       },
       logout: async () => {

@@ -137,7 +137,7 @@ export default function Home() {
       <SiteHeader />
       <main>
         <section className="w-full py-0">
-          <div className="hero-stage relative h-[calc(100svh-114px)] min-h-[520px] w-full overflow-hidden bg-[#f3f3ef] sm:h-[calc(100svh-132px)] sm:min-h-[620px]">
+          <div className="hero-stage theme-spotlight relative h-[calc(100svh-114px)] min-h-[520px] w-full overflow-hidden bg-[var(--surface-strong)] sm:h-[calc(100svh-132px)] sm:min-h-[620px]">
             {activeBannerImage ? (
               <div
                 key={activeBannerImage}
@@ -155,7 +155,7 @@ export default function Home() {
             ) : (
               <div className="h-full w-full" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/68 via-black/18 to-transparent sm:from-black/52 sm:via-black/12" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/68 via-black/18 to-transparent sm:from-black/56 sm:via-black/12" />
             <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-10">
               <div className="max-w-3xl text-white">
                 <p className="eyebrow hidden text-[var(--accent)] sm:block">{homepageBanner.eyebrow}</p>
@@ -277,7 +277,7 @@ export default function Home() {
               <Link
                 key={`category-${product.category}`}
                 href="/shop"
-                className="hero-panel rounded-[2rem] p-6 transition hover:-translate-y-1"
+                className="hero-panel theme-spotlight rounded-[2rem] p-6 transition hover:-translate-y-1"
               >
                 <p className="eyebrow text-[var(--accent)]">{product.category}</p>
                 <h3 className="display-font mt-4 text-3xl">{product.name}</h3>
@@ -337,7 +337,7 @@ export default function Home() {
                   {trustPoints.map((point) => (
                     <div
                       key={point.title}
-                      className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-5"
+                      className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5"
                     >
                       <p className="text-lg font-semibold">{point.title}</p>
                       <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
@@ -353,7 +353,7 @@ export default function Home() {
               {reviewTestimonials.length > 0 ? (
                 <div>
                   <p className="eyebrow text-[var(--accent)]">Live product reviews</p>
-                  <div className="mt-6 overflow-hidden rounded-[1.8rem] border border-[var(--border)] bg-white/60">
+                  <div className="mt-6 overflow-hidden rounded-[1.8rem] border border-[var(--border)] bg-[var(--surface-elevated)]">
                     <div className="grid gap-0 lg:grid-cols-[0.92fr_1.08fr]">
                       <div className="relative aspect-[1.08/1] min-h-[220px] bg-[#ebe7df]">
                         {reviewTestimonials[activeReviewIndex]?.photo ? (
@@ -365,7 +365,7 @@ export default function Home() {
                             className="object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full flex-col justify-between bg-[linear-gradient(180deg,rgba(214,31,38,0.08),rgba(17,17,17,0.02))] p-5 sm:p-6">
+                          <div className="flex h-full w-full flex-col justify-between bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_12%,transparent),color-mix(in_srgb,var(--foreground)_3%,transparent))] p-5 sm:p-6">
                             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-semibold text-[var(--foreground)] shadow-sm">
                               {reviewTestimonials[activeReviewIndex]?.name?.charAt(0) || "H"}
                             </div>
@@ -406,7 +406,7 @@ export default function Home() {
                     </div>
                   </div>
                   {reviewTestimonials.length > 1 ? (
-                    <div className="mt-4 flex items-center gap-2">
+                  <div className="mt-4 flex items-center gap-2">
                       {reviewTestimonials.map((review, index) => (
                         <button
                           key={review.id}
@@ -424,7 +424,7 @@ export default function Home() {
                   ) : null}
                 </div>
               ) : (
-                <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-6">
+                <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6">
                   <p className="text-base leading-8 text-[var(--muted)]">
                     Product reviews will appear here once customers start sharing feedback and photos.
                   </p>
@@ -435,7 +435,7 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="hero-panel rounded-[2rem] px-6 py-10 text-center sm:px-8">
+          <div className="hero-panel theme-dot-grid rounded-[2rem] px-6 py-10 text-center sm:px-8">
             <p className="eyebrow text-[var(--accent)]">Newsletter</p>
             <h2 className="display-font mt-4 text-3xl sm:text-4xl">
               Join the list for launches, early access, and drop updates.
@@ -447,7 +447,7 @@ export default function Home() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-white px-5 py-3.5"
+                className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-3.5"
               />
               <button
                 type="submit"

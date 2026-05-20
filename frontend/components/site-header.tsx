@@ -9,6 +9,7 @@ import { useAdminAuthModal } from "@/components/admin-auth-modal-provider";
 import { useAuthModal } from "@/components/auth-modal-provider";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
+import { useTheme } from "@/components/theme-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -32,7 +33,7 @@ function HeaderIcon({
   className?: string;
 }) {
   const baseClassName =
-    "flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12";
+    "flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--hover-fill)] sm:h-11 sm:w-11 lg:h-12 lg:w-12";
   const classes = className ? `${baseClassName} ${className}` : baseClassName;
 
   if (href) {
@@ -71,6 +72,7 @@ export function SiteHeader() {
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
   const { homepageBanner } = useStorefrontData();
+  const { isDark, toggleTheme } = useTheme();
   const { isAuthenticated: isAdminAuthenticated, logout: adminLogout } = useAdminAuth();
   const { openAdminLogin, suppressNextAdminPrompt } = useAdminAuthModal();
   const { openLogin } = useAuthModal();
@@ -118,7 +120,10 @@ export function SiteHeader() {
   }, [isAccountMenuOpen, isMobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-30 bg-white">
+    <header
+      className="sticky top-0 z-30 border-b border-[var(--border)] backdrop-blur-xl"
+      style={{ backgroundColor: "var(--header-background)" }}
+    >
       <div className="announcement-strip border-b border-[var(--border)] overflow-hidden py-1.5 sm:py-2">
         <div className="announcement-track">
           <div className="announcement-content text-[9px] font-medium tracking-[0.16em] text-[var(--accent)] sm:text-[11px] sm:tracking-[0.2em]">
@@ -135,24 +140,24 @@ export function SiteHeader() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] transition hover:bg-black/5 lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] transition hover:bg-[var(--hover-fill)] lg:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
               aria-controls="site-mobile-menu"
             >
               <span className="relative flex h-[18px] w-5 items-center justify-center">
                 <span
-                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    className={`absolute h-[1.5px] w-5 rounded-full bg-[var(--foreground)] transition ${
                     isMobileMenuOpen ? "translate-y-0 rotate-45" : "-translate-y-[6px]"
                   }`}
                 />
                 <span
-                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    className={`absolute h-[1.5px] w-5 rounded-full bg-[var(--foreground)] transition ${
                     isMobileMenuOpen ? "opacity-0" : "opacity-100"
                   }`}
                 />
                 <span
-                  className={`absolute h-[1.5px] w-5 rounded-full bg-black transition ${
+                    className={`absolute h-[1.5px] w-5 rounded-full bg-[var(--foreground)] transition ${
                     isMobileMenuOpen ? "translate-y-0 -rotate-45" : "translate-y-[6px]"
                   }`}
                 />
@@ -211,6 +216,18 @@ export function SiteHeader() {
           </Link>
 
           <div className="flex shrink-0 items-center justify-end gap-0.5 sm:gap-1 lg:gap-2">
+            <HeaderIcon onClick={toggleTheme} label={isDark ? "Switch to light mode" : "Switch to dark mode"}>
+              {isDark ? (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="4.4" />
+                  <path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M20 14.2A7.8 7.8 0 0 1 9.8 4a8.6 8.6 0 1 0 10.2 10.2Z" />
+                </svg>
+              )}
+            </HeaderIcon>
             <HeaderIcon href="/search" label="Search">
               <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="6" />
@@ -231,11 +248,11 @@ export function SiteHeader() {
                       </span>
                     </HeaderIcon>
                     {isAccountMenuOpen ? (
-                      <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-white/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+                      <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 min-w-[180px] rounded-[1.4rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl">
                         <Link
                           href="/account"
                           onClick={() => setIsAccountMenuOpen(false)}
-                          className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-black/5"
+                          className="flex rounded-[1rem] px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--hover-fill)]"
                         >
                           My account
                         </Link>
@@ -245,7 +262,7 @@ export function SiteHeader() {
                             setIsAccountMenuOpen(false);
                             void logout();
                           }}
-                          className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-black/5"
+                          className="flex w-full items-center gap-3 rounded-[1rem] px-4 py-3 text-left text-sm text-[var(--accent)] transition hover:bg-[var(--hover-fill)]"
                         >
                           <LogoutIcon />
                           <span>Logout</span>
@@ -282,7 +299,7 @@ export function SiteHeader() {
                 <button
                   type="button"
                   onClick={openCart}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-black/5 sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+                      className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--hover-fill)] sm:h-11 sm:w-11 lg:h-12 lg:w-12"
                   aria-label="Cart"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-5.5 sm:w-5.5 lg:h-6 lg:w-6" fill="none" aria-hidden="true">

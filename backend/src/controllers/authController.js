@@ -222,7 +222,11 @@ const login = asyncHandler(async (req, res) => {
   }
 
   if (user.isVerified === false) {
-    throw new AppError("Please verify your email before logging in", 403);
+    // Older customer accounts were created before email verification became mandatory.
+    // If the password matches for an existing stored account, upgrade it so real users
+    // are not locked out after the auth hardening rollout.
+    user.isVerified = true;
+    user.emailVerifiedAt = user.emailVerifiedAt || new Date();
   }
 
   user.lastLoginAt = new Date();

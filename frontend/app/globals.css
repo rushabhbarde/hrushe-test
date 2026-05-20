@@ -4,6 +4,7 @@
   --background: #ffffff;
   --surface: #ffffff;
   --surface-strong: #f7f7f7;
+  --surface-elevated: rgba(255, 255, 255, 0.84);
   --foreground: #111111;
   --muted: #5f5f5f;
   --border: rgba(17, 17, 17, 0.1);
@@ -11,6 +12,30 @@
   --accent-dark: #b31219;
   --shadow: 0 18px 48px rgba(17, 17, 17, 0.08);
   --soft-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
+  --hero-glow: rgba(214, 31, 38, 0.035);
+  --footer-background: #2f2d2b;
+  --footer-foreground: #ffffff;
+  --header-background: rgba(255, 255, 255, 0.92);
+  --hover-fill: rgba(17, 17, 17, 0.05);
+}
+
+:root[data-theme="dark"] {
+  --background: #080808;
+  --surface: #101010;
+  --surface-strong: #181818;
+  --surface-elevated: rgba(18, 18, 18, 0.86);
+  --foreground: #f7f7f4;
+  --muted: #b6b6b1;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #d61f26;
+  --accent-dark: #ee434a;
+  --shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
+  --soft-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --hero-glow: rgba(214, 31, 38, 0.14);
+  --footer-background: #050505;
+  --footer-foreground: #f8f8f5;
+  --header-background: rgba(8, 8, 8, 0.86);
+  --hover-fill: rgba(255, 255, 255, 0.06);
 }
 
 @theme inline {
@@ -36,8 +61,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
   background-image:
-    radial-gradient(circle at top, rgba(214, 31, 38, 0.035), transparent 22%),
-    linear-gradient(180deg, #ffffff, var(--background));
+    radial-gradient(circle at top, var(--hero-glow), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%), var(--background));
+  transition:
+    background-color 240ms ease,
+    color 240ms ease,
+    background-image 240ms ease;
 }
 
 a {
@@ -60,6 +89,21 @@ textarea {
   font: inherit;
 }
 
+button,
+a,
+input,
+select,
+textarea,
+article,
+section,
+div {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
 .page-shell {
   min-height: 100vh;
 }
@@ -70,9 +114,9 @@ textarea {
 
 .grain-card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.82)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent);
-  border: 1px solid rgba(17, 17, 17, 0.08);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--surface-strong) 96%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--foreground) 3%, transparent), transparent);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(24px) saturate(125%);
 }
@@ -83,16 +127,16 @@ textarea {
 
 .hero-panel {
   background:
-    linear-gradient(140deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.8)),
-    linear-gradient(180deg, rgba(214, 31, 38, 0.045), transparent);
-  border: 1px solid rgba(17, 17, 17, 0.06);
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 95%, transparent), color-mix(in srgb, var(--surface-strong) 92%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(22px) saturate(120%);
 }
 
 .hero-stage {
   background-repeat: no-repeat;
-  border: 1px solid rgba(17, 17, 17, 0.06);
+  border: 1px solid var(--border);
   box-shadow: var(--soft-shadow);
 }
 
@@ -168,14 +212,14 @@ textarea {
 
 .button-primary {
   background: var(--foreground);
-  color: #ffffff;
+  color: var(--background);
   box-shadow: var(--soft-shadow);
   min-height: 44px;
 }
 
 .button-secondary {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(17, 17, 17, 0.1);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
   box-shadow: var(--soft-shadow);
   backdrop-filter: blur(16px) saturate(120%);
   min-height: 44px;
@@ -194,10 +238,10 @@ textarea {
 .editorial-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(17, 17, 17, 0.08);
+  border: 1px solid var(--border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, transparent), color-mix(in srgb, var(--surface-strong) 88%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 4%, transparent), transparent);
   box-shadow: var(--soft-shadow);
   backdrop-filter: blur(20px) saturate(120%);
 }
@@ -211,10 +255,10 @@ textarea {
 }
 
 .empty-shell {
-  border: 1px dashed rgba(17, 17, 17, 0.12);
+  border: 1px dashed var(--border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.82)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-strong) 90%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 3%, transparent), transparent);
   backdrop-filter: blur(18px) saturate(120%);
 }
 
@@ -227,18 +271,47 @@ textarea {
 }
 
 .loading-shell {
-  border: 1px solid rgba(17, 17, 17, 0.08);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(22px) saturate(120%);
 }
 
 .loading-mark {
   background:
-    radial-gradient(circle at center, rgba(214, 31, 38, 0.14), transparent 62%),
-    rgba(255, 255, 255, 0.92);
+    radial-gradient(circle at center, color-mix(in srgb, var(--accent) 18%, transparent), transparent 62%),
+    color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, white 10%),
     0 18px 40px rgba(17, 17, 17, 0.08);
+}
+
+.theme-dot-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 9%, transparent) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.theme-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 15% 25%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 26%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--foreground) 9%, transparent), transparent 22%);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.theme-panel {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(18px) saturate(120%);
 }
 
 .loading-ring {
@@ -307,9 +380,9 @@ textarea {
   }
 
   .button-secondary:hover {
-    background: #111111;
-    color: #ffffff;
-    border-color: #111111;
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
   }
 }
 
@@ -323,8 +396,8 @@ textarea {
 @media (max-width: 767px) {
   body {
     background-image:
-      radial-gradient(circle at top, rgba(214, 31, 38, 0.03), transparent 18%),
-      linear-gradient(180deg, #ffffff, var(--background));
+      radial-gradient(circle at top, color-mix(in srgb, var(--accent) 11%, transparent), transparent 18%),
+      linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%), var(--background));
   }
 
   .grain-card,
