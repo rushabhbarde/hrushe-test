@@ -210,6 +210,9 @@ export default function StoryPage() {
                   Simplicity, authenticity, and modern everyday style.
                 </p>
               </div>
+              <div className="bg-[var(--background)] px-6 py-5 text-[0.95rem] leading-8 text-[var(--muted)]">
+                A quieter wardrobe built around pieces that feel easy, wearable, and worth coming back to.
+              </div>
               <div className="grid gap-px bg-[var(--border)] sm:grid-cols-2">
                 {values.map((value) => (
                   <div

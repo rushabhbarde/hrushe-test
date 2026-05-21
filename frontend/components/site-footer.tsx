@@ -79,7 +79,7 @@ export function SiteFooter() {
 
       <div className="border-t border-[var(--border)]">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-5 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <span>HRUSHE</span>
+          <span>&copy; 2026 HRUSHE. All rights reserved.</span>
           <span>Designed for everyday dressing</span>
         </div>
       </div>

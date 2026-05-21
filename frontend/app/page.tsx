@@ -34,6 +34,12 @@ export default function Home() {
   const { featuredProducts, homepageBanner, products, loading } = useStorefrontData();
   const [availableBannerImages, setAvailableBannerImages] = useState<string[]>([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const hasSecondaryCta = Boolean(homepageBanner.secondaryCtaLabel?.trim());
+  const heroEyebrow =
+    homepageBanner.eyebrow?.trim() &&
+    homepageBanner.eyebrow.trim().toLowerCase() !== "home page banner"
+      ? homepageBanner.eyebrow.trim()
+      : "Current collection";
 
   const spotlightProducts = useMemo(() => {
     if (featuredProducts.length > 0) {
@@ -119,7 +125,7 @@ export default function Home() {
         <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:px-8 lg:pb-20 lg:pt-10">
           <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-end lg:gap-10 xl:gap-14">
             <div className="reveal-up max-w-xl">
-              <p className="eyebrow text-[var(--muted)]">{homepageBanner.eyebrow}</p>
+              <p className="eyebrow text-[var(--muted)]">{heroEyebrow}</p>
               <h1 className="mt-4 text-[2.65rem] font-semibold uppercase leading-[0.92] tracking-[-0.08em] text-[var(--foreground)] sm:max-w-[11ch] sm:text-[4.25rem] lg:text-[5.4rem]">
                 {homepageBanner.title}
               </h1>
@@ -127,20 +133,18 @@ export default function Home() {
                 {homepageBanner.description}
               </p>
 
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href={homepageBanner.primaryCtaHref}
-                  className="inline-flex min-h-11 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--background)] transition hover:opacity-88"
-                >
-                  {homepageBanner.primaryCtaLabel}
-                </Link>
-                <Link
-                  href={homepageBanner.secondaryCtaHref}
-                  className="inline-flex min-h-11 items-center justify-center border border-[var(--border)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                >
-                  {homepageBanner.secondaryCtaLabel}
-                </Link>
-              </div>
+              {hasSecondaryCta ? (
+                <div className="mt-7 flex flex-wrap gap-3">
+                  {hasSecondaryCta ? (
+                    <Link
+                      href={homepageBanner.secondaryCtaHref}
+                      className="inline-flex min-h-11 items-center justify-center border border-[var(--border)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
+                    >
+                      {homepageBanner.secondaryCtaLabel}
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="mt-8 grid gap-2 sm:max-w-[520px] sm:grid-cols-2">
                 {quickLinks.map((item) => (
