@@ -60,9 +60,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
-  background-image:
-    radial-gradient(circle at top, var(--hero-glow), transparent 22%),
-    linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%), var(--background));
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
   transition:
     background-color 240ms ease,
     color 240ms ease,
@@ -130,15 +128,14 @@ div {
   overflow: hidden;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface-strong) 94%, transparent));
+  background: var(--surface);
 }
 
 .brand-marquee-track {
   display: flex;
   width: max-content;
   min-width: 100%;
-  animation: brand-marquee 20s linear infinite;
+  animation: brand-marquee 28s linear infinite;
   will-change: transform;
 }
 
@@ -172,8 +169,8 @@ div {
   inset: 0 auto auto 0;
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 40%, transparent), transparent);
-  opacity: 0.35;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 10%, transparent), transparent);
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -181,26 +178,11 @@ div {
   position: relative;
 }
 
-.shop-card-copy::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 1px;
-  width: 1.75rem;
-  background: color-mix(in srgb, var(--accent) 52%, transparent);
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 180ms ease, transform 180ms ease, width 220ms ease;
-}
-
 .product-veil {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.02), transparent 35%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.12), transparent 24%);
-  opacity: 0.62;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.015), transparent 34%);
+  opacity: 0.32;
   pointer-events: none;
 }
 
@@ -210,8 +192,8 @@ div {
   bottom: 0.9rem;
   z-index: 2;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.36);
-  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
   padding: 0.42rem 0.7rem;
   font-size: 0.66rem;
   letter-spacing: 0.16em;
@@ -226,11 +208,10 @@ div {
 
 .hero-panel {
   background:
-    linear-gradient(140deg, color-mix(in srgb, var(--surface) 95%, transparent), color-mix(in srgb, var(--surface-strong) 92%, transparent)),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent);
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 97%, transparent), color-mix(in srgb, var(--surface-strong) 94%, transparent));
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(22px) saturate(120%);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(18px) saturate(110%);
 }
 
 .hero-stage {
@@ -410,8 +391,8 @@ div {
 .theme-panel {
   background: var(--surface-elevated);
   border: 1px solid var(--border);
-  box-shadow: var(--soft-shadow);
-  backdrop-filter: blur(18px) saturate(120%);
+  box-shadow: 0 8px 18px rgba(17, 17, 17, 0.04);
+  backdrop-filter: blur(14px) saturate(108%);
 }
 
 .loading-ring {
@@ -484,17 +465,6 @@ div {
     color: var(--background);
     border-color: var(--foreground);
   }
-
-  .group\/product:hover .shop-card-copy::after {
-    opacity: 1;
-    transform: translateY(-3px);
-    width: 2.5rem;
-  }
-
-  .group\/product:hover .product-hover-caption {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (max-width: 1024px) {
@@ -506,9 +476,7 @@ div {
 
 @media (max-width: 767px) {
   body {
-    background-image:
-      radial-gradient(circle at top, color-mix(in srgb, var(--accent) 11%, transparent), transparent 18%),
-      linear-gradient(180deg, color-mix(in srgb, var(--background) 92%, white 8%), var(--background));
+    background-image: linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
   }
 
   .grain-card,
@@ -563,7 +531,7 @@ div {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-33.333%);
+    transform: translateX(-20%);
   }
 }
 
