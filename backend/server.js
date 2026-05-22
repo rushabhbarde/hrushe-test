@@ -12,6 +12,7 @@ const contentRoutes = require("./src/routes/contentRoutes");
 const accountRoutes = require("./src/routes/accountRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const supportRoutes = require("./src/routes/supportRoutes");
+const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
 
@@ -76,6 +77,7 @@ app.use("/content", contentRoutes);
 app.use("/account", accountRoutes);
 app.use("/admin", adminRoutes);
 app.use("/support", supportRoutes);
+app.use("/newsletter", newsletterRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -372,6 +372,13 @@ div {
   background-size: 24px 24px;
 }
 
+.paper-texture {
+  background-image:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 6%, transparent) 1px, transparent 0),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
+  background-size: 18px 18px, auto;
+}
+
 .theme-spotlight {
   position: relative;
   overflow: hidden;
