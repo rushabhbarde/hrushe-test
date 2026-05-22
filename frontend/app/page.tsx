@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ProductCard } from "@/components/product-card";
 import { apiRequest } from "@/lib/api";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -67,6 +68,12 @@ export default function Home() {
     const prioritized = products.filter((product) => product.newArrival || product.newIn);
     return (prioritized.length > 0 ? prioritized : products).slice(0, 4);
   }, [featuredProducts, products]);
+
+  const newInProducts = useMemo(() => {
+    const fresh = products.filter((product) => product.newArrival || product.newIn);
+    return (fresh.length > 0 ? fresh : products).slice(0, 3);
+  }, [products]);
+  const newInDisplayItems: Array<Product | null> = loading ? [null, null, null] : newInProducts;
 
   const collectionProducts = useMemo(() => {
     const ranked = products.filter((product) => product.bestSeller || product.featured);
@@ -198,9 +205,9 @@ export default function Home() {
     <div className="page-shell bg-[var(--background)] paper-texture">
       <SiteHeader />
       <main className="overflow-hidden">
-        <section className="mx-auto max-w-[1600px] px-4 pb-14 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 lg:pb-20 lg:pt-10">
+        <section className="mx-auto max-w-[1600px] px-4 pb-14 pt-5 sm:px-6 sm:pb-16 sm:pt-6 lg:px-8 lg:pb-20 lg:pt-8">
           <div className="grid gap-10 lg:grid-cols-[0.34fr_0.66fr] lg:gap-14 xl:gap-20">
-            <div className="flex flex-col gap-8 lg:pt-2">
+            <div className="flex flex-col gap-6 lg:pt-1">
               <div className="space-y-5">
                 <form onSubmit={handleSearchSubmit} className="max-w-[240px]">
                   <label className="flex min-h-11 items-center gap-3 border border-[var(--border)] bg-[var(--surface-strong)] px-3">
@@ -229,11 +236,11 @@ export default function Home() {
                 </form>
               </div>
 
-              <div className="reveal-up max-w-[22rem]">
+              <div className="reveal-up max-w-[36rem]">
                 <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
-              <h1 className="mt-6 text-[3.15rem] font-semibold uppercase leading-[0.86] tracking-[-0.09em] text-[var(--foreground)] sm:text-[4.8rem] lg:text-[5.8rem]">
-                {homepageBanner.title}
-              </h1>
+                <h1 className="mt-5 text-[3.15rem] font-semibold uppercase leading-[0.86] tracking-[-0.09em] text-[var(--foreground)] sm:text-[4.8rem] lg:text-[5.8rem]">
+                  {homepageBanner.title}
+                </h1>
                 <p className="mt-4 text-[1.1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.35rem]">
                   Defined quietly.
                 </p>
@@ -242,11 +249,11 @@ export default function Home() {
                   <br />
                   {seasonYear}
                 </p>
-                <p className="mt-6 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
+                <p className="mt-5 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
                   {homepageBanner.description}
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
+                <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     href={heroCtaHref}
                     className="inline-flex min-h-11 items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
@@ -280,19 +287,21 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-8 grid gap-2 sm:max-w-[520px] sm:grid-cols-2">
-                  {quickLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      className="flex min-h-11 items-center justify-between border border-[var(--border)] px-4 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                    >
-                      <span>{link.label}</span>
-                      <span aria-hidden="true" className="text-[0.95rem] text-[var(--muted)]">
-                        ↗
-                      </span>
-                    </Link>
-                  ))}
+                <div className="mt-5 overflow-x-auto pb-1">
+                  <div className="grid min-w-[560px] grid-cols-4 gap-2 sm:min-w-0">
+                    {quickLinks.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className="flex min-h-11 items-center justify-between border border-[var(--border)] px-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                      >
+                        <span>{link.label}</span>
+                        <span aria-hidden="true" className="text-[0.95rem] text-[var(--muted)]">
+                          ↗
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -349,6 +358,45 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
+          <div className="border-t border-[var(--border)] pt-14">
+            <div className="mb-9 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="eyebrow text-[var(--accent)]">New In</p>
+                <h2 className="mt-5 max-w-[14ch] text-[2.8rem] font-semibold uppercase leading-[0.9] tracking-[-0.08em] text-[var(--foreground)] sm:text-[4rem]">
+                  A tighter edit of easy, premium basics.
+                </h2>
+              </div>
+              <Link
+                href="/new-in"
+                className="text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:text-[var(--accent)]"
+              >
+                Explore all products
+              </Link>
+            </div>
+
+            {newInDisplayItems.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7">
+                {newInDisplayItems.map((product, index) =>
+                  !product ? (
+                    <div key={`new-in-skeleton-${index}`} className="animate-pulse">
+                      <div className="aspect-[18/25] bg-[var(--surface-strong)]" />
+                      <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
+                      <div className="mt-2 h-3 w-28 bg-[var(--surface-strong)]" />
+                    </div>
+                  ) : (
+                    <ProductCard key={`new-in-${product.id}`} product={product} />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="border border-[var(--border)] px-5 py-8 text-sm text-[var(--muted)]">
+                New arrivals will appear here once products are marked as New In from admin.
+              </div>
+            )}
           </div>
         </section>
 
