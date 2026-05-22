@@ -53,7 +53,7 @@ export default function Home() {
     homepageBanner.eyebrow?.trim() &&
     homepageBanner.eyebrow.trim().toLowerCase() !== "home page banner"
       ? homepageBanner.eyebrow.trim()
-      : "Current collection";
+      : "NEW SEASON, EVERYDAY ESSENTIALS";
 
   const seasonLabel = getSeasonLabel();
   const seasonYear = new Date().getFullYear();
@@ -290,16 +290,19 @@ export default function Home() {
                 <div className="mt-5 overflow-x-auto pb-1">
                   <div className="grid min-w-[560px] grid-cols-4 gap-2 sm:min-w-0">
                     {quickLinks.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        className="flex min-h-11 items-center justify-between border border-[var(--border)] px-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
-                      >
-                        <span>{link.label}</span>
-                        <span aria-hidden="true" className="text-[0.95rem] text-[var(--muted)]">
-                          ↗
-                        </span>
-                      </Link>
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="group flex min-h-11 items-center justify-between border border-[var(--border)] px-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                  >
+                    <span>{link.label}</span>
+                    <span
+                      aria-hidden="true"
+                      className="text-[0.95rem] text-[var(--muted)] transition group-hover:text-[var(--background)]"
+                    >
+                      ↗
+                    </span>
+                  </Link>
                     ))}
                   </div>
                 </div>
