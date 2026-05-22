@@ -5,6 +5,7 @@ export type HomepageBanner = {
   eyebrow: string;
   title: string;
   description: string;
+  branddescription: string;
   primaryCtaLabel: string;
   primaryCtaHref: string;
   secondaryCtaLabel: string;
@@ -19,6 +20,8 @@ export const defaultHomepageBanner: HomepageBanner = {
   eyebrow: "New season, everyday essentials",
   title: "Elevated basics for everyday dressing.",
   description:
+    "Discover modern silhouettes, premium fabrics, and versatile staples designed to feel effortless every day.",
+  branddescription:
     "Discover modern silhouettes, premium fabrics, and versatile staples designed to feel effortless every day.",
   primaryCtaLabel: "Shop the drop",
   primaryCtaHref: "/shop",

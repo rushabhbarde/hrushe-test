@@ -250,7 +250,7 @@ export default function Home() {
                   {seasonYear}
                 </p>
                 <p className="mt-5 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
-                  {homepageBanner.description}
+                  {homepageBanner.branddescription}
                 </p>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
