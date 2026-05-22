@@ -6,14 +6,14 @@ const homepageBannerSchema = new mongoose.Schema(
       type: String,
       default: "FREE SHIPPING ON SELECTED STYLES",
     },
-    eyebrow: { type: String, default: "Home page banner" },
-    title: { type: String, default: "Minimal. Bold. Ready for launch." },
+    eyebrow: { type: String, default: "New season, everyday essentials" },
+    title: { type: String, default: "Elevated basics for everyday dressing." },
     description: {
       type: String,
       default:
-        "A clean black-and-white storefront with red accent moments that draw attention exactly where you want it: active navigation, campaign messaging, and purchase actions.",
+        "Discover modern silhouettes, premium fabrics, and versatile staples designed to feel effortless every day.",
     },
-    primaryCtaLabel: { type: String, default: "Shop now" },
+    primaryCtaLabel: { type: String, default: "Shop the drop" },
     primaryCtaHref: { type: String, default: "/shop" },
     secondaryCtaLabel: { type: String, default: "View collection" },
     secondaryCtaHref: { type: String, default: "/shop" },
