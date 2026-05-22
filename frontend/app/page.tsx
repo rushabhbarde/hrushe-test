@@ -82,6 +82,10 @@ export default function Home() {
   const collectionDisplayItems: Array<Product | null> = loading ? [null, null] : collectionProducts;
 
   const heroImages = useMemo(() => {
+    if (loading) {
+      return [];
+    }
+
     const productImages = products.flatMap((product) => product.images).filter(Boolean);
     const merged = [
       homepageBanner.imageUrl || "/uploads/banners/banner1.png",
@@ -90,7 +94,7 @@ export default function Home() {
     ].filter(Boolean);
 
     return Array.from(new Set(merged));
-  }, [availableBannerImages, homepageBanner.imageUrl, products]);
+  }, [availableBannerImages, homepageBanner.imageUrl, loading, products]);
 
   const collageImages = useMemo(() => heroImages.slice(0, 4), [heroImages]);
 
@@ -237,56 +241,81 @@ export default function Home() {
               </div>
 
               <div className="reveal-up max-w-[36rem]">
-                <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
-                <h1 className="mt-5 text-[3.15rem] font-semibold uppercase leading-[0.86] tracking-[-0.09em] text-[var(--foreground)] sm:text-[4.8rem] lg:text-[5.8rem]">
-                  {homepageBanner.title}
-                </h1>
-                <p className="mt-4 text-[1.1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.35rem]">
-                  Defined quietly.
-                </p>
-                <p className="mt-4 text-[0.85rem] uppercase tracking-[0.18em] text-[var(--muted)]">
-                  {seasonLabel}
-                  <br />
-                  {seasonYear}
-                </p>
-                <p className="mt-5 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
-                  {homepageBanner.branddescription}
-                </p>
-
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <Link
-                    href={heroCtaHref}
-                    className="inline-flex min-h-11 items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                  >
-                    <span>{heroCtaLabel}</span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveBannerIndex((current) =>
-                          current === 0 ? Math.max(heroImages.length - 1, 0) : current - 1
-                        )
-                      }
-                      className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                      aria-label="Previous banner"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveBannerIndex((current) => (current + 1) % Math.max(heroImages.length, 1))
-                      }
-                      className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                      aria-label="Next banner"
-                    >
-                      ›
-                    </button>
+                {loading ? (
+                  <div aria-hidden="true" className="space-y-5">
+                    <div className="h-4 w-52 animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                    <div className="space-y-3">
+                      <div className="h-16 w-full max-w-[31rem] animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                      <div className="h-16 w-[88%] max-w-[28rem] animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                      <div className="h-16 w-[76%] max-w-[24rem] animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                    </div>
+                    <div className="h-7 w-48 animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    <div className="h-12 w-24 animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    <div className="space-y-3 pt-1">
+                      <div className="h-4 w-full max-w-[24rem] animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                      <div className="h-4 w-[92%] max-w-[22rem] animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                      <div className="h-4 w-[78%] max-w-[19rem] animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <div className="h-11 w-48 animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                      <div className="h-11 w-11 animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                      <div className="h-11 w-11 animate-pulse bg-[rgba(17,17,17,0.08)]" />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
+                    <h1 className="mt-5 text-[3.15rem] font-semibold uppercase leading-[0.86] tracking-[-0.09em] text-[var(--foreground)] sm:text-[4.8rem] lg:text-[5.8rem]">
+                      {homepageBanner.title}
+                    </h1>
+                    <p className="mt-4 text-[1.1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.35rem]">
+                      Defined quietly.
+                    </p>
+                    <p className="mt-4 text-[0.85rem] uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {seasonLabel}
+                      <br />
+                      {seasonYear}
+                    </p>
+                    <p className="mt-5 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
+                      {homepageBanner.description}
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      <Link
+                        href={heroCtaHref}
+                        className="inline-flex min-h-11 items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
+                      >
+                        <span>{heroCtaLabel}</span>
+                        <span aria-hidden="true">→</span>
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveBannerIndex((current) =>
+                              current === 0 ? Math.max(heroImages.length - 1, 0) : current - 1
+                            )
+                          }
+                          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
+                          aria-label="Previous banner"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveBannerIndex((current) => (current + 1) % Math.max(heroImages.length, 1))
+                          }
+                          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
+                          aria-label="Next banner"
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="mt-5 overflow-x-auto pb-1">
                   <div className="grid min-w-[560px] grid-cols-4 gap-2 sm:min-w-0">
                     {quickLinks.map((link) => (
@@ -311,7 +340,9 @@ export default function Home() {
 
             <div className="reveal-up-delayed grid gap-4 md:grid-cols-[1.05fr_0.78fr]">
               <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
-                {activeHeroImage ? (
+                {loading ? (
+                  <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                ) : activeHeroImage ? (
                   <Image
                     src={activeHeroImage}
                     alt={homepageBanner.title}
@@ -324,7 +355,9 @@ export default function Home() {
 
               <div className="grid gap-4">
                 <div className="relative aspect-[4/5.15] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
-                  {secondaryHeroImage ? (
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                  ) : secondaryHeroImage ? (
                     <Image
                       src={secondaryHeroImage}
                       alt="Hrushe featured look"
@@ -336,7 +369,9 @@ export default function Home() {
                 </div>
 
                 <div className="relative flex aspect-[4/3.4] flex-col justify-between overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-5">
-                  {tertiaryHeroImage ? (
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                  ) : tertiaryHeroImage ? (
                     <Image
                       src={tertiaryHeroImage}
                       alt="New in at Hrushe"
@@ -345,19 +380,23 @@ export default function Home() {
                       className="object-cover object-center opacity-18"
                     />
                   ) : null}
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.4),rgba(255,255,255,0.92))]" />
-                  <div className="relative z-10">
-                    <p className="eyebrow text-[var(--accent)]">New In</p>
-                    <p className="mt-3 max-w-[11ch] text-[1.55rem] font-semibold uppercase leading-[0.94] tracking-[-0.06em] text-[var(--foreground)]">
-                      The latest everyday edit.
-                    </p>
-                  </div>
-                  <div className="relative z-10 flex items-center justify-between border-t border-[var(--border)] pt-4 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                    <span>{spotlightProducts.length} styles</span>
-                    <Link href="/new-in" className="text-[var(--foreground)] hover:text-[var(--accent)]">
-                      View new in
-                    </Link>
-                  </div>
+                  {loading ? null : (
+                    <>
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.4),rgba(255,255,255,0.92))]" />
+                      <div className="relative z-10">
+                        <p className="eyebrow text-[var(--accent)]">New In</p>
+                        <p className="mt-3 max-w-[11ch] text-[1.55rem] font-semibold uppercase leading-[0.94] tracking-[-0.06em] text-[var(--foreground)]">
+                          The latest everyday edit.
+                        </p>
+                      </div>
+                      <div className="relative z-10 flex items-center justify-between border-t border-[var(--border)] pt-4 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                        <span>{spotlightProducts.length} styles</span>
+                        <Link href="/new-in" className="text-[var(--foreground)] hover:text-[var(--accent)]">
+                          View new in
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
