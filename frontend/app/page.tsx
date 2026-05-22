@@ -208,10 +208,10 @@ export default function Home() {
       <SiteHeader />
       <main className="overflow-hidden">
         <section className="mx-auto max-w-[1600px] px-4 pb-14 pt-5 sm:px-6 sm:pb-16 sm:pt-6 lg:px-8 lg:pb-20 lg:pt-8">
-          <div className="grid gap-10 lg:grid-cols-[0.34fr_0.66fr] lg:gap-14 xl:gap-20">
-            <div className="flex flex-col gap-6 lg:pt-1">
+          <div className="grid gap-7 sm:gap-10 lg:grid-cols-[0.34fr_0.66fr] lg:gap-14 xl:gap-20">
+            <div className="order-2 flex flex-col gap-5 lg:order-1 lg:gap-6 lg:pt-1">
               <div className="space-y-5">
-                <form onSubmit={handleSearchSubmit} className="max-w-[240px]">
+                <form onSubmit={handleSearchSubmit} className="max-w-full sm:max-w-[240px]">
                   <label className="flex min-h-11 items-center gap-3 border border-[var(--border)] bg-[var(--surface-strong)] px-3">
                     <svg
                       viewBox="0 0 24 24"
@@ -263,31 +263,31 @@ export default function Home() {
                 ) : (
                   <>
                     <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
-                    <h1 className="mt-5 text-[3.15rem] font-semibold uppercase leading-[0.86] tracking-[-0.09em] text-[var(--foreground)] sm:text-[4.8rem] lg:text-[5.8rem]">
+                    <h1 className="mt-4 text-[2.65rem] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 sm:text-[4.8rem] lg:text-[5.8rem]">
                       {homepageBanner.title}
                     </h1>
-                    <p className="mt-4 text-[1.1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.35rem]">
+                    <p className="mt-3 text-[1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:mt-4 sm:text-[1.35rem]">
                       Defined quietly.
                     </p>
-                    <p className="mt-4 text-[0.85rem] uppercase tracking-[0.18em] text-[var(--muted)]">
+                    <p className="mt-3 text-[0.8rem] uppercase tracking-[0.18em] text-[var(--muted)] sm:mt-4 sm:text-[0.85rem]">
                       {seasonLabel}
                       <br />
                       {seasonYear}
                     </p>
-                    <p className="mt-5 max-w-[24rem] text-[0.98rem] leading-8 text-[var(--muted)]">
+                    <p className="mt-4 max-w-[24rem] text-[0.94rem] leading-7 text-[var(--muted)] sm:mt-5 sm:text-[0.98rem] sm:leading-8">
                       {homepageBanner.description}
                     </p>
 
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center">
                       <Link
                         href={heroCtaHref}
-                        className="inline-flex min-h-11 items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
+                        className="inline-flex min-h-11 w-full items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] sm:w-auto"
                       >
                         <span>{heroCtaLabel}</span>
                         <span aria-hidden="true">→</span>
                       </Link>
 
-                      <div className="flex items-center gap-2">
+                      <div className="hidden items-center gap-2 sm:flex">
                         <button
                           type="button"
                           onClick={() =>
@@ -314,8 +314,8 @@ export default function Home() {
                     </div>
                   </>
                 )}
-                <div className="mt-5 overflow-x-auto pb-1">
-                  <div className="grid min-w-[560px] grid-cols-4 gap-2 sm:min-w-0">
+                <div className="mt-5 pb-1">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {quickLinks.map((link) => (
                   <Link
                     key={link.label}
@@ -336,29 +336,125 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="reveal-up-delayed grid gap-4 md:grid-cols-[1.05fr_0.78fr]">
-              <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
-                {loading ? (
-                  <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
-                ) : activeHeroImage ? (
-                  <Image
-                    src={activeHeroImage}
-                    alt={homepageBanner.title}
-                    fill
-                    unoptimized
-                    className="object-cover object-center"
-                  />
-                ) : null}
-              </div>
-
-              <div className="grid gap-4">
-                <div className="relative aspect-[4/5.15] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
+            <div className="order-1 reveal-up-delayed lg:order-2">
+              <div className="space-y-3 sm:space-y-4 lg:hidden">
+                <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
-                  ) : secondaryHeroImage ? (
+                  ) : activeHeroImage ? (
                     <Image
-                      src={secondaryHeroImage}
-                      alt="Hrushe featured look"
+                      src={activeHeroImage}
+                      alt={homepageBanner.title}
+                      fill
+                      unoptimized
+                      className="object-cover object-center"
+                    />
+                  ) : null}
+                  {loading ? null : (
+                    <>
+                      <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+                        <span className="border border-white/35 bg-black/18 px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-sm">
+                          Current Collection
+                        </span>
+                        <span className="border border-white/35 bg-white/12 px-2.5 py-1 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-white backdrop-blur-sm">
+                          {activeBannerIndex + 1}/{Math.max(heroImages.length, 1)}
+                        </span>
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.66))] p-3 pt-8">
+                        <div>
+                          <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/72">
+                            {seasonLabel} {seasonYear}
+                          </p>
+                          <p className="mt-1 text-[0.92rem] font-medium tracking-[-0.03em] text-white">
+                            Defined quietly.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveBannerIndex((current) =>
+                                current === 0 ? Math.max(heroImages.length - 1, 0) : current - 1
+                              )
+                            }
+                            className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
+                            aria-label="Previous banner"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveBannerIndex((current) => (current + 1) % Math.max(heroImages.length, 1))
+                            }
+                            className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
+                            aria-label="Next banner"
+                          >
+                            ›
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-3">
+                  <div className="relative aspect-[4/4.6] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
+                    {loading ? (
+                      <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    ) : secondaryHeroImage ? (
+                      <Image
+                        src={secondaryHeroImage}
+                        alt="Hrushe featured look"
+                        fill
+                        unoptimized
+                        className="object-cover object-center"
+                      />
+                    ) : null}
+                  </div>
+
+                  <Link
+                    href="/new-in"
+                    className="relative flex aspect-[4/4.6] flex-col justify-between overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-4"
+                  >
+                    {loading ? (
+                      <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    ) : tertiaryHeroImage ? (
+                      <Image
+                        src={tertiaryHeroImage}
+                        alt="New in at Hrushe"
+                        fill
+                        unoptimized
+                        className="object-cover object-center opacity-20"
+                      />
+                    ) : null}
+                    {loading ? null : (
+                      <>
+                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.56),rgba(255,255,255,0.94))]" />
+                        <div className="relative z-10">
+                          <p className="eyebrow text-[var(--accent)]">New In</p>
+                          <p className="mt-2.5 max-w-[10ch] text-[1.15rem] font-semibold uppercase leading-[0.95] tracking-[-0.06em] text-[var(--foreground)]">
+                            The latest everyday edit.
+                          </p>
+                        </div>
+                        <div className="relative z-10 flex items-center justify-between border-t border-[var(--border)] pt-3 text-[0.64rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                          <span>{spotlightProducts.length} styles</span>
+                          <span className="text-[var(--foreground)]">View</span>
+                        </div>
+                      </>
+                    )}
+                  </Link>
+                </div>
+              </div>
+
+              <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.82fr)] lg:gap-4">
+                <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
+                  {loading ? (
+                    <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                  ) : activeHeroImage ? (
+                    <Image
+                      src={activeHeroImage}
+                      alt={homepageBanner.title}
                       fill
                       unoptimized
                       className="object-cover object-center"
@@ -366,35 +462,51 @@ export default function Home() {
                   ) : null}
                 </div>
 
-                <div className="relative flex aspect-[4/3.4] flex-col justify-between overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-5">
-                  {loading ? (
-                    <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
-                  ) : tertiaryHeroImage ? (
-                    <Image
-                      src={tertiaryHeroImage}
-                      alt="New in at Hrushe"
-                      fill
-                      unoptimized
-                      className="object-cover object-center opacity-18"
-                    />
-                  ) : null}
-                  {loading ? null : (
-                    <>
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.4),rgba(255,255,255,0.92))]" />
-                      <div className="relative z-10">
-                        <p className="eyebrow text-[var(--accent)]">New In</p>
-                        <p className="mt-3 max-w-[11ch] text-[1.55rem] font-semibold uppercase leading-[0.94] tracking-[-0.06em] text-[var(--foreground)]">
-                          The latest everyday edit.
-                        </p>
-                      </div>
-                      <div className="relative z-10 flex items-center justify-between border-t border-[var(--border)] pt-4 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                        <span>{spotlightProducts.length} styles</span>
-                        <Link href="/new-in" className="text-[var(--foreground)] hover:text-[var(--accent)]">
-                          View new in
-                        </Link>
-                      </div>
-                    </>
-                  )}
+                <div className="grid gap-4">
+                  <div className="relative aspect-[4/5.15] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
+                    {loading ? (
+                      <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    ) : secondaryHeroImage ? (
+                      <Image
+                        src={secondaryHeroImage}
+                        alt="Hrushe featured look"
+                        fill
+                        unoptimized
+                        className="object-cover object-center"
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="relative flex aspect-[4/3.4] flex-col justify-between overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-5">
+                    {loading ? (
+                      <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
+                    ) : tertiaryHeroImage ? (
+                      <Image
+                        src={tertiaryHeroImage}
+                        alt="New in at Hrushe"
+                        fill
+                        unoptimized
+                        className="object-cover object-center opacity-18"
+                      />
+                    ) : null}
+                    {loading ? null : (
+                      <>
+                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.4),rgba(255,255,255,0.92))]" />
+                        <div className="relative z-10">
+                          <p className="eyebrow text-[var(--accent)]">New In</p>
+                          <p className="mt-3 max-w-[11ch] text-[1.55rem] font-semibold uppercase leading-[0.94] tracking-[-0.06em] text-[var(--foreground)]">
+                            The latest everyday edit.
+                          </p>
+                        </div>
+                        <div className="relative z-10 flex items-center justify-between border-t border-[var(--border)] pt-4 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                          <span>{spotlightProducts.length} styles</span>
+                          <Link href="/new-in" className="text-[var(--foreground)] hover:text-[var(--accent)]">
+                            View new in
+                          </Link>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
