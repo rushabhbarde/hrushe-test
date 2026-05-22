@@ -96,8 +96,6 @@ export default function Home() {
     return Array.from(new Set(merged));
   }, [availableBannerImages, homepageBanner.imageUrl, loading, products]);
 
-  const collageImages = useMemo(() => heroImages.slice(0, 4), [heroImages]);
-
   const collectionLabels = useMemo(() => {
     const dynamic = Array.from(
       new Set(

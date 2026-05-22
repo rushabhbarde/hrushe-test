@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { Product, ProductReview } from "@/lib/catalog";
 import {
   defaultHomepageBanner,
-  defaultProducts,
   type HomepageBanner,
 } from "@/lib/storefront-data";
 import { apiRequest } from "@/lib/api";

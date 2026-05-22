@@ -25,15 +25,17 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") {
+      return "light";
+    }
+
+    return window.localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
+  });
 
   useEffect(() => {
-    const storedTheme =
-      typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
-    const nextTheme = storedTheme === "dark" ? "dark" : "light";
-    setThemeState(nextTheme);
-    applyTheme(nextTheme);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   const setTheme = (nextTheme: Theme) => {
     setThemeState(nextTheme);
