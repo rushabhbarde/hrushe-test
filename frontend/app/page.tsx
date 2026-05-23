@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -39,6 +39,7 @@ const quickLinks = [
 export default function Home() {
   const router = useRouter();
   const { featuredProducts, homepageBanner, products, loading } = useStorefrontData();
+  const newInRailRef = useRef<HTMLDivElement | null>(null);
   const [availableBannerImages, setAvailableBannerImages] = useState<string[]>([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,7 +72,19 @@ export default function Home() {
 
   const newInProducts = useMemo(() => {
     const fresh = products.filter((product) => product.newArrival || product.newIn);
-    return (fresh.length > 0 ? fresh : products).slice(0, 8);
+    if (fresh.length >= 8) {
+      return fresh.slice(0, 8);
+    }
+
+    if (fresh.length === 0) {
+      return products.slice(0, 8);
+    }
+
+    const fallbackProducts = products.filter(
+      (product) => !fresh.some((freshProduct) => freshProduct.id === product.id)
+    );
+
+    return [...fresh, ...fallbackProducts].slice(0, 8);
   }, [products]);
   const newInDisplayItems: Array<Product | null> = loading
     ? [null, null, null, null]
@@ -154,6 +167,90 @@ export default function Home() {
       window.clearInterval(intervalId);
     };
   }, [heroImages.length]);
+
+  useEffect(() => {
+    if (loading || newInProducts.length <= 1) {
+      return;
+    }
+
+    const rail = newInRailRef.current;
+
+    if (!rail) {
+      return;
+    }
+
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+
+    if (!mobileQuery.matches) {
+      rail.scrollTo({ left: 0, behavior: "auto" });
+      return;
+    }
+
+    let activeIndex = 0;
+
+    const getStep = () => {
+      const card = rail.firstElementChild as HTMLElement | null;
+
+      if (!card) {
+        return 0;
+      }
+
+      const computedStyle = window.getComputedStyle(rail);
+      const gap = Number.parseFloat(computedStyle.columnGap || computedStyle.gap || "0");
+      return card.offsetWidth + gap;
+    };
+
+    const syncFromScroll = () => {
+      const step = getStep();
+
+      if (!step) {
+        return;
+      }
+
+      activeIndex = Math.max(
+        0,
+        Math.min(newInProducts.length - 1, Math.round(rail.scrollLeft / step))
+      );
+    };
+
+    const intervalId = window.setInterval(() => {
+      if (!mobileQuery.matches) {
+        return;
+      }
+
+      const step = getStep();
+
+      if (!step) {
+        return;
+      }
+
+      activeIndex = (activeIndex + 1) % newInProducts.length;
+      rail.scrollTo({
+        left: step * activeIndex,
+        behavior: "smooth",
+      });
+    }, 3200);
+
+    const handleScroll = () => {
+      syncFromScroll();
+    };
+
+    const handleQueryChange = (event: MediaQueryListEvent) => {
+      if (!event.matches) {
+        activeIndex = 0;
+        rail.scrollTo({ left: 0, behavior: "auto" });
+      }
+    };
+
+    rail.addEventListener("scroll", handleScroll, { passive: true });
+    mobileQuery.addEventListener("change", handleQueryChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      rail.removeEventListener("scroll", handleScroll);
+      mobileQuery.removeEventListener("change", handleQueryChange);
+    };
+  }, [loading, newInProducts]);
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -517,8 +614,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="border-t border-[var(--border)] pt-14">
+        <section className="mx-auto max-w-[1600px] px-4 pb-10 pt-10 sm:px-6 sm:pb-12 sm:pt-12 lg:px-8 lg:pb-14 lg:pt-14">
+          <div className="border-t border-[var(--border)] pt-10 sm:pt-12">
             <div className="mb-9 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="eyebrow text-[var(--accent)]">New In</p>
@@ -535,12 +632,15 @@ export default function Home() {
             </div>
 
             {newInDisplayItems.length > 0 ? (
-              <div className="product-row-scroll -mx-4 mt-1 flex gap-3 overflow-x-auto px-4 pb-3 pt-1 sm:-mx-6 sm:px-6 sm:pb-4 lg:-mx-8 lg:gap-5 lg:px-8">
+              <div
+                ref={newInRailRef}
+                className="product-row-scroll mt-1 flex gap-4 overflow-x-auto pb-3 pr-4 pt-1 md:gap-5 md:pb-4 md:pr-6 lg:pr-8"
+              >
                 {newInDisplayItems.map((product, index) =>
                   !product ? (
                     <div
                       key={`new-in-skeleton-${index}`}
-                      className="min-w-[72vw] flex-[0_0_72vw] animate-pulse sm:min-w-[300px] sm:flex-[0_0_300px] lg:min-w-[320px] lg:flex-[0_0_320px]"
+                      className="min-w-full flex-[0_0_100%] animate-pulse md:min-w-[360px] md:flex-[0_0_360px] lg:min-w-[440px] lg:flex-[0_0_440px] xl:min-w-[480px] xl:flex-[0_0_480px]"
                     >
                       <div className="aspect-[18/25] bg-[var(--surface-strong)]" />
                       <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
@@ -549,7 +649,7 @@ export default function Home() {
                   ) : (
                     <div
                       key={`new-in-${product.id}`}
-                      className="min-w-[72vw] flex-[0_0_72vw] sm:min-w-[300px] sm:flex-[0_0_300px] lg:min-w-[320px] lg:flex-[0_0_320px]"
+                      className="min-w-full flex-[0_0_100%] md:min-w-[360px] md:flex-[0_0_360px] lg:min-w-[440px] lg:flex-[0_0_440px] xl:min-w-[480px] xl:flex-[0_0_480px]"
                     >
                       <ProductCard product={product} />
                     </div>
@@ -564,9 +664,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="border-t border-[var(--border)] pt-14">
-            <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:gap-10 xl:gap-14">
+        <section className="mx-auto max-w-[1600px] px-4 pb-6 pt-8 sm:px-6 sm:pb-8 sm:pt-10 lg:px-8 lg:pb-8 lg:pt-12">
+          <div className="border-t border-[var(--border)] pt-10 sm:pt-12">
+            <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-10 xl:gap-14">
               <div className="max-w-[36rem]">
                 <p className="eyebrow text-[var(--accent)]">Current collection</p>
                 <h2 className="mt-5 text-[2.8rem] font-semibold uppercase leading-[0.9] tracking-[-0.08em] text-[var(--foreground)] sm:text-[4.1rem]">
@@ -594,7 +694,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="product-row-scroll -mx-4 flex gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 sm:pb-4 lg:mx-0 lg:gap-5 lg:px-0">
+              <div className="product-row-scroll flex gap-4 overflow-x-auto pb-3 pr-4 sm:pb-4 sm:pr-6 lg:gap-5 lg:pr-2">
                 {collectionDisplayItems.map((product, index) =>
                   !product ? (
                     <div
@@ -648,8 +748,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="border-t border-[var(--border)] pt-14">
+        <section className="mx-auto max-w-[1600px] px-4 pb-12 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:px-8 lg:pb-16 lg:pt-10">
+          <div className="border-t border-[var(--border)] pt-10 sm:pt-12">
             <div className="grid gap-10 lg:grid-cols-[0.38fr_0.62fr] lg:gap-12 xl:gap-16">
               <div className="max-w-[38rem]">
                 <p className="eyebrow text-[var(--accent)]">Our approach to fashion design</p>

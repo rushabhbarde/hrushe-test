@@ -249,6 +249,8 @@ div {
 .product-row-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
 }
 
