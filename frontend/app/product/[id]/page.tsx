@@ -140,7 +140,7 @@ function ProductInfoPanel({
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
     ? "border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-8 pt-5"
-    : "border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-9";
+    : "flex h-full flex-col border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-9";
 
   return (
     <div className={shellClassName}>
@@ -254,7 +254,7 @@ function ProductInfoPanel({
       ) : null}
 
       {!mobile ? (
-        <div className="mt-4">
+        <div className="mt-auto pt-8">
           <button
             type="button"
             onClick={onAddToCart}
@@ -594,42 +594,40 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:grid-cols-[minmax(0,520px)_306px] lg:items-start lg:justify-center lg:gap-16 xl:gap-20">
+          <div className="hidden lg:mx-auto lg:grid lg:h-[560px] lg:max-w-[1060px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
             <section
               aria-label="Product image gallery"
-              className={`grid ${
+              className={`h-full border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-5 ${
                 hasDesktopThumbRail
-                  ? "grid-cols-[368px_64px] gap-10"
-                  : "grid-cols-[368px] justify-center"
+                  ? "grid grid-cols-[minmax(0,1fr)_72px] gap-5"
+                  : "grid place-items-center"
               }`}
             >
-              <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
-                <div className="relative aspect-[4/4.78]">
-                  {activeImage ? (
-                    <Image
-                      src={activeImage}
-                      alt={product.name}
-                      fill
-                      unoptimized
-                      className="object-contain p-3"
-                    />
-                  ) : (
-                    <div
-                      className="h-full w-full"
-                      style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                    />
-                  )}
-                </div>
+              <div className="relative h-full w-full overflow-hidden">
+                {activeImage ? (
+                  <Image
+                    src={activeImage}
+                    alt={product.name}
+                    fill
+                    unoptimized
+                    className="object-contain"
+                  />
+                ) : (
+                  <div
+                    className="h-full w-full"
+                    style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                  />
+                )}
               </div>
 
               {hasDesktopThumbRail ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
                   {images.map((image, index) => (
                     <button
                       key={`${product.id}-desktop-${index}`}
                       type="button"
                       onClick={() => setActiveImageIndex(index)}
-                      className={`relative aspect-[4/5] overflow-hidden border ${
+                      className={`relative h-[82px] shrink-0 overflow-hidden border ${
                         activeImageIndex === index
                           ? "border-[var(--foreground)]"
                           : "border-[rgba(17,17,17,0.08)] opacity-55"
@@ -655,7 +653,7 @@ export default function ProductDetailPage() {
               ) : null}
             </section>
 
-            <section aria-label="Product details and purchase options">
+            <section aria-label="Product details and purchase options" className="h-full">
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
