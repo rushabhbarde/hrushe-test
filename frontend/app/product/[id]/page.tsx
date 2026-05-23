@@ -594,7 +594,7 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:h-[560px] lg:max-w-[1060px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
+          <div className="hidden lg:mx-auto lg:grid lg:h-[700px] lg:max-w-[1060px] lg:grid-cols-2 lg:items-stretch lg:gap-12 xl:gap-16">
             <section
               aria-label="Product image gallery"
               className={`h-full border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-5 ${
