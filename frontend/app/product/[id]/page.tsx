@@ -304,18 +304,22 @@ export default function ProductDetailPage() {
     useState<(typeof productInfoSections)[number]["key"]>("description");
 
   useEffect(() => {
+    let active = true;
+
     if (normalizedMatchedProduct) {
       setProduct(normalizedMatchedProduct);
       setProductLoading(false);
-      return;
     }
 
     if (loading) {
-      return;
+      return () => {
+        active = false;
+      };
     }
 
-    let active = true;
-    setProductLoading(true);
+    if (!normalizedMatchedProduct) {
+      setProductLoading(true);
+    }
 
     const loadProduct = async () => {
       try {
@@ -331,7 +335,9 @@ export default function ProductDetailPage() {
           return;
         }
 
-        setProduct(null);
+        if (!normalizedMatchedProduct) {
+          setProduct(null);
+        }
       } finally {
         if (active) {
           setProductLoading(false);
@@ -511,138 +517,145 @@ export default function ProductDetailPage() {
       <main className="mx-auto w-full pb-28 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16 xl:pt-20">
         <div>
           <div className="lg:hidden">
-            <div className="overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
-              <div className="relative aspect-[4/5.2]">
-                {activeImage ? (
-                  <Image
-                    src={activeImage}
-                    alt={product.name}
-                    fill
-                    unoptimized
-                    className="object-contain p-1"
-                  />
-                ) : (
-                  <div
-                    className="h-full w-full"
-                    style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                  />
-                )}
+            <section aria-label="Product image gallery">
+              <div className="overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
+                <div className="relative aspect-[4/5.2]">
+                  {activeImage ? (
+                    <Image
+                      src={activeImage}
+                      alt={product.name}
+                      fill
+                      unoptimized
+                      className="object-contain p-1"
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full"
+                      style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
 
-            {hasMultipleImages ? (
-              <div className="flex gap-4 overflow-x-auto border-b border-[rgba(17,17,17,0.08)] px-5 py-4">
-                {images.map((image, index) => (
-                  <button
-                    key={`${product.id}-mobile-${index}`}
-                    type="button"
-                    onClick={() => setActiveImageIndex(index)}
-                    className={`relative h-[4.75rem] w-16 shrink-0 overflow-hidden border ${
-                      activeImageIndex === index
-                        ? "border-[var(--foreground)]"
-                        : "border-[rgba(17,17,17,0.08)] opacity-55"
-                    }`}
-                  >
-                    {image ? (
-                      <Image
-                        src={image}
-                        alt={`${product.name} view ${index + 1}`}
-                        fill
-                        unoptimized
-                        className="object-contain p-1"
-                      />
-                    ) : (
-                      <div
-                        className="h-full w-full"
-                        style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+              {hasMultipleImages ? (
+                <div className="flex gap-4 overflow-x-auto border-b border-[rgba(17,17,17,0.08)] px-5 py-4">
+                  {images.map((image, index) => (
+                    <button
+                      key={`${product.id}-mobile-${index}`}
+                      type="button"
+                      onClick={() => setActiveImageIndex(index)}
+                      className={`relative h-[4.75rem] w-16 shrink-0 overflow-hidden border ${
+                        activeImageIndex === index
+                          ? "border-[var(--foreground)]"
+                          : "border-[rgba(17,17,17,0.08)] opacity-55"
+                      }`}
+                    >
+                      {image ? (
+                        <Image
+                          src={image}
+                          alt={`${product.name} view ${index + 1}`}
+                          fill
+                          unoptimized
+                          className="object-contain p-1"
+                        />
+                      ) : (
+                        <div
+                          className="h-full w-full"
+                          style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </section>
 
-            <ProductInfoPanel
-              product={product}
-              priceText={priceText}
-              description={productSummary}
-              selectedColor={selectedColor}
-              selectedSize={selectedSize}
-              addError={addError}
-              requiresSize={requiresSize}
-              canAddToCart={canAddToCart}
-              onColorSelect={(color) => {
-                setSelectedColor(color);
-                setAddError("");
-              }}
-              onSizeSelect={(size) => {
-                setSelectedSize(size);
-                setAddError("");
-              }}
-              onAddToCart={handleAddToCart}
-              mobile
-            />
+            <section aria-label="Product details and purchase options">
+              <ProductInfoPanel
+                product={product}
+                priceText={priceText}
+                description={productSummary}
+                selectedColor={selectedColor}
+                selectedSize={selectedSize}
+                addError={addError}
+                requiresSize={requiresSize}
+                canAddToCart={canAddToCart}
+                onColorSelect={(color) => {
+                  setSelectedColor(color);
+                  setAddError("");
+                }}
+                onSizeSelect={(size) => {
+                  setSelectedSize(size);
+                  setAddError("");
+                }}
+                onAddToCart={handleAddToCart}
+                mobile
+              />
+            </section>
           </div>
 
-          <div
-            className={`hidden lg:mx-auto lg:grid lg:items-start lg:justify-center ${
-              hasDesktopThumbRail
-                ? "lg:grid-cols-[368px_64px_306px] lg:gap-10 xl:gap-[3.9rem]"
-                : "lg:grid-cols-[368px_306px] lg:gap-16"
-            }`}
-          >
-            <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
-              <div className="relative aspect-[4/4.78]">
-                {activeImage ? (
-                  <Image
-                    src={activeImage}
-                    alt={product.name}
-                    fill
-                    unoptimized
-                    className="object-contain p-3"
-                  />
-                ) : (
-                  <div
-                    className="h-full w-full"
-                    style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                  />
-                )}
+          <div className="hidden lg:mx-auto lg:grid lg:grid-cols-[minmax(0,520px)_306px] lg:items-start lg:justify-center lg:gap-16 xl:gap-20">
+            <section
+              aria-label="Product image gallery"
+              className={`grid ${
+                hasDesktopThumbRail
+                  ? "grid-cols-[368px_64px] gap-10"
+                  : "grid-cols-[368px] justify-center"
+              }`}
+            >
+              <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
+                <div className="relative aspect-[4/4.78]">
+                  {activeImage ? (
+                    <Image
+                      src={activeImage}
+                      alt={product.name}
+                      fill
+                      unoptimized
+                      className="object-contain p-3"
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full"
+                      style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
 
-            {hasDesktopThumbRail ? (
-              <div className="flex flex-col gap-3">
-                {images.map((image, index) => (
-                  <button
-                    key={`${product.id}-desktop-${index}`}
-                    type="button"
-                    onClick={() => setActiveImageIndex(index)}
-                    className={`relative aspect-[4/5] overflow-hidden border ${
-                      activeImageIndex === index
-                        ? "border-[var(--foreground)]"
-                        : "border-[rgba(17,17,17,0.08)] opacity-55"
-                    }`}
-                  >
-                    {image ? (
-                      <Image
-                        src={image}
-                        alt={`${product.name} view ${index + 1}`}
-                        fill
-                        unoptimized
-                        className="object-contain p-1"
-                      />
-                    ) : (
-                      <div
-                        className="h-full w-full"
-                        style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+              {hasDesktopThumbRail ? (
+                <div className="flex flex-col gap-3">
+                  {images.map((image, index) => (
+                    <button
+                      key={`${product.id}-desktop-${index}`}
+                      type="button"
+                      onClick={() => setActiveImageIndex(index)}
+                      className={`relative aspect-[4/5] overflow-hidden border ${
+                        activeImageIndex === index
+                          ? "border-[var(--foreground)]"
+                          : "border-[rgba(17,17,17,0.08)] opacity-55"
+                      }`}
+                    >
+                      {image ? (
+                        <Image
+                          src={image}
+                          alt={`${product.name} view ${index + 1}`}
+                          fill
+                          unoptimized
+                          className="object-contain p-1"
+                        />
+                      ) : (
+                        <div
+                          className="h-full w-full"
+                          style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </section>
 
-            <div>
+            <section aria-label="Product details and purchase options">
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
@@ -662,7 +675,7 @@ export default function ProductDetailPage() {
                 }}
                 onAddToCart={handleAddToCart}
               />
-            </div>
+            </section>
           </div>
         </div>
 
