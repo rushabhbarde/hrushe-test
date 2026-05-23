@@ -139,8 +139,8 @@ function ProductInfoPanel({
   mobile = false,
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
-    ? "border-x border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-6 pt-5"
-    : "border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.78)] p-7 xl:p-8";
+    ? "border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-8 pt-5"
+    : "border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-9";
 
   return (
     <div className={shellClassName}>
@@ -148,10 +148,10 @@ function ProductInfoPanel({
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="max-w-[16ch] text-[1.7rem] font-medium uppercase leading-[1.05] tracking-[-0.05em] text-[var(--foreground)]">
+              <h1 className="max-w-[18ch] text-[0.98rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
               </h1>
-              <p className="mt-3 text-[0.74rem] uppercase tracking-[0.1em] text-[var(--muted)]">
+              <p className="mt-4 text-[0.78rem] tracking-[0.06em] text-[var(--muted)]">
                 MRP incl. of all taxes
               </p>
             </div>
@@ -159,15 +159,15 @@ function ProductInfoPanel({
               <WishlistButton
                 productId={product.id}
                 label={`Add ${product.name} to wishlist`}
-                className="inline-flex h-9 w-9 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] text-[var(--foreground)]"
+                className="inline-flex h-9 w-9 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.7)] text-[var(--foreground)]"
                 iconClassName="h-4 w-4"
               />
-              <p className="pt-1 text-[1.95rem] font-semibold leading-none tracking-[-0.04em] text-[var(--foreground)]">
+              <p className="pt-9 text-[1rem] font-medium leading-none text-[var(--foreground)]">
                 {priceText}
               </p>
             </div>
           </div>
-          <p className="mt-6 max-w-[26rem] text-[1.02rem] leading-7 text-[var(--foreground)]/88">
+          <p className="mt-6 max-w-[21rem] text-[0.78rem] font-medium leading-5 text-[var(--foreground)]">
             {description}
           </p>
         </>
@@ -175,10 +175,10 @@ function ProductInfoPanel({
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="max-w-[13ch] text-[1.58rem] font-medium uppercase leading-[1.02] tracking-[-0.05em] text-[var(--foreground)] xl:text-[1.74rem]">
+              <h1 className="max-w-[19ch] text-[1rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
               </h1>
-              <p className="mt-4 text-[1.78rem] font-semibold leading-none tracking-[-0.04em] text-[var(--foreground)] xl:text-[1.92rem]">
+              <p className="mt-3 text-[0.95rem] font-semibold leading-none text-[var(--foreground)]">
                 {priceText}
               </p>
             </div>
@@ -189,19 +189,19 @@ function ProductInfoPanel({
               iconClassName="h-4 w-4"
             />
           </div>
-          <p className="mt-3 text-[0.76rem] uppercase tracking-[0.08em] text-[var(--muted)]">
+          <p className="mt-5 text-[0.82rem] tracking-[0.06em] text-[var(--muted)]">
             MRP incl. of all taxes
           </p>
-          <p className="mt-6 max-w-[24rem] text-[0.97rem] leading-7 text-[var(--foreground)]/86">
+          <p className="mt-9 max-w-[15.5rem] text-[0.84rem] font-medium leading-5 text-[var(--foreground)]">
             {description}
           </p>
         </>
       )}
 
       {product.colors.length > 0 ? (
-        <div className="mt-6">
-          <p className="text-[0.9rem] uppercase tracking-[0.12em] text-[var(--muted)]">Color</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+        <div className={mobile ? "mt-6" : "mt-16"}>
+          <p className="text-[0.86rem] tracking-[0.08em] text-[var(--muted)]">Color</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {product.colors.map((color) => {
               const active = selectedColor === color;
 
@@ -225,8 +225,8 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-6">
-          <p className="text-[0.9rem] uppercase tracking-[0.12em] text-[var(--muted)]">Size</p>
+        <div className="mt-5">
+          <p className="text-[0.86rem] tracking-[0.08em] text-[var(--muted)]">Size</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
@@ -236,7 +236,7 @@ function ProductInfoPanel({
                   key={size}
                   type="button"
                   onClick={() => onSizeSelect(size)}
-                  className={`inline-flex min-h-9 min-w-9 items-center justify-center border px-3 text-[0.78rem] uppercase tracking-[0.12em] transition ${
+                  className={`inline-flex min-h-9 min-w-9 items-center justify-center border px-3 text-[0.72rem] uppercase transition ${
                     active
                       ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
                       : "border-[rgba(17,17,17,0.16)] bg-[var(--surface)] text-[var(--foreground)]"
@@ -247,19 +247,19 @@ function ProductInfoPanel({
               );
             })}
           </div>
-          <p className="mt-4 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+          <p className="mt-4 text-[0.62rem] uppercase text-[var(--muted)]">
             Find your size <span className="mx-2">|</span> Measurement guide
           </p>
         </div>
       ) : null}
 
       {!mobile ? (
-        <div className="mt-6">
+        <div className="mt-4">
           <button
             type="button"
             onClick={onAddToCart}
             disabled={!canAddToCart}
-            className="inline-flex min-h-12 w-full items-center justify-center bg-[rgba(17,17,17,0.08)] px-6 text-[1rem] font-medium uppercase tracking-[0.08em] text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.12)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="inline-flex min-h-10 w-full items-center justify-center bg-[rgba(17,17,17,0.1)] px-6 text-[0.8rem] font-semibold uppercase text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.15)] disabled:cursor-not-allowed disabled:opacity-55"
           >
             Add
           </button>
@@ -422,22 +422,6 @@ export default function ProductDetailPage() {
   const hasMultipleImages = images.length > 1;
   const hasDesktopThumbRail = images.length > 1;
 
-  const showPreviousImage = () => {
-    if (!hasMultipleImages) {
-      return;
-    }
-
-    setActiveImageIndex((current) => (current - 1 + images.length) % images.length);
-  };
-
-  const showNextImage = () => {
-    if (!hasMultipleImages) {
-      return;
-    }
-
-    setActiveImageIndex((current) => (current + 1) % images.length);
-  };
-
   const readPhoto = async (file: File) => {
     const result = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -524,27 +508,11 @@ export default function ProductDetailPage() {
   return (
     <div className="page-shell bg-[var(--background)] paper-texture">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-20 lg:pt-8">
-        <div className="flex items-center justify-between gap-4 border-b border-[rgba(17,17,17,0.08)] pb-4">
-          <div className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-            <Link href="/shop" className="hover:text-[var(--foreground)]">
-              Collections
-            </Link>
-            <span>/</span>
-            <span className="text-[var(--foreground)]">{product.category}</span>
-          </div>
-          <Link
-            href="/shop"
-            className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
-          >
-            Back to shop
-          </Link>
-        </div>
-
-        <div className="mt-6 lg:mt-10">
+      <main className="mx-auto w-full pb-28 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16 xl:pt-20">
+        <div>
           <div className="lg:hidden">
-            <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
-              <div className="relative aspect-[4/5.1]">
+            <div className="overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
+              <div className="relative aspect-[4/5.2]">
                 {activeImage ? (
                   <Image
                     src={activeImage}
@@ -559,45 +527,17 @@ export default function ProductDetailPage() {
                     style={{ backgroundColor: product.accent || "#f3f3f0" }}
                   />
                 )}
-
-                {hasMultipleImages ? (
-                  <>
-                    <div className="absolute inset-x-3 top-3 flex items-center justify-between">
-                      <span className="bg-[rgba(255,255,255,0.88)] px-3 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]">
-                        {activeImageIndex + 1}/{images.length}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={showPreviousImage}
-                          aria-label="Previous image"
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.88)] text-[var(--foreground)] shadow-sm"
-                        >
-                          <span className="text-lg leading-none">‹</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={showNextImage}
-                          aria-label="Next image"
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.88)] text-[var(--foreground)] shadow-sm"
-                        >
-                          <span className="text-lg leading-none">›</span>
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : null}
               </div>
             </div>
 
             {hasMultipleImages ? (
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-4 overflow-x-auto border-b border-[rgba(17,17,17,0.08)] px-5 py-4">
                 {images.map((image, index) => (
                   <button
                     key={`${product.id}-mobile-${index}`}
                     type="button"
                     onClick={() => setActiveImageIndex(index)}
-                    className={`relative h-20 w-[4.2rem] shrink-0 overflow-hidden border ${
+                    className={`relative h-[4.75rem] w-16 shrink-0 overflow-hidden border ${
                       activeImageIndex === index
                         ? "border-[var(--foreground)]"
                         : "border-[rgba(17,17,17,0.08)] opacity-55"
@@ -645,14 +585,14 @@ export default function ProductDetailPage() {
           </div>
 
           <div
-            className={`hidden lg:grid lg:items-start lg:gap-8 xl:gap-10 ${
+            className={`hidden lg:mx-auto lg:grid lg:items-start lg:justify-center ${
               hasDesktopThumbRail
-                ? "lg:grid-cols-[minmax(0,1fr)_62px_390px] xl:grid-cols-[minmax(0,1fr)_76px_420px]"
-                : "lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_430px]"
+                ? "lg:grid-cols-[368px_64px_306px] lg:gap-10 xl:gap-[3.9rem]"
+                : "lg:grid-cols-[368px_306px] lg:gap-16"
             }`}
           >
             <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
-              <div className="relative aspect-[4/4.9]">
+              <div className="relative aspect-[4/4.78]">
                 {activeImage ? (
                   <Image
                     src={activeImage}
@@ -667,32 +607,6 @@ export default function ProductDetailPage() {
                     style={{ backgroundColor: product.accent || "#f3f3f0" }}
                   />
                 )}
-
-                {hasMultipleImages ? (
-                  <div className="absolute inset-x-4 top-4 flex items-center justify-between">
-                    <span className="bg-[rgba(255,255,255,0.9)] px-3 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]">
-                      {activeImageIndex + 1}/{images.length}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={showPreviousImage}
-                        aria-label="Previous image"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] shadow-sm"
-                      >
-                        <span className="text-xl leading-none">‹</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={showNextImage}
-                        aria-label="Next image"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] shadow-sm"
-                      >
-                        <span className="text-xl leading-none">›</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
 
@@ -728,7 +642,7 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
-            <div className="sticky top-28">
+            <div>
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
@@ -752,7 +666,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <section className="mt-12 border-t border-[rgba(17,17,17,0.08)] pt-8 sm:mt-14 lg:pt-10">
+        <section className="mt-12 border-t border-[rgba(17,17,17,0.08)] px-5 pt-8 sm:mt-14 sm:px-6 lg:px-0 lg:pt-10">
           <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
             <div>
               {productInfoSections.map((section) => {
@@ -990,7 +904,7 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        <section className="mt-12 sm:mt-14">
+        <section className="mt-12 px-5 sm:mt-14 sm:px-6 lg:px-0">
           <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
             Related products
           </p>
@@ -1010,7 +924,7 @@ export default function ProductDetailPage() {
           type="button"
           onClick={handleAddToCart}
           disabled={!canAddToCart}
-          className="inline-flex min-h-12 w-full items-center justify-center bg-[rgba(17,17,17,0.08)] px-6 text-[1rem] font-medium uppercase tracking-[0.08em] text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.12)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="inline-flex min-h-12 w-full items-center justify-center bg-[rgba(17,17,17,0.1)] px-6 text-[0.82rem] font-semibold uppercase text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.15)] disabled:cursor-not-allowed disabled:opacity-55"
         >
           Add
         </button>
