@@ -71,15 +71,19 @@ export default function Home() {
 
   const newInProducts = useMemo(() => {
     const fresh = products.filter((product) => product.newArrival || product.newIn);
-    return (fresh.length > 0 ? fresh : products).slice(0, 3);
+    return (fresh.length > 0 ? fresh : products).slice(0, 8);
   }, [products]);
-  const newInDisplayItems: Array<Product | null> = loading ? [null, null, null] : newInProducts;
+  const newInDisplayItems: Array<Product | null> = loading
+    ? [null, null, null, null]
+    : newInProducts;
 
   const collectionProducts = useMemo(() => {
     const ranked = products.filter((product) => product.bestSeller || product.featured);
-    return (ranked.length > 0 ? ranked : products).slice(0, 2);
+    return (ranked.length > 0 ? ranked : products).slice(0, 6);
   }, [products]);
-  const collectionDisplayItems: Array<Product | null> = loading ? [null, null] : collectionProducts;
+  const collectionDisplayItems: Array<Product | null> = loading
+    ? [null, null, null, null]
+    : collectionProducts;
 
   const heroImages = useMemo(() => {
     if (loading) {
@@ -531,16 +535,24 @@ export default function Home() {
             </div>
 
             {newInDisplayItems.length > 0 ? (
-              <div className="grid grid-cols-2 gap-x-3 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7">
+              <div className="product-row-scroll -mx-4 mt-1 flex gap-3 overflow-x-auto px-4 pb-3 pt-1 sm:-mx-6 sm:px-6 sm:pb-4 lg:-mx-8 lg:gap-5 lg:px-8">
                 {newInDisplayItems.map((product, index) =>
                   !product ? (
-                    <div key={`new-in-skeleton-${index}`} className="animate-pulse">
+                    <div
+                      key={`new-in-skeleton-${index}`}
+                      className="min-w-[72vw] flex-[0_0_72vw] animate-pulse sm:min-w-[300px] sm:flex-[0_0_300px] lg:min-w-[320px] lg:flex-[0_0_320px]"
+                    >
                       <div className="aspect-[18/25] bg-[var(--surface-strong)]" />
                       <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
                       <div className="mt-2 h-3 w-28 bg-[var(--surface-strong)]" />
                     </div>
                   ) : (
-                    <ProductCard key={`new-in-${product.id}`} product={product} />
+                    <div
+                      key={`new-in-${product.id}`}
+                      className="min-w-[72vw] flex-[0_0_72vw] sm:min-w-[300px] sm:flex-[0_0_300px] lg:min-w-[320px] lg:flex-[0_0_320px]"
+                    >
+                      <ProductCard product={product} />
+                    </div>
                   )
                 )}
               </div>
@@ -582,12 +594,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2 lg:gap-6">
+              <div className="product-row-scroll -mx-4 flex gap-4 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 sm:pb-4 lg:mx-0 lg:gap-5 lg:px-0">
                 {collectionDisplayItems.map((product, index) =>
                   !product ? (
                     <div
                       key={`collection-skeleton-${index}`}
-                      className="animate-pulse"
+                      className="min-w-[78vw] flex-[0_0_78vw] animate-pulse sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
                     >
                       <div className="aspect-[4/5.15] border border-[var(--border)] bg-[var(--surface-strong)]" />
                       <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
@@ -597,7 +609,7 @@ export default function Home() {
                     <Link
                       key={`collection-${product.id}`}
                       href={`/product/${product.slug || product.id}`}
-                      className="group block min-w-0"
+                      className="group block min-w-[78vw] flex-[0_0_78vw] sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
                     >
                       <div className="relative aspect-[4/5.15] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
                         {product.images[0] ? (

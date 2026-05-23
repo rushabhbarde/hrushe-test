@@ -9,7 +9,6 @@ import { useAdminAuthModal } from "@/components/admin-auth-modal-provider";
 import { useAuthModal } from "@/components/auth-modal-provider";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
-import { useTheme } from "@/components/theme-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -70,7 +69,6 @@ export function SiteHeader() {
   const { openAdminLogin, suppressNextAdminPrompt } = useAdminAuthModal();
   const { openLogin } = useAuthModal();
   const { announcementText } = useStorefrontData().homepageBanner;
-  const { isDark, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -181,25 +179,6 @@ export function SiteHeader() {
           </Link>
 
           <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-            <HeaderIcon href="/search" label="Search">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-                <circle cx="11" cy="11" r="6" />
-                <path d="M20 20l-4.2-4.2" />
-              </svg>
-            </HeaderIcon>
-            <HeaderIcon onClick={toggleTheme} label={isDark ? "Switch to light mode" : "Switch to dark mode"}>
-              {isDark ? (
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="12" cy="12" r="4.4" />
-                  <path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M20 14.2A7.8 7.8 0 0 1 9.8 4a8.6 8.6 0 1 0 10.2 10.2Z" />
-                </svg>
-              )}
-            </HeaderIcon>
-
             <div ref={accountMenuRef} className="relative">
               {isAuthenticated ? (
                 <HeaderIcon label="Account" onClick={() => setIsAccountMenuOpen((current) => !current)}>

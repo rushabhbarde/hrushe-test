@@ -256,7 +256,7 @@ div {
   display: none;
 }
 
-.product-row-scroll > div {
+.product-row-scroll > * {
   scroll-snap-align: start;
 }
 
