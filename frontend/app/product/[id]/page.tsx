@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { LoadingState } from "@/components/loading-state";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { WishlistButton } from "@/components/wishlist-button";
 import { useCart } from "@/components/cart-provider";
-import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
@@ -29,12 +29,6 @@ const productInfoSections = [
     title: "Delivery, Payment and Returns",
   },
 ] as const;
-
-const topNavItems = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Collections" },
-  { href: "/new-in", label: "Deals" },
-];
 
 const swatchColors: Record<string, string> = {
   black: "#111111",
@@ -92,55 +86,27 @@ function resolveSwatchColor(color: string, accent: string) {
   return swatchColors[color.toLowerCase().trim()] || accent || "#d9d9d9";
 }
 
-function CompactHeaderIcon({
-  label,
-  onClick,
-  href,
-  children,
-  filled = false,
-  pill = false,
-}: {
-  label: string;
-  onClick?: () => void;
-  href?: string;
-  children: React.ReactNode;
-  filled?: boolean;
-  pill?: boolean;
-}) {
-  const className = pill
-    ? `inline-flex h-12 items-center justify-center rounded-full px-7 text-[0.95rem] tracking-[0.06em] ${
-        filled
-          ? "bg-[var(--foreground)] text-[var(--background)]"
-          : "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-      }`
-    : `inline-flex h-12 w-12 items-center justify-center rounded-full border ${
-        filled
-          ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
-          : "border-[var(--foreground)] bg-[var(--surface)] text-[var(--foreground)]"
-      }`;
+function getProductSummary(description: string) {
+  const normalized = description.replace(/\s+/g, " ").trim();
 
-  if (href) {
-    return (
-      <Link href={href} aria-label={label} className={className}>
-        {children}
-      </Link>
-    );
+  if (!normalized) {
+    return "Designed for everyday wear with a clean silhouette and an easy premium feel.";
   }
 
-  return (
-    <button type="button" aria-label={label} onClick={onClick} className={className}>
-      {children}
-    </button>
-  );
-}
+  const sentences =
+    normalized.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) ||
+    [];
 
-function BrandGlyph() {
-  return (
-    <span className="relative flex h-9 w-9 items-center justify-center">
-      <span className="absolute h-5 w-5 rotate-45 bg-[var(--foreground)]" />
-      <span className="absolute -left-1 h-4 w-4 rotate-45 bg-[var(--surface-strong)]" />
-    </span>
-  );
+  if (sentences.length >= 2) {
+    return sentences.slice(0, 2).join(" ");
+  }
+
+  if (normalized.length <= 220) {
+    return normalized;
+  }
+
+  const clipped = normalized.slice(0, 220);
+  return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
 }
 
 type ProductInfoPanelProps = {
@@ -174,7 +140,7 @@ function ProductInfoPanel({
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
     ? "border-x border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-6 pt-5"
-    : "border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.72)] p-10";
+    : "border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.78)] p-7 xl:p-8";
 
   return (
     <div className={shellClassName}>
@@ -209,10 +175,10 @@ function ProductInfoPanel({
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="max-w-[14ch] text-[1.9rem] font-medium uppercase leading-[1.08] tracking-[-0.05em] text-[var(--foreground)]">
+              <h1 className="max-w-[13ch] text-[1.58rem] font-medium uppercase leading-[1.02] tracking-[-0.05em] text-[var(--foreground)] xl:text-[1.74rem]">
                 {product.name}
               </h1>
-              <p className="mt-3 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-[var(--foreground)]">
+              <p className="mt-4 text-[1.78rem] font-semibold leading-none tracking-[-0.04em] text-[var(--foreground)] xl:text-[1.92rem]">
                 {priceText}
               </p>
             </div>
@@ -226,15 +192,15 @@ function ProductInfoPanel({
           <p className="mt-3 text-[0.76rem] uppercase tracking-[0.08em] text-[var(--muted)]">
             MRP incl. of all taxes
           </p>
-          <p className="mt-10 max-w-[26rem] text-[1.02rem] leading-7 text-[var(--foreground)]/88">
+          <p className="mt-6 max-w-[24rem] text-[0.97rem] leading-7 text-[var(--foreground)]/86">
             {description}
           </p>
         </>
       )}
 
       {product.colors.length > 0 ? (
-        <div className="mt-8">
-          <p className="text-[1rem] tracking-[0.08em] text-[var(--muted)]">Color</p>
+        <div className="mt-6">
+          <p className="text-[0.9rem] uppercase tracking-[0.12em] text-[var(--muted)]">Color</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.colors.map((color) => {
               const active = selectedColor === color;
@@ -259,8 +225,8 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-7">
-          <p className="text-[1rem] tracking-[0.08em] text-[var(--muted)]">Size</p>
+        <div className="mt-6">
+          <p className="text-[0.9rem] uppercase tracking-[0.12em] text-[var(--muted)]">Size</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
@@ -288,7 +254,7 @@ function ProductInfoPanel({
       ) : null}
 
       {!mobile ? (
-        <div className="mt-7">
+        <div className="mt-6">
           <button
             type="button"
             onClick={onAddToCart}
@@ -308,17 +274,17 @@ function ProductInfoPanel({
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { products, addProductReview, loading } = useStorefrontData();
-  const { addItem, itemCount, openCart } = useCart();
-  const { isAuthenticated } = useCustomerAuth();
+  const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
-  const matchedProduct = products.find(
-    (item) => item.id === params.id || item.slug === params.id
+  const matchedProduct = useMemo(
+    () => products.find((item) => item.id === params.id || item.slug === params.id),
+    [params.id, products]
   );
-  const normalizedMatchedProduct = matchedProduct
-    ? normalizeProduct(matchedProduct)
-    : null;
+  const normalizedMatchedProduct = useMemo(
+    () => (matchedProduct ? normalizeProduct(matchedProduct) : null),
+    [matchedProduct]
+  );
   const [product, setProduct] = useState<Product | null>(normalizedMatchedProduct);
   const [productLoading, setProductLoading] = useState(!normalizedMatchedProduct);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -401,14 +367,9 @@ export default function ProductDetailPage() {
   if (loading || productLoading) {
     return (
       <div className="page-shell bg-[var(--background)] paper-texture">
-        <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pt-6">
-          <ProductPageHeader
-            itemCount={itemCount}
-            isAuthenticated={isAuthenticated}
-            onBack={() => router.push("/shop")}
-            onOpenCart={openCart}
-          />
-          <div className="mt-10">
+        <SiteHeader />
+        <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+          <div className="mt-4">
             <LoadingState
               title="Loading product"
               description="We are preparing the product gallery, sizing, and details."
@@ -422,14 +383,9 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="page-shell bg-[var(--background)] paper-texture">
-        <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pt-6">
-          <ProductPageHeader
-            itemCount={itemCount}
-            isAuthenticated={isAuthenticated}
-            onBack={() => router.push("/shop")}
-            onOpenCart={openCart}
-          />
-          <div className="mt-12 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-6 py-8 sm:px-8">
+        <SiteHeader />
+        <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+          <div className="mt-8 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-6 py-8 sm:px-8">
             <h1 className="text-[2rem] font-medium uppercase tracking-[-0.05em] text-[var(--foreground)]">
               Product not found
             </h1>
@@ -462,6 +418,25 @@ export default function ProductDetailPage() {
     .slice(0, 4);
   const reviews = product.reviews || [];
   const priceText = `Rs.${product.price.toLocaleString("en-IN")}`;
+  const productSummary = getProductSummary(product.description);
+  const hasMultipleImages = images.length > 1;
+  const hasDesktopThumbRail = images.length > 1;
+
+  const showPreviousImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setActiveImageIndex((current) => (current - 1 + images.length) % images.length);
+  };
+
+  const showNextImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setActiveImageIndex((current) => (current + 1) % images.length);
+  };
 
   const readPhoto = async (file: File) => {
     const result = await new Promise<string>((resolve, reject) => {
@@ -548,22 +523,25 @@ export default function ProductDetailPage() {
 
   return (
     <div className="page-shell bg-[var(--background)] paper-texture">
-      <main className="mx-auto max-w-[1600px] px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-20 lg:pt-6">
-        <ProductPageHeader
-          itemCount={itemCount}
-          isAuthenticated={isAuthenticated}
-          onBack={() => {
-            if (typeof window !== "undefined" && window.history.length > 1) {
-              router.back();
-              return;
-            }
+      <SiteHeader />
+      <main className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-20 lg:pt-8">
+        <div className="flex items-center justify-between gap-4 border-b border-[rgba(17,17,17,0.08)] pb-4">
+          <div className="flex flex-wrap items-center gap-2 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+            <Link href="/shop" className="hover:text-[var(--foreground)]">
+              Collections
+            </Link>
+            <span>/</span>
+            <span className="text-[var(--foreground)]">{product.category}</span>
+          </div>
+          <Link
+            href="/shop"
+            className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
+          >
+            Back to shop
+          </Link>
+        </div>
 
-            router.push("/shop");
-          }}
-          onOpenCart={openCart}
-        />
-
-        <div className="mt-7 lg:mt-14">
+        <div className="mt-6 lg:mt-10">
           <div className="lg:hidden">
             <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
               <div className="relative aspect-[4/5.1]">
@@ -581,10 +559,38 @@ export default function ProductDetailPage() {
                     style={{ backgroundColor: product.accent || "#f3f3f0" }}
                   />
                 )}
+
+                {hasMultipleImages ? (
+                  <>
+                    <div className="absolute inset-x-3 top-3 flex items-center justify-between">
+                      <span className="bg-[rgba(255,255,255,0.88)] px-3 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]">
+                        {activeImageIndex + 1}/{images.length}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={showPreviousImage}
+                          aria-label="Previous image"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.88)] text-[var(--foreground)] shadow-sm"
+                        >
+                          <span className="text-lg leading-none">‹</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={showNextImage}
+                          aria-label="Next image"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(255,255,255,0.88)] text-[var(--foreground)] shadow-sm"
+                        >
+                          <span className="text-lg leading-none">›</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
 
-            {images.length > 1 ? (
+            {hasMultipleImages ? (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                 {images.map((image, index) => (
                   <button
@@ -619,7 +625,7 @@ export default function ProductDetailPage() {
             <ProductInfoPanel
               product={product}
               priceText={priceText}
-              description={product.description}
+              description={productSummary}
               selectedColor={selectedColor}
               selectedSize={selectedSize}
               addError={addError}
@@ -638,7 +644,13 @@ export default function ProductDetailPage() {
             />
           </div>
 
-          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_62px_360px] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,1fr)_76px_400px]">
+          <div
+            className={`hidden lg:grid lg:items-start lg:gap-8 xl:gap-10 ${
+              hasDesktopThumbRail
+                ? "lg:grid-cols-[minmax(0,1fr)_62px_390px] xl:grid-cols-[minmax(0,1fr)_76px_420px]"
+                : "lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_430px]"
+            }`}
+          >
             <div className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
               <div className="relative aspect-[4/4.9]">
                 {activeImage ? (
@@ -655,44 +667,72 @@ export default function ProductDetailPage() {
                     style={{ backgroundColor: product.accent || "#f3f3f0" }}
                   />
                 )}
+
+                {hasMultipleImages ? (
+                  <div className="absolute inset-x-4 top-4 flex items-center justify-between">
+                    <span className="bg-[rgba(255,255,255,0.9)] px-3 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]">
+                      {activeImageIndex + 1}/{images.length}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={showPreviousImage}
+                        aria-label="Previous image"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] shadow-sm"
+                      >
+                        <span className="text-xl leading-none">‹</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={showNextImage}
+                        aria-label="Next image"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] text-[var(--foreground)] shadow-sm"
+                      >
+                        <span className="text-xl leading-none">›</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              {images.map((image, index) => (
-                <button
-                  key={`${product.id}-desktop-${index}`}
-                  type="button"
-                  onClick={() => setActiveImageIndex(index)}
-                  className={`relative aspect-[4/5] overflow-hidden border ${
-                    activeImageIndex === index
-                      ? "border-[var(--foreground)]"
-                      : "border-[rgba(17,17,17,0.08)] opacity-55"
-                  }`}
-                >
-                  {image ? (
-                    <Image
-                      src={image}
-                      alt={`${product.name} view ${index + 1}`}
-                      fill
-                      unoptimized
-                      className="object-contain p-1"
-                    />
-                  ) : (
-                    <div
-                      className="h-full w-full"
-                      style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+            {hasDesktopThumbRail ? (
+              <div className="flex flex-col gap-3">
+                {images.map((image, index) => (
+                  <button
+                    key={`${product.id}-desktop-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    className={`relative aspect-[4/5] overflow-hidden border ${
+                      activeImageIndex === index
+                        ? "border-[var(--foreground)]"
+                        : "border-[rgba(17,17,17,0.08)] opacity-55"
+                    }`}
+                  >
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt={`${product.name} view ${index + 1}`}
+                        fill
+                        unoptimized
+                        className="object-contain p-1"
+                      />
+                    ) : (
+                      <div
+                        className="h-full w-full"
+                        style={{ backgroundColor: product.accent || "#f3f3f0" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             <div className="sticky top-28">
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
-                description={product.description}
+                description={productSummary}
                 selectedColor={selectedColor}
                 selectedSize={selectedSize}
                 addError={addError}
@@ -979,125 +1019,5 @@ export default function ProductDetailPage() {
 
       <SiteFooter />
     </div>
-  );
-}
-
-function ProductPageHeader({
-  itemCount,
-  isAuthenticated,
-  onBack,
-  onOpenCart,
-}: {
-  itemCount: number;
-  isAuthenticated: boolean;
-  onBack: () => void;
-  onOpenCart: () => void;
-}) {
-  return (
-    <header className="space-y-3">
-      <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-        <div className="flex items-center gap-8 text-[1rem] tracking-[0.08em] text-[var(--foreground)]">
-          <button
-            type="button"
-            aria-label="Browse navigation"
-            className="flex h-10 w-10 items-center justify-center"
-          >
-            <span className="space-y-1.5">
-              <span className="block h-px w-7 bg-[var(--foreground)]" />
-              <span className="block h-px w-5 bg-[var(--foreground)]" />
-            </span>
-          </button>
-          {topNavItems.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-[var(--muted)]">
-              {item.label}
-            </Link>
-          ))}
-        </div>
-
-        <Link href="/" className="justify-self-center">
-          <BrandGlyph />
-        </Link>
-
-        <div className="flex items-center justify-end gap-4">
-          <CompactHeaderIcon label="Wishlist" href="/account">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-            </svg>
-          </CompactHeaderIcon>
-          <CompactHeaderIcon label="Cart" onClick={onOpenCart} pill filled>
-            Cart
-          </CompactHeaderIcon>
-          <CompactHeaderIcon label="Bag" onClick={onOpenCart}>
-            <span className="relative inline-flex">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-                <path
-                  d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {itemCount > 0 ? (
-                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-              ) : null}
-            </span>
-          </CompactHeaderIcon>
-          <CompactHeaderIcon
-            label={isAuthenticated ? "Account" : "Login"}
-            href={isAuthenticated ? "/account" : "/login"}
-            filled
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-            </svg>
-          </CompactHeaderIcon>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between lg:hidden">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back"
-          className="inline-flex h-12 w-12 items-center justify-center"
-        >
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M19 12H5" />
-            <path d="M11 18l-6-6 6-6" />
-          </svg>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <CompactHeaderIcon label="Bag" onClick={onOpenCart}>
-            <span className="relative inline-flex">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-                <path
-                  d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {itemCount > 0 ? (
-                <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-              ) : null}
-            </span>
-          </CompactHeaderIcon>
-          <CompactHeaderIcon
-            label={isAuthenticated ? "Account" : "Login"}
-            href={isAuthenticated ? "/account" : "/login"}
-            filled
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-            </svg>
-          </CompactHeaderIcon>
-        </div>
-      </div>
-    </header>
   );
 }
