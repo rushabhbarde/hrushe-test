@@ -109,6 +109,38 @@ function getProductSummary(description: string) {
   return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
 }
 
+function CarouselArrow({
+  direction,
+  onClick,
+  className = "",
+}: {
+  direction: "previous" | "next";
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={direction === "previous" ? "Previous image" : "Next image"}
+      className={`inline-flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.14)] bg-[rgba(255,255,255,0.82)] text-[var(--foreground)] backdrop-blur transition hover:bg-[var(--surface)] ${className}`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {direction === "previous" ? <path d="M15 5 8 12l7 7" /> : <path d="m9 5 7 7-7 7" />}
+      </svg>
+    </button>
+  );
+}
+
 type ProductInfoPanelProps = {
   product: Product;
   priceText: string;
@@ -140,7 +172,7 @@ function ProductInfoPanel({
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
     ? "border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-8 pt-5"
-    : "flex h-full flex-col border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-14 py-12";
+    : "flex h-full flex-col overflow-y-auto border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-10 xl:px-12 xl:py-12";
 
   return (
     <div className={shellClassName}>
@@ -300,6 +332,7 @@ export default function ProductDetailPage() {
   const [reviewError, setReviewError] = useState("");
   const [reviewSaved, setReviewSaved] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [openSection, setOpenSection] =
     useState<(typeof productInfoSections)[number]["key"]>("description");
 
@@ -370,6 +403,20 @@ export default function ProductDetailPage() {
     }
   }, [reviewSaved]);
 
+  useEffect(() => {
+    const imageCount = product?.images?.length || 0;
+
+    if (imageCount <= 1 || isCarouselPaused) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      setActiveImageIndex((current) => (current + 1) % imageCount);
+    }, 4000);
+
+    return () => window.clearInterval(timerId);
+  }, [isCarouselPaused, product?.images?.length]);
+
   if (loading || productLoading) {
     return (
       <div className="page-shell bg-[var(--background)] paper-texture">
@@ -426,7 +473,22 @@ export default function ProductDetailPage() {
   const priceText = `Rs.${product.price.toLocaleString("en-IN")}`;
   const productSummary = getProductSummary(product.description);
   const hasMultipleImages = images.length > 1;
-  const hasDesktopThumbRail = images.length > 1;
+
+  const showPreviousImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setActiveImageIndex((current) => (current - 1 + images.length) % images.length);
+  };
+
+  const showNextImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setActiveImageIndex((current) => (current + 1) % images.length);
+  };
 
   const readPhoto = async (file: File) => {
     const result = await new Promise<string>((resolve, reject) => {
@@ -518,7 +580,13 @@ export default function ProductDetailPage() {
         <div>
           <div className="lg:hidden">
             <section aria-label="Product image gallery">
-              <div className="overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]">
+              <div
+                className="relative overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
+                onMouseEnter={() => setIsCarouselPaused(true)}
+                onMouseLeave={() => setIsCarouselPaused(false)}
+                onFocus={() => setIsCarouselPaused(true)}
+                onBlur={() => setIsCarouselPaused(false)}
+              >
                 <div className="relative aspect-[4/5.2]">
                   {activeImage ? (
                     <Image
@@ -535,39 +603,31 @@ export default function ProductDetailPage() {
                     />
                   )}
                 </div>
-              </div>
 
-              {hasMultipleImages ? (
-                <div className="flex gap-4 overflow-x-auto border-b border-[rgba(17,17,17,0.08)] px-5 py-4">
-                  {images.map((image, index) => (
-                    <button
-                      key={`${product.id}-mobile-${index}`}
-                      type="button"
-                      onClick={() => setActiveImageIndex(index)}
-                      className={`relative h-[4.75rem] w-16 shrink-0 overflow-hidden border ${
-                        activeImageIndex === index
-                          ? "border-[var(--foreground)]"
-                          : "border-[rgba(17,17,17,0.08)] opacity-55"
-                      }`}
-                    >
-                      {image ? (
-                        <Image
-                          src={image}
-                          alt={`${product.name} view ${index + 1}`}
-                          fill
-                          unoptimized
-                          className="object-contain p-1"
+                {hasMultipleImages ? (
+                  <>
+                    <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 items-center justify-between">
+                      <CarouselArrow direction="previous" onClick={showPreviousImage} className="h-10 w-10" />
+                      <CarouselArrow direction="next" onClick={showNextImage} className="h-10 w-10" />
+                    </div>
+                    <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+                      {images.map((_, index) => (
+                        <button
+                          key={`${product.id}-mobile-dot-${index}`}
+                          type="button"
+                          onClick={() => setActiveImageIndex(index)}
+                          aria-label={`Show image ${index + 1}`}
+                          className={`h-1.5 transition ${
+                            activeImageIndex === index
+                              ? "w-7 bg-[var(--foreground)]"
+                              : "w-3 bg-[rgba(17,17,17,0.22)]"
+                          }`}
                         />
-                      ) : (
-                        <div
-                          className="h-full w-full"
-                          style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </section>
 
             <section aria-label="Product details and purchase options">
@@ -594,14 +654,14 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:h-[700px] lg:max-w-[1400px] lg:grid-cols-2 lg:items-stretch lg:gap-12 xl:gap-16">
+          <div className="hidden lg:mx-auto lg:grid lg:h-[min(620px,calc(100vh-12rem))] lg:max-w-[1180px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
             <section
               aria-label="Product image gallery"
-              className={`h-full border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8 ${
-                hasDesktopThumbRail
-                  ? "grid grid-cols-[minmax(0,1fr)_72px] gap-5"
-                  : "grid place-items-center"
-              }`}
+              className="relative h-full overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
+              onFocus={() => setIsCarouselPaused(true)}
+              onBlur={() => setIsCarouselPaused(false)}
             >
               <div className="relative h-full w-full overflow-hidden">
                 {activeImage ? (
@@ -620,36 +680,28 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {hasDesktopThumbRail ? (
-                <div className="flex h-full flex-col gap-3 overflow-y-auto pr-1">
-                  {images.map((image, index) => (
-                    <button
-                      key={`${product.id}-desktop-${index}`}
-                      type="button"
-                      onClick={() => setActiveImageIndex(index)}
-                      className={`relative h-[82px] shrink-0 overflow-hidden border ${
-                        activeImageIndex === index
-                          ? "border-[var(--foreground)]"
-                          : "border-[rgba(17,17,17,0.08)] opacity-55"
-                      }`}
-                    >
-                      {image ? (
-                        <Image
-                          src={image}
-                          alt={`${product.name} view ${index + 1}`}
-                          fill
-                          unoptimized
-                          className="object-contain p-1"
-                        />
-                      ) : (
-                        <div
-                          className="h-full w-full"
-                          style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
+              {hasMultipleImages ? (
+                <>
+                  <div className="absolute inset-x-5 top-1/2 flex -translate-y-1/2 items-center justify-between">
+                    <CarouselArrow direction="previous" onClick={showPreviousImage} />
+                    <CarouselArrow direction="next" onClick={showNextImage} />
+                  </div>
+                  <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
+                    {images.map((_, index) => (
+                      <button
+                        key={`${product.id}-desktop-dot-${index}`}
+                        type="button"
+                        onClick={() => setActiveImageIndex(index)}
+                        aria-label={`Show image ${index + 1}`}
+                        className={`h-1.5 transition ${
+                          activeImageIndex === index
+                            ? "w-8 bg-[var(--foreground)]"
+                            : "w-3 bg-[rgba(17,17,17,0.22)]"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : null}
             </section>
 
