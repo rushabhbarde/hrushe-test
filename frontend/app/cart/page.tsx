@@ -2,13 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { useCart, type CartLine } from "@/components/cart-provider";
+import { ProductCard } from "@/components/product-card";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { useWishlist } from "@/components/wishlist-provider";
+import type { Product } from "@/lib/catalog";
+import { useStorefrontData } from "@/lib/use-storefront";
 
 const shipping = 0;
 
@@ -60,13 +63,24 @@ function QuantityControl({
 }
 
 export default function CartPage() {
-  const { items, subtotal, itemCount, removeItem, updateQuantity } = useCart();
-  const { isWishlisted, toggleWishlist } = useWishlist();
+  const { items, subtotal, itemCount, addItem, removeItem, updateQuantity } = useCart();
+  const { wishlistIds, isWishlisted, toggleWishlist, removeWishlistItem } = useWishlist();
+  const { products } = useStorefrontData();
   const { pushToast } = useToast();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [activeCartTab, setActiveCartTab] = useState<"bag" | "favourites">("bag");
   const [removingKeys, setRemovingKeys] = useState<string[]>([]);
   const [bumpedKey, setBumpedKey] = useState("");
   const total = subtotal + shipping;
+  const hasSavedProducts = wishlistIds.length > 0;
+  const canCheckout = acceptedTerms && items.length > 0;
+  const wishlistProducts = useMemo<Product[]>(
+    () =>
+      wishlistIds
+        .map((productId) => products.find((product) => product.id === productId))
+        .filter((product): product is Product => Boolean(product)),
+    [products, wishlistIds]
+  );
 
   const removeCartLine = (item: CartLine, toast = "Item removed") => {
     const key = lineKey(item);
@@ -94,12 +108,29 @@ export default function CartPage() {
     pushToast(nextQuantity <= 0 ? "Item removed" : "Cart updated", nextQuantity <= 0 ? "error" : "success");
   };
 
+  const moveFavouriteToBag = (product: Product) => {
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      size: product.sizes[0] || "S",
+      color: product.colors[0] || "Default",
+      fit: product.category,
+      quantity: 1,
+      accent: product.accent,
+      image: product.images[0],
+    });
+    removeWishlistItem(product.id);
+    setActiveCartTab("bag");
+    pushToast("Moved favourite to bag.");
+  };
+
   return (
     <div className="page-shell">
       <SiteHeader />
       <main className="lux-page py-8 sm:py-10 lg:py-14">
         <div className="lux-container">
-          {items.length === 0 ? (
+          {items.length === 0 && !hasSavedProducts ? (
             <section className="mx-auto max-w-3xl py-10">
               <EmptyState
                 title="Your shopping bag is empty."
@@ -112,17 +143,31 @@ export default function CartPage() {
             <>
               <div className="reveal-up flex flex-col gap-5 border-b border-[var(--border)] pb-5 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="eyebrow text-[var(--accent)]">Shopping bag</p>
+                  <p className="eyebrow text-[var(--accent)]">
+                    {activeCartTab === "bag" ? "Shopping bag" : "Favourites"}
+                  </p>
                   <h1 className="display-font mt-3 text-4xl tracking-[-0.06em] sm:text-5xl lg:text-6xl">
-                    Selected pieces.
+                    {activeCartTab === "bag" ? "Selected pieces." : "Saved pieces."}
                   </h1>
                 </div>
                 <div className="inline-flex w-fit items-center border border-[var(--border)] bg-white/62 p-1 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
-                  <span className="bg-white px-4 py-2 text-[var(--foreground)]">Bag</span>
                   <button
                     type="button"
-                    className="px-4 py-2 transition hover:text-[var(--foreground)]"
-                    onClick={() => pushToast("Wishlist is available from the heart icon.")}
+                    onClick={() => setActiveCartTab("bag")}
+                    className={`px-4 py-2 transition hover:text-[var(--foreground)] ${
+                      activeCartTab === "bag" ? "bg-white text-[var(--foreground)]" : ""
+                    }`}
+                    aria-pressed={activeCartTab === "bag"}
+                  >
+                    Bag
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-2 transition hover:text-[var(--foreground)] ${
+                      activeCartTab === "favourites" ? "bg-white text-[var(--foreground)]" : ""
+                    }`}
+                    onClick={() => setActiveCartTab("favourites")}
+                    aria-pressed={activeCartTab === "favourites"}
                   >
                     Favourites
                   </button>
@@ -130,103 +175,154 @@ export default function CartPage() {
               </div>
 
               <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
-                <section className="reveal-up grid min-w-0 gap-x-10 gap-y-8 md:grid-cols-2 xl:gap-y-10">
-                  {items.map((item) => {
-                    const key = lineKey(item);
-                    const removing = removingKeys.includes(key);
+                {activeCartTab === "bag" ? (
+                  <section className="reveal-up grid min-w-0 gap-x-10 gap-y-8 md:grid-cols-2 xl:gap-y-10">
+                    {items.length === 0 ? (
+                      <div className="md:col-span-2">
+                        <EmptyState
+                          title="Your bag is still empty."
+                          description="Move one of your favourites into the bag when you are ready to checkout."
+                          ctaHref="/shop"
+                          ctaLabel="Explore products"
+                        />
+                      </div>
+                    ) : (
+                      items.map((item) => {
+                        const key = lineKey(item);
+                        const removing = removingKeys.includes(key);
 
-                    return (
-                      <article
-                        key={key}
-                        className={`lux-hover-lift grid min-w-0 grid-cols-[minmax(0,1fr)_3.75rem] gap-3 border-b border-[var(--border)] pb-8 transition-all duration-300 ${
-                          removing ? "-translate-y-2 scale-[0.98] opacity-0" : "opacity-100"
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="relative aspect-[0.84/1] overflow-hidden border border-[var(--border)] bg-[#f4f4f4]">
-                            {item.image ? (
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                fill
-                                unoptimized
-                                sizes="(max-width: 768px) 72vw, 34vw"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full" style={{ background: item.accent }} />
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => moveToWishlist(item)}
-                              className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center bg-white/90 text-[var(--muted)] shadow-sm transition hover:text-[var(--accent)]"
-                              aria-label={`Save ${item.name} for later`}
-                            >
-                              ♡
-                            </button>
-                          </div>
-
-                          <div className="mt-3 grid grid-cols-[1fr_auto] gap-4">
+                        return (
+                          <article
+                            key={key}
+                            className={`lux-hover-lift grid min-w-0 grid-cols-[minmax(0,1fr)_3.75rem] gap-3 border-b border-[var(--border)] pb-8 transition-all duration-300 ${
+                              removing ? "-translate-y-2 scale-[0.98] opacity-0" : "opacity-100"
+                            }`}
+                          >
                             <div className="min-w-0">
-                              <p className="text-sm text-[var(--muted)]">Cotton T Shirt</p>
-                              <Link
-                                href={`/product/${item.productId}`}
-                                className="mt-1 block text-lg font-semibold uppercase leading-tight tracking-[-0.04em]"
-                              >
-                                {item.name}
-                              </Link>
+                              <div className="relative aspect-[0.84/1] overflow-hidden border border-[var(--border)] bg-[#f4f4f4]">
+                                {item.image ? (
+                                  <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    unoptimized
+                                    sizes="(max-width: 768px) 72vw, 34vw"
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full" style={{ background: item.accent }} />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => moveToWishlist(item)}
+                                  className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-white/90 text-[var(--muted)] shadow-sm transition hover:text-[var(--accent)]"
+                                  aria-label={`Save ${item.name} for later`}
+                                >
+                                  ♡
+                                </button>
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-[1fr_auto] gap-4">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-[var(--muted)]">Cotton T Shirt</p>
+                                  <Link
+                                    href={`/product/${item.productId}`}
+                                    className="mt-1 block text-lg font-semibold uppercase leading-tight tracking-[-0.04em]"
+                                  >
+                                    {item.name}
+                                  </Link>
+                                </div>
+                                <p className="whitespace-nowrap text-base font-semibold">
+                                  {formatPrice(item.price)}
+                                </p>
+                              </div>
+                              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+                                <button
+                                  type="button"
+                                  onClick={() => moveToWishlist(item)}
+                                  className="underline underline-offset-4 transition hover:text-[var(--foreground)]"
+                                >
+                                  Save for later
+                                </button>
+                                <span>Ships in 3-5 days</span>
+                              </div>
                             </div>
-                            <p className="whitespace-nowrap text-base font-semibold">
-                              {formatPrice(item.price)}
-                            </p>
-                          </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+
+                            <div className="flex flex-col items-center justify-start gap-5 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => removeCartLine(item)}
+                                className="flex h-8 w-8 items-center justify-center text-xl leading-none text-[var(--muted)] transition hover:text-[var(--accent)]"
+                                aria-label={`Remove ${item.name}`}
+                              >
+                                ×
+                              </button>
+                              <div className="text-center">
+                                <p className="text-sm font-semibold uppercase">{item.size || "OS"}</p>
+                                <span
+                                  className="mt-4 block h-7 w-7 border border-[var(--border)]"
+                                  style={{ background: item.accent || item.color || "#111" }}
+                                  aria-label={`Color ${item.color || "default"}`}
+                                />
+                              </div>
+                              <QuantityControl
+                                item={item}
+                                active={bumpedKey === key}
+                                onChange={(nextQuantity) => changeQuantity(item, nextQuantity)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => moveToWishlist(item)}
+                                className="text-lg text-[var(--muted)] transition hover:rotate-180 hover:text-[var(--foreground)]"
+                                aria-label={`Move ${item.name} to wishlist`}
+                              >
+                                ↻
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      })
+                    )}
+                  </section>
+                ) : (
+                  <section className="reveal-up grid min-w-0 gap-x-10 gap-y-9 md:grid-cols-2 xl:gap-y-10">
+                    {wishlistProducts.length === 0 ? (
+                      <div className="md:col-span-2">
+                        <EmptyState
+                          title="No favourite pieces yet."
+                          description="Use the heart on any product card to save it here, then move it into your bag whenever you are ready."
+                          ctaHref="/shop"
+                          ctaLabel="Browse products"
+                        />
+                      </div>
+                    ) : (
+                      wishlistProducts.map((product) => (
+                        <article key={product.id} className="min-w-0">
+                          <ProductCard product={product} />
+                          <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             <button
                               type="button"
-                              onClick={() => moveToWishlist(item)}
-                              className="underline underline-offset-4 transition hover:text-[var(--foreground)]"
+                              onClick={() => moveFavouriteToBag(product)}
+                              className="lux-action w-full"
                             >
-                              Save for later
+                              Move to bag
                             </button>
-                            <span>Ships in 3-5 days</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                removeWishlistItem(product.id);
+                                pushToast("Removed from favourites.", "error");
+                              }}
+                              className="lux-action-muted w-full"
+                            >
+                              Remove
+                            </button>
                           </div>
-                        </div>
-
-                        <div className="flex flex-col items-center justify-start gap-5 pt-1">
-                          <button
-                            type="button"
-                            onClick={() => removeCartLine(item)}
-                            className="flex h-8 w-8 items-center justify-center text-xl leading-none text-[var(--muted)] transition hover:text-[var(--accent)]"
-                            aria-label={`Remove ${item.name}`}
-                          >
-                            ×
-                          </button>
-                          <div className="text-center">
-                            <p className="text-sm font-semibold uppercase">{item.size || "OS"}</p>
-                            <span
-                              className="mt-4 block h-7 w-7 border border-[var(--border)]"
-                              style={{ background: item.accent || item.color || "#111" }}
-                              aria-label={`Color ${item.color || "default"}`}
-                            />
-                          </div>
-                          <QuantityControl
-                            item={item}
-                            active={bumpedKey === key}
-                            onChange={(nextQuantity) => changeQuantity(item, nextQuantity)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => moveToWishlist(item)}
-                            className="text-lg text-[var(--muted)] transition hover:rotate-180 hover:text-[var(--foreground)]"
-                            aria-label={`Move ${item.name} to wishlist`}
-                          >
-                            ↻
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </section>
+                        </article>
+                      ))
+                    )}
+                  </section>
+                )}
 
                 <aside className="reveal-up-delayed xl:sticky xl:top-28 xl:self-start">
                   <div className="lux-panel p-6 sm:p-7">
@@ -268,15 +364,21 @@ export default function CartPage() {
                     </label>
 
                     <Link
-                      href={acceptedTerms ? "/checkout" : "#"}
-                      aria-disabled={!acceptedTerms}
+                      href={canCheckout ? "/checkout" : "#"}
+                      aria-disabled={!canCheckout}
                       onClick={(event) => {
+                        if (!items.length) {
+                          event.preventDefault();
+                          pushToast("Move a favourite to your bag before checkout.", "error");
+                          return;
+                        }
+
                         if (!acceptedTerms) {
                           event.preventDefault();
                           pushToast("Please accept the terms to continue.", "error");
                         }
                       }}
-                      className={`lux-action mt-5 w-full ${acceptedTerms ? "" : "pointer-events-auto opacity-45"}`}
+                      className={`lux-action mt-5 w-full ${canCheckout ? "" : "pointer-events-auto opacity-45"}`}
                     >
                       Continue
                     </Link>

@@ -123,12 +123,12 @@ export function AdminShell({
                           href={item.href}
                           className={`flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm transition ${
                             active
-                              ? "bg-[rgba(17,17,17,0.95)] text-white shadow-[0_16px_32px_rgba(17,17,17,0.16)]"
+                              ? "bg-[rgba(17,17,17,0.95)] !text-white shadow-[0_16px_32px_rgba(17,17,17,0.16)]"
                               : "text-[var(--muted)] hover:bg-[rgba(17,17,17,0.04)] hover:text-[var(--foreground)]"
                           }`}
                         >
-                          <span>{item.label}</span>
-                          {active ? <span className="h-2 w-2 rounded-full bg-[var(--accent)]" /> : null}
+                          <span className={active ? "!text-white" : ""}>{item.label}</span>
+                          {active ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
                         </Link>
                       );
                     })}
@@ -245,7 +245,7 @@ export function AdminShell({
                               onClick={() => setMobileNavOpen(false)}
                               className={`rounded-2xl px-3 py-2.5 text-sm ${
                                 active
-                                  ? "bg-[rgba(17,17,17,0.95)] text-white"
+                                  ? "bg-[rgba(17,17,17,0.95)] !text-white"
                                   : "border border-[rgba(17,17,17,0.08)] bg-white text-[var(--foreground)]"
                               }`}
                             >

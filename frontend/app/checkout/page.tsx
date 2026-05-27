@@ -276,6 +276,29 @@ export default function CheckoutPage() {
     }
   };
 
+  const goToStep = (nextStep: CheckoutStep) => {
+    if (nextStep === activeStep) {
+      return;
+    }
+
+    if (nextStep === "information") {
+      setError("");
+      setActiveStep("information");
+      return;
+    }
+
+    if (nextStep === "shipping") {
+      if (validateContact()) {
+        setActiveStep("shipping");
+      }
+      return;
+    }
+
+    if (validateContact() && validateShipping()) {
+      setActiveStep("payment");
+    }
+  };
+
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -419,10 +442,13 @@ export default function CheckoutPage() {
                       <button
                         key={step.key}
                         type="button"
-                        onClick={() => setActiveStep(step.key)}
-                        className={`py-2 text-left transition ${
-                          activeStep === step.key ? "text-[var(--foreground)]" : "text-[var(--muted)]"
+                        onClick={() => goToStep(step.key)}
+                        className={`border-b py-2 text-left transition ${
+                          activeStep === step.key
+                            ? "border-[var(--foreground)] text-[var(--foreground)]"
+                            : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
                         }`}
+                        aria-current={activeStep === step.key ? "step" : undefined}
                       >
                         {step.label}
                       </button>

@@ -3,9 +3,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useDeferredValue, useMemo, useState } from "react";
+import { useCart } from "@/components/cart-provider";
 import { EmptyState } from "@/components/empty-state";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { useToast } from "@/components/toast-provider";
+import { WishlistButton } from "@/components/wishlist-button";
 import type { Product } from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -1072,32 +1075,51 @@ function FilterHint({ children }: { children: ReactNode }) {
 }
 
 function ShopProductCard({ product }: { product: Product }) {
+  const { addItem, openCart } = useCart();
+  const { pushToast } = useToast();
   const productHref = `/product/${product.slug || product.id}`;
   const hasImage = Boolean(product.images[0]);
+  const quickAddToCart = () => {
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      size: product.sizes[0] || "S",
+      color: product.colors[0] || "Default",
+      fit: product.category,
+      quantity: 1,
+      accent: product.accent,
+      image: product.images[0],
+    });
+    pushToast(`${product.name} added to bag.`);
+    openCart();
+  };
 
   return (
     <article className="group block">
-      <Link
-        href={productHref}
-        className="block overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
-      >
-        {hasImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.images[0]}
-            alt={product.name}
-            className="aspect-[4/5] h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="aspect-[4/5] h-full w-full"
-            style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
-          />
-        )}
-      </Link>
+      <div className="relative">
+        <Link
+          href={productHref}
+          className="block overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
+        >
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="aspect-[4/5] h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          ) : (
+            <div
+              className="aspect-[4/5] h-full w-full"
+              style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
+            />
+          )}
+        </Link>
+      </div>
 
-      <Link href={productHref} className="mt-3 block">
+      <div className="mt-3 block">
         <div className="flex items-center gap-2 text-[0.86rem] leading-none text-[var(--muted)]">
           <span className="truncate">{product.category}</span>
           <span className="inline-flex items-center gap-1">
@@ -1110,15 +1132,33 @@ function ShopProductCard({ product }: { product: Product }) {
             ) : null}
           </span>
         </div>
-        <div className="mt-1.5 flex items-start justify-between gap-3">
-          <h2 className="max-w-[16ch] text-[1.08rem] font-semibold leading-[1.1] tracking-[-0.04em] text-[var(--foreground)]">
+        <Link href={productHref} className="mt-1.5 block">
+          <h2 className="text-[1.08rem] font-semibold leading-[1.1] tracking-[-0.04em] text-[var(--foreground)]">
             {product.name}
           </h2>
-          <span className="shrink-0 text-[1rem] font-semibold text-[var(--foreground)]">
+        </Link>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="min-w-0 text-[1rem] font-semibold text-[var(--foreground)]">
             Rs.{product.price.toLocaleString("en-IN")}
           </span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <WishlistButton
+              productId={product.id}
+              label={`Save ${product.name}`}
+              className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+              iconClassName="h-[17px] w-[17px]"
+            />
+            <button
+              type="button"
+              onClick={quickAddToCart}
+              className="flex h-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] px-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
+              aria-label={`Add ${product.name} to cart`}
+            >
+              Add
+            </button>
+          </div>
         </div>
-      </Link>
+      </div>
     </article>
   );
 }

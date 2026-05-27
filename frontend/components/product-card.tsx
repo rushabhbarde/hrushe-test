@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useCart } from "@/components/cart-provider";
+import { useToast } from "@/components/toast-provider";
 import type { Product } from "@/lib/catalog";
 import { getCompareAtPrice } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
@@ -35,10 +39,27 @@ const swatchColors: Record<string, string> = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const { addItem, openCart } = useCart();
+  const { pushToast } = useToast();
   const hasImage = Boolean(product.images[0]);
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const hasDiscount = compareAtPrice > product.price;
+  const quickAddToCart = () => {
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      size: product.sizes[0] || "S",
+      color: product.colors[0] || "Default",
+      fit: product.category,
+      quantity: 1,
+      accent: product.accent,
+      image: product.images[0],
+    });
+    pushToast(`${product.name} added to bag.`);
+    openCart();
+  };
 
   return (
     <article data-product-card className="group/product reveal-up-soft block min-w-0">
@@ -66,27 +87,43 @@ export function ProductCard({ product }: { product: Product }) {
             style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
           />
         )}
-        <WishlistButton
-          productId={product.id}
-          label={`Save ${product.name}`}
-          className="absolute bottom-1.5 right-1.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-[var(--foreground)] transition hover:bg-white md:bottom-2 md:right-2"
-          iconClassName="h-[18px] w-[18px]"
-        />
       </div>
 
-      <Link href={productHref} className="shop-card-copy block px-0 pb-1 pt-1">
-        <p className="line-clamp-2 text-[1rem] font-medium uppercase leading-[1.04] tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.04rem]">
-          {product.name}
-        </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <p className="text-[0.99rem] font-semibold leading-none text-[var(--foreground)] sm:text-[1rem]">
-            Rs.{product.price.toLocaleString("en-IN")}.00
+      <div className="shop-card-copy block px-0 pb-1 pt-1">
+        <Link href={productHref} className="block">
+          <p className="line-clamp-2 text-[1rem] font-medium uppercase leading-[1.04] tracking-[-0.03em] text-[var(--foreground)] sm:text-[1.04rem]">
+            {product.name}
           </p>
-          {hasDiscount ? (
-            <p className="text-[0.74rem] leading-none text-[var(--accent)] line-through sm:text-[0.78rem]">
-              Rs.{compareAtPrice.toLocaleString("en-IN")}.00
-            </p>
-          ) : null}
+        </Link>
+        <div className="mt-1 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <p className="text-[0.99rem] font-semibold leading-none text-[var(--foreground)] sm:text-[1rem]">
+                Rs.{product.price.toLocaleString("en-IN")}.00
+              </p>
+              {hasDiscount ? (
+                <p className="text-[0.74rem] leading-none text-[var(--accent)] line-through sm:text-[0.78rem]">
+                  Rs.{compareAtPrice.toLocaleString("en-IN")}.00
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <WishlistButton
+              productId={product.id}
+              label={`Save ${product.name}`}
+              className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+              iconClassName="h-[17px] w-[17px]"
+            />
+            <button
+              type="button"
+              onClick={quickAddToCart}
+              className="flex h-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] px-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
+              aria-label={`Add ${product.name} to cart`}
+            >
+              Add
+            </button>
+          </div>
         </div>
         <div className="mt-1.5 flex min-h-3 items-center gap-1">
           {product.colors.slice(0, 4).map((color) => (
@@ -107,7 +144,7 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
-      </Link>
+      </div>
     </article>
   );
 }
