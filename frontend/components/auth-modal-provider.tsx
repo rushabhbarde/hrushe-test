@@ -110,14 +110,14 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     <AuthModalContext.Provider value={value}>
       {children}
       {isOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-md">
           <button
             type="button"
             aria-label="Close account popup"
             className="absolute inset-0 cursor-default"
             onClick={closeAuthModal}
           />
-          <div className="relative z-10 w-full max-w-[560px]">
+          <div className="auth-switch-panel relative z-10 w-full max-w-[560px]">
             <button
               type="button"
               onClick={closeAuthModal}

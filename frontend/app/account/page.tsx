@@ -1319,13 +1319,13 @@ export default function AccountPage() {
                     ctaLabel="Explore products"
                   />
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {wishlistProducts.map((product) => (
                       <div
                         key={product.id}
-                        className="rounded-[1.8rem] border border-[var(--border)] bg-white/70 p-4"
+                        className="lux-hover-lift border border-[var(--border)] bg-white/72 p-4"
                       >
-                        <div className="relative aspect-[4/5] overflow-hidden rounded-[1.4rem] bg-[#f4f4f4]">
+                        <div className="relative aspect-[0.86/1] overflow-hidden bg-[#f4f4f4]">
                           {product.images[0] ? (
                             <Image
                               src={product.images[0]}
@@ -1353,14 +1353,14 @@ export default function AccountPage() {
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link
                             href={product.slug ? `/product/${product.slug}` : "/shop"}
-                            className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
+                            className="lux-action-muted px-4 py-2.5 text-sm"
                           >
                             View product
                           </Link>
                           <button
                             type="button"
                             onClick={() => void moveWishlistToCart(product.id)}
-                            className="button-primary rounded-full px-4 py-2.5 text-sm transition"
+                            className="lux-action px-4 py-2.5 text-sm"
                           >
                             {submitting === `wishlist-cart-${product.id}` ? "Moving..." : "Move to cart"}
                           </button>

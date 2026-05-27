@@ -46,17 +46,21 @@ export function AuthPanel({
   const [error, setError] = useState("");
   const [loginIdentifier, setLoginIdentifier] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
   const [signupOtp, setSignupOtp] = useState("");
   const [signupOtpRequested, setSignupOtpRequested] = useState(false);
   const [signupDevOtp, setSignupDevOtp] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotPassword, setForgotPassword] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotStep, setForgotStep] = useState<"request" | "verify">("request");
   const [devOtp, setDevOtp] = useState("");
 
@@ -301,7 +305,7 @@ export function AuthPanel({
   };
 
   return (
-    <div className={`grain-card rounded-[2rem] p-6 sm:p-8 ${className}`.trim()}>
+    <div className={`lux-panel rounded-[2rem] p-6 sm:p-8 ${className}`.trim()}>
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="eyebrow text-[var(--accent)]">Account</p>
@@ -355,11 +359,11 @@ export function AuthPanel({
 
       {view === "forgot-password" ? (
         forgotStep === "request" ? (
-          <form className="mt-8 grid gap-4" onSubmit={(event) => void onRequestOtp(event)}>
+          <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onRequestOtp(event)}>
             <input
               value={forgotEmail}
               onChange={(event) => setForgotEmail(event.target.value)}
-              className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+              className="lux-input"
               placeholder="Email address"
               type="email"
               required
@@ -374,11 +378,11 @@ export function AuthPanel({
               </button>
           </form>
         ) : (
-          <form className="mt-8 grid gap-4" onSubmit={(event) => void onResetPassword(event)}>
+          <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onResetPassword(event)}>
             <input
               value={forgotEmail}
               onChange={(event) => setForgotEmail(event.target.value)}
-              className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+              className="lux-input"
               placeholder="Email address"
               type="email"
               required
@@ -386,19 +390,28 @@ export function AuthPanel({
             <input
               value={forgotOtp}
               onChange={(event) => setForgotOtp(event.target.value)}
-              className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+              className="lux-input"
               placeholder="6-digit OTP"
               inputMode="numeric"
               required
             />
-            <input
-              value={forgotPassword}
-              onChange={(event) => setForgotPassword(event.target.value)}
-              className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="New password"
-              type="password"
-              required
-            />
+            <div className="relative">
+              <input
+                value={forgotPassword}
+                onChange={(event) => setForgotPassword(event.target.value)}
+                className="lux-input pr-20"
+                placeholder="New password"
+                type={showForgotPassword ? "text" : "password"}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword((current) => !current)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+              >
+                {showForgotPassword ? "Hide" : "Show"}
+              </button>
+            </div>
             {devOtp ? (
               <p className="text-sm text-[var(--muted)]">
                 Dev OTP: <span className="font-semibold text-[var(--accent)]">{devOtp}</span>
@@ -430,22 +443,31 @@ export function AuthPanel({
           </form>
         )
       ) : mode === "login" ? (
-        <form className="mt-8 grid gap-4" onSubmit={(event) => void onLoginSubmit(event)}>
+        <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onLoginSubmit(event)}>
           <input
             value={loginIdentifier}
             onChange={(event) => setLoginIdentifier(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+            className="lux-input"
             placeholder="Email address or phone number"
             required
           />
-          <input
-            value={loginPassword}
-            onChange={(event) => setLoginPassword(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-            placeholder="Password"
-            type="password"
-            required
-          />
+          <div className="relative">
+            <input
+              value={loginPassword}
+              onChange={(event) => setLoginPassword(event.target.value)}
+              className="lux-input pr-20"
+              placeholder="Password"
+              type={showLoginPassword ? "text" : "password"}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowLoginPassword((current) => !current)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+            >
+              {showLoginPassword ? "Hide" : "Show"}
+            </button>
+          </div>
           {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
           <button
             type="button"
@@ -463,11 +485,11 @@ export function AuthPanel({
           </button>
         </form>
       ) : (
-        <form className="mt-8 grid gap-4" onSubmit={(event) => void onSignupSubmit(event)}>
+        <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onSignupSubmit(event)}>
           <input
             value={signupName}
             onChange={(event) => setSignupName(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+            className="lux-input"
             placeholder="Full name"
             required
           />
@@ -479,7 +501,7 @@ export function AuthPanel({
               setSignupOtp("");
               setSignupDevOtp("");
             }}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+            className="lux-input"
             placeholder="Email address"
             type="email"
             required
@@ -487,7 +509,7 @@ export function AuthPanel({
           <input
             value={signupPhone}
             onChange={(event) => setSignupPhone(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+            className="lux-input"
             placeholder="Phone number"
             type="tel"
             required
@@ -496,7 +518,7 @@ export function AuthPanel({
             <input
               value={signupOtp}
               onChange={(event) => setSignupOtp(event.target.value)}
-              className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
+              className="lux-input"
               placeholder="Email OTP"
               inputMode="numeric"
               required
@@ -514,22 +536,40 @@ export function AuthPanel({
                   : "Send OTP"}
             </button>
           </div>
-          <input
-            value={signupPassword}
-            onChange={(event) => setSignupPassword(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-            placeholder="Password"
-            type="password"
-            required
-          />
-          <input
-            value={signupConfirmPassword}
-            onChange={(event) => setSignupConfirmPassword(event.target.value)}
-            className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-            placeholder="Confirm password"
-            type="password"
-            required
-          />
+          <div className="relative">
+            <input
+              value={signupPassword}
+              onChange={(event) => setSignupPassword(event.target.value)}
+              className="lux-input pr-20"
+              placeholder="Password"
+              type={showSignupPassword ? "text" : "password"}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowSignupPassword((current) => !current)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+            >
+              {showSignupPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              value={signupConfirmPassword}
+              onChange={(event) => setSignupConfirmPassword(event.target.value)}
+              className="lux-input pr-20"
+              placeholder="Confirm password"
+              type={showSignupConfirmPassword ? "text" : "password"}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowSignupConfirmPassword((current) => !current)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+            >
+              {showSignupConfirmPassword ? "Hide" : "Show"}
+            </button>
+          </div>
           {signupDevOtp ? (
             <p className="text-sm text-[var(--muted)]">
               Dev OTP: <span className="font-semibold text-[var(--accent)]">{signupDevOtp}</span>

@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useCart } from "@/components/cart-provider";
+import { useToast } from "@/components/toast-provider";
 import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useWishlist } from "@/components/wishlist-provider";
@@ -16,8 +18,11 @@ export function WishlistDrawer() {
     closeWishlist,
     removeWishlistItem,
   } = useWishlist();
+  const { addItem } = useCart();
+  const { pushToast } = useToast();
   const { products } = useStorefrontData();
   const pathname = usePathname();
+  const [removingIds, setRemovingIds] = useState<string[]>([]);
 
   useEffect(() => {
     closeWishlist();
@@ -45,7 +50,7 @@ export function WishlistDrawer() {
         className="absolute inset-0 bg-black/35"
         onClick={closeWishlist}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-white p-5 shadow-2xl sm:p-6">
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-5 shadow-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="eyebrow text-[var(--accent)]">Favourites</p>
@@ -60,7 +65,7 @@ export function WishlistDrawer() {
           </button>
         </div>
 
-        <div className="mt-6 flex-1 space-y-4 overflow-y-auto">
+        <div className="hide-scrollbar mt-6 flex-1 space-y-5 overflow-y-auto">
           {wishlistProducts.length === 0 ? (
             <div className="empty-shell rounded-[2rem] p-6">
               <p className="text-lg font-semibold">Your favourites are empty.</p>
@@ -78,12 +83,14 @@ export function WishlistDrawer() {
             wishlistProducts.map((product) => (
               <div
                 key={product.id}
-                className="rounded-[1.2rem] border border-[var(--border)] bg-white/80 p-3 shadow-[0_14px_36px_rgba(20,20,20,0.06)]"
+                className={`lux-hover-lift border border-[var(--border)] bg-white/72 p-3 transition-all duration-300 ${
+                  removingIds.includes(product.id) ? "-translate-y-2 scale-[0.98] opacity-0" : ""
+                }`}
               >
                 <div>
                   <Link
                     href={`/product/${product.slug || product.id}`}
-                    className="relative block aspect-[0.9/1.14] overflow-hidden rounded-[0.9rem] bg-[#f6f6f6]"
+                    className="relative block aspect-[0.86/1] overflow-hidden bg-[#f6f6f6]"
                   >
                     {product.images[0] ? (
                       <Image
@@ -103,7 +110,12 @@ export function WishlistDrawer() {
                       type="button"
                       onClick={(event) => {
                         event.preventDefault();
-                        removeWishlistItem(product.id);
+                        setRemovingIds((current) => [...current, product.id]);
+                        window.setTimeout(() => {
+                          removeWishlistItem(product.id);
+                          setRemovingIds((current) => current.filter((id) => id !== product.id));
+                          pushToast("Removed from wishlist");
+                        }, 220);
                       }}
                       aria-label={`Remove ${product.name} from wishlist`}
                       className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[var(--accent)] shadow-sm transition hover:bg-white"
@@ -145,12 +157,33 @@ export function WishlistDrawer() {
                     </p>
                   </div>
 
-                  <Link
-                    href={`/product/${product.slug || product.id}`}
-                    className="mt-4 inline-flex w-full items-center justify-center border border-black bg-black px-4 py-3 text-sm uppercase tracking-[0.12em] !text-white transition hover:opacity-90"
-                  >
-                    View product
-                  </Link>
+                  <div className="mt-4 grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        addItem({
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          size: product.sizes[0] || "M",
+                          color: product.colors[0] || "Default",
+                          accent: product.accent,
+                          image: product.images[0],
+                        });
+                        removeWishlistItem(product.id);
+                        pushToast("Moved to cart");
+                      }}
+                      className="lux-action w-full"
+                    >
+                      Move to cart
+                    </button>
+                    <Link
+                      href={`/product/${product.slug || product.id}`}
+                      className="lux-action-muted w-full"
+                    >
+                      View product
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))

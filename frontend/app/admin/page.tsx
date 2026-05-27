@@ -42,6 +42,17 @@ const nextOrderAction: Partial<Record<OrderStatus, { label: string; next: OrderS
   "Out for delivery": { label: "Mark delivered", next: "Delivered" },
 };
 
+const managementCards = [
+  { href: "/admin/homepage", label: "Home banner", detail: "Images, hero copy, section order" },
+  { href: "/admin/storefront", label: "Storefront sections", detail: "Featured rails and merchandising" },
+  { href: "/admin/products", label: "Product management", detail: "Catalog, image previews, variants" },
+  { href: "/admin/categories", label: "Categories", detail: "Navigation and filter groups" },
+  { href: "/admin/collections", label: "Collections", detail: "Drops, edits, campaign pages" },
+  { href: "/admin/coupons", label: "Coupons", detail: "Discounts and campaign rules" },
+  { href: "/admin/orders", label: "Order tracking", detail: "Status, courier, fulfillment" },
+  { href: "/admin/reports", label: "Analytics", detail: "Revenue and sales reports" },
+];
+
 export default function AdminDashboardPage() {
   const { products } = useStorefrontData();
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -100,6 +111,7 @@ export default function AdminDashboardPage() {
       lowStockProducts,
       incompleteProducts,
       openSupport,
+      totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
     };
   }, [orders, products, supportRequests]);
 
@@ -207,11 +219,12 @@ export default function AdminDashboardPage() {
   return (
     <AdminShell>
       <div className="space-y-5">
-        <section className="grid gap-3 rounded-[1.5rem] border border-[rgba(17,17,17,0.08)] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(17,17,17,0.04)] sm:grid-cols-2 lg:grid-cols-5">
-          <CompactMetric label="Today orders" value={String(operations.todayOrders.length)} />
-          <CompactMetric label="Today revenue" value={formatAdminCurrency(operations.todayRevenue)} />
-          <CompactMetric label="Pending shipments" value={String(operations.pendingShipments)} />
-          <CompactMetric label="Open returns" value={String(operations.returnsOpen)} />
+        <section className="grid gap-3 rounded-[1.5rem] border border-[rgba(17,17,17,0.08)] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(17,17,17,0.04)] sm:grid-cols-2 lg:grid-cols-6">
+          <CompactMetric label="Total orders" value={String(orders.length)} />
+          <CompactMetric label="Revenue" value={formatAdminCurrency(operations.totalRevenue)} />
+          <CompactMetric label="Products" value={String(products.length)} />
+          <CompactMetric label="Users" value={String(customers.length)} />
+          <CompactMetric label="Pending orders" value={String(operations.pendingOrders.length)} />
           <CompactMetric label="Low stock" value={String(operations.lowStockProducts.length)} />
         </section>
 
@@ -220,6 +233,41 @@ export default function AdminDashboardPage() {
             {statusMessage}
           </div>
         ) : null}
+
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+          <AdminPanel>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <AdminSectionLabel>Management</AdminSectionLabel>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
+                  Storefront controls.
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                  Fast access to banner image uploads, homepage sections, featured products,
+                  collections, coupons, and order tracking.
+                </p>
+              </div>
+              <Link href="/admin/homepage" className="button-secondary rounded-full px-4 py-2 text-sm font-medium">
+                Edit homepage
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {managementCards.map((card) => (
+                <ManagementCard key={card.href} {...card} />
+              ))}
+            </div>
+          </AdminPanel>
+
+          <AdminPanel>
+            <AdminSectionLabel>Analytics pulse</AdminSectionLabel>
+            <div className="mt-5 space-y-4">
+              <AnalyticsBar label="Pending orders" value={operations.pendingOrders.length} total={Math.max(orders.length, 1)} />
+              <AnalyticsBar label="Shipments active" value={operations.pendingShipments} total={Math.max(orders.length, 1)} />
+              <AnalyticsBar label="Catalog fixes" value={operations.incompleteProducts.length} total={Math.max(products.length, 1)} />
+              <AnalyticsBar label="Support open" value={operations.openSupport.length} total={Math.max(supportRequests.length, 1)} />
+            </div>
+          </AdminPanel>
+        </div>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
           <AdminPanel className="p-0 md:p-0">
@@ -377,6 +425,37 @@ function QuickAction({ href, label, detail }: { href: string; label: string; det
       <p className="text-sm font-semibold">{label}</p>
       <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{detail}</p>
     </Link>
+  );
+}
+
+function ManagementCard({ href, label, detail }: { href: string; label: string; detail: string }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-[1.25rem] border border-[rgba(17,17,17,0.08)] bg-white/70 px-4 py-4 transition hover:-translate-y-0.5 hover:border-[rgba(17,17,17,0.22)] hover:shadow-[0_18px_36px_rgba(17,17,17,0.07)]"
+    >
+      <p className="text-sm font-semibold tracking-[-0.02em]">{label}</p>
+      <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{detail}</p>
+    </Link>
+  );
+}
+
+function AnalyticsBar({ label, value, total }: { label: string; value: number; total: number }) {
+  const percentage = Math.min(100, Math.round((value / total) * 100));
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-[var(--muted)]">{value}</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[rgba(17,17,17,0.06)]">
+        <div
+          className="h-full rounded-full bg-black transition-all"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

@@ -20,14 +20,16 @@ export default function CheckoutSuccessPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1400px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-        <section className="grain-card relative rounded-[2.4rem] px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+      <main className="lux-page py-10 sm:py-14">
+        <section className="lux-container">
+          <div className="lux-panel relative rounded-[2.4rem] px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
           <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
             <div>
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)] text-3xl text-white shadow-[0_18px_40px_rgba(208,32,39,0.24)]">
-                ✓
+              <div className="loading-mark relative flex h-16 w-16 items-center justify-center rounded-full bg-black text-sm font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_40px_rgba(17,17,17,0.16)]">
+                <span className="loading-ring absolute inset-0 rounded-full border border-black/15" />
+                Paid
               </div>
-              <p className="eyebrow mt-6 text-[var(--accent)]">Checkout success</p>
+              <p className="eyebrow mt-6 text-[var(--accent)]">Payment successful</p>
               <h1 className="display-font mt-4 text-4xl sm:text-5xl lg:text-6xl">
                 Your order is confirmed.
               </h1>
@@ -57,19 +59,21 @@ export default function CheckoutSuccessPage() {
             <div className="grid gap-4">
               <div className="relative rounded-[2rem] border border-[var(--border)] bg-white/60 p-6 backdrop-blur-md">
                 <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                  What happens next
+                  Order summary
                 </p>
-                <div className="mt-5 space-y-4">
-                  {[
-                    "Your order is now saved in your account and order history.",
-                    "You will see status changes like Confirmed, Shipped, and Delivered.",
-                    "Tracking details will appear as soon as the courier is assigned.",
-                  ].map((step) => (
-                    <div key={step} className="flex gap-3">
-                      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-                      <p className="text-sm leading-7 text-[var(--muted)]">{step}</p>
-                    </div>
-                  ))}
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                    <span className="text-[var(--muted)]">Payment</span>
+                    <span>Successful</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                    <span className="text-[var(--muted)]">Order status</span>
+                    <span>Confirmed</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--muted)]">Tracking</span>
+                    <span>Available after dispatch</span>
+                  </div>
                 </div>
               </div>
               <div className="relative rounded-[2rem] border border-[var(--border)] bg-white/60 p-6 backdrop-blur-md">
@@ -98,6 +102,7 @@ export default function CheckoutSuccessPage() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </section>
       </main>
