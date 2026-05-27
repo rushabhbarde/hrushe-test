@@ -8,11 +8,12 @@
   --foreground: #111111;
   --muted: #5f5f5f;
   --border: rgba(17, 17, 17, 0.1);
-  --accent: #d61f26;
-  --accent-dark: #b31219;
+  --accent: #585858;
+  --accent-dark: #111111;
+  --danger: #c43a35;
   --shadow: 0 18px 48px rgba(17, 17, 17, 0.08);
   --soft-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
-  --hero-glow: rgba(214, 31, 38, 0.035);
+  --hero-glow: rgba(17, 17, 17, 0.035);
   --footer-background: #2f2d2b;
   --footer-foreground: #ffffff;
   --header-background: rgba(255, 255, 255, 0.92);
@@ -27,11 +28,12 @@
   --foreground: #f7f7f4;
   --muted: #b6b6b1;
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #d61f26;
-  --accent-dark: #ee434a;
+  --accent: #d2d2d2;
+  --accent-dark: #ffffff;
+  --danger: #ef6b65;
   --shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
   --soft-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
-  --hero-glow: rgba(214, 31, 38, 0.14);
+  --hero-glow: rgba(255, 255, 255, 0.08);
   --footer-background: #050505;
   --footer-foreground: #f8f8f5;
   --header-background: rgba(8, 8, 8, 0.86);
@@ -298,6 +300,7 @@ div {
   box-shadow: var(--soft-shadow);
   min-height: 44px;
   letter-spacing: 0.06em;
+  border-radius: 0 !important;
 }
 
 .button-secondary {
@@ -306,6 +309,7 @@ div {
   box-shadow: var(--soft-shadow);
   backdrop-filter: blur(16px) saturate(120%);
   min-height: 44px;
+  border-radius: 0 !important;
 }
 
 .lux-page {
@@ -328,6 +332,7 @@ div {
     radial-gradient(circle at top right, color-mix(in srgb, var(--foreground) 3%, transparent), transparent 18rem);
   box-shadow: 0 18px 44px rgba(17, 17, 17, 0.05);
   backdrop-filter: blur(18px) saturate(112%);
+  border-radius: 0 !important;
 }
 
 .lux-input {
@@ -363,6 +368,7 @@ div {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  border-radius: 0 !important;
 }
 
 .lux-action-muted {
@@ -379,6 +385,24 @@ div {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  border-radius: 0 !important;
+}
+
+:where(
+  .grain-card,
+  .empty-shell,
+  .loading-shell,
+  .theme-panel,
+  .editorial-card,
+  .hero-panel,
+  [class*="rounded-[1"],
+  [class*="rounded-[2"],
+  .rounded-2xl,
+  .rounded-xl,
+  .rounded-lg,
+  .rounded-md
+) {
+  border-radius: 0 !important;
 }
 
 .lux-hover-lift {
@@ -454,8 +478,9 @@ div {
 
 .loading-mark {
   background:
-    radial-gradient(circle at center, color-mix(in srgb, var(--accent) 18%, transparent), transparent 62%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--foreground) 10%, transparent), transparent 62%),
     color-mix(in srgb, var(--surface) 92%, transparent);
+  border-radius: 0 !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, white 10%),
     0 18px 40px rgba(17, 17, 17, 0.08);
@@ -516,7 +541,7 @@ div {
       110deg,
       rgba(255, 255, 255, 0.85) 8%,
       rgba(255, 255, 255, 0.92) 18%,
-      rgba(214, 31, 38, 0.08) 33%,
+      rgba(17, 17, 17, 0.08) 33%,
       rgba(255, 255, 255, 0.88) 45%
     );
   background-size: 220% 100%;

@@ -532,7 +532,7 @@ export default function CheckoutPage() {
                           onChange={onChange}
                           className="lux-input"
                         >
-                          <option value="Home">Country / Home</option>
+                          <option value="Home">Address type / Home</option>
                           <option value="Work">Work</option>
                           <option value="Other">Other</option>
                         </select>
@@ -601,7 +601,12 @@ export default function CheckoutPage() {
                           <input
                             type="checkbox"
                             checked={acceptedTerms}
-                            onChange={(event) => setAcceptedTerms(event.target.checked)}
+                            onChange={(event) => {
+                              setAcceptedTerms(event.target.checked);
+                              if (event.target.checked) {
+                                setError("");
+                              }
+                            }}
                             className="mt-0.5 h-4 w-4 rounded-none"
                           />
                           <span>I agree to the Terms and Conditions.</span>

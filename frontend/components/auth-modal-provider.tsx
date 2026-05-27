@@ -121,7 +121,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={closeAuthModal}
-              className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-xl text-black shadow-sm transition hover:bg-white"
+              className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center border border-[var(--border)] bg-white/90 text-xl text-black shadow-sm transition hover:bg-white"
               aria-label="Close"
             >
               ×

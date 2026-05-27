@@ -327,11 +327,11 @@ export function AuthPanel({
       </div>
 
       {view === "auth" ? (
-        <div className="mt-6 inline-flex rounded-full border border-[var(--border)] bg-white/60 p-1">
+        <div className="mt-6 inline-flex border border-[var(--border)] bg-white/60 p-1">
           <button
             type="button"
             onClick={() => switchMode("login")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`px-4 py-2 text-sm font-medium transition ${
               mode === "login" ? "bg-black text-white" : "text-[var(--muted)]"
             }`}
           >
@@ -340,7 +340,7 @@ export function AuthPanel({
           <button
             type="button"
             onClick={() => switchMode("signup")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`px-4 py-2 text-sm font-medium transition ${
               mode === "signup" ? "bg-black text-white" : "text-[var(--muted)]"
             }`}
           >
@@ -372,7 +372,7 @@ export function AuthPanel({
               <button
                 type="submit"
                 disabled={isForgotOtpSubmitting}
-                className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
               </button>
@@ -422,7 +422,7 @@ export function AuthPanel({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Resetting..." : "Reset password"}
               </button>
@@ -435,7 +435,7 @@ export function AuthPanel({
                   setDevOtp("");
                   setError("");
                 }}
-                className="button-secondary rounded-full px-5 py-3 transition"
+                className="button-secondary px-5 py-3 transition"
               >
                 Resend OTP
               </button>
@@ -479,7 +479,7 @@ export function AuthPanel({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Signing in..." : "Login"}
           </button>
@@ -527,7 +527,7 @@ export function AuthPanel({
               type="button"
               onClick={() => void onRequestSignupOtp()}
               disabled={isSignupOtpSubmitting}
-              className="button-secondary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="button-secondary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSignupOtpSubmitting
                 ? "Sending OTP..."
@@ -579,7 +579,7 @@ export function AuthPanel({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Creating account..." : "Create account"}
           </button>

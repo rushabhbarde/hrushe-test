@@ -53,13 +53,13 @@ export function WishlistDrawer() {
       <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-5 shadow-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="eyebrow text-[var(--accent)]">Favourites</p>
+            <p className="eyebrow text-[var(--muted)]">Favourites</p>
             <h2 className="mt-2 text-2xl font-semibold">Favourites</h2>
           </div>
           <button
             type="button"
             onClick={closeWishlist}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
+            className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
           >
             ×
           </button>
@@ -67,14 +67,14 @@ export function WishlistDrawer() {
 
         <div className="hide-scrollbar mt-6 flex-1 space-y-5 overflow-y-auto">
           {wishlistProducts.length === 0 ? (
-            <div className="empty-shell rounded-[2rem] p-6">
+            <div className="empty-shell p-6">
               <p className="text-lg font-semibold">Your favourites are empty.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
                 Tap the heart on any product to save it here for later.
               </p>
               <Link
                 href="/shop"
-                className="button-primary mt-5 inline-flex rounded-full px-5 py-3 transition"
+                className="button-primary mt-5 inline-flex px-5 py-3 transition"
               >
                 Explore products
               </Link>
@@ -118,7 +118,7 @@ export function WishlistDrawer() {
                         }, 220);
                       }}
                       aria-label={`Remove ${product.name} from wishlist`}
-                      className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[var(--accent)] shadow-sm transition hover:bg-white"
+                      className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-sm transition hover:bg-white"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -135,7 +135,7 @@ export function WishlistDrawer() {
                 </div>
 
                 <div className="px-1 pb-1 pt-4">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--accent)]">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
                     {product.category}
                   </p>
                   <Link
@@ -195,7 +195,7 @@ export function WishlistDrawer() {
             <span>{itemCount} saved</span>
             <Link
               href="/account#wishlist"
-              className="font-medium text-[var(--accent)]"
+              className="font-medium text-[var(--foreground)] underline underline-offset-4"
             >
               View in account
             </Link>

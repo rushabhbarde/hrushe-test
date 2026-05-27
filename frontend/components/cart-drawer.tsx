@@ -34,31 +34,31 @@ export function CartDrawer() {
         className="absolute inset-0 bg-black/35"
         onClick={closeCart}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-white p-4 shadow-2xl sm:p-6">
+      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 shadow-2xl sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="eyebrow text-[var(--accent)]">Cart</p>
+            <p className="eyebrow text-[var(--muted)]">Cart</p>
             <h2 className="mt-2 text-2xl font-semibold">Your bag</h2>
           </div>
           <button
             type="button"
             onClick={closeCart}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
+            className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
           >
             ×
           </button>
         </div>
 
-        <div className="mt-6 flex-1 space-y-4 overflow-y-auto">
+        <div className="hide-scrollbar mt-6 flex-1 space-y-4 overflow-y-auto">
           {items.length === 0 ? (
-            <div className="empty-shell rounded-[2rem] p-6">
+            <div className="empty-shell p-6">
               <p className="text-lg font-semibold">Your cart is empty.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
                 Add a few pieces and come back here for a quick checkout jump.
               </p>
               <Link
                 href="/shop"
-                className="button-primary mt-5 inline-flex rounded-full px-5 py-3 transition"
+                className="button-primary mt-5 inline-flex px-5 py-3 transition"
               >
                 Shop now
               </Link>
@@ -67,10 +67,10 @@ export function CartDrawer() {
             items.map((item) => (
               <div
                 key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-                className="grain-card rounded-[1.75rem] p-4"
+                className="border border-[var(--border)] bg-white/72 p-4"
               >
                 <div className="flex gap-3 sm:gap-4">
-                  <div className="relative h-20 w-[4.5rem] shrink-0 overflow-hidden rounded-[1rem] bg-[#f6f6f6] sm:w-20">
+                  <div className="relative h-20 w-[4.5rem] shrink-0 overflow-hidden bg-[#f6f6f6] sm:w-20">
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -102,7 +102,7 @@ export function CartDrawer() {
                             item.fit
                           )
                         }
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
+                        className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
                       >
                         -
                       </button>
@@ -118,14 +118,14 @@ export function CartDrawer() {
                             item.fit
                           )
                         }
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)]"
+                        className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
                       >
                         +
                       </button>
                       <button
                         type="button"
                         onClick={() => removeItem(item.productId, item.size, item.color, item.fit)}
-                        className="ml-auto text-sm text-[var(--accent)]"
+                        className="ml-auto text-sm text-[var(--foreground)] underline underline-offset-4"
                       >
                         Remove
                       </button>
@@ -145,13 +145,13 @@ export function CartDrawer() {
           <div className="mt-4 grid gap-3">
             <Link
               href="/checkout"
-              className="button-primary inline-flex justify-center rounded-full px-5 py-3 transition"
+              className="button-primary inline-flex justify-center px-5 py-3 transition"
             >
               Checkout
             </Link>
             <Link
               href="/cart"
-              className="button-secondary inline-flex justify-center rounded-full px-5 py-3 transition"
+              className="button-secondary inline-flex justify-center px-5 py-3 transition"
             >
               View cart
             </Link>

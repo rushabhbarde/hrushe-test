@@ -23,6 +23,44 @@ const buildAuthorizationHeader = () => {
   return token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
 };
 
+const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
+  <!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>${subject}</title>
+    </head>
+    <body style="margin:0;background:#f5f5f3;color:#111111;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f3;padding:28px 16px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #d8d8d4;background:#ffffff;">
+              <tr>
+                <td style="border-bottom:1px solid #d8d8d4;padding:26px 28px 22px;">
+                  <div style="font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6c6c68;">HRUSHE</div>
+                  <div style="margin-top:12px;font-size:26px;line-height:1.05;font-weight:700;letter-spacing:-0.04em;">Quiet pieces. Everyday ease.</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:28px;font-size:15px;line-height:1.75;color:#222222;">
+                  ${html}
+                </td>
+              </tr>
+              <tr>
+                <td style="border-top:1px solid #d8d8d4;padding:20px 28px;font-size:12px;line-height:1.6;color:#6c6c68;">
+                  HRUSHE support: team@hrushe.in<br />
+                  This is an automated brand notification.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+`;
+
 const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
   if (!normalizedZeptoMailApiKey()) {
     return { delivered: false, reason: "missing_zeptomail_api_key" };
@@ -52,7 +90,7 @@ const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
             }
           : {
               subject,
-              htmlbody: html,
+              htmlbody: buildMailHtml({ subject, html }),
             }),
       }),
     }

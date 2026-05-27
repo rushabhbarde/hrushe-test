@@ -97,7 +97,7 @@ export function AdminShell({
         <div className="flex min-h-screen">
           <aside className="sticky top-0 hidden h-screen w-[290px] shrink-0 border-r border-[rgba(17,17,17,0.08)] bg-white/92 px-5 py-6 xl:block">
             <Link href="/admin" className="flex items-center gap-3 border-b border-[rgba(17,17,17,0.08)] pb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(214,31,38,0.08)] text-[var(--accent)]">
+              <div className="flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[rgba(17,17,17,0.04)] text-[var(--foreground)]">
                 <span className="display-font text-2xl leading-none">H</span>
               </div>
               <div>
@@ -144,7 +144,7 @@ export function AdminShell({
                 <button
                   type="button"
                   onClick={() => setMobileNavOpen((current) => !current)}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(17,17,17,0.1)] bg-white xl:hidden"
+                  className="inline-flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.1)] bg-white xl:hidden"
                   aria-label="Open admin navigation"
                 >
                   <HamburgerIcon />
@@ -165,7 +165,7 @@ export function AdminShell({
                       {activeItem?.label || "Dashboard"}
                     </p>
                     {activeItem?.group ? (
-                      <span className="rounded-full border border-[rgba(17,17,17,0.08)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+                    <span className="border border-[rgba(17,17,17,0.08)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
                         {activeItem.group}
                       </span>
                     ) : null}
@@ -175,7 +175,7 @@ export function AdminShell({
                 <div className="hidden flex-1 items-center justify-end gap-3 lg:flex">
                   <form
                     onSubmit={handleGlobalSearch}
-                    className="flex min-w-[280px] items-center gap-2 rounded-full border border-[rgba(17,17,17,0.08)] bg-white px-4 py-2.5 text-sm text-[var(--muted)] transition focus-within:border-[rgba(17,17,17,0.28)]"
+                    className="flex min-w-[280px] items-center gap-2 border border-[rgba(17,17,17,0.08)] bg-white px-4 py-2.5 text-sm text-[var(--muted)] transition focus-within:border-[rgba(17,17,17,0.28)]"
                   >
                     <SearchIcon />
                     <input
@@ -188,13 +188,13 @@ export function AdminShell({
                   {contextualActions}
                   <Link
                     href="/admin/add-product"
-                    className="button-primary rounded-full px-4 py-2.5 text-sm font-medium"
+                    className="button-primary px-4 py-2.5 text-sm font-medium"
                   >
                     Quick create
                   </Link>
                   <Link
                     href="/admin/support"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(17,17,17,0.08)] bg-white"
+                    className="inline-flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-white"
                     aria-label="Notifications"
                   >
                     <BellIcon />
@@ -203,9 +203,9 @@ export function AdminShell({
                     <button
                       type="button"
                       onClick={() => setProfileOpen((current) => !current)}
-                      className="inline-flex h-11 items-center gap-3 rounded-full border border-[rgba(17,17,17,0.08)] bg-white px-3"
+                      className="inline-flex h-11 items-center gap-3 border border-[rgba(17,17,17,0.08)] bg-white px-3"
                     >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(214,31,38,0.08)] text-sm font-semibold text-[var(--accent)]">
+                      <span className="flex h-8 w-8 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[rgba(17,17,17,0.04)] text-sm font-semibold text-[var(--foreground)]">
                         A
                       </span>
                       <span className="text-sm font-medium">Admin</span>

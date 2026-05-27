@@ -9,7 +9,7 @@ const toneClasses: Record<Tone, string> = {
   default:
     "border-[rgba(17,17,17,0.08)] bg-white text-[var(--foreground)]",
   accent:
-    "border-[rgba(214,31,38,0.14)] bg-[rgba(214,31,38,0.06)] text-[var(--accent)]",
+    "border-[rgba(17,17,17,0.14)] bg-[rgba(17,17,17,0.05)] text-[var(--foreground)]",
   success:
     "border-[rgba(18,130,74,0.14)] bg-[rgba(18,130,74,0.08)] text-[#12824a]",
   warning:
@@ -25,7 +25,7 @@ export function AdminBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${toneClasses[tone]}`}
+      className={`inline-flex items-center border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${toneClasses[tone]}`}
     >
       {children}
     </span>
@@ -41,7 +41,7 @@ export function AdminPanel({
 }) {
   return (
     <section
-      className={`rounded-[1.75rem] border border-[rgba(17,17,17,0.08)] bg-white/96 p-5 shadow-[0_16px_40px_rgba(17,17,17,0.06)] backdrop-blur md:p-6 ${className}`}
+      className={`border border-[rgba(17,17,17,0.08)] bg-white/96 p-5 shadow-[0_16px_40px_rgba(17,17,17,0.06)] backdrop-blur md:p-6 ${className}`}
     >
       {children}
     </section>
@@ -58,7 +58,7 @@ export function AdminSectionLabel({
   return (
     <p
       className={`text-[11px] font-medium uppercase tracking-[0.28em] ${
-        tone === "accent" ? "text-[var(--accent)]" : "text-[var(--muted)]"
+        tone === "accent" ? "text-[var(--foreground)]" : "text-[var(--muted)]"
       }`}
     >
       {children}
@@ -78,7 +78,7 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-5 rounded-[2rem] border border-[rgba(17,17,17,0.06)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,255,255,0.9))] px-5 py-6 shadow-[0_20px_48px_rgba(17,17,17,0.05)] sm:px-7 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-5 border border-[rgba(17,17,17,0.06)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,255,255,0.9))] px-5 py-6 shadow-[0_20px_48px_rgba(17,17,17,0.05)] sm:px-7 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
       <div className="max-w-3xl">
         <AdminSectionLabel>{eyebrow}</AdminSectionLabel>
         <h1 className="display-font mt-3 text-4xl leading-none text-[var(--foreground)] sm:text-5xl">
@@ -106,8 +106,8 @@ export function AdminActionButton({
 }) {
   const className =
     variant === "primary"
-      ? "button-primary rounded-full px-5 py-3 text-sm font-medium"
-      : "button-secondary rounded-full px-5 py-3 text-sm font-medium";
+      ? "button-primary px-5 py-3 text-sm font-medium"
+      : "button-secondary px-5 py-3 text-sm font-medium";
 
   return (
     <Link href={href} className={className}>
@@ -177,7 +177,7 @@ export function AdminEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="empty-shell flex min-h-[240px] flex-col items-start justify-center rounded-[1.5rem] px-6 py-8">
+    <div className="empty-shell flex min-h-[240px] flex-col items-start justify-center px-6 py-8">
       <AdminSectionLabel>Ready when you are</AdminSectionLabel>
       <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{title}</h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">{description}</p>
@@ -190,7 +190,7 @@ export function AdminFilterInput(props: React.InputHTMLAttributes<HTMLInputEleme
   return (
     <input
       {...props}
-      className={`min-h-11 rounded-full border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
+      className={`min-h-11 border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
     />
   );
 }
@@ -199,7 +199,7 @@ export function AdminFilterSelect(props: React.SelectHTMLAttributes<HTMLSelectEl
   return (
     <select
       {...props}
-      className={`min-h-11 rounded-full border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
+      className={`min-h-11 border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
     />
   );
 }

@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             className={`toast-shell min-w-[280px] max-w-md rounded-full px-5 py-3 text-sm font-medium text-white shadow-lg ${
-              toast.tone === "error" ? "bg-[var(--accent)]" : "bg-black"
+              toast.tone === "error" ? "bg-[var(--danger)]" : "bg-black"
             }`}
           >
             {toast.title}
