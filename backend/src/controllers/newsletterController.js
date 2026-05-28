@@ -27,7 +27,7 @@ const subscribeToNewsletter = asyncHandler(async (req, res) => {
 
   if (env.MAIL_FROM) {
     try {
-      await sendEmail({
+      const delivery = await sendEmail({
         to: env.MAIL_FROM,
         subject: "New HRUSHE newsletter signup",
         html: `
@@ -39,6 +39,9 @@ const subscribeToNewsletter = asyncHandler(async (req, res) => {
           })}</p>
         `,
       });
+      if (!delivery.delivered) {
+        throw new Error(delivery.reason || "Newsletter email delivery failed");
+      }
     } catch (error) {
       console.error("Newsletter notification email failed", {
         message: error?.message,

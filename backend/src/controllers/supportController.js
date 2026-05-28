@@ -56,7 +56,7 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
 
   if (request.userId?.email) {
     try {
-      await sendEmail({
+      const delivery = await sendEmail({
         to: request.userId.email,
         subject: `HRUSHE support update: ${request.subject}`,
         html: `
@@ -71,6 +71,9 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
           <p>For more help, reply to this email or contact team@hrushe.in.</p>
         `,
       });
+      if (!delivery.delivered) {
+        throw new Error(delivery.reason || "Support status email delivery failed");
+      }
     } catch (error) {
       console.error("Support status email failed", {
         message: error?.message,

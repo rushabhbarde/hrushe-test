@@ -471,6 +471,12 @@ const removeWishlistItem = asyncHandler(async (req, res) => {
 
 const moveWishlistItemToCart = asyncHandler(async (req, res) => {
   const { size = "", color = "", fit = "", quantity = 1 } = req.body;
+  const normalizedVariant = {
+    size: String(size || "").trim(),
+    color: String(color || "").trim(),
+    fit: ["Oversize", "Regular"].includes(fit) ? fit : "",
+    quantity: Number(quantity) || 1,
+  };
   const product = await Product.findById(req.params.productId);
 
   if (!product) {
@@ -492,20 +498,20 @@ const moveWishlistItemToCart = asyncHandler(async (req, res) => {
   const existingItem = cart.items.find(
     (item) =>
       getCartItemProductId(item) === req.params.productId &&
-      item.size === String(size || "").trim() &&
-      item.color === String(color || "").trim() &&
-      item.fit === String(fit || "").trim()
+      item.size === normalizedVariant.size &&
+      item.color === normalizedVariant.color &&
+      item.fit === normalizedVariant.fit
   );
 
   if (existingItem) {
-    existingItem.quantity += Number(quantity) || 1;
+    existingItem.quantity += normalizedVariant.quantity;
   } else {
     cart.items.push({
       productId: product._id,
-      quantity: Number(quantity) || 1,
-      size: String(size || "").trim(),
-      color: String(color || "").trim(),
-      fit: ["Oversize", "Regular"].includes(fit) ? fit : "",
+      quantity: normalizedVariant.quantity,
+      size: normalizedVariant.size,
+      color: normalizedVariant.color,
+      fit: normalizedVariant.fit,
     });
   }
 
@@ -546,7 +552,7 @@ const createSupportRequest = asyncHandler(async (req, res) => {
   });
 
   try {
-    await sendEmail({
+    const delivery = await sendEmail({
       to: "team@hrushe.in",
       subject: `HRUSHE support: ${supportRequest.subject}`,
       html: `
@@ -557,6 +563,9 @@ const createSupportRequest = asyncHandler(async (req, res) => {
         <p>${supportRequest.message}</p>
       `,
     });
+    if (!delivery.delivered) {
+      throw new Error(delivery.reason || "Support request email delivery failed");
+    }
   } catch (error) {
     console.error("Support request email failed", {
       message: error?.message,

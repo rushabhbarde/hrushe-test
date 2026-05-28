@@ -1,3 +1,4 @@
+const nodemailer = require("nodemailer");
 const env = require("../config/env");
 
 const normalizedMailFrom = () => String(env.MAIL_FROM || "").trim();
@@ -12,6 +13,20 @@ const buildFromAddress = () => ({
   address: normalizedMailFrom(),
   name: normalizedMailFromName(),
 });
+
+const hasSmtpConfig = () =>
+  Boolean(String(env.SMTP_HOST || "").trim() && String(env.SMTP_USER || "").trim() && String(env.SMTP_PASS || "").trim());
+
+const buildSmtpTransporter = () =>
+  nodemailer.createTransport({
+    host: String(env.SMTP_HOST || "").trim(),
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: {
+      user: String(env.SMTP_USER || "").trim(),
+      pass: String(env.SMTP_PASS || "").trim(),
+    },
+  });
 
 const buildAuthorizationHeader = () => {
   const token = normalizedZeptoMailApiKey();
@@ -61,15 +76,7 @@ const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
   </html>
 `;
 
-const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
-  if (!normalizedZeptoMailApiKey()) {
-    return { delivered: false, reason: "missing_zeptomail_api_key" };
-  }
-
-  if (!normalizedMailFrom()) {
-    return { delivered: false, reason: "missing_mail_from" };
-  }
-
+const sendViaZeptoMail = async ({ to, subject, html, templateKey, mergeInfo }) => {
   const isTemplateSend = Boolean(String(templateKey || "").trim());
   const response = await fetch(
     isTemplateSend ? normalizedZeptoMailTemplateUrl() : normalizedZeptoMailUrl(),
@@ -112,6 +119,52 @@ const sendEmail = async ({ to, subject, html, templateKey, mergeInfo }) => {
   }
 
   return { delivered: true, provider: "zeptomail" };
+};
+
+const sendViaSmtp = async ({ to, subject, html, text }) => {
+  const transporter = buildSmtpTransporter();
+
+  await transporter.sendMail({
+    from: {
+      address: normalizedMailFrom(),
+      name: normalizedMailFromName(),
+    },
+    to,
+    subject,
+    text,
+    html: buildMailHtml({ subject, html }),
+  });
+
+  return { delivered: true, provider: "smtp" };
+};
+
+const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) => {
+  if (!normalizedZeptoMailApiKey()) {
+    if (!hasSmtpConfig()) {
+      return { delivered: false, reason: "missing_mail_provider" };
+    }
+
+    return sendViaSmtp({ to, subject, html, text });
+  }
+
+  if (!normalizedMailFrom()) {
+    return { delivered: false, reason: "missing_mail_from" };
+  }
+
+  try {
+    return await sendViaZeptoMail({ to, subject, html, templateKey, mergeInfo });
+  } catch (error) {
+    if (!hasSmtpConfig()) {
+      throw error;
+    }
+
+    console.error("ZeptoMail failed, falling back to SMTP", {
+      message: error?.message,
+      code: error?.code,
+      responseCode: error?.responseCode,
+    });
+    return sendViaSmtp({ to, subject, html, text });
+  }
 };
 
 module.exports = { sendEmail };

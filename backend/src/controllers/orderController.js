@@ -207,7 +207,7 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
     )
     .join("");
 
-  await sendEmail({
+  const delivery = await sendEmail({
     to: order.customerEmail,
     subject,
     text: `${summaryLine}\nOrder #${order.orderNumber || order._id.toString()}\nTotal: Rs. ${order.totalAmount}`,
@@ -225,6 +225,26 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
       }
     `,
   });
+
+  if (!delivery.delivered) {
+    const error = new Error(delivery.reason || "Order email delivery failed");
+    error.code = "ORDER_EMAIL_NOT_DELIVERED";
+    throw error;
+  }
+};
+
+const safelySendOrderEmail = async (order, subject, summaryLine) => {
+  try {
+    await sendOrderEmail(order, subject, summaryLine);
+  } catch (error) {
+    console.error("Order email failed", {
+      orderId: order?._id?.toString?.(),
+      orderNumber: order?.orderNumber,
+      message: error?.message,
+      code: error?.code,
+      responseCode: error?.responseCode,
+    });
+  }
 };
 
 const placeOrder = asyncHandler(async (req, res) => {
@@ -414,7 +434,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     courierName !== undefined ||
     trackingUrl !== undefined
   ) {
-    await sendOrderEmail(
+    await safelySendOrderEmail(
       order,
       `Your HRUSHE order is now ${order.orderStatus}`,
       `Your order status has been updated to ${order.orderStatus}.`
@@ -573,7 +593,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
   });
   await order.save();
   await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
-  await sendOrderEmail(
+  await safelySendOrderEmail(
     order,
     "Your HRUSHE order is confirmed",
     "Thank you for shopping with HRUSHE. Your order has been confirmed."

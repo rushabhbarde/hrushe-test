@@ -34,9 +34,19 @@ const env = {
   MSG91_DLT_TEMPLATE_ID: process.env.MSG91_DLT_TEMPLATE_ID || "",
   MSG91_COUNTRY_CODE: process.env.MSG91_COUNTRY_CODE || "91",
   MSG91_OTP_MESSAGE: process.env.MSG91_OTP_MESSAGE || "",
-  MAIL_FROM: process.env.MAIL_FROM || "team@hrushe.in",
-  MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || "Hrushe",
-  ZEPTOMAIL_API_KEY: process.env.ZEPTOMAIL_API_KEY || "",
+  MAIL_FROM:
+    process.env.MAIL_FROM ||
+    process.env.SMTP_FROM ||
+    process.env.EMAIL_FROM ||
+    process.env.SMTP_USER ||
+    "team@hrushe.in",
+  MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || "Hrushe",
+  ZEPTOMAIL_API_KEY:
+    process.env.ZEPTOMAIL_API_KEY ||
+    process.env.ZEPTO_MAIL_API_KEY ||
+    process.env.ZOHO_ZEPTOMAIL_API_KEY ||
+    process.env.ZEPTOMAIL_SEND_MAIL_TOKEN ||
+    "",
   ZEPTOMAIL_API_URL:
     process.env.ZEPTOMAIL_API_URL || "https://api.zeptomail.in/v1.1/email",
   ZEPTOMAIL_TEMPLATE_API_URL:
@@ -50,6 +60,24 @@ const env = {
     process.env.ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP || "",
   ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED:
     process.env.ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED || "",
+  SMTP_HOST: process.env.SMTP_HOST || process.env.MAIL_HOST || "",
+  SMTP_PORT: Number(process.env.SMTP_PORT || process.env.MAIL_PORT) || 587,
+  SMTP_SECURE:
+    process.env.SMTP_SECURE === "true" ||
+    process.env.MAIL_SECURE === "true" ||
+    Number(process.env.SMTP_PORT || process.env.MAIL_PORT) === 465,
+  SMTP_USER:
+    process.env.SMTP_USER ||
+    process.env.MAIL_USER ||
+    process.env.EMAIL_USER ||
+    process.env.GMAIL_USER ||
+    "",
+  SMTP_PASS:
+    process.env.SMTP_PASS ||
+    process.env.MAIL_PASS ||
+    process.env.EMAIL_PASS ||
+    process.env.GMAIL_PASS ||
+    "",
 };
 
 module.exports = env;
