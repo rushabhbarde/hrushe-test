@@ -8,6 +8,7 @@ const normalizedZeptoMailUrl = () =>
   String(env.ZEPTOMAIL_API_URL || "https://api.zeptomail.com/v1.1/email").trim();
 const normalizedZeptoMailTemplateUrl = () =>
   String(env.ZEPTOMAIL_TEMPLATE_API_URL || "https://api.zeptomail.com/v1.1/email/template").trim();
+const mailTimeoutMs = () => Math.max(Number(env.MAIL_TIMEOUT_MS) || 10000, 1000);
 
 const buildFromAddress = () => ({
   address: normalizedMailFrom(),
@@ -15,13 +16,20 @@ const buildFromAddress = () => ({
 });
 
 const hasSmtpConfig = () =>
-  Boolean(String(env.SMTP_HOST || "").trim() && String(env.SMTP_USER || "").trim() && String(env.SMTP_PASS || "").trim());
+  Boolean(
+    String(env.SMTP_HOST || "").trim() &&
+      String(env.SMTP_USER || "").trim() &&
+      String(env.SMTP_PASS || "").trim()
+  );
 
 const buildSmtpTransporter = () =>
   nodemailer.createTransport({
     host: String(env.SMTP_HOST || "").trim(),
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
+    connectionTimeout: mailTimeoutMs(),
+    greetingTimeout: mailTimeoutMs(),
+    socketTimeout: mailTimeoutMs(),
     auth: {
       user: String(env.SMTP_USER || "").trim(),
       pass: String(env.SMTP_PASS || "").trim(),
@@ -78,30 +86,48 @@ const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
 
 const sendViaZeptoMail = async ({ to, subject, html, templateKey, mergeInfo }) => {
   const isTemplateSend = Boolean(String(templateKey || "").trim());
-  const response = await fetch(
-    isTemplateSend ? normalizedZeptoMailTemplateUrl() : normalizedZeptoMailUrl(),
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: buildAuthorizationHeader(),
-      },
-      body: JSON.stringify({
-        from: buildFromAddress(),
-        to: [{ email_address: { address: to } }],
-        ...(isTemplateSend
-          ? {
-              template_key: String(templateKey).trim(),
-              merge_info: mergeInfo || {},
-            }
-          : {
-              subject,
-              htmlbody: buildMailHtml({ subject, html }),
-            }),
-      }),
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), mailTimeoutMs());
+  let response;
+
+  try {
+    response = await fetch(
+      isTemplateSend ? normalizedZeptoMailTemplateUrl() : normalizedZeptoMailUrl(),
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: buildAuthorizationHeader(),
+        },
+        body: JSON.stringify({
+          from: buildFromAddress(),
+          to: [{ email_address: { address: to } }],
+          ...(isTemplateSend
+            ? {
+                template_key: String(templateKey).trim(),
+                merge_info: mergeInfo || {},
+              }
+            : {
+                subject,
+                htmlbody: buildMailHtml({ subject, html }),
+              }),
+        }),
+      }
+    );
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(`Mail provider timed out after ${mailTimeoutMs()}ms`);
+      timeoutError.code = "MAIL_PROVIDER_TIMEOUT";
+      timeoutError.responseCode = 504;
+      throw timeoutError;
     }
-  );
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

@@ -2,6 +2,7 @@ import { getCustomerAuthHeaders } from "@/lib/customer-auth";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
 
 export function apiUrl(path: string) {
   return `${API_BASE_URL}${path}`;
@@ -27,19 +28,36 @@ function buildHeaders(init?: RequestInit) {
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit) {
-  const response = await fetch(apiUrl(path), {
-    ...init,
-    credentials: "include",
-    headers: buildHeaders(init),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
 
-  const data = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch(apiUrl(path), {
+      ...init,
+      credentials: "include",
+      headers: buildHeaders(init),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+
+    return data as T;
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error("Request timed out. Please try again.");
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return data as T;
 }
 
 export async function downloadApiFile(path: string, filename = "download") {

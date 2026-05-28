@@ -60,6 +60,7 @@ const env = {
     process.env.ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP || "",
   ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED:
     process.env.ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED || "",
+  MAIL_TIMEOUT_MS: Number(process.env.MAIL_TIMEOUT_MS || process.env.EMAIL_TIMEOUT_MS) || 10000,
   SMTP_HOST: process.env.SMTP_HOST || process.env.MAIL_HOST || "",
   SMTP_PORT: Number(process.env.SMTP_PORT || process.env.MAIL_PORT) || 587,
   SMTP_SECURE:

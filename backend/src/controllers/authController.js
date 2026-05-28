@@ -55,6 +55,13 @@ const logEmailFailure = (label, error) => {
   });
 };
 
+const clearPasswordResetOtp = async (user) => {
+  user.passwordResetOtp = undefined;
+  user.passwordResetOtpExpiresAt = undefined;
+  user.passwordResetOtpRequestedAt = undefined;
+  await user.save();
+};
+
 const cookieOptions = {
   sameSite: env.COOKIE_SAME_SITE,
   httpOnly: true,
@@ -393,6 +400,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logEmailFailure("Password reset OTP", error);
+    await clearPasswordResetOtp(user);
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -404,6 +412,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
       "Password reset OTP",
       new Error(delivery.reason || "Mail delivery failed")
     );
+    await clearPasswordResetOtp(user);
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -475,6 +484,7 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     logEmailFailure("Signup OTP", error);
+    await VerificationCode.deleteMany({ email, purpose: "signup" });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -483,6 +493,7 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
 
   if (!delivery.delivered) {
     logEmailFailure("Signup OTP", new Error(delivery.reason || "Mail delivery failed"));
+    await VerificationCode.deleteMany({ email, purpose: "signup" });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502

@@ -27,6 +27,46 @@ services:
         value: "true"
       - key: COOKIE_DOMAIN
         sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_CURRENCY
+        value: INR
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: OTP_DEV_MODE
+        value: "false"
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: HRUSHE
+      - key: MAIL_TIMEOUT_MS
+        value: "10000"
+      - key: ZEPTOMAIL_API_KEY
+        sync: false
+      - key: ZEPTOMAIL_API_URL
+        value: https://api.zeptomail.in/v1.1/email
+      - key: ZEPTOMAIL_TEMPLATE_API_URL
+        value: https://api.zeptomail.in/v1.1/email/template
+      - key: ZEPTOMAIL_TEMPLATE_SIGNUP_OTP
+        sync: false
+      - key: ZEPTOMAIL_TEMPLATE_WELCOME
+        sync: false
+      - key: ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP
+        sync: false
+      - key: ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
       - key: GOKWIK_HOSTED_CHECKOUT_URL
         sync: false
       - key: GOKWIK_WEBHOOK_SECRET
