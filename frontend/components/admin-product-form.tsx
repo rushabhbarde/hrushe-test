@@ -607,10 +607,10 @@ export function AdminProductForm({
             <div className="mt-5 grid gap-4">
               <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
                 <span className="text-sm font-medium text-[var(--foreground)]">
-                  Featured product
+                  Featured / Current collection
                 </span>
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Show this item in curated homepage edits and featured product sections.
+                  Show this item in the Current Collection section on the homepage.
                 </p>
                 <input
                   type="checkbox"
@@ -638,7 +638,7 @@ export function AdminProductForm({
                   New in
                 </span>
                 <p className="mt-1 text-xs text-[var(--muted)]">
-                  Push this item into the New In edit used for the main navigation and launch merchandising.
+                  Show this item on the New page and the New In section on the homepage.
                 </p>
                 <input
                   type="checkbox"

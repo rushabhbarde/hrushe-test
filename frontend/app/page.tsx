@@ -72,27 +72,15 @@ export default function Home() {
 
   const newInProducts = useMemo(() => {
     const fresh = products.filter((product) => product.newArrival || product.newIn);
-    if (fresh.length >= 8) {
-      return fresh.slice(0, 8);
-    }
-
-    if (fresh.length === 0) {
-      return products.slice(0, 8);
-    }
-
-    const fallbackProducts = products.filter(
-      (product) => !fresh.some((freshProduct) => freshProduct.id === product.id)
-    );
-
-    return [...fresh, ...fallbackProducts].slice(0, 8);
+    return fresh.slice(0, 8);
   }, [products]);
   const newInDisplayItems: Array<Product | null> = loading
     ? [null, null, null, null]
     : newInProducts;
 
   const collectionProducts = useMemo(() => {
-    const ranked = products.filter((product) => product.bestSeller || product.featured);
-    return (ranked.length > 0 ? ranked : products).slice(0, 6);
+    const featured = products.filter((product) => product.featured);
+    return featured.slice(0, 6);
   }, [products]);
   const collectionDisplayItems: Array<Product | null> = loading
     ? [null, null, null, null]
@@ -455,7 +443,7 @@ export default function Home() {
                     <>
                       <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
                         <span className="border border-white/35 bg-black/18 px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-sm">
-                          Current Collection
+                          Featured
                         </span>
                         <span className="border border-white/35 bg-white/12 px-2.5 py-1 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-white backdrop-blur-sm">
                           {activeBannerIndex + 1}/{Math.max(heroImages.length, 1)}
@@ -668,7 +656,7 @@ export default function Home() {
           <div className="border-t border-[var(--border)] pt-10 sm:pt-12">
             <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-10 xl:gap-14">
               <div className="max-w-[36rem]">
-                <p className="eyebrow text-[var(--accent)]">Current collection</p>
+                <p className="eyebrow text-[var(--accent)]">Featured</p>
                 <h2 className="mt-5 text-[2.8rem] font-semibold uppercase leading-[0.9] tracking-[-0.08em] text-[var(--foreground)] sm:text-[4.1rem]">
                   Built around fit,
                   <br />
@@ -695,53 +683,30 @@ export default function Home() {
               </div>
 
               <div className="product-row-scroll flex gap-4 overflow-x-auto pb-3 pr-4 sm:pb-4 sm:pr-6 lg:gap-5 lg:pr-2">
-                {collectionDisplayItems.map((product, index) =>
-                  !product ? (
-                    <div
-                      key={`collection-skeleton-${index}`}
-                      className="min-w-[78vw] flex-[0_0_78vw] animate-pulse sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
-                    >
-                      <div className="aspect-[4/5.15] border border-[var(--border)] bg-[var(--surface-strong)]" />
-                      <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
-                      <div className="mt-2 h-3 w-28 bg-[var(--surface-strong)]" />
-                    </div>
-                  ) : (
-                    <Link
-                      key={`collection-${product.id}`}
-                      href={`/product/${product.slug || product.id}`}
-                      className="group block min-w-[78vw] flex-[0_0_78vw] sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
-                    >
-                      <div className="relative aspect-[4/5.15] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
-                        {product.images[0] ? (
-                          <Image
-                            src={product.images[0]}
-                            alt={product.name}
-                            fill
-                            unoptimized
-                            className="object-cover object-center transition duration-500 group-hover:scale-[1.015]"
-                          />
-                        ) : (
-                          <div
-                            className="h-full w-full"
-                            style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
-                          />
-                        )}
+                {collectionDisplayItems.length > 0 ? (
+                  collectionDisplayItems.map((product, index) =>
+                    !product ? (
+                      <div
+                        key={`collection-skeleton-${index}`}
+                        className="min-w-[78vw] flex-[0_0_78vw] animate-pulse sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
+                      >
+                        <div className="aspect-[18/25] border border-[var(--border)] bg-[var(--surface-strong)]" />
+                        <div className="mt-3 h-4 w-3/4 bg-[var(--surface-strong)]" />
+                        <div className="mt-2 h-3 w-28 bg-[var(--surface-strong)]" />
                       </div>
-                      <div className="mt-3 flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="line-clamp-2 text-[1.02rem] font-medium uppercase leading-[1.12] tracking-[-0.02em] text-[var(--foreground)]">
-                            {product.name}
-                          </p>
-                          <p className="mt-1 line-clamp-1 text-[0.78rem] uppercase tracking-[0.14em] text-[var(--accent)]">
-                            {product.category}
-                          </p>
-                        </div>
-                        <span className="whitespace-nowrap pt-0.5 text-[0.96rem] font-medium text-[var(--foreground)]">
-                          Rs.{product.price}
-                        </span>
+                    ) : (
+                      <div
+                        key={`collection-${product.id}`}
+                        className="min-w-[78vw] flex-[0_0_78vw] sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]"
+                      >
+                        <ProductCard product={product} />
                       </div>
-                    </Link>
+                    )
                   )
+                ) : (
+                  <div className="min-w-[78vw] flex-[0_0_78vw] border border-[var(--border)] px-5 py-8 text-sm leading-6 text-[var(--muted)] sm:min-w-[330px] sm:flex-[0_0_330px] lg:min-w-[360px] lg:flex-[0_0_360px]">
+                    Featured products will appear here once products are marked as Featured from admin.
+                  </div>
                 )}
               </div>
             </div>

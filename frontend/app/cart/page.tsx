@@ -194,90 +194,104 @@ export default function CartPage() {
                         return (
                           <article
                             key={key}
-                            className={`lux-hover-lift grid min-w-0 grid-cols-[minmax(0,1fr)_3.75rem] gap-3 border-b border-[var(--border)] pb-8 transition-all duration-300 ${
+                            className={`lux-panel lux-hover-lift group min-w-0 overflow-hidden p-0 transition-all duration-300 ${
                               removing ? "-translate-y-2 scale-[0.98] opacity-0" : "opacity-100"
                             }`}
                           >
-                            <div className="min-w-0">
-                              <div className="relative aspect-[0.84/1] overflow-hidden border border-[var(--border)] bg-[#f4f4f4]">
-                                {item.image ? (
-                                  <Image
-                                    src={item.image}
-                                    alt={item.name}
-                                    fill
-                                    unoptimized
-                                    sizes="(max-width: 768px) 72vw, 34vw"
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full" style={{ background: item.accent }} />
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => moveToWishlist(item)}
-                                  className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-white/90 text-[var(--muted)] shadow-sm transition hover:text-[var(--accent)]"
-                                  aria-label={`Save ${item.name} for later`}
-                                >
-                                  ♡
-                                </button>
-                              </div>
-
-                              <div className="mt-3 grid grid-cols-[1fr_auto] gap-4">
-                                <div className="min-w-0">
-                                  <p className="text-sm text-[var(--muted)]">Cotton T Shirt</p>
-                                  <Link
-                                    href={`/product/${item.productId}`}
-                                    className="mt-1 block text-lg font-semibold uppercase leading-tight tracking-[-0.04em]"
+                            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.25rem] sm:grid-cols-[minmax(0,1fr)_4.75rem]">
+                              <div className="min-w-0">
+                                <div className="relative aspect-[0.84/1] overflow-hidden border-b border-[var(--border)] bg-[#f4f4f4]">
+                                  {item.image ? (
+                                    <Image
+                                      src={item.image}
+                                      alt={item.name}
+                                      fill
+                                      unoptimized
+                                      sizes="(max-width: 768px) 74vw, 34vw"
+                                      className="object-cover transition duration-500 group-hover:scale-[1.025]"
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full" style={{ background: item.accent }} />
+                                  )}
+                                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/18 to-transparent opacity-0 transition group-hover:opacity-100" />
+                                  <button
+                                    type="button"
+                                    onClick={() => moveToWishlist(item)}
+                                    className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center border border-white/50 bg-white/92 text-lg text-[var(--muted)] shadow-[0_12px_28px_rgba(17,17,17,0.12)] transition hover:-translate-y-0.5 hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                                    aria-label={`Save ${item.name} for later`}
                                   >
-                                    {item.name}
-                                  </Link>
+                                    ♡
+                                  </button>
                                 </div>
-                                <p className="whitespace-nowrap text-base font-semibold">
-                                  {formatPrice(item.price)}
-                                </p>
+
+                                <div className="bg-[color-mix(in_srgb,var(--surface)_76%,transparent)] p-4 sm:p-5">
+                                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
+                                    <div className="min-w-0">
+                                      <p className="text-sm leading-none text-[var(--muted)]">
+                                        {item.fit || "Cotton T Shirt"}
+                                      </p>
+                                      <Link
+                                        href={`/product/${item.productId}`}
+                                        className="mt-2 block text-lg font-semibold uppercase leading-[1.05] tracking-[-0.045em] transition hover:text-[var(--accent)] sm:text-xl"
+                                      >
+                                        {item.name}
+                                      </Link>
+                                    </div>
+                                    <p className="whitespace-nowrap text-lg font-semibold leading-none">
+                                      {formatPrice(item.price)}
+                                    </p>
+                                  </div>
+                                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border)] pt-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    <button
+                                      type="button"
+                                      onClick={() => moveToWishlist(item)}
+                                      className="underline underline-offset-4 transition hover:text-[var(--foreground)]"
+                                    >
+                                      Save for later
+                                    </button>
+                                    <span>Ships in 3-5 days</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+
+                              <div className="flex flex-col items-center justify-between border-l border-[var(--border)] bg-[color-mix(in_srgb,var(--surface-strong)_72%,transparent)] px-2 py-3 sm:px-3 sm:py-4">
+                                <button
+                                  type="button"
+                                  onClick={() => removeCartLine(item)}
+                                  className="flex h-8 w-8 items-center justify-center text-xl leading-none text-[var(--muted)] transition hover:bg-[var(--hover-fill)] hover:text-[var(--danger)]"
+                                  aria-label={`Remove ${item.name}`}
+                                >
+                                  ×
+                                </button>
+                                <div className="flex flex-col items-center gap-4 text-center">
+                                  <div>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-[var(--muted)]">
+                                      Size
+                                    </p>
+                                    <p className="mt-1 text-base font-semibold uppercase">
+                                      {item.size || "OS"}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className="block h-8 w-8 border border-[var(--border)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]"
+                                    style={{ background: item.accent || item.color || "#111" }}
+                                    aria-label={`Color ${item.color || "default"}`}
+                                  />
+                                  <QuantityControl
+                                    item={item}
+                                    active={bumpedKey === key}
+                                    onChange={(nextQuantity) => changeQuantity(item, nextQuantity)}
+                                  />
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => moveToWishlist(item)}
-                                  className="underline underline-offset-4 transition hover:text-[var(--foreground)]"
+                                  className="flex h-8 w-8 items-center justify-center text-lg text-[var(--muted)] transition hover:rotate-180 hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
+                                  aria-label={`Move ${item.name} to wishlist`}
                                 >
-                                  Save for later
+                                  ↻
                                 </button>
-                                <span>Ships in 3-5 days</span>
                               </div>
-                            </div>
-
-                            <div className="flex flex-col items-center justify-start gap-5 pt-1">
-                              <button
-                                type="button"
-                                onClick={() => removeCartLine(item)}
-                                className="flex h-8 w-8 items-center justify-center text-xl leading-none text-[var(--muted)] transition hover:text-[var(--accent)]"
-                                aria-label={`Remove ${item.name}`}
-                              >
-                                ×
-                              </button>
-                              <div className="text-center">
-                                <p className="text-sm font-semibold uppercase">{item.size || "OS"}</p>
-                                <span
-                                  className="mt-4 block h-7 w-7 border border-[var(--border)]"
-                                  style={{ background: item.accent || item.color || "#111" }}
-                                  aria-label={`Color ${item.color || "default"}`}
-                                />
-                              </div>
-                              <QuantityControl
-                                item={item}
-                                active={bumpedKey === key}
-                                onChange={(nextQuantity) => changeQuantity(item, nextQuantity)}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => moveToWishlist(item)}
-                                className="text-lg text-[var(--muted)] transition hover:rotate-180 hover:text-[var(--foreground)]"
-                                aria-label={`Move ${item.name} to wishlist`}
-                              >
-                                ↻
-                              </button>
                             </div>
                           </article>
                         );
