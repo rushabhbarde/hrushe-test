@@ -3,12 +3,20 @@ const env = require("../config/env");
 
 const normalizedMailFrom = () => String(env.MAIL_FROM || "").trim();
 const normalizedMailFromName = () => String(env.MAIL_FROM_NAME || "Hrushe").trim();
-const normalizedZeptoMailApiKey = () => String(env.ZEPTOMAIL_API_KEY || "").trim();
+const normalizedZeptoMailApiKey = () =>
+  String(env.ZEPTOMAIL_API_KEY || "")
+    .trim()
+    .replace(/^zoho-enczapikey\s+/i, "")
+    .replace(/\s+/g, "");
 const normalizedZeptoMailUrl = () =>
   String(env.ZEPTOMAIL_API_URL || "https://api.zeptomail.com/v1.1/email").trim();
 const normalizedZeptoMailTemplateUrl = () =>
   String(env.ZEPTOMAIL_TEMPLATE_API_URL || "https://api.zeptomail.com/v1.1/email/template").trim();
 const mailTimeoutMs = () => Math.max(Number(env.MAIL_TIMEOUT_MS) || 10000, 1000);
+const normalizedSmtpPass = () =>
+  String(env.SMTP_PASS || "")
+    .trim()
+    .replace(/\s+/g, "");
 
 const buildFromAddress = () => ({
   address: normalizedMailFrom(),
@@ -19,7 +27,7 @@ const hasSmtpConfig = () =>
   Boolean(
     String(env.SMTP_HOST || "").trim() &&
       String(env.SMTP_USER || "").trim() &&
-      String(env.SMTP_PASS || "").trim()
+      normalizedSmtpPass()
   );
 
 const buildSmtpTransporter = () =>
@@ -32,7 +40,7 @@ const buildSmtpTransporter = () =>
     socketTimeout: mailTimeoutMs(),
     auth: {
       user: String(env.SMTP_USER || "").trim(),
-      pass: String(env.SMTP_PASS || "").trim(),
+      pass: normalizedSmtpPass(),
     },
   });
 
@@ -43,7 +51,7 @@ const buildAuthorizationHeader = () => {
     return "";
   }
 
-  return token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
+  return `Zoho-enczapikey ${token}`;
 };
 
 const sanitizeMailError = (error) => ({
