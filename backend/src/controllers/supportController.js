@@ -2,6 +2,7 @@ const SupportRequest = require("../models/SupportRequest");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
+const { buildSupportStatusEmail } = require("../utils/emailTemplates");
 
 const getSupportRequests = asyncHandler(async (req, res) => {
   const filter = {};
@@ -59,17 +60,10 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
       const delivery = await sendEmail({
         to: request.userId.email,
         subject: `HRUSHE support update: ${request.subject}`,
-        html: `
-          <p>Hi ${request.userId.name || "there"},</p>
-          <p>Your support request has been updated.</p>
-          <p><strong>Status:</strong> ${request.status}</p>
-          ${
-            request.resolutionNote
-              ? `<p><strong>Note:</strong> ${request.resolutionNote}</p>`
-              : ""
-          }
-          <p>For more help, reply to this email or contact team@hrushe.in.</p>
-        `,
+        html: buildSupportStatusEmail({
+          request,
+          customerName: request.userId.name || "there",
+        }),
       });
       if (!delivery.delivered) {
         throw new Error(delivery.reason || "Support status email delivery failed");

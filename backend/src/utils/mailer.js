@@ -17,11 +17,27 @@ const normalizedSmtpPass = () =>
   String(env.SMTP_PASS || "")
     .trim()
     .replace(/\s+/g, "");
+const normalizedClientUrl = () =>
+  String(env.CLIENT_URL || "http://localhost:3000").trim().replace(/\/+$/, "");
 
 const buildFromAddress = () => ({
   address: normalizedMailFrom(),
   name: normalizedMailFromName(),
 });
+
+const buildSiteUrl = (path = "") => {
+  const base = normalizedClientUrl();
+
+  if (!path) {
+    return base;
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const hasSmtpConfig = () =>
   Boolean(
@@ -72,26 +88,47 @@ const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>${subject}</title>
     </head>
-    <body style="margin:0;background:#f5f5f3;color:#111111;font-family:Arial,Helvetica,sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f3;padding:28px 16px;">
+    <body style="margin:0;background:#f3f1ed;color:#111111;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f1ed;padding:28px 16px;">
         <tr>
           <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;border:1px solid #d8d8d4;background:#ffffff;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #e7e1da;background:#ffffff;">
               <tr>
-                <td style="border-bottom:1px solid #d8d8d4;padding:26px 28px 22px;">
-                  <div style="font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#6c6c68;">HRUSHE</div>
-                  <div style="margin-top:12px;font-size:26px;line-height:1.05;font-weight:700;letter-spacing:-0.04em;">Quiet pieces. Everyday ease.</div>
+                <td style="padding:14px 28px;border-bottom:1px solid #e7e1da;color:#5f5f5f;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;">
+                  India wide delivery
                 </td>
               </tr>
               <tr>
-                <td style="padding:28px;font-size:15px;line-height:1.75;color:#222222;">
+                <td style="border-bottom:1px solid #e7e1da;padding:28px;background:#f7f7f7;">
+                  <div style="font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#5f5f5f;">HRUSHE</div>
+                  <div style="margin-top:14px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.02;font-weight:700;letter-spacing:-0.04em;color:#111111;">
+                    Quiet pieces.<br />
+                    Everyday ease.
+                  </div>
+                  <div style="margin-top:12px;color:#5f5f5f;font-size:14px;line-height:1.75;">
+                    Designed for everyday dressing.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:0 28px 32px;font-size:15px;line-height:1.75;color:#222222;">
                   ${html}
                 </td>
               </tr>
               <tr>
-                <td style="border-top:1px solid #d8d8d4;padding:20px 28px;font-size:12px;line-height:1.6;color:#6c6c68;">
-                  HRUSHE support: team@hrushe.in<br />
-                  This is an automated brand notification.
+                <td style="border-top:1px solid #e7e1da;padding:24px 28px;background:#2f2d2b;color:#f8f8f5;">
+                  <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#d7d2cc;">Stay connected</div>
+                  <div style="margin-top:10px;font-size:13px;line-height:1.8;">
+                    <a href="${buildSiteUrl("/shop")}" style="color:#f8f8f5;text-decoration:none;">Shop</a>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <a href="${buildSiteUrl("/track-order")}" style="color:#f8f8f5;text-decoration:none;">Track order</a>
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <a href="${buildSiteUrl("/contact")}" style="color:#f8f8f5;text-decoration:none;">Contact</a>
+                  </div>
+                  <div style="margin-top:12px;font-size:12px;line-height:1.7;color:#d7d2cc;">
+                    HRUSHE support: team@hrushe.in<br />
+                    This is an automated brand notification.
+                  </div>
                 </td>
               </tr>
             </table>
@@ -103,7 +140,7 @@ const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
 `;
 
 const sendViaZeptoMail = async ({ to, subject, html, templateKey, mergeInfo }) => {
-  const isTemplateSend = Boolean(String(templateKey || "").trim());
+  const isTemplateSend = Boolean(String(templateKey || "").trim() && !String(html || "").trim());
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), mailTimeoutMs());
   let response;
@@ -196,7 +233,7 @@ const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) =>
   try {
     return await sendViaZeptoMail({ to, subject, html, templateKey, mergeInfo });
   } catch (error) {
-    const shouldRetryWithoutTemplate = Boolean(String(templateKey || "").trim() && html);
+    const shouldRetryWithoutTemplate = Boolean(error?.meta?.usedTemplate && html);
 
     if (shouldRetryWithoutTemplate) {
       console.error(

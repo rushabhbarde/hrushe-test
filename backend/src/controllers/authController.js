@@ -9,6 +9,11 @@ const asyncHandler = require("../utils/asyncHandler");
 const { sendMsg91Otp } = require("../utils/sendMsg91Otp");
 const { sendEmail } = require("../utils/mailer");
 const { serializeUser } = require("../utils/serializeUser");
+const {
+  buildOtpEmail,
+  buildPasswordChangedEmail,
+  buildWelcomeEmail,
+} = require("../utils/emailTemplates");
 
 const OTP_EXPIRY_MINUTES = 10;
 const PASSWORD_HASH_ROUNDS = 12;
@@ -151,7 +156,9 @@ const signup = asyncHandler(async (req, res) => {
     const delivery = await sendEmail({
       to: normalizedEmail,
       subject: "Welcome to HRUSHE",
-      html: `<p>Hi ${name.trim()},</p><p>Your <strong>HRUSHE</strong> account has been created successfully.</p>`,
+      html: buildWelcomeEmail({
+        name: normalizedName,
+      }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_WELCOME || undefined,
       mergeInfo: {
         name: normalizedName,
@@ -326,7 +333,10 @@ const changePassword = asyncHandler(async (req, res) => {
     const delivery = await sendEmail({
       to: user.email,
       subject: "Your HRUSHE password was changed",
-      html: "<p>Your <strong>HRUSHE</strong> account password has been changed successfully.</p>",
+      html: buildPasswordChangedEmail({
+        name: user.name,
+        email: user.email,
+      }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_PASSWORD_CHANGED || undefined,
       mergeInfo: {
         name: user.name,
@@ -389,7 +399,12 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
     delivery = await sendEmail({
       to: email,
       subject: "Your HRUSHE password reset OTP",
-      html: `<p><strong>${otp}</strong> is your HRUSHE password reset OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+      html: buildOtpEmail({
+        purpose: "password-reset",
+        otp,
+        expiryMinutes: OTP_EXPIRY_MINUTES,
+        email,
+      }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP || undefined,
       mergeInfo: {
         otp,
@@ -473,7 +488,12 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     delivery = await sendEmail({
       to: email,
       subject: "Your HRUSHE signup OTP",
-      html: `<p><strong>${otp}</strong> is your HRUSHE signup OTP.</p><p>It is valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+      html: buildOtpEmail({
+        purpose: "signup",
+        otp,
+        expiryMinutes: OTP_EXPIRY_MINUTES,
+        email,
+      }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_SIGNUP_OTP || undefined,
       mergeInfo: {
         otp,

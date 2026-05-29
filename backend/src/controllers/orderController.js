@@ -6,6 +6,7 @@ const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
+const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
 
 const allowedStatuses = [
@@ -200,30 +201,14 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
     return;
   }
 
-  const itemsHtml = order.products
-    .map(
-      (item) =>
-        `<li>${item.name} x ${item.quantity}${item.size ? ` • Size ${item.size}` : ""}${item.color ? ` • ${item.color}` : ""}</li>`
-    )
-    .join("");
-
   const delivery = await sendEmail({
     to: order.customerEmail,
     subject,
     text: `${summaryLine}\nOrder #${order.orderNumber || order._id.toString()}\nTotal: Rs. ${order.totalAmount}`,
-    html: `
-      <p>${summaryLine}</p>
-      <p><strong>Order #${order.orderNumber || order._id.toString()}</strong></p>
-      <p>Total: <strong>Rs. ${order.totalAmount}</strong></p>
-      <ul>${itemsHtml}</ul>
-      ${
-        order.trackingId || order.trackingUrl
-          ? `<p>Tracking ID: ${order.trackingId || "-"}</p>${
-              order.trackingUrl ? `<p><a href="${order.trackingUrl}">Track shipment</a></p>` : ""
-            }`
-          : ""
-      }
-    `,
+    html: buildOrderStatusEmail({
+      order,
+      summaryLine,
+    }),
   });
 
   if (!delivery.delivered) {

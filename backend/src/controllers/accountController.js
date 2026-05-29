@@ -6,6 +6,7 @@ const SupportRequest = require("../models/SupportRequest");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
+const { buildSupportRequestAdminEmail } = require("../utils/emailTemplates");
 const { serializeUser, serializeAddress } = require("../utils/serializeUser");
 
 const FAVORITE_COLOR_LIMIT = 8;
@@ -555,13 +556,14 @@ const createSupportRequest = asyncHandler(async (req, res) => {
     const delivery = await sendEmail({
       to: "team@hrushe.in",
       subject: `HRUSHE support: ${supportRequest.subject}`,
-      html: `
-        <p><strong>Customer:</strong> ${req.user.name} (${req.user.email})</p>
-        <p><strong>Category:</strong> ${supportRequest.category}</p>
-        <p><strong>Order:</strong> ${orderId || "N/A"}</p>
-        <p><strong>Message:</strong></p>
-        <p>${supportRequest.message}</p>
-      `,
+      html: buildSupportRequestAdminEmail({
+        customerName: req.user.name,
+        customerEmail: req.user.email,
+        category: supportRequest.category,
+        orderId,
+        message: supportRequest.message,
+        subject: supportRequest.subject,
+      }),
     });
     if (!delivery.delivered) {
       throw new Error(delivery.reason || "Support request email delivery failed");

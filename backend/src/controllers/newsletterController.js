@@ -3,6 +3,7 @@ const NewsletterSubscriber = require("../models/NewsletterSubscriber");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
+const { buildNewsletterSignupAdminEmail } = require("../utils/emailTemplates");
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,14 +31,11 @@ const subscribeToNewsletter = asyncHandler(async (req, res) => {
       const delivery = await sendEmail({
         to: env.MAIL_FROM,
         subject: "New HRUSHE newsletter signup",
-        html: `
-          <p>A new newsletter signup was received for HRUSHE.</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Source:</strong> ${source}</p>
-          <p><strong>Captured at:</strong> ${new Date().toLocaleString("en-IN", {
-            timeZone: "Asia/Kolkata",
-          })}</p>
-        `,
+        html: buildNewsletterSignupAdminEmail({
+          email,
+          source,
+          capturedAt: new Date(),
+        }),
       });
       if (!delivery.delivered) {
         throw new Error(delivery.reason || "Newsletter email delivery failed");
