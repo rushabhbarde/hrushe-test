@@ -46,6 +46,16 @@ const buildAuthorizationHeader = () => {
   return token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
 };
 
+const sanitizeMailError = (error) => ({
+  message: error?.message,
+  code: error?.code,
+  responseCode: error?.responseCode,
+  response:
+    typeof error?.response === "string" ? error.response.slice(0, 500) : undefined,
+  endpoint: error?.meta?.endpoint,
+  usedTemplate: Boolean(error?.meta?.usedTemplate),
+});
+
 const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
   <!doctype html>
   <html>
@@ -136,10 +146,8 @@ const sendViaZeptoMail = async ({ to, subject, html, templateKey, mergeInfo }) =
     error.response = errorText;
     error.responseCode = response.status;
     error.meta = {
-      url: isTemplateSend ? normalizedZeptoMailTemplateUrl() : normalizedZeptoMailUrl(),
-      from: buildFromAddress().address,
-      to,
-      templateKey: isTemplateSend ? String(templateKey).trim() : "",
+      endpoint: isTemplateSend ? "template" : "html",
+      usedTemplate: isTemplateSend,
     };
     throw error;
   }
@@ -180,16 +188,34 @@ const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) =>
   try {
     return await sendViaZeptoMail({ to, subject, html, templateKey, mergeInfo });
   } catch (error) {
+    const shouldRetryWithoutTemplate = Boolean(String(templateKey || "").trim() && html);
+
+    if (shouldRetryWithoutTemplate) {
+      console.error(
+        "ZeptoMail template send failed, retrying without template",
+        sanitizeMailError(error)
+      );
+
+      try {
+        return await sendViaZeptoMail({ to, subject, html });
+      } catch (htmlError) {
+        error = htmlError;
+        console.error("ZeptoMail HTML retry failed", sanitizeMailError(error));
+      }
+    }
+
     if (!hasSmtpConfig()) {
       throw error;
     }
 
-    console.error("ZeptoMail failed, falling back to SMTP", {
-      message: error?.message,
-      code: error?.code,
-      responseCode: error?.responseCode,
-    });
-    return sendViaSmtp({ to, subject, html, text });
+    console.error("ZeptoMail failed, falling back to SMTP", sanitizeMailError(error));
+
+    try {
+      return await sendViaSmtp({ to, subject, html, text });
+    } catch (smtpError) {
+      console.error("SMTP fallback failed", sanitizeMailError(smtpError));
+      throw smtpError;
+    }
   }
 };
 
