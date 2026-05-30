@@ -13,6 +13,7 @@ import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
+import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const productInfoSections = [
@@ -144,6 +145,9 @@ function CarouselArrow({
 type ProductInfoPanelProps = {
   product: Product;
   priceText: string;
+  compareAtPriceText: string;
+  discountLabel: string;
+  hasDiscount: boolean;
   description: string;
   selectedColor: string;
   selectedSize: string;
@@ -159,6 +163,9 @@ type ProductInfoPanelProps = {
 function ProductInfoPanel({
   product,
   priceText,
+  compareAtPriceText,
+  discountLabel,
+  hasDiscount,
   description,
   selectedColor,
   selectedSize,
@@ -183,6 +190,21 @@ function ProductInfoPanel({
               <h1 className="max-w-[18ch] text-[0.98rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
               </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="text-[1rem] font-semibold leading-none text-[var(--foreground)]">
+                  {priceText}
+                </p>
+                {hasDiscount ? (
+                  <>
+                    <p className="text-[0.82rem] leading-none text-[var(--danger)] line-through decoration-[1.5px]">
+                      {compareAtPriceText}
+                    </p>
+                    <p className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-[var(--danger)]">
+                      {discountLabel}
+                    </p>
+                  </>
+                ) : null}
+              </div>
               <p className="mt-4 text-[0.78rem] tracking-[0.06em] text-[var(--muted)]">
                 MRP incl. of all taxes
               </p>
@@ -194,9 +216,6 @@ function ProductInfoPanel({
                 className="inline-flex h-9 w-9 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.7)] text-[var(--foreground)]"
                 iconClassName="h-4 w-4"
               />
-              <p className="pt-9 text-[1rem] font-medium leading-none text-[var(--foreground)]">
-                {priceText}
-              </p>
             </div>
           </div>
           <p className="mt-6 max-w-[21rem] text-[0.78rem] font-medium leading-5 text-[var(--foreground)]">
@@ -210,9 +229,21 @@ function ProductInfoPanel({
               <h1 className="max-w-[19ch] text-[1rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
               </h1>
-              <p className="mt-3 text-[0.95rem] font-semibold leading-none text-[var(--foreground)]">
-                {priceText}
-              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="text-[0.95rem] font-semibold leading-none text-[var(--foreground)]">
+                  {priceText}
+                </p>
+                {hasDiscount ? (
+                  <>
+                    <p className="text-[0.84rem] leading-none text-[var(--danger)] line-through decoration-[1.5px]">
+                      {compareAtPriceText}
+                    </p>
+                    <p className="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-[var(--danger)]">
+                      {discountLabel}
+                    </p>
+                  </>
+                ) : null}
+              </div>
             </div>
             <WishlistButton
               productId={product.id}
@@ -470,7 +501,14 @@ export default function ProductDetailPage() {
     )
     .slice(0, 4);
   const reviews = product.reviews || [];
+  const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
+  const hasDiscount = compareAtPrice > product.price;
+  const discountPercent = hasDiscount
+    ? getDiscountPercent(product.price, compareAtPrice)
+    : 0;
   const priceText = `Rs.${product.price.toLocaleString("en-IN")}`;
+  const compareAtPriceText = `Rs.${compareAtPrice.toLocaleString("en-IN")}`;
+  const discountLabel = `-${discountPercent}%`;
   const productSummary = getProductSummary(product.description);
   const hasMultipleImages = images.length > 1;
 
@@ -634,6 +672,9 @@ export default function ProductDetailPage() {
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
+                compareAtPriceText={compareAtPriceText}
+                discountLabel={discountLabel}
+                hasDiscount={hasDiscount}
                 description={productSummary}
                 selectedColor={selectedColor}
                 selectedSize={selectedSize}
@@ -709,6 +750,9 @@ export default function ProductDetailPage() {
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
+                compareAtPriceText={compareAtPriceText}
+                discountLabel={discountLabel}
+                hasDiscount={hasDiscount}
                 description={productSummary}
                 selectedColor={selectedColor}
                 selectedSize={selectedSize}

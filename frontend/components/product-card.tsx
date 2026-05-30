@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import type { Product } from "@/lib/catalog";
-import { getCompareAtPrice } from "@/lib/pricing";
+import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
 
 function CartIcon({ className = "" }: { className?: string }) {
@@ -65,6 +65,9 @@ export function ProductCard({ product }: { product: Product }) {
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const hasDiscount = compareAtPrice > product.price;
+  const discountPercent = hasDiscount
+    ? getDiscountPercent(product.price, compareAtPrice)
+    : 0;
   const quickAddToCart = () => {
     addItem({
       productId: product.id,
@@ -89,8 +92,8 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
         {hasDiscount ? (
-          <span className="absolute left-2 top-2 z-10 bg-[var(--foreground)] px-2 py-[5px] text-[0.56rem] font-medium uppercase tracking-[0.14em] text-[var(--background)] md:left-2.5 md:top-2.5">
-            -{Math.round(((compareAtPrice - product.price) / compareAtPrice) * 100)}%
+          <span className="absolute left-2 top-2 z-10 border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)] md:left-2.5 md:top-2.5">
+            -{discountPercent}%
           </span>
         ) : null}
         {hasImage ? (
@@ -122,7 +125,7 @@ export function ProductCard({ product }: { product: Product }) {
                 Rs.{product.price.toLocaleString("en-IN")}.00
               </p>
               {hasDiscount ? (
-                <p className="text-[0.74rem] leading-none text-[var(--accent)] line-through sm:text-[0.78rem]">
+                <p className="text-[0.74rem] leading-none text-[var(--danger)] line-through decoration-[1.5px] sm:text-[0.78rem]">
                   Rs.{compareAtPrice.toLocaleString("en-IN")}.00
                 </p>
               ) : null}
