@@ -14,8 +14,8 @@ Set these variables on Render for the backend service:
 ```text
 NODE_ENV=production
 PORT=10000
-CLIENT_URL=https://your-frontend-domain.vercel.app
-ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app,https://www.hrushe.in
+CLIENT_URL=https://www.hrushe.in
+ALLOWED_ORIGINS=https://www.hrushe.in,https://hrushe.in,https://hrushe-test.vercel.app
 BACKEND_PUBLIC_URL=https://your-backend-domain.onrender.com
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db>?retryWrites=true&w=majority
 JWT_SECRET=<strong-random-secret>
@@ -29,12 +29,19 @@ GOKWIK_WEBHOOK_SECRET=<your-gokwik-webhook-secret>
 Notes:
 
 - `ALLOWED_ORIGINS` accepts a comma-separated list.
+- Include both `https://www.hrushe.in` and `https://hrushe.in`, plus any Vercel preview or fallback domain that should be able to call the API.
 - `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true` are required for cross-site auth cookies between Vercel and Render.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used in checkout success, failure, cancel, and webhook flows.
 
 ## Frontend Production Environment
 
 Set this variable on Vercel:
+
+```text
+API_URL=https://your-backend-domain.onrender.com
+```
+
+Optional legacy fallback:
 
 ```text
 NEXT_PUBLIC_API_URL=https://your-backend-domain.onrender.com
@@ -60,7 +67,7 @@ NEXT_PUBLIC_API_URL=https://your-backend-domain.onrender.com
 
 1. Import this repository into Vercel.
 2. Set the project root to `frontend`.
-3. Add `NEXT_PUBLIC_API_URL`.
+3. Add `API_URL`.
 4. Deploy and confirm the storefront loads with products and auth requests hitting the Render backend.
 
 ## Production Database

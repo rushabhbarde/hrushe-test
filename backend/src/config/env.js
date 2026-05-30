@@ -4,11 +4,25 @@ const parseOrigins = (value) =>
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+const PRODUCTION_SITE_ORIGINS = [
+  "https://hrushe.in",
+  "https://www.hrushe.in",
+];
+
+const uniqueOrigins = (origins) => Array.from(new Set(origins));
+
+const buildAllowedOrigins = () =>
+  uniqueOrigins([
+    ...parseOrigins(process.env.ALLOWED_ORIGINS),
+    ...parseOrigins(process.env.CLIENT_URL),
+    ...(process.env.NODE_ENV === "production" ? PRODUCTION_SITE_ORIGINS : []),
+  ]);
+
 const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT) || 5001,
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
-  ALLOWED_ORIGINS: parseOrigins(process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL),
+  ALLOWED_ORIGINS: buildAllowedOrigins(),
   BACKEND_PUBLIC_URL:
     process.env.BACKEND_PUBLIC_URL ||
     `http://localhost:${Number(process.env.PORT) || 5001}`,

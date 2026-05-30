@@ -1,11 +1,13 @@
 import { getCustomerAuthHeaders } from "@/lib/customer-auth";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+// Keep browser requests same-origin so custom domains do not depend on
+// cross-origin CORS configuration for storefront data.
+const API_PROXY_PREFIX = "/api/backend";
 const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
 
 export function apiUrl(path: string) {
-  return `${API_BASE_URL}${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_PROXY_PREFIX}${normalizedPath}`;
 }
 
 function buildHeaders(init?: RequestInit) {
