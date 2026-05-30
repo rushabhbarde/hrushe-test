@@ -70,6 +70,23 @@ function formatReviewDate(createdAt?: string) {
   return reviewDateFormatter.format(parsedDate);
 }
 
+function getHeroTitleSizeClasses(title: string) {
+  const normalized = title.replace(/\s+/g, " ").trim();
+  const longestWordLength = normalized
+    .split(" ")
+    .reduce((max, word) => Math.max(max, word.replace(/[^a-z0-9-]/gi, "").length), 0);
+
+  if (normalized.length > 40 || longestWordLength > 13) {
+    return "text-[2.35rem] sm:text-[4.1rem] lg:text-[4.85rem]";
+  }
+
+  if (normalized.length > 34 || longestWordLength > 11) {
+    return "text-[2.5rem] sm:text-[4.45rem] lg:text-[5.3rem]";
+  }
+
+  return "text-[2.65rem] sm:text-[4.8rem] lg:text-[5.8rem]";
+}
+
 export default function Home() {
   const router = useRouter();
   const { homepageBanner, products, loading } = useStorefrontData();
@@ -213,6 +230,10 @@ export default function Home() {
   const activeHeroDescription = activeHeroBanner?.subtitle?.trim() || homepageBanner.description;
   const activeHeroCtaLabel = activeHeroBanner?.ctaText?.trim() || heroCtaLabel;
   const activeHeroCtaHref = activeHeroBanner?.ctaLink?.trim() || heroCtaHref;
+  const heroTitleSizeClasses = useMemo(
+    () => getHeroTitleSizeClasses(activeHeroTitle),
+    [activeHeroTitle]
+  );
 
   useEffect(() => {
     if (publishedHeroBanners.length <= 1) {
@@ -447,7 +468,9 @@ export default function Home() {
                 ) : (
                   <>
                     <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
-                    <h1 className="mt-4 max-w-[11ch] text-[2.65rem] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 sm:text-[4.8rem] lg:text-[5.8rem]">
+                    <h1
+                      className={`mt-4 max-w-[11ch] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 ${heroTitleSizeClasses}`}
+                    >
                       {activeHeroTitle}
                     </h1>
                     <p className="mt-3 text-[1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:mt-4 sm:text-[1.35rem]">
