@@ -61,18 +61,28 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
       ? undefined
       : await request.arrayBuffer();
 
-  const response = await fetch(buildBackendUrl(request, path), {
-    method,
-    headers: forwardRequestHeaders(request),
-    body,
-    cache: "no-store",
-    redirect: "manual",
-  });
+  try {
+    const response = await fetch(buildBackendUrl(request, path), {
+      method,
+      headers: forwardRequestHeaders(request),
+      body,
+      cache: "no-store",
+      redirect: "manual",
+    });
 
-  return new Response(response.body, {
-    status: response.status,
-    headers: forwardResponseHeaders(response),
-  });
+    return new Response(response.body, {
+      status: response.status,
+      headers: forwardResponseHeaders(response),
+    });
+  } catch {
+    return Response.json(
+      {
+        message:
+          "Backend API is unavailable. Start the backend server on http://localhost:5001 and try again.",
+      },
+      { status: 502 }
+    );
+  }
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -98,4 +108,3 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 export async function OPTIONS(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
-

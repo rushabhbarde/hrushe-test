@@ -20,7 +20,10 @@ import { clearCustomerToken } from "@/lib/customer-auth";
 
 type AdminAuthContextValue = {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string
+  ) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
 };
 
@@ -98,17 +101,23 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           if (response.user.role !== "admin") {
             clearAdminToken();
             setIsAuthenticated(false);
-            return false;
+            return { ok: false, error: "This account does not have admin access." };
           }
 
           clearCustomerToken();
           setAdminToken(response.token || "");
           setIsAuthenticated(true);
-          return true;
-        } catch {
+          return { ok: true };
+        } catch (error) {
           setIsAuthenticated(false);
           clearAdminToken();
-          return false;
+          return {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Could not sign in to the admin panel.",
+          };
         }
       },
       logout: async () => {

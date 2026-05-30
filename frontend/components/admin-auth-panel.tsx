@@ -26,8 +26,10 @@ export function AdminAuthPanel({
     setError("");
 
     try {
-      if (!(await login(username, password))) {
-        setError("Invalid admin credentials.");
+      const result = await login(username, password);
+
+      if (!result.ok) {
+        setError(result.error || "Invalid admin credentials.");
         return;
       }
 
@@ -67,6 +69,10 @@ export function AdminAuthPanel({
           required
         />
         {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
+        <p className="text-xs leading-5 text-[var(--muted)]">
+          Local fallback admin credentials: <span className="font-medium">admin</span> /{" "}
+          <span className="font-medium">admin</span>
+        </p>
         <button
           type="submit"
           disabled={isSubmitting}
