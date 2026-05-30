@@ -392,8 +392,8 @@ export default function Home() {
       <SiteHeader />
       <main className="overflow-hidden">
         <section className="mx-auto max-w-[1600px] px-4 pb-14 pt-5 sm:px-6 sm:pb-16 sm:pt-6 lg:px-8 lg:pb-20 lg:pt-8">
-          <div className="grid gap-7 sm:gap-10 lg:grid-cols-[0.34fr_0.66fr] lg:gap-14 xl:gap-20">
-            <div className="order-2 flex flex-col gap-5 lg:order-1 lg:gap-6 lg:pt-1">
+          <div className="grid gap-7 sm:gap-10 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] lg:gap-14 xl:gap-20">
+            <div className="order-2 min-w-0 flex flex-col gap-5 lg:order-1 lg:gap-6 lg:pt-1">
               <div className="space-y-5">
                 <form onSubmit={handleSearchSubmit} className="max-w-full sm:max-w-[240px]">
                   <label className="flex min-h-11 items-center gap-3 border border-[var(--border)] bg-[var(--surface-strong)] px-3">
@@ -422,7 +422,7 @@ export default function Home() {
                 </form>
               </div>
 
-              <div className="reveal-up max-w-[36rem]">
+              <div className="reveal-up min-w-0 max-w-[36rem] lg:max-w-[34rem]">
                 {loading ? (
                   <div aria-hidden="true" className="space-y-5">
                     <div className="h-4 w-52 animate-pulse bg-[rgba(17,17,17,0.08)]" />
@@ -447,7 +447,7 @@ export default function Home() {
                 ) : (
                   <>
                     <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
-                    <h1 className="mt-4 text-[2.65rem] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 sm:text-[4.8rem] lg:text-[5.8rem]">
+                    <h1 className="mt-4 max-w-[11ch] text-[2.65rem] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 sm:text-[4.8rem] lg:text-[5.8rem]">
                       {activeHeroTitle}
                     </h1>
                     <p className="mt-3 text-[1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:mt-4 sm:text-[1.35rem]">
@@ -522,7 +522,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="order-1 reveal-up-delayed lg:order-2">
+            <div className="order-1 min-w-0 reveal-up-delayed lg:order-2">
               <div className="space-y-3 sm:space-y-4 lg:hidden">
                 <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
                   {loading ? (
