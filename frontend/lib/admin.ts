@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/catalog";
+import type { Product, ProductStatus } from "@/lib/catalog";
 import type { OrderRecord } from "@/lib/orders";
 import type {
   AddressRecord,
@@ -73,26 +73,18 @@ export type AdminSupportRequest = {
 
 export const adminNavigation: AdminNavItem[] = [
   { group: "Dashboard", label: "Overview", href: "/admin" },
-  { group: "Operations", label: "Orders", href: "/admin/orders" },
-  { group: "Operations", label: "Returns & refunds", href: "/admin/returns" },
-  { group: "Operations", label: "Support", href: "/admin/support" },
+  { group: "Storefront", label: "Home management", href: "/admin/homepage" },
   { group: "Catalog", label: "Products", href: "/admin/products" },
-  { group: "Catalog", label: "Inventory", href: "/admin/inventory" },
-  { group: "Catalog", label: "Categories", href: "/admin/categories" },
-  { group: "Catalog", label: "Collections", href: "/admin/collections" },
-  { group: "Customers", label: "All customers", href: "/admin/customers" },
-  { group: "Customers", label: "Segments / tags", href: "/admin/audience" },
-  { group: "Marketing", label: "Coupons", href: "/admin/coupons" },
-  { group: "Marketing", label: "Announcements", href: "/admin/announcements" },
-  { group: "Marketing", label: "Reviews", href: "/admin/reviews" },
-  { group: "Reports", label: "Sales", href: "/admin/reports/sales" },
-  { group: "Reports", label: "Orders", href: "/admin/reports/orders" },
-  { group: "Reports", label: "Products", href: "/admin/reports/products" },
-  { group: "Reports", label: "Customers", href: "/admin/reports/customers" },
-  { group: "Settings", label: "Store", href: "/admin/settings/store" },
-  { group: "Settings", label: "Notifications", href: "/admin/settings/notifications" },
-  { group: "Settings", label: "Admin users", href: "/admin/settings/admin-users" },
-  { group: "Settings", label: "Integrations", href: "/admin/settings/integrations" },
+  { group: "Operations", label: "Orders", href: "/admin/orders" },
+  { group: "Operations", label: "Shipping", href: "/admin/shipping" },
+  { group: "Customers", label: "Customers", href: "/admin/customers" },
+  { group: "Marketing", label: "Coupons & promos", href: "/admin/coupons" },
+  { group: "Content", label: "Content", href: "/admin/content" },
+  { group: "Content", label: "Media library", href: "/admin/media" },
+  { group: "Content", label: "Reviews", href: "/admin/reviews" },
+  { group: "Reports", label: "Reports", href: "/admin/reports" },
+  { group: "Settings", label: "Website settings", href: "/admin/settings" },
+  { group: "Settings", label: "Roles & permissions", href: "/admin/roles" },
 ];
 
 export function formatAdminCurrency(value: number) {
@@ -119,9 +111,17 @@ export function formatAdminDate(value?: string | null, options?: Intl.DateTimeFo
   }).format(new Date(value));
 }
 
-export function deriveProductStatus(product: Product) {
+export function deriveProductStatus(product: Product, overrideStatus?: ProductStatus) {
+  if (overrideStatus) {
+    return overrideStatus;
+  }
+
+  if (product.status) {
+    return product.status;
+  }
+
   if (product.sizes.length === 0) {
-    return "Out of Stock";
+    return "Sold Out";
   }
 
   const hasRequiredCatalogData =
@@ -138,9 +138,23 @@ export function deriveProductStatus(product: Product) {
   return "Active";
 }
 
+export function productStatusTone(status: ProductStatus) {
+  switch (status) {
+    case "Active":
+      return "success";
+    case "Hidden":
+      return "accent";
+    case "Sold Out":
+      return "warning";
+    default:
+      return "default";
+  }
+}
+
 export function orderStatusTone(status: string) {
   switch (status) {
     case "Delivered":
+    case "Refunded":
     case "Refund completed":
       return "success";
     case "Cancelled":

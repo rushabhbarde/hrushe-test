@@ -23,6 +23,74 @@ const LEGACY_HOMEPAGE_BANNER = Object.freeze({
     "A clean black-and-white storefront with red accent moments that draw attention exactly where you want it: active navigation, campaign messaging, and purchase actions.",
 });
 
+function isPlainObject(value) {
+  return Object.prototype.toString.call(value) === "[object Object]";
+}
+
+function mergePlainObjects(baseValue, nextValue) {
+  if (nextValue === undefined) {
+    return baseValue;
+  }
+
+  if (Array.isArray(nextValue)) {
+    return nextValue;
+  }
+
+  if (!isPlainObject(baseValue) || !isPlainObject(nextValue)) {
+    return nextValue;
+  }
+
+  const merged = { ...baseValue };
+
+  Object.entries(nextValue).forEach(([key, value]) => {
+    merged[key] = mergePlainObjects(baseValue[key], value);
+  });
+
+  return merged;
+}
+
+function normalizeWorkspaceBanner(banner = {}) {
+  return {
+    id: String(banner.id || "").trim(),
+    label: String(banner.label || "").trim(),
+    title: String(banner.title || "").trim(),
+    subtitle: String(banner.subtitle || "").trim(),
+    ctaText: String(banner.ctaText || "").trim(),
+    ctaLink: String(banner.ctaLink || "").trim(),
+    desktopImage: String(banner.desktopImage || "").trim(),
+    mobileImage: String(banner.mobileImage || "").trim(),
+    enabled: banner.enabled !== false,
+    scheduleStart: banner.scheduleStart || null,
+    scheduleEnd: banner.scheduleEnd || null,
+  };
+}
+
+function isBannerScheduledForNow(banner) {
+  const now = Date.now();
+  const startsAt = banner.scheduleStart ? new Date(banner.scheduleStart).getTime() : null;
+  const endsAt = banner.scheduleEnd ? new Date(banner.scheduleEnd).getTime() : null;
+
+  if (Number.isFinite(startsAt) && startsAt > now) {
+    return false;
+  }
+
+  if (Number.isFinite(endsAt) && endsAt < now) {
+    return false;
+  }
+
+  return true;
+}
+
+function getPublishedWorkspaceBanners(adminWorkspace) {
+  const rawBanners = Array.isArray(adminWorkspace?.homeManagement?.banners)
+    ? adminWorkspace.homeManagement.banners
+    : [];
+
+  return rawBanners
+    .map(normalizeWorkspaceBanner)
+    .filter((banner) => banner.enabled && isBannerScheduledForNow(banner) && (banner.desktopImage || banner.mobileImage));
+}
+
 function normalizeHomepageBanner(homepageBanner) {
   const banner = homepageBanner?.toObject ? homepageBanner.toObject() : homepageBanner || {};
 
@@ -77,24 +145,67 @@ const getHomepageBanner = asyncHandler(async (req, res) => {
   }
 
   const content = await getSiteContent();
+  const publishedBanners = getPublishedWorkspaceBanners(content.adminWorkspace);
+  const activeWorkspaceBanner = publishedBanners[0] || null;
+  const normalizedHomepageBanner = normalizeHomepageBanner(content.homepageBanner);
+
   homepageBannerCache = {
-    data: content.homepageBanner,
+    data: {
+      ...normalizedHomepageBanner,
+      ...(activeWorkspaceBanner
+        ? {
+            announcementText:
+              activeWorkspaceBanner.label || normalizedHomepageBanner.announcementText,
+            title: activeWorkspaceBanner.title || normalizedHomepageBanner.title,
+            description:
+              activeWorkspaceBanner.subtitle || normalizedHomepageBanner.description,
+            primaryCtaLabel:
+              activeWorkspaceBanner.ctaText || normalizedHomepageBanner.primaryCtaLabel,
+            primaryCtaHref:
+              activeWorkspaceBanner.ctaLink || normalizedHomepageBanner.primaryCtaHref,
+            imageUrl:
+              activeWorkspaceBanner.desktopImage || normalizedHomepageBanner.imageUrl,
+          }
+        : {}),
+      banners: publishedBanners,
+    },
     timestamp: Date.now(),
   };
   res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
-  return res.json(content.homepageBanner);
+  return res.json(homepageBannerCache.data);
 });
 
 const updateHomepageBanner = asyncHandler(async (req, res) => {
   const content = await getSiteContent();
   content.homepageBanner = { ...content.homepageBanner.toObject(), ...req.body };
   await content.save();
-  homepageBannerCache = {
-    data: content.homepageBanner,
-    timestamp: Date.now(),
-  };
+  homepageBannerCache = null;
 
   return res.json(content.homepageBanner);
 });
 
-module.exports = { getHomepageBanner, updateHomepageBanner };
+const getAdminWorkspace = asyncHandler(async (req, res) => {
+  const content = await getSiteContent();
+  return res.json(content.adminWorkspace || {});
+});
+
+const updateAdminWorkspace = asyncHandler(async (req, res) => {
+  const content = await getSiteContent();
+  const currentWorkspace =
+    content.adminWorkspace && typeof content.adminWorkspace === "object"
+      ? content.adminWorkspace
+      : {};
+
+  content.adminWorkspace = mergePlainObjects(currentWorkspace, req.body || {});
+  await content.save();
+  homepageBannerCache = null;
+
+  return res.json(content.adminWorkspace || {});
+});
+
+module.exports = {
+  getHomepageBanner,
+  updateHomepageBanner,
+  getAdminWorkspace,
+  updateAdminWorkspace,
+};

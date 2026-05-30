@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/catalog";
+import type { AdminBanner } from "@/lib/admin-workspace";
 
 export type HomepageBanner = {
   announcementText: string;
@@ -10,6 +11,7 @@ export type HomepageBanner = {
   secondaryCtaLabel: string;
   secondaryCtaHref: string;
   imageUrl: string;
+  banners?: AdminBanner[];
 };
 
 export const defaultProducts: Product[] = [];
@@ -25,4 +27,5 @@ export const defaultHomepageBanner: HomepageBanner = {
   secondaryCtaLabel: "View collection",
   secondaryCtaHref: "/shop",
   imageUrl: "/uploads/banners/banner1.png",
+  banners: [],
 };

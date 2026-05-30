@@ -2,17 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AdminProductForm } from "@/components/admin-product-form";
+import {
+  AdminProductForm,
+  type AdminProductFormSubmit,
+} from "@/components/admin-product-form";
 import { AdminShell } from "@/components/admin-shell";
 import { AdminPanel, AdminSectionLabel } from "@/components/admin-ui";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
+import { resolveProductAdminMeta } from "@/lib/admin-workspace";
+import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 export default function EditProductPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { products, updateProduct, loading } = useStorefrontData();
+  const { workspace, saveWorkspace } = useAdminWorkspace();
   const listProduct = useMemo(
     () => products.find((item) => item.id === params.id || item.slug === params.id),
     [params.id, products]
@@ -58,12 +64,21 @@ export default function EditProductPage() {
     };
   }, [listProduct, loading, params.id]);
 
-  const handleSubmit = async (nextProduct: Product) => {
+  const handleSubmit = async ({ product: nextProduct, meta }: AdminProductFormSubmit) => {
     if (!product) {
       return;
     }
 
     await updateProduct(product.id, nextProduct);
+    await saveWorkspace({
+      productMeta: {
+        ...workspace.productMeta,
+        [product.id]: {
+          ...meta,
+          productId: product.id,
+        },
+      },
+    });
     router.push("/admin/products");
   };
 
@@ -76,9 +91,10 @@ export default function EditProductPage() {
       ) : product ? (
         <AdminProductForm
           initialProduct={product}
+          initialMeta={resolveProductAdminMeta(workspace, product)}
           submitLabel="Update product"
           title="Edit launch product."
-          description="Update imagery, pricing, categories, and merchandising flags without leaving the catalog workspace."
+          description="Update catalog copy, premium imagery, manual visibility status, and merchandising labels from one luxury admin surface."
           onSubmit={handleSubmit}
         />
       ) : (

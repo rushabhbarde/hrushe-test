@@ -41,7 +41,7 @@ const reportConfig = {
       { label: "Catalog health", value: "Live-ready", detail: "Image and setup gaps are already surfaced." },
       { label: "Best sellers", value: "Ready", detail: "Merchandising flags support ranking." },
       { label: "Category mix", value: "Ready", detail: "Product categories are already structured." },
-      { label: "Sell-through", value: "Future", detail: "Requires variant inventory history." },
+      { label: "Sell-through", value: "Future", detail: "Requires richer order and merchandising history." },
     ],
   },
 } as const;

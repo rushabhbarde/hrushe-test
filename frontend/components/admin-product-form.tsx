@@ -1,754 +1,519 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { categories, type Product } from "@/lib/catalog";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AdminField,
+  AdminFilterInput,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSectionLabel,
+  AdminSwitch,
+  AdminTextArea,
+} from "@/components/admin-ui";
+import { useToast } from "@/components/toast-provider";
+import {
+  categories,
+  type Product,
+  type ProductCollectionLabel,
+  type ProductFitType,
+  type ProductGender,
+  type ProductStatus,
+} from "@/lib/catalog";
+import { compressSingleImage } from "@/lib/image-upload";
+import { type ProductAdminMeta } from "@/lib/admin-workspace";
 
-const sizeOptions = ["XS", "S", "M", "L", "XL", "XXL"];
-const namedColorMap: Record<string, string> = {
-  black: "#111111",
-  white: "#f5f5f0",
-  offwhite: "#e7e1d5",
-  "off-white": "#e7e1d5",
-  bone: "#e9e0d0",
-  cream: "#f0e6d8",
-  beige: "#d8c7ad",
-  stone: "#c8c1b4",
-  sand: "#cbb89d",
-  brown: "#6b4f3a",
-  coffee: "#6d4c41",
-  mocha: "#70543e",
-  tan: "#b98b64",
-  olive: "#65724d",
-  green: "#3f6a4a",
-  forest: "#465742",
-  sage: "#9aa28d",
-  mint: "#a7c8b0",
-  blue: "#476c9b",
-  navy: "#24344d",
-  midnight: "#1d2432",
-  slate: "#5f6672",
-  charcoal: "#3c3c3c",
-  grey: "#7a7a7a",
-  gray: "#7a7a7a",
-  ash: "#90949b",
-  silver: "#b7bcc3",
-  burgundy: "#6f2137",
-  maroon: "#74263f",
-  red: "#a63131",
-  wine: "#6f2b3a",
-  pink: "#d88c9a",
-  blush: "#ddb3b1",
-  yellow: "#d6af41",
-  mustard: "#bb8f27",
-  orange: "#c7743a",
-  rust: "#9b4b31",
-  purple: "#6f5e8b",
-  lavender: "#b9abc8",
-};
+const sizeOptions = ["S", "M", "L", "XL", "XXL"] as const;
+const statusOptions: ProductStatus[] = ["Active", "Draft", "Hidden", "Sold Out"];
+const fitOptions: ProductFitType[] = ["Oversized", "Regular"];
+const genderOptions: ProductGender[] = ["Men", "Women", "Unisex"];
+const labelOptions: ProductCollectionLabel[] = ["New In", "Featured", "Collection"];
 
-type AdminProductFormValues = {
+type FormState = {
   name: string;
   slug: string;
   description: string;
   price: string;
   compareAtPrice: string;
-  categoriesInput: string;
-  sizes: string[];
+  category: string;
+  extraCategories: string;
   colors: string;
-  accent: string;
-  featured: boolean;
-  bestSeller: boolean;
-  newIn: boolean;
-  newArrival: boolean;
+  sizes: string[];
+  fitType: ProductFitType;
+  gender: ProductGender;
+  status: ProductStatus;
+  collectionLabels: ProductCollectionLabel[];
+  images: string[];
+  galleryImages: string[];
+};
+
+export type AdminProductFormSubmit = {
+  product: Product;
+  meta: ProductAdminMeta;
 };
 
 type AdminProductFormProps = {
   initialProduct?: Product;
+  initialMeta?: ProductAdminMeta;
   submitLabel: string;
   title: string;
   description: string;
-  onSubmit: (product: Product) => Promise<void>;
+  onSubmit: (payload: AdminProductFormSubmit) => Promise<void>;
 };
-
-const emptyForm: AdminProductFormValues = {
-  name: "",
-  slug: "",
-  description: "",
-  price: "",
-  compareAtPrice: "",
-  categoriesInput: "",
-  sizes: [],
-  colors: "",
-  accent: "#111111",
-  featured: false,
-  bestSeller: false,
-  newIn: false,
-  newArrival: false,
-};
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadImage(source: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new window.Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Could not process selected image."));
-    image.src = source;
-  });
-}
-
-async function compressImage(file: File) {
-  const dataUrl = await readFileAsDataUrl(file);
-  const image = await loadImage(dataUrl);
-  const maxDimension = 720;
-  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-  const width = Math.max(1, Math.round(image.width * scale));
-  const height = Math.max(1, Math.round(image.height * scale));
-  const canvas = document.createElement("canvas");
-
-  canvas.width = width;
-  canvas.height = height;
-
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("Could not process selected image.");
-  }
-
-  context.drawImage(image, 0, 0, width, height);
-
-  const compressed = canvas.toDataURL("image/jpeg", 0.5);
-
-  if (compressed.length > 650_000) {
-    return canvas.toDataURL("image/jpeg", 0.4);
-  }
-
-  return compressed;
-}
 
 function slugify(value: string) {
   return value
     .toLowerCase()
     .trim()
+    .replace(/&/g, "and")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
-function normalizeColorKey(value: string) {
-  return value.toLowerCase().trim().replace(/\s+/g, "").replace(/_/g, "-");
+function inferAccent(colors: string[]) {
+  const first = colors[0]?.trim().toLowerCase() || "black";
+  const accentMap: Record<string, string> = {
+    black: "#111111",
+    white: "#f4f1eb",
+    cream: "#e6d8c2",
+    beige: "#cdb89c",
+    brown: "#6c4e36",
+    olive: "#68704d",
+    navy: "#28344b",
+    charcoal: "#3a3a3a",
+    burgundy: "#6f2537",
+  };
+
+  return accentMap[first] || "#111111";
 }
 
-function inferAccentFromColors(value: string) {
-  const firstColor = value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)[0];
-
-  if (!firstColor) {
-    return "#111111";
-  }
-
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(firstColor)) {
-    return firstColor;
-  }
-
-  return namedColorMap[normalizeColorKey(firstColor)] || "#111111";
-}
-
-function formatCurrency(value: string) {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return "--";
-  }
-
-  return `Rs. ${amount.toLocaleString("en-IN")}`;
-}
-
-function buildInitialForm(product?: Product): AdminProductFormValues {
-  if (!product) {
-    return emptyForm;
-  }
-
+function buildInitialState(
+  product?: Product,
+  meta?: ProductAdminMeta
+): FormState {
   return {
-    name: product.name,
-    slug: product.slug || "",
-    description: product.description,
-    price: String(product.price),
-    compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
-    categoriesInput:
-      product.categories && product.categories.length > 0
-        ? product.categories.join(", ")
-        : product.category,
-    sizes: product.sizes,
-    colors: product.colors.join(", "),
-    accent: product.accent,
-    featured: Boolean(product.featured),
-    bestSeller: Boolean(product.bestSeller),
-    newIn: Boolean(product.newIn),
-    newArrival: Boolean(product.newArrival),
+    name: product?.name || "",
+    slug: product?.slug || "",
+    description: product?.description || "",
+    price: product?.price ? String(product.price) : "",
+    compareAtPrice: product?.compareAtPrice ? String(product.compareAtPrice) : "",
+    category: product?.category || categories[0],
+    extraCategories:
+      (product?.categories || []).filter((item) => item !== product?.category).join(", "),
+    colors: (product?.colors || []).join(", "),
+    sizes: product?.sizes || [],
+    fitType: meta?.fitType || product?.fitType || "Regular",
+    gender: meta?.gender || product?.gender || "Unisex",
+    status: meta?.status || product?.status || "Draft",
+    collectionLabels: meta?.collectionLabels || product?.collectionLabels || [],
+    images: product?.images || [],
+    galleryImages: meta?.galleryImages || product?.galleryImages || [],
   };
 }
 
 export function AdminProductForm({
   initialProduct,
+  initialMeta,
   submitLabel,
   title,
   description,
   onSubmit,
 }: AdminProductFormProps) {
-  const categoryOptions = Array.from(
-    new Set(
-      [
-        ...categories,
-        ...(initialProduct?.categories || []),
-        initialProduct?.category || "",
-      ]
-        .map((item) => item.trim())
-        .filter(Boolean)
-    )
-  );
-  const [form, setForm] = useState<AdminProductFormValues>(() =>
-    buildInitialForm(initialProduct)
-  );
-  const [uploadedImages, setUploadedImages] = useState<string[]>(
-    initialProduct?.images || []
-  );
-  const [uploadError, setUploadError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const { pushToast } = useToast();
+  const [form, setForm] = useState<FormState>(() => buildInitialState(initialProduct, initialMeta));
   const [slugEdited, setSlugEdited] = useState(Boolean(initialProduct?.slug));
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setForm(buildInitialForm(initialProduct));
-    setUploadedImages(initialProduct?.images || []);
+    setForm(buildInitialState(initialProduct, initialMeta));
     setSlugEdited(Boolean(initialProduct?.slug));
-  }, [initialProduct]);
+  }, [initialMeta, initialProduct]);
 
-  const parsedColors = form.colors
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const parsedCategories = form.categoriesInput
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const salePrice = Number(form.price);
-  const originalPrice = Number(form.compareAtPrice);
-  const discountPercent =
-    Number.isFinite(salePrice) &&
-    Number.isFinite(originalPrice) &&
-    originalPrice > salePrice &&
-    salePrice > 0
-      ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
+  const parsedColors = useMemo(
+    () => form.colors.split(",").map((item) => item.trim()).filter(Boolean),
+    [form.colors]
+  );
+  const parsedCategories = useMemo(() => {
+    const next = [form.category, ...form.extraCategories.split(",").map((item) => item.trim())]
+      .filter(Boolean);
+    return Array.from(new Set(next));
+  }, [form.category, form.extraCategories]);
+
+  const sellingPrice = Number(form.price);
+  const comparePrice = Number(form.compareAtPrice);
+  const discountPercentage =
+    comparePrice > sellingPrice && sellingPrice > 0
+      ? Math.round(((comparePrice - sellingPrice) / comparePrice) * 100)
       : 0;
 
-  const onChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = event.target;
+  function updateForm<T extends keyof FormState>(key: T, value: FormState[T]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
 
-    setForm((current) => {
-      const next = { ...current, [name]: value };
-
-      if (name === "name" && !slugEdited) {
-        next.slug = slugify(value);
-      }
-
-      if (name === "colors") {
-        next.accent = inferAccentFromColors(value);
-      }
-
-      return next;
-    });
-  };
-
-  const onToggleBoolean = (
-    name: "featured" | "bestSeller" | "newIn" | "newArrival"
-  ) => {
-    setForm((current) => ({ ...current, [name]: !current[name] }));
-  };
-
-  const toggleSize = (size: string) => {
-    setForm((current) => ({
-      ...current,
-      sizes: current.sizes.includes(size)
-        ? current.sizes.filter((item) => item !== size)
-        : [...current.sizes, size],
-    }));
-  };
-
-  const onImagesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-
-    if (files.length === 0) {
+  async function uploadImages(
+    files: FileList | null,
+    key: "images" | "galleryImages",
+    maxDimension: number
+  ) {
+    if (!files?.length) {
       return;
     }
 
     try {
-      setUploadError("");
-      const imageData = await Promise.all(files.map(compressImage));
-
-      const totalPayloadSize = imageData.reduce(
-        (sum, image) => sum + image.length,
-        0
+      const uploaded = await Promise.all(
+        Array.from(files).map((file) => compressSingleImage(file, maxDimension))
       );
-
-      if (totalPayloadSize > 1_800_000) {
-        throw new Error("Selected images are still too large after optimization.");
-      }
-
-      setUploadedImages(imageData);
+      updateForm(key, [...form[key], ...uploaded]);
+      pushToast(`${key === "images" ? "Product" : "Gallery"} images added.`);
     } catch {
-      setUploadError(
-        "Could not process selected images. Try fewer images or smaller files."
-      );
+      pushToast("Could not process those images.", "error");
     }
-  };
+  }
 
-  const onFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
-    setSubmitError("");
 
     try {
-      await onSubmit({
+      const colors = parsedColors;
+      const collectionLabels = form.collectionLabels;
+      const product: Product = {
         id: initialProduct?.id || "",
         name: form.name,
-        slug: form.slug || undefined,
+        slug: form.slug || slugify(form.name),
         description: form.description,
         price: Number(form.price),
-        compareAtPrice: form.compareAtPrice
-          ? Number(form.compareAtPrice)
-          : undefined,
-        category: parsedCategories[0] || "",
+        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
+        category: form.category,
         categories: parsedCategories,
+        colors,
         sizes: form.sizes,
-        colors: form.colors
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
-        images: uploadedImages,
-        imageLabel:
-          initialProduct?.imageLabel || "Admin uploaded product image",
-        accent: form.accent,
-        featured: form.featured,
-        bestSeller: form.bestSeller,
-        newIn: form.newIn,
-        newArrival: form.newArrival,
-      });
+        images: form.images,
+        galleryImages: form.galleryImages,
+        fitType: form.fitType,
+        gender: form.gender,
+        collectionLabels,
+        status: form.status,
+        featured: collectionLabels.includes("Featured"),
+        newIn: collectionLabels.includes("New In"),
+        bestSeller: initialProduct?.bestSeller || false,
+        newArrival: initialProduct?.newArrival || collectionLabels.includes("Collection"),
+        imageLabel: initialProduct?.imageLabel || "HRUSHE admin upload",
+        accent: inferAccent(colors),
+        reviews: initialProduct?.reviews || [],
+      };
 
-      if (!initialProduct) {
-        setForm(emptyForm);
-        setUploadedImages([]);
-        setSlugEdited(false);
-      }
+      const meta: ProductAdminMeta = {
+        productId: initialProduct?.id || product.slug || product.name,
+        status: form.status,
+        fitType: form.fitType,
+        gender: form.gender,
+        collectionLabels,
+        galleryImages: form.galleryImages,
+      };
 
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 1500);
+      await onSubmit({ product, meta });
+      pushToast(`${initialProduct ? "Product updated" : "Product created"} successfully.`);
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "Could not save product."
-      );
+      pushToast(error instanceof Error ? error.message : "Could not save product.", "error");
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <div className="grain-card rounded-[2rem] p-6 sm:p-8">
-      <p className="eyebrow text-[var(--accent)]">Admin product panel</p>
-      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="display-font text-4xl">{title}</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-            {description}
-          </p>
-        </div>
-        <div className="rounded-[1.6rem] border border-[var(--border)] bg-white/45 px-5 py-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-            Product preview
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <span
-              className="h-10 w-10 rounded-full border border-[var(--border)]"
-              style={{ backgroundColor: form.accent }}
-            />
-            <div>
-              <p className="text-sm font-semibold">
-                {form.name || "New product draft"}
-              </p>
-              <p className="text-xs text-[var(--muted)]">
-                {parsedCategories[0] || "Category pending"} · {formatCurrency(form.price)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader eyebrow="Product management" title={title} description={description} />
 
-      <form
-        className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]"
-        onSubmit={(event) => void onFormSubmit(event)}
-      >
-        <div className="grid gap-6">
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">Core details</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  Name, slug, description, and category placement for the storefront.
-                </p>
-              </div>
-              <span className="rounded-full bg-black/5 px-3 py-1 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                Basics
-              </span>
-            </div>
+      <form className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" onSubmit={(event) => void handleSubmit(event)}>
+        <div className="space-y-6">
+          <AdminPanel>
+            <AdminSectionLabel>Product information</AdminSectionLabel>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <input
-                name="name"
-                value={form.name}
-                onChange={onChange}
-                className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-                placeholder="Product name"
-                required
-              />
-              <input
-                name="slug"
-                value={form.slug}
-                onChange={(event) => {
-                  setSlugEdited(true);
-                  onChange(event);
-                }}
-                className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-                placeholder="Product slug"
-              />
+              <AdminField label="Product name">
+                <AdminFilterInput
+                  value={form.name}
+                  onChange={(event) => {
+                    updateForm("name", event.target.value);
+                    if (!slugEdited) {
+                      updateForm("slug", slugify(event.target.value));
+                    }
+                  }}
+                  required
+                />
+              </AdminField>
+              <AdminField label="Slug">
+                <AdminFilterInput
+                  value={form.slug}
+                  onChange={(event) => {
+                    setSlugEdited(true);
+                    updateForm("slug", slugify(event.target.value));
+                  }}
+                  required
+                />
+              </AdminField>
             </div>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={onChange}
-              className="mt-4 min-h-32 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="Description"
-              required
-            />
-            <input
-              list="admin-category-options"
-              name="categoriesInput"
-              value={form.categoriesInput}
-              onChange={onChange}
-              className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="Type categories separated by commas"
-              required
-            />
-            <datalist id="admin-category-options">
-              {categoryOptions.map((category) => (
-                <option key={category} value={category} />
-              ))}
-            </datalist>
-            {parsedCategories.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {parsedCategories.map((category) => (
-                  <span
-                    key={category}
-                    className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs text-[var(--muted)]"
-                  >
-                    {category}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </section>
 
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold">Pricing setup</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  Set the live selling price and the original cut price shown on the product card.
-                </p>
-              </div>
-              {discountPercent > 0 ? (
-                <span className="rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white">
-                  {discountPercent}% off
-                </span>
-              ) : null}
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <AdminField label="Price">
+                <AdminFilterInput
+                  value={form.price}
+                  onChange={(event) => updateForm("price", event.target.value)}
+                  inputMode="decimal"
+                  required
+                />
+              </AdminField>
+              <AdminField label="Compare-at price">
+                <AdminFilterInput
+                  value={form.compareAtPrice}
+                  onChange={(event) => updateForm("compareAtPrice", event.target.value)}
+                  inputMode="decimal"
+                />
+              </AdminField>
             </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <AdminField label="Primary category">
+                <select
+                  value={form.category}
+                  onChange={(event) => updateForm("category", event.target.value)}
+                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </AdminField>
+              <AdminField label="Extra categories" hint="Comma-separated merchandising tags.">
+                <AdminFilterInput
+                  value={form.extraCategories}
+                  onChange={(event) => updateForm("extraCategories", event.target.value)}
+                />
+              </AdminField>
+            </div>
+
+            <div className="mt-4">
+              <AdminField label="Product description">
+                <AdminTextArea
+                  value={form.description}
+                  onChange={(event) => updateForm("description", event.target.value)}
+                  required
+                />
+              </AdminField>
+            </div>
+          </AdminPanel>
+
+          <AdminPanel>
+            <AdminSectionLabel>Attributes</AdminSectionLabel>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <input
-                name="price"
-                value={form.price}
-                onChange={onChange}
-                className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-                placeholder="Discounted price"
-                required
-                inputMode="decimal"
-              />
-              <input
-                name="compareAtPrice"
-                value={form.compareAtPrice}
-                onChange={onChange}
-                className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-                placeholder="Original price"
-                inputMode="decimal"
-              />
+              <AdminField label="Colors" hint="Comma-separated values shown on the storefront.">
+                <AdminFilterInput
+                  value={form.colors}
+                  onChange={(event) => updateForm("colors", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Gender">
+                <select
+                  value={form.gender}
+                  onChange={(event) => updateForm("gender", event.target.value as ProductGender)}
+                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                >
+                  {genderOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </AdminField>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-[var(--border)] bg-white/65 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  Selling price
-                </p>
-                <p className="mt-2 text-lg font-semibold">{formatCurrency(form.price)}</p>
-              </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-white/65 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  Original price
-                </p>
-                <p className="mt-2 text-lg font-semibold">
-                  {formatCurrency(form.compareAtPrice)}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-white/65 p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  Discount
-                </p>
-                <p className="mt-2 text-lg font-semibold">
-                  {discountPercent > 0 ? `${discountPercent}%` : "--"}
-                </p>
-              </div>
-            </div>
-          </section>
 
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <p className="text-sm font-semibold">Fit and color setup</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Choose live size availability and the color names customers will see.
-            </p>
-            <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-              <p className="text-sm font-medium text-[var(--foreground)]">Available sizes</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <AdminField label="Fit type">
+                <div className="grid grid-cols-2 gap-3">
+                  {fitOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateForm("fitType", option)}
+                      className={`px-4 py-3 text-sm font-medium ${
+                        form.fitType === option
+                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </AdminField>
+
+              <AdminField label="Product status">
+                <select
+                  value={form.status}
+                  onChange={(event) => updateForm("status", event.target.value as ProductStatus)}
+                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </AdminField>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-sm font-medium text-[var(--foreground)]">Sizes</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {sizeOptions.map((size) => {
                   const selected = form.sizes.includes(size);
-
                   return (
-                    <label
+                    <button
                       key={size}
-                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                      type="button"
+                      onClick={() =>
+                        updateForm(
+                          "sizes",
+                          selected
+                            ? form.sizes.filter((item) => item !== size)
+                            : [...form.sizes, size]
+                        )
+                      }
+                      className={`px-4 py-2 text-sm ${
                         selected
-                          ? "border-black bg-black text-white"
-                          : "border-[var(--border)] bg-white text-[var(--foreground)]"
+                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => toggleSize(size)}
-                        className="hidden"
-                      />
-                      <span>{size}</span>
-                    </label>
+                      {size}
+                    </button>
                   );
                 })}
               </div>
             </div>
-            <input
-              name="colors"
-              value={form.colors}
-              onChange={onChange}
-              className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-              placeholder="Colors (comma separated)"
-            />
-            <div className="mt-4 rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-              <p className="text-sm font-medium text-[var(--foreground)]">
-                Detected accent color
-              </p>
-              <div className="mt-3 flex items-center gap-3">
-                <span
-                  className="h-10 w-10 rounded-full border border-[var(--border)]"
-                  style={{ backgroundColor: form.accent }}
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{form.accent}</p>
-                  <p className="text-xs text-[var(--muted)]">
-                    Based on the first color in the list.
-                  </p>
-                </div>
-              </div>
-              {parsedColors.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {parsedColors.map((color) => (
-                    <span
-                      key={color}
-                      className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs text-[var(--muted)]"
+
+            <div className="mt-5">
+              <p className="text-sm font-medium text-[var(--foreground)]">Collection labels</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {labelOptions.map((label) => {
+                  const selected = form.collectionLabels.includes(label);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() =>
+                        updateForm(
+                          "collectionLabels",
+                          selected
+                            ? form.collectionLabels.filter((item) => item !== label)
+                            : [...form.collectionLabels, label]
+                        )
+                      }
+                      className={`px-4 py-2 text-sm ${
+                        selected
+                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
+                      }`}
                     >
-                      {color}
-                    </span>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </AdminPanel>
+        </div>
+
+        <div className="space-y-6">
+          <AdminPanel>
+            <AdminSectionLabel>Media</AdminSectionLabel>
+            <div className="mt-5 space-y-5">
+              <AdminField label="Product images" hint="Primary storefront media. The first image is used as the lead product image.">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => void uploadImages(event.target.files, "images", 960)}
+                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                />
+              </AdminField>
+              <AdminField label="Gallery images" hint="Extra editorial frames for rich product storytelling.">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => void uploadImages(event.target.files, "galleryImages", 1080)}
+                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                />
+              </AdminField>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {form.images.map((image, index) => (
+                <MediaCard
+                  key={`image-${index}-${image.slice(0, 16)}`}
+                  image={image}
+                  label={index === 0 ? "Primary" : `Image ${index + 1}`}
+                  onRemove={() => updateForm("images", form.images.filter((_, itemIndex) => itemIndex !== index))}
+                />
+              ))}
+            </div>
+
+            {form.galleryImages.length ? (
+              <>
+                <p className="mt-5 text-sm font-medium text-[var(--foreground)]">Gallery</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {form.galleryImages.map((image, index) => (
+                    <MediaCard
+                      key={`gallery-${index}-${image.slice(0, 16)}`}
+                      image={image}
+                      label={`Gallery ${index + 1}`}
+                      onRemove={() =>
+                        updateForm(
+                          "galleryImages",
+                          form.galleryImages.filter((_, itemIndex) => itemIndex !== index)
+                        )
+                      }
+                    />
                   ))}
                 </div>
-              ) : null}
-            </div>
-          </section>
-        </div>
-
-        <div className="grid gap-6">
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <p className="text-sm font-semibold">Storefront status</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Control where this product gets highlighted across the site.
-            </p>
-            <div className="mt-5 grid gap-4">
-              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  Featured / Current collection
-                </span>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Show this item in the Current Collection section on the homepage.
-                </p>
-                <input
-                  type="checkbox"
-                  checked={form.featured}
-                  onChange={() => onToggleBoolean("featured")}
-                  className="mt-4 h-5 w-5"
-                />
-              </label>
-              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  Best seller
-                </span>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Highlight this product in the best-sellers edit instead of relying on price order.
-                </p>
-                <input
-                  type="checkbox"
-                  checked={form.bestSeller}
-                  onChange={() => onToggleBoolean("bestSeller")}
-                  className="mt-4 h-5 w-5"
-                />
-              </label>
-              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  New in
-                </span>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Show this item on the New page and the New In section on the homepage.
-                </p>
-                <input
-                  type="checkbox"
-                  checked={form.newIn}
-                  onChange={() => onToggleBoolean("newIn")}
-                  className="mt-4 h-5 w-5"
-                />
-              </label>
-              <label className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <span className="text-sm font-medium text-[var(--foreground)]">
-                  New arrival
-                </span>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Push this product into new-arrival sections and launch-focused edits.
-                </p>
-                <input
-                  type="checkbox"
-                  checked={form.newArrival}
-                  onChange={() => onToggleBoolean("newArrival")}
-                  className="mt-4 h-5 w-5"
-                />
-              </label>
-            </div>
-          </section>
-
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <p className="text-sm font-semibold">Media gallery</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Add the front, back, and lifestyle views that will sell the product best.
-            </p>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={onImagesChange}
-              className="mt-5 block w-full text-sm text-[var(--muted)] file:mr-4 file:rounded-full file:border-0 file:bg-black file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
-            />
-            <p className="mt-2 text-xs leading-6 text-[var(--muted)]">
-              Images are optimized automatically. Keep this to 2-4 medium-size images for the
-              smoothest save flow. The first image becomes the main storefront image.
-            </p>
-            {uploadError ? (
-              <p className="mt-3 text-sm text-[var(--accent)]">{uploadError}</p>
+              </>
             ) : null}
-            {uploadedImages.length > 0 ? (
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {uploadedImages.map((image, index) => (
-                  <div
-                    key={`${index}-${image.slice(0, 20)}`}
-                    className="relative aspect-square overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)]"
-                  >
-                    <Image
-                      src={image}
-                      alt={`Preview ${index + 1}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                    <span className="absolute left-2 top-2 rounded-full bg-white/92 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-black">
-                      {index === 0 ? "Primary" : `Image ${index + 1}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-5 rounded-2xl border border-dashed border-[var(--border)] bg-white/35 px-4 py-10 text-center text-sm text-[var(--muted)]">
-                Upload images to see the product gallery preview here.
-              </div>
-            )}
-          </section>
+          </AdminPanel>
 
-          <section className="rounded-[1.8rem] border border-[var(--border)] bg-white/55 p-5 sm:p-6">
-            <p className="text-sm font-semibold">Publishing summary</p>
-            <div className="mt-4 grid gap-3">
-              <div className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  Slug
-                </p>
-                <p className="mt-2 break-all text-sm font-medium">
-                  {form.slug || "Will be generated from the product name"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  Readiness
-                </p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  {uploadedImages.length > 0
-                    ? `${uploadedImages.length} images ready, ${form.sizes.length} sizes selected.`
-                    : "Add product images before publishing for a stronger storefront."}
-                </p>
-              </div>
+          <AdminPanel>
+            <AdminSectionLabel>Readiness</AdminSectionLabel>
+            <div className="mt-5 space-y-4">
+              <SummaryRow label="Category structure" value={parsedCategories.join(", ") || "Not set"} />
+              <SummaryRow label="Color palette" value={parsedColors.join(", ") || "Not set"} />
+              <SummaryRow label="Discount" value={discountPercentage > 0 ? `${discountPercentage}% off` : "No compare-at price"} />
+              <SummaryRow label="Visibility" value={form.status} />
             </div>
-          </section>
-        </div>
+            <div className="mt-5">
+              <AdminSwitch
+                checked={form.collectionLabels.includes("Featured")}
+                onChange={(checked) =>
+                  updateForm(
+                    "collectionLabels",
+                    checked
+                      ? Array.from(new Set([...form.collectionLabels, "Featured"]))
+                      : form.collectionLabels.filter((label) => label !== "Featured")
+                  )
+                }
+                label="Feature on storefront"
+                description="Keep this synced with the collection label for homepage merchandising."
+              />
+            </div>
+          </AdminPanel>
 
-        <div className="xl:col-span-2">
-          {submitError ? (
-            <p className="mb-4 text-sm text-[var(--accent)]">{submitError}</p>
-          ) : null}
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="button-primary rounded-full px-6 py-3 transition disabled:opacity-60"
-            >
-              {submitting ? "Saving..." : saved ? "Saved" : submitLabel}
+            <button type="submit" disabled={submitting} className="button-primary px-6 py-3 text-sm font-medium disabled:opacity-60">
+              {submitting ? "Saving..." : submitLabel}
             </button>
             <span className="text-sm text-[var(--muted)]">
-              Changes will update the storefront as soon as the save completes.
+              Products save with auto-generated database IDs. Inventory is intentionally excluded.
             </span>
           </div>
         </div>
@@ -756,3 +521,37 @@ export function AdminProductForm({
     </div>
   );
 }
+
+function MediaCard({
+  image,
+  label,
+  onRemove,
+}: {
+  image: string;
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="relative overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-strong)_84%,transparent)]">
+      <div className="relative aspect-square">
+        <Image src={image} alt={label} fill unoptimized className="object-cover" />
+      </div>
+      <div className="flex items-center justify-between gap-3 px-3 py-3">
+        <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+        <button type="button" onClick={onRemove} className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--danger)]">
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{value}</p>
+    </div>
+  );
+}
+

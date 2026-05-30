@@ -6,30 +6,29 @@ export default function AdminInventoryPage() {
   return (
     <AdminModulePage
       eyebrow="Catalog"
-      title="Inventory prepared for scale."
-      description="Variant-wise stock, low-stock visibility, and warehouse-ready structure so inventory can grow with the brand."
-      primaryAction={{ label: "Update stock", href: "/admin/products" }}
+      title="Inventory is intentionally excluded."
+      description="The HRUSHE admin uses manual product visibility states only. Products stay controlled through Active, Draft, Hidden, and Sold Out without stock counting."
+      primaryAction={{ label: "Open product management", href: "/admin/products" }}
       stats={[
-        { label: "Tracked variants", value: "Live", detail: "Variant stock is inferred from active size setup today." },
-        { label: "Low stock alerts", value: "Placeholder", detail: "Ready for future stock thresholds." },
-        { label: "Out of stock", value: "0", detail: "Structured for variant-level visibility." },
-        { label: "Warehouse", value: "Future-ready", detail: "Location support can drop in naturally later." },
+        { label: "Product IDs", value: "Auto-generated", detail: "Every product uses a database ID instead of stock SKUs." },
+        { label: "Visibility control", value: "Live", detail: "Status is managed manually from the product form and list." },
+        { label: "Sold out", value: "Manual", detail: "Admins can mark products as Sold Out without inventory tracking." },
+        { label: "Warehousing", value: "Disabled", detail: "No warehouse or stock-count workflows are included by design." },
       ]}
       sections={[
         {
-          title: "Stock operations",
-          description: "Workflows designed to grow from a lean launch to real inventory handling.",
+          title: "Current model",
+          description: "The admin follows the requested manual-merchandising approach.",
           items: [
-            { title: "Variant stock list", description: "A future-ready stock surface for size, color, and fit combinations.", meta: "Catalog ops" },
-            { title: "Incoming stock", description: "Placeholder hooks for purchase orders, restocks, and inbound batches.", meta: "Future" },
-            { title: "Stock history", description: "Space reserved for adjustments, reasons, and team accountability logs.", meta: "Audit trail" },
+            { title: "Manual statuses", description: "Use Active, Draft, Hidden, or Sold Out to control storefront visibility.", meta: "Catalog ops" },
+            { title: "No stock counts", description: "There are no quantity fields, thresholds, or restock ledgers in this admin.", meta: "By design" },
           ],
         },
         {
-          title: "Readiness",
+          title: "Where to manage products",
           items: [
-            { title: "Low stock alerting", description: "Prepared for thresholds once true stock counts are introduced." },
-            { title: "Location awareness", description: "Warehouse or city-level stock distribution can plug into this module later." },
+            { title: "Product management", description: "Use the catalog screens for imagery, pricing, fit, gender, labels, and visibility." },
+            { title: "Homepage merchandising", description: "Use Home Management to decide what gets promoted rather than stock-based automation." },
           ],
         },
       ]}

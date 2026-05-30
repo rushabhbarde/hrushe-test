@@ -7,14 +7,18 @@ type Tone = "default" | "accent" | "success" | "warning";
 
 const toneClasses: Record<Tone, string> = {
   default:
-    "border-[rgba(17,17,17,0.08)] bg-white text-[var(--foreground)]",
+    "border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)] text-[var(--foreground)]",
   accent:
-    "border-[rgba(17,17,17,0.14)] bg-[rgba(17,17,17,0.05)] text-[var(--foreground)]",
+    "border-[color:color-mix(in_srgb,var(--foreground)_16%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_7%,transparent)] text-[var(--foreground)]",
   success:
-    "border-[rgba(18,130,74,0.14)] bg-[rgba(18,130,74,0.08)] text-[#12824a]",
+    "border-[rgba(18,130,74,0.18)] bg-[rgba(18,130,74,0.1)] text-[#12824a]",
   warning:
-    "border-[rgba(193,112,24,0.14)] bg-[rgba(193,112,24,0.08)] text-[#8c5417]",
+    "border-[rgba(193,112,24,0.18)] bg-[rgba(193,112,24,0.1)] text-[#8c5417]",
 };
+
+function fieldClassName(className = "") {
+  return `min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color:color-mix(in_srgb,var(--muted)_90%,transparent)] focus:border-[color:color-mix(in_srgb,var(--foreground)_28%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_5%,transparent)] ${className}`.trim();
+}
 
 export function AdminBadge({
   children,
@@ -41,7 +45,7 @@ export function AdminPanel({
 }) {
   return (
     <section
-      className={`border border-[rgba(17,17,17,0.08)] bg-white/96 p-5 shadow-[0_16px_40px_rgba(17,17,17,0.06)] backdrop-blur md:p-6 ${className}`}
+      className={`border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_92%,transparent),color-mix(in_srgb,var(--surface-strong)_88%,transparent))] p-5 shadow-[0_20px_48px_rgba(17,17,17,0.08)] backdrop-blur md:p-6 ${className}`}
     >
       {children}
     </section>
@@ -58,7 +62,9 @@ export function AdminSectionLabel({
   return (
     <p
       className={`text-[11px] font-medium uppercase tracking-[0.28em] ${
-        tone === "accent" ? "text-[var(--foreground)]" : "text-[var(--muted)]"
+        tone === "accent"
+          ? "text-[color:color-mix(in_srgb,var(--foreground)_82%,transparent)]"
+          : "text-[var(--muted)]"
       }`}
     >
       {children}
@@ -78,7 +84,7 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-5 border border-[rgba(17,17,17,0.06)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,255,255,0.9))] px-5 py-6 shadow-[0_20px_48px_rgba(17,17,17,0.05)] sm:px-7 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
+    <div className="theme-spotlight overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_94%,transparent),color-mix(in_srgb,var(--surface-strong)_90%,transparent))] px-5 py-6 shadow-[0_24px_60px_rgba(17,17,17,0.08)] sm:px-7 sm:py-8 lg:flex lg:items-end lg:justify-between">
       <div className="max-w-3xl">
         <AdminSectionLabel>{eyebrow}</AdminSectionLabel>
         <h1 className="display-font mt-3 text-4xl leading-none text-[var(--foreground)] sm:text-5xl">
@@ -90,7 +96,7 @@ export function AdminPageHeader({
           </p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-3 lg:justify-end">{actions}</div> : null}
+      {actions ? <div className="mt-5 flex flex-wrap gap-3 lg:mt-0 lg:justify-end">{actions}</div> : null}
     </div>
   );
 }
@@ -153,7 +159,7 @@ export function AdminSubhead({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-col gap-3 border-b border-[rgba(17,17,17,0.08)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-5 flex flex-col gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] pb-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--foreground)]">
           {title}
@@ -187,20 +193,76 @@ export function AdminEmptyState({
 }
 
 export function AdminFilterInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={fieldClassName(props.className)} />;
+}
+
+export function AdminFilterSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={fieldClassName(props.className)} />;
+}
+
+export function AdminTextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <input
+    <textarea
       {...props}
-      className={`min-h-11 border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition placeholder:text-[var(--muted)] focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
+      className={`${fieldClassName(props.className)} min-h-[132px] py-3`}
     />
   );
 }
 
-export function AdminFilterSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function AdminField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
-    <select
-      {...props}
-      className={`min-h-11 border border-[rgba(17,17,17,0.1)] bg-white px-4 text-sm outline-none transition focus:border-[rgba(17,17,17,0.25)] ${props.className || ""}`}
-    />
+    <label className="grid gap-2">
+      <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
+      {children}
+      {hint ? <span className="text-xs leading-5 text-[var(--muted)]">{hint}</span> : null}
+    </label>
+  );
+}
+
+export function AdminSwitch({
+  checked,
+  onChange,
+  label,
+  description,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  description?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4 text-left"
+      aria-pressed={checked}
+    >
+      <div>
+        <p className="text-sm font-medium text-[var(--foreground)]">{label}</p>
+        {description ? <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{description}</p> : null}
+      </div>
+      <span
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center border transition ${
+          checked
+            ? "border-[var(--foreground)] bg-[var(--foreground)]"
+            : "border-[color:color-mix(in_srgb,var(--foreground)_14%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-strong)_90%,transparent)]"
+        }`}
+      >
+        <span
+          className={`absolute left-1 h-4.5 w-4.5 bg-[var(--background)] transition ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
@@ -220,3 +282,58 @@ export function AdminKeyValue({
     </div>
   );
 }
+
+export function AdminConfirmDialog({
+  open,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  destructive = false,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(0,0,0,0.36)] px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-strong)_94%,transparent))] p-6 shadow-[0_32px_80px_rgba(17,17,17,0.18)]">
+        <AdminSectionLabel tone={destructive ? "warning" : "accent"}>
+          {destructive ? "Confirm destructive action" : "Confirm action"}
+        </AdminSectionLabel>
+        <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[var(--foreground)]">
+          {title}
+        </h3>
+        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{description}</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button type="button" onClick={onCancel} className="button-secondary px-5 py-3 text-sm font-medium">
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`px-5 py-3 text-sm font-medium ${
+              destructive
+                ? "border border-[var(--danger)] bg-[var(--danger)] text-white"
+                : "button-primary"
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

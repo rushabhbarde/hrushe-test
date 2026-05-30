@@ -1,241 +1,437 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
+  AdminConfirmDialog,
+  AdminField,
+  AdminFilterInput,
+  AdminFilterSelect,
   AdminKeyValue,
   AdminPageHeader,
   AdminPanel,
   AdminSubhead,
+  AdminTextArea,
 } from "@/components/admin-ui";
+import { useToast } from "@/components/toast-provider";
+import { downloadApiFile, apiRequest } from "@/lib/api";
 import { formatAdminCurrency, orderStatusTone } from "@/lib/admin";
-import { apiRequest } from "@/lib/api";
-import { formatOrderDate, orderStatuses, type OrderRecord } from "@/lib/orders";
+import { resolveOrderAdminMeta, type OrderAdminMeta } from "@/lib/admin-workspace";
+import { orderStatuses, type OrderRecord } from "@/lib/orders";
+import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
-type OrderUpdateForm = {
-  orderStatus: OrderRecord["orderStatus"];
-  courierName: string;
-  trackingId: string;
-  trackingUrl: string;
-};
+const shippingStates: OrderAdminMeta["shippingStatus"][] = [
+  "Queued",
+  "Manifested",
+  "In Transit",
+  "Out for Delivery",
+  "Delivered",
+  "Return Pickup",
+];
 
-function buildForm(order: OrderRecord): OrderUpdateForm {
-  return {
-    orderStatus: order.orderStatus,
-    courierName: order.courierName || "",
-    trackingId: order.trackingId || "",
-    trackingUrl: order.trackingUrl || "",
-  };
+function buildTimeline(order: OrderRecord, meta: OrderAdminMeta) {
+  const defaultTimeline = [
+    { label: "Order placed", detail: "Customer completed checkout." },
+    { label: "Current order status", detail: order.orderStatus },
+    { label: "Shipping status", detail: meta.shippingStatus },
+  ];
+
+  const updates = meta.shippingUpdates
+    .slice()
+    .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+    .map((item) => ({
+      label: item.title,
+      detail: `${item.detail} · ${new Date(item.timestamp).toLocaleString("en-IN")}`,
+    }));
+
+  if (meta.refundState !== "none") {
+    updates.unshift({
+      label: "Refund state",
+      detail: meta.refundState === "processed" ? "Refund completed" : "Refund requested",
+    });
+  }
+
+  return [...defaultTimeline, ...updates];
 }
 
 export default function AdminOrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const { workspace, saveWorkspace } = useAdminWorkspace();
+  const { pushToast } = useToast();
   const [order, setOrder] = useState<OrderRecord | null>(null);
-  const [form, setForm] = useState<OrderUpdateForm | null>(null);
+  const [orderMeta, setOrderMeta] = useState<OrderAdminMeta | null>(null);
+  const [newUpdate, setNewUpdate] = useState({ title: "", detail: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [saveMessage, setSaveMessage] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    const loadOrder = async () => {
-      try {
-        const response = await apiRequest<OrderRecord>(`/order/${params.id}`, { cache: "no-store" });
-        if (active) {
-          setOrder(response);
-          setForm(buildForm(response));
+    void apiRequest<OrderRecord>(`/order/${params.id}`, { cache: "no-store" })
+      .then((response) => {
+        if (!active) {
+          return;
         }
-      } catch (loadError) {
+        setOrder(response);
+        setOrderMeta(resolveOrderAdminMeta(workspace, response));
+      })
+      .catch(() => {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Could not load order.");
+          setOrder(null);
+          setOrderMeta(null);
         }
-      } finally {
+      })
+      .finally(() => {
         if (active) {
           setLoading(false);
         }
-      }
-    };
+      });
 
-    void loadOrder();
     return () => {
       active = false;
     };
-  }, [params.id]);
+  }, [params.id, workspace]);
 
-  const saveOrder = async () => {
-    if (!form || !order) {
+  const timeline = useMemo(
+    () => (order && orderMeta ? buildTimeline(order, orderMeta) : []),
+    [order, orderMeta]
+  );
+
+  async function saveOrderChanges(nextStatus = order?.orderStatus) {
+    if (!order || !orderMeta) {
       return;
     }
 
     setSaving(true);
-    setError("");
-    setSaveMessage("");
 
     try {
-      const updated = await apiRequest<OrderRecord>(`/order/status/${order.id}`, {
+      const updatedOrder = await apiRequest<OrderRecord>(`/order/status/${order.id}`, {
         method: "PUT",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          orderStatus: nextStatus,
+          courierName: order.courierName,
+          trackingId: order.trackingId,
+          trackingUrl: order.trackingUrl,
+        }),
       });
 
-      setOrder(updated);
-      setForm(buildForm(updated));
-      setSaveMessage("Fulfillment details saved.");
-      router.refresh();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not update order.");
+      await saveWorkspace({
+        orderMeta: {
+          ...workspace.orderMeta,
+          [order.id]: orderMeta,
+        },
+      });
+
+      setOrder(updatedOrder);
+      pushToast("Order updates saved.");
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not update order.", "error");
     } finally {
       setSaving(false);
     }
-  };
+  }
 
-  return (
-    <AdminShell>
-      {loading ? (
+  if (loading) {
+    return (
+      <AdminShell>
         <AdminPanel>
           <p className="text-sm text-[var(--muted)]">Loading order...</p>
         </AdminPanel>
-      ) : error && !order ? (
+      </AdminShell>
+    );
+  }
+
+  if (!order || !orderMeta) {
+    return (
+      <AdminShell>
         <AdminPanel>
-          <p className="text-sm text-[var(--accent)]">{error}</p>
+          <p className="text-sm text-[var(--muted)]">Order not found.</p>
         </AdminPanel>
-      ) : order && form ? (
-        <div className="space-y-6">
-          <AdminPageHeader
-            eyebrow="Order detail"
-            title={`Order #${order.orderNumber || order.id.slice(-6)}`}
-            description="Order summary, customer context, fulfillment controls, and delivery tracking in one decision surface."
-            actions={
-              <Link href="/admin/orders" className="button-secondary rounded-full px-5 py-3 text-sm font-medium">
+      </AdminShell>
+    );
+  }
+
+  return (
+    <AdminShell>
+      <div className="space-y-6">
+        <AdminPageHeader
+          eyebrow="Order detail"
+          title={`Order #${order.orderNumber || order.id.slice(-6)}`}
+          description="Manage fulfillment, track shipping, coordinate customer support, and issue refunds without leaving the order workspace."
+          actions={
+            <>
+              <button
+                type="button"
+                onClick={() => void downloadApiFile(`/order/${order.id}/invoice`, `hrushe-order-${order.id}.pdf`)}
+                className="button-secondary px-5 py-3 text-sm font-medium"
+              >
+                Download invoice
+              </button>
+              <Link href="/admin/orders" className="button-primary px-5 py-3 text-sm font-medium">
                 Back to orders
               </Link>
-            }
-          />
+            </>
+          }
+        />
 
-          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-5">
-              <AdminPanel>
-                <AdminSubhead title="Customer profile preview" description="Basic contact data and delivery destination." />
-                <div className="grid gap-5 md:grid-cols-2">
-                  <AdminKeyValue label="Customer" value={order.customerName} />
-                  <AdminKeyValue label="Email" value={order.customerEmail} />
-                  <AdminKeyValue label="Phone" value={order.customerPhone || "Phone not provided"} />
-                  <AdminKeyValue label="Shipping address" value={order.shippingAddress} />
-                </div>
-              </AdminPanel>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+          <div className="space-y-5">
+            <AdminPanel>
+              <AdminSubhead title="Customer and order snapshot" description="Core contact, payment, and delivery information." />
+              <div className="grid gap-5 md:grid-cols-2">
+                <AdminKeyValue label="Customer" value={order.customerName} />
+                <AdminKeyValue label="Email" value={order.customerEmail} />
+                <AdminKeyValue label="Phone" value={order.customerPhone || "Not provided"} />
+                <AdminKeyValue label="Shipping address" value={order.shippingAddress} />
+                <AdminKeyValue label="Payment method" value={order.paymentMethod} />
+                <AdminKeyValue
+                  label="Payment status"
+                  value={<AdminBadge tone={order.paymentStatus === "paid" ? "success" : "default"}>{order.paymentStatus}</AdminBadge>}
+                />
+                <AdminKeyValue
+                  label="Order status"
+                  value={<AdminBadge tone={orderStatusTone(order.orderStatus)}>{order.orderStatus}</AdminBadge>}
+                />
+                <AdminKeyValue label="Order value" value={formatAdminCurrency(order.totalAmount)} />
+              </div>
+            </AdminPanel>
 
-              <AdminPanel>
-                <AdminSubhead title="Ordered items" description="Variant information carried into the order snapshot." />
-                <div className="space-y-3">
-                  {order.products.map((product, index) => (
-                    <div key={`${product.productId}-${index}`} className="rounded-[1.25rem] border border-[rgba(17,17,17,0.08)] px-4 py-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-base font-semibold tracking-[-0.02em]">{product.name}</p>
-                          <p className="mt-2 text-sm text-[var(--muted)]">
-                            Qty {product.quantity} · Size {product.size || "Default"} · Color {product.color || "Default"} · Fit {product.fit || "—"}
-                          </p>
-                        </div>
-                        <p className="text-sm font-semibold">{formatAdminCurrency(product.price)}</p>
+            <AdminPanel>
+              <AdminSubhead title="Ordered products" description="Line items captured at checkout." />
+              <div className="space-y-3">
+                {order.products.map((product, index) => (
+                  <div key={`${product.productId}-${index}`} className="border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold">{product.name}</p>
+                        <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+                          Qty {product.quantity} · Size {product.size || "Free"} · Color {product.color || "Default"} · Fit {product.fit || "—"}
+                        </p>
                       </div>
+                      <p className="text-sm font-semibold">{formatAdminCurrency(product.price)}</p>
                     </div>
-                  ))}
-                </div>
-              </AdminPanel>
-            </div>
+                  </div>
+                ))}
+              </div>
+            </AdminPanel>
 
-            <div className="space-y-5">
-              <AdminPanel>
-                <AdminSubhead title="Payment & order summary" description="Commercial status and pricing breakdown." />
-                <div className="space-y-4">
-                  <AdminKeyValue label="Payment status" value={<AdminBadge tone={order.paymentStatus === "paid" ? "success" : "default"}>{order.paymentStatus}</AdminBadge>} />
-                  <AdminKeyValue label="Payment method" value={order.paymentMethod} />
-                  <AdminKeyValue label="Placed" value={formatOrderDate(order.createdAt)} />
-                  <AdminKeyValue label="Current status" value={<AdminBadge tone={orderStatusTone(order.orderStatus)}>{order.orderStatus}</AdminBadge>} />
-                  <AdminKeyValue label="Total" value={formatAdminCurrency(order.totalAmount)} />
-                </div>
-              </AdminPanel>
+            <AdminPanel>
+              <AdminSubhead title="Order timeline" description="Status history and shipping updates in one vertical feed." />
+              <div className="space-y-3">
+                {timeline.map((item, index) => (
+                  <div key={`${item.label}-${index}`} className="flex gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4">
+                    <div className="mt-1 h-2.5 w-2.5 shrink-0 bg-[var(--foreground)]" />
+                    <div>
+                      <p className="text-sm font-semibold">{item.label}</p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">{item.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </AdminPanel>
+          </div>
 
-              <AdminPanel>
-                <AdminSubhead title="Fulfillment controls" description="Keep courier and delivery data updated for the customer-facing order pages." />
-                <div className="grid gap-4">
-                  <label className="grid gap-2">
-                    <span className="text-sm text-[var(--muted)]">Order status</span>
-                    <select
-                      value={form.orderStatus}
-                      onChange={(event) =>
-                        setForm((current) =>
-                          current ? { ...current, orderStatus: event.target.value as OrderRecord["orderStatus"] } : current
-                        )
-                      }
-                      className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
-                    >
-                      {orderStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-sm text-[var(--muted)]">Courier name</span>
-                    <input
-                      value={form.courierName}
-                      onChange={(event) =>
-                        setForm((current) => (current ? { ...current, courierName: event.target.value } : current))
-                      }
-                      placeholder="Delhivery, Blue Dart, etc."
-                      className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
-                    />
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-sm text-[var(--muted)]">Tracking number</span>
-                    <input
-                      value={form.trackingId}
-                      onChange={(event) =>
-                        setForm((current) => (current ? { ...current, trackingId: event.target.value } : current))
-                      }
-                      placeholder="Tracking number"
-                      className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
-                    />
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-sm text-[var(--muted)]">Tracking URL</span>
-                    <input
-                      value={form.trackingUrl}
-                      onChange={(event) =>
-                        setForm((current) => (current ? { ...current, trackingUrl: event.target.value } : current))
-                      }
-                      placeholder="https://..."
-                      className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
-                    />
-                  </label>
-
-                  {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-                  {saveMessage ? <p className="text-sm text-[#12824a]">{saveMessage}</p> : null}
-
-                  <button
-                    type="button"
-                    onClick={() => void saveOrder()}
-                    disabled={saving}
-                    className="button-primary rounded-full px-5 py-3 disabled:opacity-60"
+          <div className="space-y-5">
+            <AdminPanel>
+              <AdminSubhead title="Fulfillment controls" description="Update courier, tracking, and shipping state." />
+              <div className="grid gap-4">
+                <AdminField label="Order status">
+                  <AdminFilterSelect
+                    value={order.orderStatus}
+                    onChange={(event) =>
+                      setOrder((current) =>
+                        current
+                          ? { ...current, orderStatus: event.target.value as OrderRecord["orderStatus"] }
+                          : current
+                      )
+                    }
                   >
-                    {saving ? "Saving..." : "Save order updates"}
-                  </button>
-                </div>
-              </AdminPanel>
-            </div>
+                    {orderStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </AdminFilterSelect>
+                </AdminField>
+
+                <AdminField label="Shipping status">
+                  <AdminFilterSelect
+                    value={orderMeta.shippingStatus}
+                    onChange={(event) =>
+                      setOrderMeta((current) =>
+                        current
+                          ? {
+                              ...current,
+                              shippingStatus: event.target.value as OrderAdminMeta["shippingStatus"],
+                            }
+                          : current
+                      )
+                    }
+                  >
+                    {shippingStates.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </AdminFilterSelect>
+                </AdminField>
+
+                <AdminField label="Courier partner">
+                  <AdminFilterInput
+                    value={order.courierName || ""}
+                    onChange={(event) =>
+                      setOrder((current) =>
+                        current ? { ...current, courierName: event.target.value } : current
+                      )
+                    }
+                  />
+                </AdminField>
+
+                <AdminField label="Tracking number">
+                  <AdminFilterInput
+                    value={order.trackingId || ""}
+                    onChange={(event) =>
+                      setOrder((current) =>
+                        current ? { ...current, trackingId: event.target.value } : current
+                      )
+                    }
+                  />
+                </AdminField>
+
+                <AdminField label="Tracking URL">
+                  <AdminFilterInput
+                    value={order.trackingUrl || ""}
+                    onChange={(event) =>
+                      setOrder((current) =>
+                        current ? { ...current, trackingUrl: event.target.value } : current
+                      )
+                    }
+                  />
+                </AdminField>
+
+                <AdminField label="Return pickup tracking">
+                  <AdminFilterInput
+                    value={orderMeta.returnPickupTracking}
+                    onChange={(event) =>
+                      setOrderMeta((current) =>
+                        current
+                          ? { ...current, returnPickupTracking: event.target.value }
+                          : current
+                      )
+                    }
+                  />
+                </AdminField>
+
+                <button type="button" onClick={() => void saveOrderChanges(order.orderStatus)} className="button-primary px-5 py-3 text-sm font-medium" disabled={saving}>
+                  {saving ? "Saving..." : "Save fulfillment updates"}
+                </button>
+              </div>
+            </AdminPanel>
+
+            <AdminPanel>
+              <AdminSubhead title="Shipment updates" description="Log courier handoffs, delivery notes, and return pickup progress." />
+              <div className="grid gap-4">
+                <AdminField label="Update title">
+                  <AdminFilterInput
+                    value={newUpdate.title}
+                    onChange={(event) => setNewUpdate((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="Packed at warehouse"
+                  />
+                </AdminField>
+                <AdminField label="Update detail">
+                  <AdminTextArea
+                    value={newUpdate.detail}
+                    onChange={(event) => setNewUpdate((current) => ({ ...current, detail: event.target.value }))}
+                    placeholder="Include any courier or delivery detail worth showing internally."
+                  />
+                </AdminField>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newUpdate.title.trim() || !newUpdate.detail.trim()) {
+                      pushToast("Add both a title and detail for the shipment update.", "error");
+                      return;
+                    }
+
+                    setOrderMeta((current) =>
+                      current
+                        ? {
+                            ...current,
+                            shippingUpdates: [
+                              {
+                                id: `${Date.now()}`,
+                                type: "shipment",
+                                title: newUpdate.title.trim(),
+                                detail: newUpdate.detail.trim(),
+                                timestamp: new Date().toISOString(),
+                              },
+                              ...current.shippingUpdates,
+                            ],
+                          }
+                        : current
+                    );
+                    setNewUpdate({ title: "", detail: "" });
+                    pushToast("Shipment update added to the order timeline.");
+                  }}
+                  className="button-secondary px-5 py-3 text-sm font-medium"
+                >
+                  Add update
+                </button>
+              </div>
+            </AdminPanel>
+
+            <AdminPanel>
+              <AdminSubhead title="Cancellations and refunds" description="Use confirmations before destructive changes." />
+              <div className="flex flex-wrap gap-3">
+                <button type="button" onClick={() => setCancelOpen(true)} className="button-secondary px-5 py-3 text-sm font-medium">
+                  Cancel order
+                </button>
+                <button type="button" onClick={() => setRefundOpen(true)} className="px-5 py-3 text-sm font-medium text-[var(--danger)]">
+                  Refund order
+                </button>
+              </div>
+            </AdminPanel>
           </div>
         </div>
-      ) : null}
+
+        <AdminConfirmDialog
+          open={cancelOpen}
+          title="Cancel this order?"
+          description="This updates the live order status to Cancelled and keeps the change in the customer-facing tracking flow."
+          confirmLabel="Cancel order"
+          destructive
+          onConfirm={() => {
+            setCancelOpen(false);
+            void saveOrderChanges("Cancelled");
+          }}
+          onCancel={() => setCancelOpen(false)}
+        />
+
+        <AdminConfirmDialog
+          open={refundOpen}
+          title="Mark this order as refunded?"
+          description="This records the refund in admin workspace notes so the team can track financial resolution separately from delivery status."
+          confirmLabel="Record refund"
+          destructive
+          onConfirm={() => {
+            setRefundOpen(false);
+            const nextMeta = { ...orderMeta, refundState: "processed" as const };
+            setOrderMeta(nextMeta);
+            void saveWorkspace({
+              orderMeta: {
+                ...workspace.orderMeta,
+                [order.id]: nextMeta,
+              },
+            }).then(() => pushToast("Refund marked as processed."));
+          }}
+          onCancel={() => setRefundOpen(false)}
+        />
+      </div>
     </AdminShell>
   );
 }

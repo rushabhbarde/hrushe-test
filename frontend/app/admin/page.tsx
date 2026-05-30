@@ -1,561 +1,327 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
-import { AdminBadge, AdminPanel, AdminSectionLabel } from "@/components/admin-ui";
 import {
-  deriveProductStatus,
+  AdminBadge,
+  AdminMetricCard,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSectionLabel,
+  AdminSubhead,
+} from "@/components/admin-ui";
+import {
+  buildRecentCustomerActivity,
+  buildSalesSeries,
+  buildTopSellingProducts,
+} from "@/lib/admin-analytics";
+import {
   formatAdminCurrency,
-  formatAdminDate,
+  formatCompactNumber,
   orderStatusTone,
-  type AdminCustomer,
-  type AdminSupportRequest,
 } from "@/lib/admin";
-import { apiRequest } from "@/lib/api";
-import type { Product } from "@/lib/catalog";
-import { formatOrderDate, type OrderRecord, type OrderStatus } from "@/lib/orders";
+import { resolveProductAdminMeta } from "@/lib/admin-workspace";
+import { useAdminData } from "@/lib/use-admin-data";
+import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
 
-type PriorityAction = {
-  key: string;
-  title: string;
-  detail: string;
-  href: string;
-  actionLabel: string;
-  tone?: "default" | "accent" | "success" | "warning";
-};
-
-type ActivityItem = {
-  key: string;
-  label: string;
-  detail: string;
-  href: string;
-  date: string;
-};
-
-const nextOrderAction: Partial<Record<OrderStatus, { label: string; next: OrderStatus }>> = {
-  Pending: { label: "Confirm", next: "Confirmed" },
-  Confirmed: { label: "Mark packed", next: "Packed" },
-  Packed: { label: "Mark shipped", next: "Shipped" },
-  Shipped: { label: "Out for delivery", next: "Out for delivery" },
-  "Out for delivery": { label: "Mark delivered", next: "Delivered" },
-};
-
-const managementCards = [
-  { href: "/admin/homepage", label: "Home banner", detail: "Images, hero copy, section order" },
-  { href: "/admin/storefront", label: "Storefront sections", detail: "Featured rails and merchandising" },
-  { href: "/admin/products", label: "Product management", detail: "Catalog, image previews, variants" },
-  { href: "/admin/categories", label: "Categories", detail: "Navigation and filter groups" },
-  { href: "/admin/collections", label: "Collections", detail: "Drops, edits, campaign pages" },
-  { href: "/admin/coupons", label: "Coupons", detail: "Discounts and campaign rules" },
-  { href: "/admin/orders", label: "Order tracking", detail: "Status, courier, fulfillment" },
-  { href: "/admin/reports", label: "Analytics", detail: "Revenue and sales reports" },
-];
+const analyticsTabs = [
+  { key: "daily", label: "Daily" },
+  { key: "weekly", label: "Weekly" },
+  { key: "monthly", label: "Monthly" },
+] as const;
 
 export default function AdminDashboardPage() {
   const { products } = useStorefrontData();
-  const [orders, setOrders] = useState<OrderRecord[]>([]);
-  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
-  const [supportRequests, setSupportRequests] = useState<AdminSupportRequest[]>([]);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const { orders, customers, loading } = useAdminData();
+  const { workspace } = useAdminWorkspace();
+  const [analyticsMode, setAnalyticsMode] = useState<(typeof analyticsTabs)[number]["key"]>("daily");
 
-  useEffect(() => {
-    let active = true;
-
-    void Promise.allSettled([
-      apiRequest<OrderRecord[]>("/order/all"),
-      apiRequest<AdminCustomer[]>("/admin/customers"),
-      apiRequest<AdminSupportRequest[]>("/support/requests"),
-    ]).then(([orderResult, customerResult, supportResult]) => {
-      if (!active) {
-        return;
-      }
-
-      setOrders(orderResult.status === "fulfilled" ? orderResult.value : []);
-      setCustomers(customerResult.status === "fulfilled" ? customerResult.value : []);
-      setSupportRequests(supportResult.status === "fulfilled" ? supportResult.value : []);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const operations = useMemo(() => {
-    const todayKey = new Date().toDateString();
-    const todayOrders = orders.filter((order) => new Date(order.createdAt).toDateString() === todayKey);
-    const pendingOrders = orders.filter((order) => order.orderStatus === "Pending");
-    const ordersToPack = orders.filter((order) => order.orderStatus === "Confirmed" || order.orderStatus === "Packed");
-    const returnsOpen = orders.filter((order) => order.orderStatus === "Returned").length;
-    const failedPayments = orders.filter((order) => order.paymentStatus === "failed");
-    const pendingShipments = orders.filter((order) =>
-      ["Pending", "Confirmed", "Packed", "Shipped", "Out for delivery"].includes(order.orderStatus),
+  const metrics = useMemo(() => {
+    const pendingOrders = orders.filter((order) => order.orderStatus === "Pending").length;
+    const shippedOrders = orders.filter((order) =>
+      ["Shipped", "Out for delivery"].includes(order.orderStatus)
     ).length;
-    const lowStockProducts = products.filter((product) => product.sizes.length === 0);
-    const incompleteProducts = products.filter((product) => {
-      const status = deriveProductStatus(product);
-      return status === "Draft" || product.images.length < 2 || !product.description?.trim();
-    });
-    const openSupport = supportRequests.filter((request) => request.status !== "resolved");
+    const deliveredOrders = orders.filter((order) => order.orderStatus === "Delivered").length;
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
     return {
-      todayOrders,
-      todayRevenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+      totalRevenue,
       pendingOrders,
-      ordersToPack,
-      returnsOpen,
-      failedPayments,
-      pendingShipments,
-      lowStockProducts,
-      incompleteProducts,
-      openSupport,
-      totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+      shippedOrders,
+      deliveredOrders,
+      activeProducts: products.filter(
+        (product) => resolveProductAdminMeta(workspace, product).status === "Active"
+      ).length,
     };
-  }, [orders, products, supportRequests]);
+  }, [orders, products, workspace]);
 
-  const priorityActions = useMemo<PriorityAction[]>(() => {
-    const orderActions = operations.pendingOrders.slice(0, 3).map((order) => ({
-      key: `pending-${order.id}`,
-      title: `Confirm order #${order.orderNumber || order.id.slice(-6)}`,
-      detail: `${order.customerName} · ${formatAdminCurrency(order.totalAmount)} · ${order.products.length} item(s)`,
-      href: `/admin/orders/${order.id}`,
-      actionLabel: "Review order",
-      tone: "accent" as const,
-    }));
+  const salesSeries = useMemo(
+    () => buildSalesSeries(orders, analyticsMode),
+    [analyticsMode, orders]
+  );
+  const topProducts = useMemo(() => buildTopSellingProducts(orders, products), [orders, products]);
+  const recentActivity = useMemo(
+    () => buildRecentCustomerActivity(orders, customers),
+    [orders, customers]
+  );
 
-    const packActions = operations.ordersToPack.slice(0, 2).map((order) => ({
-      key: `pack-${order.id}`,
-      title: `${order.orderStatus === "Confirmed" ? "Pack" : "Ship"} order #${order.orderNumber || order.id.slice(-6)}`,
-      detail: `${order.customerName} · ${order.courierName || "Courier not added"}`,
-      href: `/admin/orders/${order.id}`,
-      actionLabel: "Open fulfillment",
-      tone: "default" as const,
-    }));
-
-    const paymentActions = operations.failedPayments.slice(0, 2).map((order) => ({
-      key: `payment-${order.id}`,
-      title: `Review failed payment #${order.orderNumber || order.id.slice(-6)}`,
-      detail: `${order.customerName} · ${formatAdminCurrency(order.totalAmount)}`,
-      href: `/admin/orders/${order.id}`,
-      actionLabel: "Review payment",
-      tone: "warning" as const,
-    }));
-
-    const productActions = operations.incompleteProducts.slice(0, 3).map((product) => ({
-      key: `product-${product.id}`,
-      title: `Complete ${product.name}`,
-      detail: getProductFixHint(product),
-      href: `/admin/products/${product.id}`,
-      actionLabel: "Update product",
-      tone: "warning" as const,
-    }));
-
-    const supportActions = operations.openSupport.slice(0, 2).map((ticket) => ({
-      key: `support-${ticket.id || ticket._id}`,
-      title: ticket.subject || "Customer support request",
-      detail: `${ticket.category} · ${ticket.userId?.email || "Customer not linked"}`,
-      href: "/admin/support",
-      actionLabel: "Resolve",
-      tone: "accent" as const,
-    }));
-
-    return [...orderActions, ...packActions, ...paymentActions, ...productActions, ...supportActions].slice(0, 8);
-  }, [operations]);
-
-  const activity = useMemo<ActivityItem[]>(() => {
-    const orderActivity = orders.slice(0, 8).map((order) => ({
-      key: `order-${order.id}`,
-      label: `Order #${order.orderNumber || order.id.slice(-6)} placed`,
-      detail: `${order.customerName} · ${formatAdminCurrency(order.totalAmount)}`,
-      href: `/admin/orders/${order.id}`,
-      date: order.createdAt,
-    }));
-
-    const customerActivity = customers.slice(0, 5).map((customer) => ({
-      key: `customer-${customer.id}`,
-      label: "Customer account created",
-      detail: `${customer.name} · ${customer.email}`,
-      href: `/admin/customers/${customer.id}`,
-      date: customer.createdAt,
-    }));
-
-    const supportActivity = supportRequests.slice(0, 5).map((ticket) => ({
-      key: `ticket-${ticket.id || ticket._id}`,
-      label: "Support request opened",
-      detail: `${ticket.subject || ticket.category} · ${ticket.status}`,
-      href: "/admin/support",
-      date: ticket.createdAt,
-    }));
-
-    return [...orderActivity, ...customerActivity, ...supportActivity]
-      .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime())
-      .slice(0, 10);
-  }, [customers, orders, supportRequests]);
-
-  async function progressOrder(order: OrderRecord) {
-    const next = nextOrderAction[order.orderStatus];
-    if (!next) {
-      return;
-    }
-
-    setStatusMessage("");
-    setUpdatingOrderId(order.id);
-    try {
-      const updatedOrder = await apiRequest<OrderRecord>(`/order/status/${order.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ orderStatus: next.next }),
-      });
-      setOrders((current) => current.map((item) => (item.id === order.id ? updatedOrder : item)));
-      setStatusMessage(`Order #${order.orderNumber || order.id.slice(-6)} moved to ${next.next}.`);
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not update order.");
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  }
+  const maxRevenue = Math.max(...salesSeries.map((item) => item.revenue), 1);
 
   return (
     <AdminShell>
-      <div className="space-y-5">
-        <section className="grid gap-3 rounded-[1.5rem] border border-[rgba(17,17,17,0.08)] bg-white px-4 py-4 shadow-[0_12px_32px_rgba(17,17,17,0.04)] sm:grid-cols-2 lg:grid-cols-6">
-          <CompactMetric label="Total orders" value={String(orders.length)} />
-          <CompactMetric label="Revenue" value={formatAdminCurrency(operations.totalRevenue)} />
-          <CompactMetric label="Products" value={String(products.length)} />
-          <CompactMetric label="Users" value={String(customers.length)} />
-          <CompactMetric label="Pending orders" value={String(operations.pendingOrders.length)} />
-          <CompactMetric label="Low stock" value={String(operations.lowStockProducts.length)} />
-        </section>
-
-        {statusMessage ? (
-          <div className="rounded-full border border-[rgba(17,17,17,0.08)] bg-white px-4 py-3 text-sm text-[var(--muted)]">
-            {statusMessage}
-          </div>
-        ) : null}
-
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
-          <AdminPanel>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <AdminSectionLabel>Management</AdminSectionLabel>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
-                  Storefront controls.
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  Fast access to banner image uploads, homepage sections, featured products,
-                  collections, coupons, and order tracking.
-                </p>
-              </div>
-              <Link href="/admin/homepage" className="button-secondary rounded-full px-4 py-2 text-sm font-medium">
-                Edit homepage
+      <div className="space-y-6">
+        <AdminPageHeader
+          eyebrow="Overview"
+          title="Run HRUSHE from one premium control room."
+          description="Track commerce health, keep campaigns moving, and manage the full luxury storefront operation from a single responsive dashboard."
+          actions={
+            <>
+              <Link href="/admin/homepage" className="button-secondary px-5 py-3 text-sm font-medium">
+                Manage homepage
               </Link>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {managementCards.map((card) => (
-                <ManagementCard key={card.href} {...card} />
-              ))}
-            </div>
-          </AdminPanel>
+              <Link href="/admin/add-product" className="button-primary px-5 py-3 text-sm font-medium">
+                Add product
+              </Link>
+            </>
+          }
+        />
 
-          <AdminPanel>
-            <AdminSectionLabel>Analytics pulse</AdminSectionLabel>
-            <div className="mt-5 space-y-4">
-              <AnalyticsBar label="Pending orders" value={operations.pendingOrders.length} total={Math.max(orders.length, 1)} />
-              <AnalyticsBar label="Shipments active" value={operations.pendingShipments} total={Math.max(orders.length, 1)} />
-              <AnalyticsBar label="Catalog fixes" value={operations.incompleteProducts.length} total={Math.max(products.length, 1)} />
-              <AnalyticsBar label="Support open" value={operations.openSupport.length} total={Math.max(supportRequests.length, 1)} />
-            </div>
-          </AdminPanel>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <AdminMetricCard
+            label="Total orders"
+            value={formatCompactNumber(orders.length)}
+            detail="All-time orders placed across the storefront."
+          />
+          <AdminMetricCard
+            label="Total revenue"
+            value={formatAdminCurrency(metrics.totalRevenue)}
+            detail="Gross order value captured from all orders."
+            tone="accent"
+          />
+          <AdminMetricCard
+            label="Pending orders"
+            value={String(metrics.pendingOrders)}
+            detail="Orders that still need confirmation or fulfillment."
+            tone="warning"
+          />
+          <AdminMetricCard
+            label="Shipped / delivered"
+            value={`${metrics.shippedOrders} / ${metrics.deliveredOrders}`}
+            detail="Live delivery momentum for active shipments and completed orders."
+            tone="success"
+          />
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.55fr)]">
-          <AdminPanel className="p-0 md:p-0">
-            <div className="border-b border-[rgba(17,17,17,0.08)] px-5 py-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <AdminSectionLabel>Priority work</AdminSectionLabel>
-                  <h1 className="mt-2 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">
-                    Process what needs attention.
-                  </h1>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <CompactCard label="Total customers" value={formatCompactNumber(customers.length)} detail="Accounts and repeat buyers." />
+          <CompactCard label="Total products" value={formatCompactNumber(products.length)} detail="All catalog entries in the admin." />
+          <CompactCard label="Active products" value={String(metrics.activeProducts)} detail="Products currently visible on the storefront." />
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+          <AdminPanel>
+            <AdminSubhead
+              title="Sales analytics"
+              description="Daily, weekly, and monthly order revenue pulse."
+              action={
+                <div className="flex flex-wrap gap-2">
+                  {analyticsTabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setAnalyticsMode(tab.key)}
+                      className={`px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] ${
+                        analyticsMode === tab.key
+                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_84%,transparent)] text-[var(--muted)]"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
-                <Link href="/admin/orders" className="button-secondary rounded-full px-4 py-2 text-sm font-medium">
-                  Open order queue
-                </Link>
+              }
+            />
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_240px]">
+              <div className="flex min-h-[280px] items-end gap-3 overflow-x-auto border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_72%,transparent)] p-5">
+                {salesSeries.map((point) => (
+                  <div key={point.label} className="flex min-w-[88px] flex-1 flex-col justify-end gap-3">
+                    <div className="relative flex min-h-[190px] items-end bg-[linear-gradient(180deg,color-mix(in_srgb,var(--foreground)_4%,transparent),transparent)]">
+                      <div
+                        className="w-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--foreground)_86%,transparent),color-mix(in_srgb,var(--foreground)_62%,transparent))]"
+                        style={{
+                          height: `${Math.max((point.revenue / maxRevenue) * 100, 8)}%`,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{formatAdminCurrency(point.revenue)}</p>
+                      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">
+                        {point.label}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-3">
+                {salesSeries.slice(-3).map((point) => (
+                  <div
+                    key={`summary-${point.label}`}
+                    className="border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">{point.label}</p>
+                    <p className="mt-3 text-lg font-semibold">{formatAdminCurrency(point.revenue)}</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{point.orders} orders</p>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="divide-y divide-[rgba(17,17,17,0.08)]">
-              {priorityActions.length ? (
-                priorityActions.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className="grid gap-3 px-5 py-4 transition hover:bg-[rgba(17,17,17,0.025)] sm:grid-cols-[1fr_auto] sm:items-center"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <AdminBadge tone={item.tone}>{item.actionLabel}</AdminBadge>
-                        <p className="font-semibold tracking-[-0.02em]">{item.title}</p>
-                      </div>
-                      <p className="mt-2 text-sm text-[var(--muted)]">{item.detail}</p>
-                    </div>
-                    <span className="text-sm font-medium text-[var(--accent)]">Review</span>
-                  </Link>
-                ))
-              ) : (
-                <div className="px-5 py-8">
-                  <p className="text-lg font-semibold tracking-[-0.03em]">No urgent work right now.</p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    Use quick actions below to add products, adjust stock, or review the order queue.
-                  </p>
-                </div>
-              )}
-            </div>
           </AdminPanel>
 
           <AdminPanel>
-            <AdminSectionLabel>Quick actions</AdminSectionLabel>
-            <div className="mt-4 grid gap-2">
-              <QuickAction href="/admin/add-product" label="Add product" detail="Create a SKU, variants, images" />
-              <QuickAction href="/admin/orders?status=Pending" label="Process orders" detail="Confirm, pack, ship" />
-              <QuickAction href="/admin/inventory" label="Update inventory" detail="Fix low/out-of-stock items" />
-              <QuickAction href="/admin/announcements" label="Edit announcement" detail="Update top promo strip" />
-              <QuickAction href="/admin/coupons" label="Create coupon" detail="Discounts and campaign rules" />
-            </div>
-          </AdminPanel>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-3">
-          <AdminPanel className="p-0 md:p-0">
-            <PanelHeader label="Latest orders" href="/admin/orders" />
-            <div className="divide-y divide-[rgba(17,17,17,0.08)]">
-              {orders.slice(0, 5).map((order) => (
-                <OrderWorkRow
-                  key={order.id}
-                  order={order}
-                  isUpdating={updatingOrderId === order.id}
-                  onProgress={() => void progressOrder(order)}
-                />
-              ))}
-              {!orders.length ? <EmptyPanelLine text="No orders yet." /> : null}
-            </div>
-          </AdminPanel>
-
-          <AdminPanel className="p-0 md:p-0">
-            <PanelHeader label="Incomplete products" href="/admin/products?status=Draft" />
-            <div className="divide-y divide-[rgba(17,17,17,0.08)]">
-              {operations.incompleteProducts.slice(0, 5).map((product) => (
-                <ProductWorkRow key={product.id} product={product} />
-              ))}
-              {!operations.incompleteProducts.length ? <EmptyPanelLine text="Catalog setup is clean." /> : null}
-            </div>
-          </AdminPanel>
-
-          <AdminPanel className="p-0 md:p-0">
-            <PanelHeader label="Recent customers" href="/admin/customers" />
-            <div className="divide-y divide-[rgba(17,17,17,0.08)]">
-              {customers.slice(0, 5).map((customer) => (
-                <Link
-                  key={customer.id}
-                  href={`/admin/customers/${customer.id}`}
-                  className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-[rgba(17,17,17,0.025)]"
+            <AdminSubhead
+              title="Top selling products"
+              description="Best performers by quantity sold."
+            />
+            <div className="space-y-3">
+              {topProducts.map((product, index) => (
+                <div
+                  key={product.productId}
+                  className="flex items-center justify-between gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{customer.name}</p>
-                    <p className="mt-1 truncate text-xs text-[var(--muted)]">{customer.email}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <p className="truncate text-sm font-semibold">{product.name}</p>
+                        <p className="mt-1 text-xs text-[var(--muted)]">{product.category || "Collection item"}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold">{formatAdminCurrency(customer.totalSpend)}</p>
-                    <p className="mt-1 text-xs text-[var(--muted)]">{customer.orderCount} orders</p>
+                    <p className="text-sm font-semibold">{product.quantity} sold</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {formatAdminCurrency(product.revenue)}
+                    </p>
                   </div>
-                </Link>
+                </div>
               ))}
-              {!customers.length ? <EmptyPanelLine text="No customer accounts yet." /> : null}
             </div>
           </AdminPanel>
         </div>
 
-        <AdminPanel className="p-0 md:p-0">
-          <div className="border-b border-[rgba(17,17,17,0.08)] px-5 py-5">
-            <AdminSectionLabel>Recent activity</AdminSectionLabel>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Real events from orders, customers, and support. Each row opens the related work item.
-            </p>
-          </div>
-          <div className="divide-y divide-[rgba(17,17,17,0.08)]">
-            {activity.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                className="grid gap-2 px-5 py-4 transition hover:bg-[rgba(17,17,17,0.025)] sm:grid-cols-[1fr_auto] sm:items-center"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{item.label}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{item.detail}</p>
-                </div>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                  {formatAdminDate(item.date, { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </Link>
-            ))}
-            {!activity.length ? <EmptyPanelLine text="Activity will appear after orders, customers, or support requests arrive." /> : null}
-          </div>
-        </AdminPanel>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(360px,0.9fr)]">
+          <AdminPanel>
+            <AdminSubhead title="Recent orders" description="Operational queue for the newest orders." />
+            <div className="overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
+              <div className="hidden grid-cols-[140px_minmax(0,1fr)_140px_140px_120px] gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)] lg:grid">
+                <span>Order</span>
+                <span>Customer</span>
+                <span>Payment</span>
+                <span>Status</span>
+                <span className="text-right">Value</span>
+              </div>
+              <div className="divide-y divide-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
+                {orders.slice(0, 8).map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="grid gap-4 px-4 py-4 transition hover:bg-[color:color-mix(in_srgb,var(--foreground)_3%,transparent)] lg:grid-cols-[140px_minmax(0,1fr)_140px_140px_120px] lg:px-5"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">#{order.orderNumber || order.id.slice(-6)}</p>
+                      <p className="mt-1 text-xs text-[var(--muted)]">{new Date(order.createdAt).toLocaleDateString("en-IN")}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{order.customerName}</p>
+                      <p className="mt-1 text-xs text-[var(--muted)]">{order.customerEmail}</p>
+                    </div>
+                    <div>
+                      <AdminBadge tone={order.paymentStatus === "paid" ? "success" : "default"}>
+                        {order.paymentStatus}
+                      </AdminBadge>
+                    </div>
+                    <div>
+                      <AdminBadge tone={orderStatusTone(order.orderStatus)}>{order.orderStatus}</AdminBadge>
+                    </div>
+                    <div className="text-left lg:text-right">
+                      <p className="text-sm font-semibold">{formatAdminCurrency(order.totalAmount)}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </AdminPanel>
+
+          <AdminPanel>
+            <AdminSubhead
+              title="Recent customer activity"
+              description="Fresh signals from orders and account creation."
+            />
+            <div className="space-y-3">
+              {recentActivity.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="block border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4 transition hover:bg-[color:color-mix(in_srgb,var(--foreground)_3%,transparent)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold">{item.label}</p>
+                      <p className="mt-1 text-sm text-[var(--muted)]">{item.detail}</p>
+                    </div>
+                    <p className="shrink-0 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">
+                      {new Date(item.date).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-5 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4">
+              <AdminSectionLabel>Theme & operations</AdminSectionLabel>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <AdminBadge tone={workspace.websiteSettings.maintenanceMode ? "warning" : "success"}>
+                  {workspace.websiteSettings.maintenanceMode ? "Maintenance mode on" : "Storefront live"}
+                </AdminBadge>
+                <AdminBadge tone="accent">{workspace.roles.length} admin roles</AdminBadge>
+                <AdminBadge tone="default">{workspace.coupons.filter((coupon) => coupon.active).length} live offers</AdminBadge>
+              </div>
+            </div>
+          </AdminPanel>
+        </div>
+
+        {loading ? (
+          <div className="text-sm text-[var(--muted)]">Loading the latest admin datasets…</div>
+        ) : null}
       </div>
     </AdminShell>
   );
 }
 
-function CompactMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.1rem] border border-[rgba(17,17,17,0.08)] px-4 py-3">
-      <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--muted)]">{label}</p>
-      <p className="mt-2 text-xl font-semibold tracking-[-0.04em]">{value}</p>
-    </div>
-  );
-}
-
-function QuickAction({ href, label, detail }: { href: string; label: string; detail: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-[1.1rem] border border-[rgba(17,17,17,0.08)] px-4 py-3 transition hover:border-[rgba(17,17,17,0.22)] hover:bg-[rgba(17,17,17,0.025)]"
-    >
-      <p className="text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{detail}</p>
-    </Link>
-  );
-}
-
-function ManagementCard({ href, label, detail }: { href: string; label: string; detail: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-[1.25rem] border border-[rgba(17,17,17,0.08)] bg-white/70 px-4 py-4 transition hover:-translate-y-0.5 hover:border-[rgba(17,17,17,0.22)] hover:shadow-[0_18px_36px_rgba(17,17,17,0.07)]"
-    >
-      <p className="text-sm font-semibold tracking-[-0.02em]">{label}</p>
-      <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{detail}</p>
-    </Link>
-  );
-}
-
-function AnalyticsBar({ label, value, total }: { label: string; value: number; total: number }) {
-  const percentage = Math.min(100, Math.round((value / total) * 100));
-
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium">{label}</span>
-        <span className="text-[var(--muted)]">{value}</span>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[rgba(17,17,17,0.06)]">
-        <div
-          className="h-full rounded-full bg-black transition-all"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function PanelHeader({ label, href }: { label: string; href: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-[rgba(17,17,17,0.08)] px-5 py-4">
-      <AdminSectionLabel>{label}</AdminSectionLabel>
-      <Link href={href} className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent)]">
-        View all
-      </Link>
-    </div>
-  );
-}
-
-function OrderWorkRow({
-  order,
-  isUpdating,
-  onProgress,
+function CompactCard({
+  label,
+  value,
+  detail,
 }: {
-  order: OrderRecord;
-  isUpdating: boolean;
-  onProgress: () => void;
+  label: string;
+  value: string;
+  detail: string;
 }) {
-  const next = nextOrderAction[order.orderStatus];
-
   return (
-    <div className="px-5 py-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link href={`/admin/orders/${order.id}`} className="text-sm font-semibold hover:text-[var(--accent)]">
-            #{order.orderNumber || order.id.slice(-6)}
-          </Link>
-          <p className="mt-1 truncate text-xs text-[var(--muted)]">{order.customerName}</p>
-        </div>
-        <AdminBadge tone={orderStatusTone(order.orderStatus)}>{order.orderStatus}</AdminBadge>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold">{formatAdminCurrency(order.totalAmount)}</p>
-        {next ? (
-          <button
-            type="button"
-            onClick={onProgress}
-            disabled={isUpdating}
-            className="rounded-full border border-[rgba(17,17,17,0.12)] px-3 py-1.5 text-xs font-medium transition hover:bg-black hover:text-white disabled:cursor-wait disabled:opacity-60"
-          >
-            {isUpdating ? "Updating..." : next.label}
-          </button>
-        ) : (
-          <Link href={`/admin/orders/${order.id}`} className="text-xs font-medium text-[var(--accent)]">
-            Open
-          </Link>
-        )}
-      </div>
-      <p className="mt-2 text-xs text-[var(--muted)]">{formatOrderDate(order.createdAt)}</p>
-    </div>
+    <AdminPanel>
+      <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">{label}</p>
+      <p className="mt-4 text-3xl font-semibold tracking-[-0.04em]">{value}</p>
+      <p className="mt-2 text-sm text-[var(--muted)]">{detail}</p>
+    </AdminPanel>
   );
-}
-
-function ProductWorkRow({ product }: { product: Product }) {
-  return (
-    <Link
-      href={`/admin/products/${product.id}`}
-      className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-[rgba(17,17,17,0.025)]"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[rgba(17,17,17,0.06)]">
-          {product.images[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
-          ) : null}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{product.name}</p>
-          <p className="mt-1 truncate text-xs text-[var(--muted)]">{getProductFixHint(product)}</p>
-        </div>
-      </div>
-      <span className="text-xs font-medium text-[var(--accent)]">Fix</span>
-    </Link>
-  );
-}
-
-function EmptyPanelLine({ text }: { text: string }) {
-  return <p className="px-5 py-6 text-sm text-[var(--muted)]">{text}</p>;
-}
-
-function getProductFixHint(product: Product) {
-  if (!product.images.length) {
-    return "Add product images";
-  }
-  if (product.images.length < 2) {
-    return "Add one more image for storefront confidence";
-  }
-  if (!product.description?.trim()) {
-    return "Add product description";
-  }
-  if (!product.category?.trim()) {
-    return "Select category";
-  }
-  if (!product.sizes.length) {
-    return "Add available sizes";
-  }
-  return "Review merchandising setup";
 }

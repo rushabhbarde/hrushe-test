@@ -34,6 +34,10 @@ const siteContentSchema = new mongoose.Schema(
       type: homepageBannerSchema,
       default: () => ({}),
     },
+    adminWorkspace: {
+      type: mongoose.Schema.Types.Mixed,
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );

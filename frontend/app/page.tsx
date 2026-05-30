@@ -58,8 +58,8 @@ export default function Home() {
 
   const seasonLabel = getSeasonLabel();
   const seasonYear = new Date().getFullYear();
-  const heroCtaLabel = homepageBanner.secondaryCtaLabel?.trim() || "Go to shop";
-  const heroCtaHref = homepageBanner.secondaryCtaHref || "/shop";
+  const heroCtaLabel = homepageBanner.primaryCtaLabel?.trim() || "Go to shop";
+  const heroCtaHref = homepageBanner.primaryCtaHref || "/shop";
 
   const spotlightProducts = useMemo(() => {
     if (featuredProducts.length > 0) {
@@ -91,15 +91,19 @@ export default function Home() {
       return [];
     }
 
+    const publishedBannerImages = (homepageBanner.banners || []).flatMap((banner) =>
+      [banner.desktopImage, banner.mobileImage].filter(Boolean)
+    );
     const productImages = products.flatMap((product) => product.images).filter(Boolean);
     const merged = [
       homepageBanner.imageUrl || "/uploads/banners/banner1.png",
+      ...publishedBannerImages,
       ...availableBannerImages,
       ...productImages,
     ].filter(Boolean);
 
     return Array.from(new Set(merged));
-  }, [availableBannerImages, homepageBanner.imageUrl, loading, products]);
+  }, [availableBannerImages, homepageBanner.banners, homepageBanner.imageUrl, loading, products]);
 
   const collectionLabels = useMemo(() => {
     const dynamic = Array.from(

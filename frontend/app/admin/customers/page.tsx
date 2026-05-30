@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
@@ -12,47 +11,25 @@ import {
   AdminPanel,
   AdminSubhead,
 } from "@/components/admin-ui";
-import { customerStatusTone, formatAdminCurrency, formatAdminDate, type AdminCustomer } from "@/lib/admin";
-import { apiRequest } from "@/lib/api";
+import { customerStatusTone, formatAdminCurrency, formatAdminDate } from "@/lib/admin";
+import { resolveCustomerAdminMeta } from "@/lib/admin-workspace";
+import { useAdminData } from "@/lib/use-admin-data";
+import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
 export default function AdminCustomersPage() {
-  const searchParams = useSearchParams();
-  const queryParam = searchParams.get("query") || "";
-  const [customers, setCustomers] = useState<AdminCustomer[]>([]);
-  const [query, setQuery] = useState(queryParam);
+  const { customers } = useAdminData();
+  const { workspace } = useAdminWorkspace();
+  const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
-
-  useEffect(() => {
-    setQuery(queryParam);
-  }, [queryParam]);
-
-  useEffect(() => {
-    let active = true;
-
-    void apiRequest<AdminCustomer[]>("/admin/customers")
-      .then((data) => {
-        if (active) {
-          setCustomers(data);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setCustomers([]);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const next = customers.filter((customer) => {
+      const meta = resolveCustomerAdminMeta(workspace, customer);
       const matchesQuery =
         !normalizedQuery ||
-        [customer.name, customer.email, customer.phone || ""].join(" ").toLowerCase().includes(normalizedQuery);
+        [customer.name, customer.email, customer.phone || "", meta.note].join(" ").toLowerCase().includes(normalizedQuery);
       const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
@@ -68,7 +45,7 @@ export default function AdminCustomersPage() {
     });
 
     return next;
-  }, [customers, query, sortBy, statusFilter]);
+  }, [customers, query, sortBy, statusFilter, workspace]);
 
   return (
     <AdminShell>
@@ -122,7 +99,12 @@ export default function AdminCustomersPage() {
                       <p className="mt-1 text-sm text-[var(--muted)]">{customer.email}</p>
                     </div>
                   </div>
-                  <AdminBadge tone={customerStatusTone(customer.status)}>{customer.status}</AdminBadge>
+                  <div className="flex flex-wrap gap-2">
+                    <AdminBadge tone={customerStatusTone(customer.status)}>{customer.status}</AdminBadge>
+                    {resolveCustomerAdminMeta(workspace, customer).blocked ? (
+                      <AdminBadge tone="warning">Blocked</AdminBadge>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

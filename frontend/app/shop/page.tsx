@@ -3,12 +3,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useDeferredValue, useMemo, useState } from "react";
-import { useCart } from "@/components/cart-provider";
 import { EmptyState } from "@/components/empty-state";
+import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { useToast } from "@/components/toast-provider";
-import { WishlistButton } from "@/components/wishlist-button";
 import type { Product } from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -104,31 +102,6 @@ function getAverageRating(product: Product) {
 
 function formatCategoryLabel(value: string) {
   return value.toUpperCase();
-}
-
-function resolveSwatchColor(product: Product) {
-  const firstColor = product.colors[0]?.toLowerCase().trim();
-  return swatchColors[firstColor] || product.accent || "#d9d9d9";
-}
-
-function CartIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6.5 8.5h11l-.7 10h-9.6l-.7-10Z" />
-      <path d="M9.5 8.5a2.5 2.5 0 0 1 5 0" />
-      <path d="M9.5 11.5v.01" />
-      <path d="M14.5 11.5v.01" />
-    </svg>
-  );
 }
 
 function priceMatchesFilter(price: number, filter: PriceFilter) {
@@ -957,7 +930,7 @@ export default function ShopPage() {
                 ) : (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-5 sm:gap-y-10 xl:grid-cols-3 xl:gap-x-10 xl:gap-y-12">
                     {visibleProducts.map((product) => (
-                      <ShopProductCard key={product.id} product={product} />
+                      <ProductCard key={product.id} product={product} />
                     ))}
                   </div>
                 )}
@@ -1094,105 +1067,15 @@ function FilterHint({ children }: { children: ReactNode }) {
   return <p className="text-sm leading-6 text-[var(--muted)]">{children}</p>;
 }
 
-function ShopProductCard({ product }: { product: Product }) {
-  const { addItem, openCart } = useCart();
-  const { pushToast } = useToast();
-  const productHref = `/product/${product.slug || product.id}`;
-  const hasImage = Boolean(product.images[0]);
-  const quickAddToCart = () => {
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      size: product.sizes[0] || "S",
-      color: product.colors[0] || "Default",
-      fit: product.category,
-      quantity: 1,
-      accent: product.accent,
-      image: product.images[0],
-    });
-    pushToast(`${product.name} added to bag.`);
-    openCart();
-  };
-
-  return (
-    <article className="group block">
-      <div className="relative">
-        <Link
-          href={productHref}
-          className="block overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
-        >
-          {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.images[0]}
-              alt={product.name}
-              className="aspect-[4/5] h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.02]"
-              loading="lazy"
-            />
-          ) : (
-            <div
-              className="aspect-[4/5] h-full w-full"
-              style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
-            />
-          )}
-        </Link>
-      </div>
-
-      <div className="mt-3 block">
-        <div className="flex items-center gap-2 text-[0.86rem] leading-none text-[var(--muted)]">
-          <span className="truncate">{product.category}</span>
-          <span className="inline-flex items-center gap-1">
-            <span
-              className="h-2.5 w-2.5 border border-[rgba(17,17,17,0.12)]"
-              style={{ backgroundColor: resolveSwatchColor(product) }}
-            />
-            {product.colors.length > 1 ? (
-              <span className="text-[0.78rem]">+{product.colors.length - 1}</span>
-            ) : null}
-          </span>
-        </div>
-        <Link href={productHref} className="mt-1.5 block">
-          <h2 className="text-[1.08rem] font-semibold leading-[1.1] tracking-[-0.04em] text-[var(--foreground)]">
-            {product.name}
-          </h2>
-        </Link>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="min-w-0 text-[1rem] font-semibold text-[var(--foreground)]">
-            Rs.{product.price.toLocaleString("en-IN")}
-          </span>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <WishlistButton
-              productId={product.id}
-              label={`Save ${product.name}`}
-              className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
-              iconClassName="h-[17px] w-[17px]"
-            />
-            <button
-              type="button"
-              onClick={quickAddToCart}
-              title="Add to cart"
-              className="flex h-8 w-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
-              aria-label={`Add ${product.name} to cart`}
-            >
-              <CartIcon className="h-[17px] w-[17px]" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 function ShopGridSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-5 sm:gap-y-10 xl:grid-cols-3 xl:gap-x-10 xl:gap-y-12">
       {Array.from({ length: count }, (_, index) => (
         <div key={index} className="loading-pulse">
-          <div className="aspect-[4/5] border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]" />
-          <div className="mt-3 h-3.5 w-2/5 bg-[var(--surface-strong)]" />
+          <div className="aspect-[18/25] bg-[var(--surface-strong)]" />
           <div className="mt-2 h-5 w-4/5 bg-[var(--surface-strong)]" />
-          <div className="mt-2 h-4 w-24 bg-[var(--surface-strong)]" />
+          <div className="mt-2 h-4 w-28 bg-[var(--surface-strong)]" />
+          <div className="mt-2 h-3 w-16 bg-[var(--surface-strong)]" />
         </div>
       ))}
     </div>

@@ -7,6 +7,11 @@ export type ProductReview = {
   createdAt?: string;
 };
 
+export type ProductStatus = "Active" | "Draft" | "Hidden" | "Sold Out";
+export type ProductFitType = "Oversized" | "Regular";
+export type ProductGender = "Men" | "Women" | "Unisex";
+export type ProductCollectionLabel = "New In" | "Featured" | "Collection";
+
 export type Product = {
   id: string;
   name: string;
@@ -26,6 +31,13 @@ export type Product = {
   images: string[];
   compareAtPrice?: number;
   reviews?: ProductReview[];
+  galleryImages?: string[];
+  fitType?: ProductFitType;
+  gender?: ProductGender;
+  collectionLabels?: ProductCollectionLabel[];
+  status?: ProductStatus;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export const categories = [
