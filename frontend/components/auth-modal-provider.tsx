@@ -110,33 +110,35 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     <AuthModalContext.Provider value={value}>
       {children}
       {isOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-md">
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/55 px-3 py-4 backdrop-blur-xl sm:px-6 sm:py-8">
           <button
             type="button"
             aria-label="Close account popup"
-            className="absolute inset-0 cursor-default"
+            className="fixed inset-0 cursor-default"
             onClick={closeAuthModal}
           />
-          <div className="auth-switch-panel relative z-10 w-full max-w-[560px]">
-            <button
-              type="button"
-              onClick={closeAuthModal}
-              className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center border border-[var(--border)] bg-white/90 text-xl text-black shadow-sm transition hover:bg-white"
-              aria-label="Close"
-            >
-              ×
-            </button>
-            <AuthPanel
-              initialMode={mode}
-              onModeChange={setMode}
-              onSuccess={() => {
-                closeAuthModal();
-                if (nextPath) {
-                  router.push(nextPath);
-                }
-              }}
-              className="shadow-[0_30px_80px_rgba(0,0,0,0.18)]"
-            />
+          <div className="relative z-10 flex min-h-full items-start justify-center py-2 sm:items-center">
+            <div className="auth-switch-panel relative w-full max-w-[940px]">
+              <button
+                type="button"
+                onClick={closeAuthModal}
+                className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-white/95 text-xl text-black shadow-sm transition hover:bg-white sm:right-4 sm:top-4"
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <AuthPanel
+                initialMode={mode}
+                onModeChange={setMode}
+                onSuccess={() => {
+                  closeAuthModal();
+                  if (nextPath) {
+                    router.push(nextPath);
+                  }
+                }}
+                className="shadow-[0_34px_90px_rgba(0,0,0,0.24)]"
+              />
+            </div>
           </div>
         </div>
       ) : null}

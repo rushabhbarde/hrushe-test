@@ -304,287 +304,365 @@ export function AuthPanel({
     }
   };
 
+  const panelTitle =
+    view === "forgot-password"
+      ? "Reset your password."
+      : mode === "login"
+        ? "Welcome back."
+        : "Create your account.";
+  const panelDescription =
+    view === "forgot-password"
+      ? "Verify your email OTP and set a fresh password without leaving checkout."
+      : mode === "login"
+        ? "Sign in to track orders, save favourites, and move through checkout faster."
+        : "Join HRUSHE to save delivery details, place orders, and keep every drop close.";
+  const panelHighlights =
+    view === "forgot-password"
+      ? ["Email OTP verification", "Secure password reset", "Return to your saved bag"]
+      : mode === "login"
+        ? ["Saved bag and favourites", "Fast checkout access", "Order tracking in one place"]
+        : ["Verified email signup", "Saved delivery profile", "Wishlist and cart shortcuts"];
+  const formClass = "auth-switch-panel mt-5 grid gap-3.5 sm:mt-6 sm:gap-4";
+  const inputClass =
+    "lux-input bg-white/75 text-[0.95rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.68)]";
+  const passwordToggleClass =
+    "absolute right-4 top-1/2 -translate-y-1/2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-black";
+  const errorMessage = error ? (
+    <p
+      className="border border-[color-mix(in_srgb,var(--danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] px-4 py-3 text-sm leading-5 text-[var(--danger)]"
+      aria-live="polite"
+    >
+      {error}
+    </p>
+  ) : null;
+
   return (
-    <div className={`lux-panel rounded-[2rem] p-6 sm:p-8 ${className}`.trim()}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow text-[var(--accent)]">Account</p>
-          <h2 className="display-font mt-3 text-3xl sm:text-4xl">
-            {view === "forgot-password"
-              ? "Reset your password."
-              : mode === "login"
-                ? "Welcome back."
-                : "Create your account."}
-          </h2>
-          <p className="mt-3 max-w-md text-sm leading-6 text-[var(--muted)]">
-            {view === "forgot-password"
-              ? "Enter your email, verify the OTP, and set a new password without leaving this popup."
-              : mode === "login"
-                ? "Sign in to view orders, track deliveries, and checkout faster."
-                : "Join HRUSHE to save your details, place orders, and track every drop."}
-          </p>
-        </div>
-      </div>
+    <div className={`lux-panel overflow-hidden ${className}`.trim()}>
+      <div className="grid lg:grid-cols-[0.84fr_1.16fr]">
+        <aside className="relative hidden min-h-[640px] overflow-hidden bg-[#111111] p-8 text-white lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.18),transparent_28rem)]" />
+          <div className="relative">
+            <p className="eyebrow text-white/60">HRUSHE Account</p>
+            <h2 className="display-font mt-5 max-w-sm text-6xl leading-[0.88] tracking-[-0.06em]">
+              Quiet access. Faster orders.
+            </h2>
+            <p className="mt-6 max-w-xs text-sm leading-6 text-white/64">
+              A clean member space for saved delivery details, wishlist pieces,
+              and checkout without repeating yourself.
+            </p>
+          </div>
 
-      {view === "auth" ? (
-        <div className="mt-6 inline-flex border border-[var(--border)] bg-white/60 p-1">
-          <button
-            type="button"
-            onClick={() => switchMode("login")}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              mode === "login" ? "bg-black text-white" : "text-[var(--muted)]"
-            }`}
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("signup")}
-            className={`px-4 py-2 text-sm font-medium transition ${
-              mode === "signup" ? "bg-black text-white" : "text-[var(--muted)]"
-            }`}
-          >
-            Create account
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={closeForgotPassword}
-          className="mt-6 inline-flex text-sm font-medium text-[var(--accent)] underline underline-offset-4"
-        >
-          Back to login
-        </button>
-      )}
-
-      {view === "forgot-password" ? (
-        forgotStep === "request" ? (
-          <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onRequestOtp(event)}>
-            <input
-              value={forgotEmail}
-              onChange={(event) => setForgotEmail(event.target.value)}
-              className="lux-input"
-              placeholder="Email address"
-              type="email"
-              required
-            />
-            {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-              <button
-                type="submit"
-                disabled={isForgotOtpSubmitting}
-              className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+          <div className="relative grid gap-3">
+            {panelHighlights.map((item, index) => (
+              <div
+                key={item}
+                className="grid grid-cols-[3.5rem_1fr] items-center border border-white/12 bg-white/[0.04] px-4 py-3"
               >
-                {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
-              </button>
-          </form>
-        ) : (
-          <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onResetPassword(event)}>
-            <input
-              value={forgotEmail}
-              onChange={(event) => setForgotEmail(event.target.value)}
-              className="lux-input"
-              placeholder="Email address"
-              type="email"
-              required
-            />
-            <input
-              value={forgotOtp}
-              onChange={(event) => setForgotOtp(event.target.value)}
-              className="lux-input"
-              placeholder="6-digit OTP"
-              inputMode="numeric"
-              required
-            />
-            <div className="relative">
-              <input
-                value={forgotPassword}
-                onChange={(event) => setForgotPassword(event.target.value)}
-                className="lux-input pr-20"
-                placeholder="New password"
-                type={showForgotPassword ? "text" : "password"}
-                required
-              />
+                <span className="text-xs font-semibold tracking-[0.22em] text-white/42">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="text-sm font-medium text-white/86">{item}</span>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <section className="relative bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-4 py-5 sm:px-7 sm:py-8 lg:px-8">
+          <div className="mb-5 border border-[var(--border)] bg-black px-4 py-4 text-white lg:hidden">
+            <p className="eyebrow text-white/58">HRUSHE Account</p>
+            <p className="mt-2 text-sm leading-5 text-white/76">
+              Secure access for saved bags, wishlist pieces, and faster checkout.
+            </p>
+          </div>
+
+          <div className="pr-12 sm:pr-14">
+            <p className="eyebrow text-[var(--accent)]">Account access</p>
+            <h2 className="display-font mt-2 text-[2.45rem] leading-[0.9] tracking-[-0.055em] sm:text-5xl lg:text-[3.35rem]">
+              {panelTitle}
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
+              {panelDescription}
+            </p>
+          </div>
+
+          {view === "auth" ? (
+            <div className="mt-5 grid max-w-md grid-cols-2 border border-[var(--border)] bg-white/70 p-1">
               <button
                 type="button"
-                onClick={() => setShowForgotPassword((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
+                onClick={() => switchMode("login")}
+                className={`min-h-11 px-4 text-sm font-semibold transition ${
+                  mode === "login"
+                    ? "bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+                    : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
+                }`}
               >
-                {showForgotPassword ? "Hide" : "Show"}
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("signup")}
+                className={`min-h-11 px-4 text-sm font-semibold transition ${
+                  mode === "signup"
+                    ? "bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+                    : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
+                }`}
+              >
+                Create account
               </button>
             </div>
-            {devOtp ? (
-              <p className="text-sm text-[var(--muted)]">
-                Dev OTP: <span className="font-semibold text-[var(--accent)]">{devOtp}</span>
-              </p>
-            ) : null}
-            {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-            <div className="flex flex-wrap items-center gap-3">
+          ) : (
+            <button
+              type="button"
+              onClick={closeForgotPassword}
+              className="mt-5 inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)] transition hover:text-black"
+            >
+              <span className="h-px w-10 bg-current" />
+              Back to login
+            </button>
+          )}
+
+          {view === "forgot-password" ? (
+            forgotStep === "request" ? (
+              <form className={formClass} onSubmit={(event) => void onRequestOtp(event)}>
+                <input
+                  value={forgotEmail}
+                  onChange={(event) => setForgotEmail(event.target.value)}
+                  className={inputClass}
+                  placeholder="Email address"
+                  type="email"
+                  required
+                />
+                {errorMessage}
+                <button
+                  type="submit"
+                  disabled={isForgotOtpSubmitting}
+                  className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
+                </button>
+              </form>
+            ) : (
+              <form className={formClass} onSubmit={(event) => void onResetPassword(event)}>
+                <input
+                  value={forgotEmail}
+                  onChange={(event) => setForgotEmail(event.target.value)}
+                  className={inputClass}
+                  placeholder="Email address"
+                  type="email"
+                  required
+                />
+                <input
+                  value={forgotOtp}
+                  onChange={(event) => setForgotOtp(event.target.value)}
+                  className={inputClass}
+                  placeholder="6-digit OTP"
+                  inputMode="numeric"
+                  required
+                />
+                <div className="relative">
+                  <input
+                    value={forgotPassword}
+                    onChange={(event) => setForgotPassword(event.target.value)}
+                    className={`${inputClass} pr-24`}
+                    placeholder="New password"
+                    type={showForgotPassword ? "text" : "password"}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword((current) => !current)}
+                    className={passwordToggleClass}
+                  >
+                    {showForgotPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                {devOtp ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    Dev OTP: <span className="font-semibold text-[var(--accent)]">{devOtp}</span>
+                  </p>
+                ) : null}
+                {errorMessage}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmitting ? "Resetting..." : "Reset password"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotStep("request");
+                      setForgotOtp("");
+                      setForgotPassword("");
+                      setDevOtp("");
+                      setError("");
+                    }}
+                    className="button-secondary px-5 py-3 transition"
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              </form>
+            )
+          ) : mode === "login" ? (
+            <form className={formClass} onSubmit={(event) => void onLoginSubmit(event)}>
+              <input
+                value={loginIdentifier}
+                onChange={(event) => setLoginIdentifier(event.target.value)}
+                className={inputClass}
+                placeholder="Email address or phone number"
+                required
+              />
+              <div className="relative">
+                <input
+                  value={loginPassword}
+                  onChange={(event) => setLoginPassword(event.target.value)}
+                  className={`${inputClass} pr-24`}
+                  placeholder="Password"
+                  type={showLoginPassword ? "text" : "password"}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword((current) => !current)}
+                  className={passwordToggleClass}
+                >
+                  {showLoginPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              {errorMessage}
+              <div className="grid gap-3 sm:grid-cols-[1fr_12rem] sm:items-center">
+                <button
+                  type="button"
+                  onClick={openForgotPassword}
+                  className="justify-self-start text-sm font-medium text-[var(--accent)] underline underline-offset-4 transition hover:text-black"
+                >
+                  Forgot password?
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? "Signing in..." : "Login"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form className={formClass} onSubmit={(event) => void onSignupSubmit(event)}>
+              <input
+                value={signupName}
+                onChange={(event) => setSignupName(event.target.value)}
+                className={inputClass}
+                placeholder="Full name"
+                required
+              />
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_0.72fr]">
+                <input
+                  value={signupEmail}
+                  onChange={(event) => {
+                    setSignupEmail(event.target.value);
+                    setSignupOtpRequested(false);
+                    setSignupOtp("");
+                    setSignupDevOtp("");
+                  }}
+                  className={inputClass}
+                  placeholder="Email address"
+                  type="email"
+                  required
+                />
+                <input
+                  value={signupPhone}
+                  onChange={(event) => setSignupPhone(event.target.value)}
+                  className={inputClass}
+                  placeholder="Phone number"
+                  type="tel"
+                  required
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11.5rem]">
+                <input
+                  value={signupOtp}
+                  onChange={(event) => setSignupOtp(event.target.value)}
+                  className={inputClass}
+                  placeholder="Email OTP"
+                  inputMode="numeric"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => void onRequestSignupOtp()}
+                  disabled={isSignupOtpSubmitting}
+                  className="button-secondary whitespace-nowrap px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSignupOtpSubmitting
+                    ? "Sending..."
+                    : signupOtpRequested
+                      ? "Resend OTP"
+                      : "Send OTP"}
+                </button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <input
+                    value={signupPassword}
+                    onChange={(event) => setSignupPassword(event.target.value)}
+                    className={`${inputClass} pr-24`}
+                    placeholder="Password"
+                    type={showSignupPassword ? "text" : "password"}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword((current) => !current)}
+                    className={passwordToggleClass}
+                  >
+                    {showSignupPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    value={signupConfirmPassword}
+                    onChange={(event) => setSignupConfirmPassword(event.target.value)}
+                    className={`${inputClass} pr-24`}
+                    placeholder="Confirm password"
+                    type={showSignupConfirmPassword ? "text" : "password"}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupConfirmPassword((current) => !current)}
+                    className={passwordToggleClass}
+                  >
+                    {showSignupConfirmPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+              </div>
+              {signupDevOtp ? (
+                <p className="text-sm text-[var(--muted)]">
+                  Dev OTP: <span className="font-semibold text-[var(--accent)]">{signupDevOtp}</span>
+                </p>
+              ) : null}
+              {errorMessage}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Resetting..." : "Reset password"}
+                {isSubmitting ? "Creating account..." : "Create account"}
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotStep("request");
-                  setForgotOtp("");
-                  setForgotPassword("");
-                  setDevOtp("");
-                  setError("");
-                }}
-                className="button-secondary px-5 py-3 transition"
-              >
-                Resend OTP
-              </button>
-            </div>
-          </form>
-        )
-      ) : mode === "login" ? (
-        <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onLoginSubmit(event)}>
-          <input
-            value={loginIdentifier}
-            onChange={(event) => setLoginIdentifier(event.target.value)}
-            className="lux-input"
-            placeholder="Email address or phone number"
-            required
-          />
-          <div className="relative">
-            <input
-              value={loginPassword}
-              onChange={(event) => setLoginPassword(event.target.value)}
-              className="lux-input pr-20"
-              placeholder="Password"
-              type={showLoginPassword ? "text" : "password"}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowLoginPassword((current) => !current)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
-            >
-              {showLoginPassword ? "Hide" : "Show"}
-            </button>
+            </form>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border)] pt-4 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+            <span>Secure account access</span>
+            <span className="h-1 w-1 bg-[var(--border)]" />
+            <span>OTP protected</span>
           </div>
-          {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-          <button
-            type="button"
-            onClick={openForgotPassword}
-            className="justify-self-start text-sm font-medium text-[var(--accent)] underline underline-offset-4"
-          >
-            Forgot password?
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Signing in..." : "Login"}
-          </button>
-        </form>
-      ) : (
-        <form className="auth-switch-panel mt-8 grid gap-4" onSubmit={(event) => void onSignupSubmit(event)}>
-          <input
-            value={signupName}
-            onChange={(event) => setSignupName(event.target.value)}
-            className="lux-input"
-            placeholder="Full name"
-            required
-          />
-          <input
-            value={signupEmail}
-            onChange={(event) => {
-              setSignupEmail(event.target.value);
-              setSignupOtpRequested(false);
-              setSignupOtp("");
-              setSignupDevOtp("");
-            }}
-            className="lux-input"
-            placeholder="Email address"
-            type="email"
-            required
-          />
-          <input
-            value={signupPhone}
-            onChange={(event) => setSignupPhone(event.target.value)}
-            className="lux-input"
-            placeholder="Phone number"
-            type="tel"
-            required
-          />
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-            <input
-              value={signupOtp}
-              onChange={(event) => setSignupOtp(event.target.value)}
-              className="lux-input"
-              placeholder="Email OTP"
-              inputMode="numeric"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => void onRequestSignupOtp()}
-              disabled={isSignupOtpSubmitting}
-              className="button-secondary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSignupOtpSubmitting
-                ? "Sending OTP..."
-                : signupOtpRequested
-                  ? "Resend OTP"
-                  : "Send OTP"}
-            </button>
-          </div>
-          <div className="relative">
-            <input
-              value={signupPassword}
-              onChange={(event) => setSignupPassword(event.target.value)}
-              className="lux-input pr-20"
-              placeholder="Password"
-              type={showSignupPassword ? "text" : "password"}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowSignupPassword((current) => !current)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
-            >
-              {showSignupPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-          <div className="relative">
-            <input
-              value={signupConfirmPassword}
-              onChange={(event) => setSignupConfirmPassword(event.target.value)}
-              className="lux-input pr-20"
-              placeholder="Confirm password"
-              type={showSignupConfirmPassword ? "text" : "password"}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowSignupConfirmPassword((current) => !current)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
-            >
-              {showSignupConfirmPassword ? "Hide" : "Show"}
-            </button>
-          </div>
-          {signupDevOtp ? (
-            <p className="text-sm text-[var(--muted)]">
-              Dev OTP: <span className="font-semibold text-[var(--accent)]">{signupDevOtp}</span>
-            </p>
-          ) : null}
-          {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Creating account..." : "Create account"}
-          </button>
-        </form>
-      )}
+        </section>
+      </div>
     </div>
   );
 }
