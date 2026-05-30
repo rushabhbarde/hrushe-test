@@ -111,6 +111,26 @@ function resolveSwatchColor(product: Product) {
   return swatchColors[firstColor] || product.accent || "#d9d9d9";
 }
 
+function CartIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6.5 8.5h11l-.7 10h-9.6l-.7-10Z" />
+      <path d="M9.5 8.5a2.5 2.5 0 0 1 5 0" />
+      <path d="M9.5 11.5v.01" />
+      <path d="M14.5 11.5v.01" />
+    </svg>
+  );
+}
+
 function priceMatchesFilter(price: number, filter: PriceFilter) {
   if (filter === "under-1000") {
     return price < 1000;
@@ -1151,10 +1171,11 @@ function ShopProductCard({ product }: { product: Product }) {
             <button
               type="button"
               onClick={quickAddToCart}
-              className="flex h-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] px-2.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
+              title="Add to cart"
+              className="flex h-8 w-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
               aria-label={`Add ${product.name} to cart`}
             >
-              Add
+              <CartIcon className="h-[17px] w-[17px]" />
             </button>
           </div>
         </div>
