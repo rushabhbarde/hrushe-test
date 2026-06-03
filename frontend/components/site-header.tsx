@@ -66,7 +66,7 @@ export function SiteHeader() {
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
   const { isAuthenticated: isAdminAuthenticated, logout: adminLogout } = useAdminAuth();
-  const { openAdminLogin, suppressNextAdminPrompt } = useAdminAuthModal();
+  const { suppressNextAdminPrompt } = useAdminAuthModal();
   const { openLogin } = useAuthModal();
   const { announcementText } = useStorefrontData().homepageBanner;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,18 +153,6 @@ export function SiteHeader() {
                   {item.label}
                 </Link>
               ))}
-              {isAdminAuthenticated ? (
-                <Link
-                  href="/admin"
-                  className={pathname === "/admin" ? "nav-link-active" : "hover:text-[var(--foreground)]"}
-                >
-                  Admin
-                </Link>
-              ) : (
-                <button type="button" onClick={() => openAdminLogin("/admin")} className="hover:text-[var(--foreground)]">
-                  Admin
-                </button>
-              )}
             </nav>
           </div>
 
@@ -280,22 +268,6 @@ export function SiteHeader() {
                     {item.label}
                   </Link>
                 ))}
-                {isAdminAuthenticated ? (
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-3">
-                    Admin
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      openAdminLogin("/admin");
-                    }}
-                    className="px-3 py-3 text-left"
-                  >
-                    Admin
-                  </button>
-                )}
                 {isAuthenticated ? (
                   <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-3 text-[var(--muted)]">
                     Signed in as {user?.name}
