@@ -90,9 +90,9 @@ export function ProductCard({ product }: { product: Product }) {
         className="shop-card-image relative aspect-[18/25] overflow-hidden bg-[#f6f6f3]"
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
-        <Link href={productHref} className="absolute inset-0" aria-label={product.name} />
+        <Link href={productHref} className="absolute inset-0 z-10" aria-label={product.name} />
         {hasDiscount ? (
-          <span className="absolute left-2 top-2 z-10 border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)] md:left-2.5 md:top-2.5">
+          <span className="pointer-events-none absolute left-2 top-2 z-20 border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)] md:left-2.5 md:top-2.5">
             -{discountPercent}%
           </span>
         ) : null}
@@ -101,12 +101,12 @@ export function ProductCard({ product }: { product: Product }) {
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-cover object-center transition duration-700 md:group-hover/product:scale-[1.02]"
+            className="pointer-events-none h-full w-full object-cover object-center transition duration-700 md:group-hover/product:scale-[1.02]"
             loading="lazy"
           />
         ) : (
           <div
-            className="h-full w-full"
+            className="pointer-events-none h-full w-full"
             style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
           />
         )}

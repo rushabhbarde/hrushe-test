@@ -13,7 +13,6 @@ import {
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
 import {
-  categories,
   type Product,
   type ProductCollectionLabel,
   type ProductFitType,
@@ -36,7 +35,6 @@ type FormState = {
   price: string;
   compareAtPrice: string;
   category: string;
-  extraCategories: string;
   colors: string;
   sizes: string[];
   fitType: ProductFitType;
@@ -55,6 +53,7 @@ export type AdminProductFormSubmit = {
 type AdminProductFormProps = {
   initialProduct?: Product;
   initialMeta?: ProductAdminMeta;
+  categoryOptions: string[];
   submitLabel: string;
   title: string;
   description: string;
@@ -88,6 +87,7 @@ function inferAccent(colors: string[]) {
 }
 
 function buildInitialState(
+  categoryOptions: string[],
   product?: Product,
   meta?: ProductAdminMeta
 ): FormState {
@@ -97,9 +97,7 @@ function buildInitialState(
     description: product?.description || "",
     price: product?.price ? String(product.price) : "",
     compareAtPrice: product?.compareAtPrice ? String(product.compareAtPrice) : "",
-    category: product?.category || categories[0],
-    extraCategories:
-      (product?.categories || []).filter((item) => item !== product?.category).join(", "),
+    category: product?.category || categoryOptions[0] || "",
     colors: (product?.colors || []).join(", "),
     sizes: product?.sizes || [],
     fitType: meta?.fitType || product?.fitType || "Regular",
@@ -114,30 +112,29 @@ function buildInitialState(
 export function AdminProductForm({
   initialProduct,
   initialMeta,
+  categoryOptions,
   submitLabel,
   title,
   description,
   onSubmit,
 }: AdminProductFormProps) {
   const { pushToast } = useToast();
-  const [form, setForm] = useState<FormState>(() => buildInitialState(initialProduct, initialMeta));
+  const [form, setForm] = useState<FormState>(() =>
+    buildInitialState(categoryOptions, initialProduct, initialMeta)
+  );
   const [slugEdited, setSlugEdited] = useState(Boolean(initialProduct?.slug));
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setForm(buildInitialState(initialProduct, initialMeta));
+    setForm(buildInitialState(categoryOptions, initialProduct, initialMeta));
     setSlugEdited(Boolean(initialProduct?.slug));
-  }, [initialMeta, initialProduct]);
+  }, [categoryOptions, initialMeta, initialProduct]);
 
   const parsedColors = useMemo(
     () => form.colors.split(",").map((item) => item.trim()).filter(Boolean),
     [form.colors]
   );
-  const parsedCategories = useMemo(() => {
-    const next = [form.category, ...form.extraCategories.split(",").map((item) => item.trim())]
-      .filter(Boolean);
-    return Array.from(new Set(next));
-  }, [form.category, form.extraCategories]);
+  const parsedCategories = useMemo(() => [form.category].filter(Boolean), [form.category]);
 
   const sellingPrice = Number(form.price);
   const comparePrice = Number(form.compareAtPrice);
@@ -175,6 +172,10 @@ export function AdminProductForm({
     setSubmitting(true);
 
     try {
+      if (!form.category) {
+        throw new Error("Add a category in Admin > Categories before saving a product.");
+      }
+
       const colors = parsedColors;
       const collectionLabels = form.collectionLabels;
       const product: Product = {
@@ -279,19 +280,22 @@ export function AdminProductForm({
                   onChange={(event) => updateForm("category", event.target.value)}
                   className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
                 >
-                  {categories.map((category) => (
+                  {categoryOptions.length ? null : (
+                    <option value="">No categories added yet</option>
+                  )}
+                  {categoryOptions.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
                   ))}
                 </select>
               </AdminField>
-              <AdminField label="Extra categories" hint="Comma-separated merchandising tags.">
-                <AdminFilterInput
-                  value={form.extraCategories}
-                  onChange={(event) => updateForm("extraCategories", event.target.value)}
-                />
-              </AdminField>
+              <div className="flex items-end">
+                <p className="text-xs leading-6 text-[var(--muted)]">
+                  Add or remove available categories from the Categories section. Products now use one
+                  primary category only.
+                </p>
+              </div>
             </div>
 
             <div className="mt-4">
@@ -554,4 +558,3 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

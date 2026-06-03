@@ -16,13 +16,12 @@ import {
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
 import {
-  categories,
   type Product,
   type ProductCollectionLabel,
   type ProductStatus,
 } from "@/lib/catalog";
 import { formatAdminCurrency, productStatusTone } from "@/lib/admin";
-import { resolveProductAdminMeta } from "@/lib/admin-workspace";
+import { resolveCatalogCategories, resolveProductAdminMeta } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -55,6 +54,14 @@ export default function AdminProductsPage() {
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkUploadText, setBulkUploadText] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const categoryOptions = useMemo(
+    () =>
+      resolveCatalogCategories(
+        workspace,
+        products.flatMap((product) => [product.category, ...(product.categories || [])])
+      ),
+    [products, workspace]
+  );
 
   const productRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -154,8 +161,9 @@ export default function AdminProductsPage() {
           description: entry.description,
           price: entry.price,
           compareAtPrice: entry.compareAtPrice,
-          category: entry.category || categories[0],
-          categories: entry.categories || [entry.category || categories[0]],
+          category: entry.category || categoryOptions[0] || "Uncategorized",
+          categories:
+            entry.categories || [entry.category || categoryOptions[0] || "Uncategorized"],
           colors: entry.colors || [],
           sizes: entry.sizes || ["M"],
           images: entry.images || [],
@@ -231,7 +239,7 @@ export default function AdminProductsPage() {
             />
             <AdminFilterSelect value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
               <option value="all">All categories</option>
-              {categories.map((category) => (
+              {categoryOptions.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

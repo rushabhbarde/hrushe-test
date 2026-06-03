@@ -6,6 +6,7 @@ import type {
   ProductStatus,
   ProductReview,
 } from "@/lib/catalog";
+import { categories as defaultCatalogCategories } from "@/lib/catalog";
 import type { AdminCustomer } from "@/lib/admin";
 import type { OrderRecord } from "@/lib/orders";
 
@@ -160,6 +161,7 @@ export type AdminWorkspace = {
     banners: AdminBanner[];
     lastPublishedAt: string | null;
   };
+  catalogCategories: string[];
   productMeta: Record<string, ProductAdminMeta>;
   orderMeta: Record<string, OrderAdminMeta>;
   customerMeta: Record<string, CustomerAdminMeta>;
@@ -237,6 +239,7 @@ export const defaultAdminWorkspace: AdminWorkspace = {
     ],
     lastPublishedAt: timestamp(),
   },
+  catalogCategories: [...defaultCatalogCategories],
   productMeta: {},
   orderMeta: {},
   customerMeta: {},
@@ -461,6 +464,14 @@ export function resolveReviewModeration(
   );
 }
 
+export function resolveCatalogCategories(workspace: AdminWorkspace, seededCategories: string[] = []) {
+  const merged = [...(workspace.catalogCategories || []), ...seededCategories]
+    .map((category) => String(category || "").trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(merged));
+}
+
 export function getActiveHomepageBanners(workspace: AdminWorkspace) {
   const now = Date.now();
 
@@ -483,4 +494,3 @@ export function getActiveHomepageBanners(workspace: AdminWorkspace) {
     return true;
   });
 }
-

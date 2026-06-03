@@ -10,7 +10,7 @@ import { AdminShell } from "@/components/admin-shell";
 import { AdminPanel, AdminSectionLabel } from "@/components/admin-ui";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
-import { resolveProductAdminMeta } from "@/lib/admin-workspace";
+import { resolveCatalogCategories, resolveProductAdminMeta } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -25,6 +25,11 @@ export default function EditProductPage() {
   );
   const [product, setProduct] = useState<Product | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const categoryOptions = useMemo(
+    () =>
+      resolveCatalogCategories(workspace, product ? [product.category, ...(product.categories || [])] : []),
+    [product, workspace]
+  );
 
   useEffect(() => {
     if (loading) {
@@ -92,6 +97,7 @@ export default function EditProductPage() {
         <AdminProductForm
           initialProduct={product}
           initialMeta={resolveProductAdminMeta(workspace, product)}
+          categoryOptions={categoryOptions}
           submitLabel="Update product"
           title="Edit launch product."
           description="Update catalog copy, premium imagery, manual visibility status, and merchandising labels from one luxury admin surface."

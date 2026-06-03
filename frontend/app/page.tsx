@@ -87,6 +87,32 @@ function getHeroTitleSizeClasses(title: string) {
   return "text-[2.65rem] sm:text-[4.8rem] lg:text-[5.8rem]";
 }
 
+function SmoothBannerImage({
+  src,
+  alt,
+  overlayOpacityClass = "",
+}: {
+  src: string;
+  alt: string;
+  overlayOpacityClass?: string;
+}) {
+  if (!src) {
+    return null;
+  }
+
+  return (
+    <div key={src} className="absolute inset-0 hero-banner-motion">
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        unoptimized
+        className={`object-cover object-center ${overlayOpacityClass || ""}`}
+      />
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const { homepageBanner, products, loading } = useStorefrontData();
@@ -551,13 +577,7 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroMobileImage ? (
-                    <Image
-                      src={activeHeroMobileImage}
-                      alt={activeHeroTitle}
-                      fill
-                      unoptimized
-                      className="object-cover object-center"
-                    />
+                    <SmoothBannerImage src={activeHeroMobileImage} alt={activeHeroTitle} />
                   ) : null}
                   {loading ? null : (
                     <>
@@ -614,12 +634,9 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroMobileImage ? (
-                      <Image
+                      <SmoothBannerImage
                         src={secondaryHeroMobileImage}
                         alt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
-                        fill
-                        unoptimized
-                        className="object-cover object-center"
                       />
                     ) : null}
                   </div>
@@ -631,12 +648,10 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroMobileImage ? (
-                      <Image
+                      <SmoothBannerImage
                         src={tertiaryHeroMobileImage}
                         alt={tertiaryHeroBanner?.title || "Hrushe campaign"}
-                        fill
-                        unoptimized
-                        className="object-cover object-center opacity-20"
+                        overlayOpacityClass="opacity-20"
                       />
                     ) : null}
                     {loading ? null : (
@@ -667,13 +682,7 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroDesktopImage ? (
-                    <Image
-                      src={activeHeroDesktopImage}
-                      alt={activeHeroTitle}
-                      fill
-                      unoptimized
-                      className="object-cover object-center"
-                    />
+                    <SmoothBannerImage src={activeHeroDesktopImage} alt={activeHeroTitle} />
                   ) : null}
                 </div>
 
@@ -682,12 +691,9 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroDesktopImage ? (
-                      <Image
+                      <SmoothBannerImage
                         src={secondaryHeroDesktopImage}
                         alt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
-                        fill
-                        unoptimized
-                        className="object-cover object-center"
                       />
                     ) : null}
                   </div>
@@ -699,12 +705,10 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroDesktopImage ? (
-                      <Image
+                      <SmoothBannerImage
                         src={tertiaryHeroDesktopImage}
                         alt={tertiaryHeroBanner?.title || "Hrushe campaign"}
-                        fill
-                        unoptimized
-                        className="object-cover object-center opacity-18"
+                        overlayOpacityClass="opacity-18"
                       />
                     ) : null}
                     {loading ? null : (
@@ -1117,6 +1121,42 @@ export default function Home() {
                 {newsletterFeedback.message}
               </p>
             ) : null}
+
+            <div className="mx-auto mt-10 grid max-w-[56rem] gap-4 border-t border-[var(--border)] pt-8 text-left lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+              <div>
+                <p className="eyebrow text-[var(--accent)]">Collaborate</p>
+                <h3 className="mt-4 max-w-[18ch] text-[1.9rem] font-semibold uppercase leading-[0.96] tracking-[-0.06em] text-[var(--foreground)] sm:text-[2.35rem]">
+                  Designers, artists, and creative partners can reach out here too.
+                </h3>
+                <p className="mt-4 max-w-[34rem] text-[0.96rem] leading-8 text-[var(--muted)]">
+                  If you want to share your designs, pitch a collaboration, or explore working with
+                  HRUSHE, send over your portfolio, moodboard, or concept note and we will review it.
+                </p>
+              </div>
+
+              <div className="flex flex-col justify-between border border-[var(--border)] bg-[var(--surface)] px-5 py-5 sm:px-6 sm:py-6">
+                <div>
+                  <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                    Collaboration inbox
+                  </p>
+                  <p className="mt-4 text-[1.1rem] font-medium tracking-[-0.03em] text-[var(--foreground)]">
+                    team@hrushe.in
+                  </p>
+                  <p className="mt-3 text-[0.92rem] leading-7 text-[var(--muted)]">
+                    Include your name, links, design direction, and a short note on how you would
+                    like to work together.
+                  </p>
+                </div>
+
+                <Link
+                  href="mailto:team@hrushe.in?subject=HRUSHE%20Collaboration"
+                  className="mt-6 inline-flex min-h-12 items-center justify-between gap-8 border border-[var(--foreground)] px-5 text-[0.76rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <span>Share your work</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       </main>
