@@ -73,6 +73,7 @@ export function SiteHeader() {
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
   const isAdminRoute = pathname.startsWith("/admin");
 
@@ -85,7 +86,10 @@ export function SiteHeader() {
       if (!accountMenuRef.current?.contains(event.target as Node)) {
         setIsAccountMenuOpen(false);
       }
-      if (!mobileMenuRef.current?.contains(event.target as Node)) {
+      if (
+        !mobileMenuRef.current?.contains(event.target as Node) &&
+        !mobileMenuToggleRef.current?.contains(event.target as Node)
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -119,6 +123,7 @@ export function SiteHeader() {
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-2 lg:gap-7">
             <button
+              ref={mobileMenuToggleRef}
               type="button"
               onClick={() => setIsMobileMenuOpen((current) => !current)}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] lg:hidden"

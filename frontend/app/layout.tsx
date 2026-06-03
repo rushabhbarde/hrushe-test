@@ -24,13 +24,45 @@ const displayFont = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Hrushetest | Modern Fashion Brand",
+  metadataBase: new URL("https://hrushe.in"),
+  applicationName: "HRUSHE",
+  title: {
+    default: "HRUSHE | Modern Fashion Brand",
+    template: "%s | HRUSHE",
+  },
   description:
-    "A modern fashion storefront for elevated essentials, seasonal drops, and statement silhouettes.",
+    "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+  manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/brand/hrushe-search-logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/hrushe-search-logo-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/brand/hrushe-search-logo-192.png",
+    apple: "/brand/hrushe-apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "HRUSHE | Modern Fashion Brand",
+    description:
+      "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+    url: "https://hrushe.in",
+    siteName: "HRUSHE",
+    type: "website",
+    images: [
+      {
+        url: "/brand/hrushe-search-logo-512.png",
+        width: 512,
+        height: 512,
+        alt: "HRUSHE logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "HRUSHE | Modern Fashion Brand",
+    description:
+      "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+    images: ["/brand/hrushe-search-logo-512.png"],
   },
 };
 
@@ -47,11 +79,22 @@ export default function RootLayout({
       document.documentElement.style.colorScheme = theme;
     } catch (error) {}
   `;
+  const organizationStructuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "HRUSHE",
+    url: "https://hrushe.in",
+    logo: "https://hrushe.in/brand/hrushe-search-logo-512.png",
+  });
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: organizationStructuredData }}
+        />
       </head>
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
         <ThemeProvider>
