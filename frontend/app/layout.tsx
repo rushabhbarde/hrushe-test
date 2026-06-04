@@ -35,11 +35,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/brand/hrushe-search-logo-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/brand/hrushe-search-logo-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/brand/hrushe-sylogo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/hrushe-sylogo-512.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/brand/hrushe-search-logo-192.png",
-    apple: "/brand/hrushe-apple-touch-icon.png",
+    shortcut: "/brand/hrushe-sylogo-192.png",
+    apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
   },
   openGraph: {
     title: "HRUSHE | Modern Fashion Brand",
@@ -50,10 +50,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/brand/hrushe-search-logo-512.png",
+        url: "/brand/hrushe-sylogo-512.png",
         width: 512,
         height: 512,
-        alt: "HRUSHE logo",
+        alt: "HRUSHE symbol logo",
       },
     ],
   },
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     title: "HRUSHE | Modern Fashion Brand",
     description:
       "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
-    images: ["/brand/hrushe-search-logo-512.png"],
+    images: ["/brand/hrushe-sylogo-512.png"],
   },
 };
 
@@ -84,7 +84,7 @@ export default function RootLayout({
     "@type": "Organization",
     name: "HRUSHE",
     url: "https://hrushe.in",
-    logo: "https://hrushe.in/brand/hrushe-search-logo-512.png",
+    logo: "https://hrushe.in/brand/hrushe-sylogo-512.png",
   });
 
   return (

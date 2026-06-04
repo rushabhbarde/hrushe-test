@@ -280,7 +280,7 @@ export const defaultAdminWorkspace: AdminWorkspace = {
   websiteSettings: {
     brandName: "HRUSHE",
     logoUrl: "/hrushelogo.svg",
-    faviconUrl: "/brand/hrushe-search-logo-192.png",
+    faviconUrl: "/brand/hrushe-sylogo-192.png",
     contactEmail: "team@hrushe.in",
     contactPhone: "+91 90000 00000",
     supportWhatsapp: "+91 90000 00000",

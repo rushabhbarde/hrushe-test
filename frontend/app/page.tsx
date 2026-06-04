@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -87,29 +87,123 @@ function getHeroTitleSizeClasses(title: string) {
   return "text-[2.65rem] sm:text-[4.8rem] lg:text-[5.8rem]";
 }
 
+type HeroTransitionState = {
+  activeIndex: number;
+  previousIndex: number | null;
+  transitionKey: number;
+};
+
+type HeroTransitionAction =
+  | {
+      type: "shift";
+      step: number;
+      bannerCount: number;
+    }
+  | {
+      type: "clearPrevious";
+      transitionKey: number;
+    };
+
+function normalizeLoopIndex(value: number, count: number) {
+  if (count <= 0) {
+    return 0;
+  }
+
+  return ((value % count) + count) % count;
+}
+
+function heroTransitionReducer(
+  state: HeroTransitionState,
+  action: HeroTransitionAction
+): HeroTransitionState {
+  switch (action.type) {
+    case "shift": {
+      const count = Math.max(action.bannerCount, 1);
+
+      if (count <= 1) {
+        return {
+          activeIndex: 0,
+          previousIndex: null,
+          transitionKey: state.transitionKey,
+        };
+      }
+
+      const nextIndex = normalizeLoopIndex(state.activeIndex + action.step, count);
+
+      if (nextIndex === state.activeIndex) {
+        return state;
+      }
+
+      return {
+        activeIndex: nextIndex,
+        previousIndex: normalizeLoopIndex(state.activeIndex, count),
+        transitionKey: state.transitionKey + 1,
+      };
+    }
+    case "clearPrevious":
+      if (action.transitionKey !== state.transitionKey || state.previousIndex === null) {
+        return state;
+      }
+
+      return {
+        ...state,
+        previousIndex: null,
+      };
+    default:
+      return state;
+  }
+}
+
 function SmoothBannerImage({
-  src,
-  alt,
+  currentSrc,
+  currentAlt,
+  previousSrc,
+  previousAlt,
+  transitionKey,
   overlayOpacityClass = "",
 }: {
-  src: string;
-  alt: string;
+  currentSrc: string;
+  currentAlt: string;
+  previousSrc?: string | null;
+  previousAlt?: string;
+  transitionKey: number;
   overlayOpacityClass?: string;
 }) {
-  if (!src) {
+  if (!currentSrc && !previousSrc) {
     return null;
   }
 
   return (
-    <div key={src} className="absolute inset-0 hero-banner-motion">
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        unoptimized
-        className={`object-cover object-center ${overlayOpacityClass || ""}`}
-      />
-    </div>
+    <>
+      {previousSrc ? (
+        <div
+          key={`previous-${transitionKey}-${previousSrc}`}
+          className="absolute inset-0 hero-banner-motion-out"
+        >
+          <Image
+            src={previousSrc}
+            alt={previousAlt || currentAlt}
+            fill
+            unoptimized
+            className={`object-cover object-center ${overlayOpacityClass || ""}`}
+          />
+        </div>
+      ) : null}
+      {currentSrc ? (
+        <div
+          key={`current-${transitionKey}-${currentSrc}`}
+          className="absolute inset-0 hero-banner-motion-in"
+        >
+          <Image
+            src={currentSrc}
+            alt={currentAlt}
+            fill
+            unoptimized
+            className={`object-cover object-center ${overlayOpacityClass || ""}`}
+          />
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -117,7 +211,11 @@ export default function Home() {
   const router = useRouter();
   const { homepageBanner, products, loading } = useStorefrontData();
   const newInRailRef = useRef<HTMLDivElement | null>(null);
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [heroTransitionState, dispatchHeroTransition] = useReducer(heroTransitionReducer, {
+    activeIndex: 0,
+    previousIndex: null,
+    transitionKey: 0,
+  });
   const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -241,17 +339,49 @@ export default function Home() {
   );
 
   const heroBannerCount = Math.max(publishedHeroBanners.length, 1);
-  const activeHeroBanner = publishedHeroBanners[activeBannerIndex % heroBannerCount] || publishedHeroBanners[0];
+  const activeBannerIndex = normalizeLoopIndex(
+    heroTransitionState.activeIndex,
+    heroBannerCount
+  );
+  const previousBannerIndex =
+    heroTransitionState.previousIndex === null
+      ? null
+      : normalizeLoopIndex(heroTransitionState.previousIndex, heroBannerCount);
+  const activeHeroBanner =
+    publishedHeroBanners[activeBannerIndex % heroBannerCount] || publishedHeroBanners[0];
   const secondaryHeroBanner =
     publishedHeroBanners[(activeBannerIndex + 1) % heroBannerCount] || activeHeroBanner;
   const tertiaryHeroBanner =
     publishedHeroBanners[(activeBannerIndex + 2) % heroBannerCount] || secondaryHeroBanner;
+  const previousHeroBanner =
+    previousBannerIndex === null
+      ? null
+      : publishedHeroBanners[previousBannerIndex % heroBannerCount] || publishedHeroBanners[0];
+  const previousSecondaryHeroBanner =
+    previousBannerIndex === null
+      ? null
+      : publishedHeroBanners[(previousBannerIndex + 1) % heroBannerCount] || previousHeroBanner;
+  const previousTertiaryHeroBanner =
+    previousBannerIndex === null
+      ? null
+      : publishedHeroBanners[(previousBannerIndex + 2) % heroBannerCount] ||
+        previousSecondaryHeroBanner;
   const activeHeroDesktopImage = activeHeroBanner?.desktopImage || "";
   const secondaryHeroDesktopImage = secondaryHeroBanner?.desktopImage || activeHeroDesktopImage;
   const tertiaryHeroDesktopImage = tertiaryHeroBanner?.desktopImage || secondaryHeroDesktopImage;
+  const previousHeroDesktopImage = previousHeroBanner?.desktopImage || null;
+  const previousSecondaryHeroDesktopImage =
+    previousSecondaryHeroBanner?.desktopImage || previousHeroDesktopImage;
+  const previousTertiaryHeroDesktopImage =
+    previousTertiaryHeroBanner?.desktopImage || previousSecondaryHeroDesktopImage;
   const activeHeroMobileImage = activeHeroBanner?.mobileImage || activeHeroDesktopImage;
   const secondaryHeroMobileImage = secondaryHeroBanner?.mobileImage || secondaryHeroDesktopImage;
   const tertiaryHeroMobileImage = tertiaryHeroBanner?.mobileImage || tertiaryHeroDesktopImage;
+  const previousHeroMobileImage = previousHeroBanner?.mobileImage || previousHeroDesktopImage;
+  const previousSecondaryHeroMobileImage =
+    previousSecondaryHeroBanner?.mobileImage || previousSecondaryHeroDesktopImage;
+  const previousTertiaryHeroMobileImage =
+    previousTertiaryHeroBanner?.mobileImage || previousTertiaryHeroDesktopImage;
   const activeHeroTitle = activeHeroBanner?.title?.trim() || homepageBanner.title;
   const activeHeroDescription = activeHeroBanner?.subtitle?.trim() || homepageBanner.description;
   const activeHeroCtaLabel = activeHeroBanner?.ctaText?.trim() || heroCtaLabel;
@@ -267,13 +397,34 @@ export default function Home() {
     }
 
     const intervalId = window.setInterval(() => {
-      setActiveBannerIndex((current) => (current + 1) % publishedHeroBanners.length);
+      dispatchHeroTransition({
+        type: "shift",
+        step: 1,
+        bannerCount: publishedHeroBanners.length,
+      });
     }, 6000);
 
     return () => {
       window.clearInterval(intervalId);
     };
   }, [publishedHeroBanners.length]);
+
+  useEffect(() => {
+    if (heroTransitionState.previousIndex === null) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatchHeroTransition({
+        type: "clearPrevious",
+        transitionKey: heroTransitionState.transitionKey,
+      });
+    }, 820);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [heroTransitionState.previousIndex, heroTransitionState.transitionKey]);
 
   useEffect(() => {
     if (homepageReviews.length === 0) {
@@ -524,9 +675,11 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() =>
-                            setActiveBannerIndex((current) =>
-                              current === 0 ? Math.max(publishedHeroBanners.length - 1, 0) : current - 1
-                            )
+                            dispatchHeroTransition({
+                              type: "shift",
+                              step: -1,
+                              bannerCount: publishedHeroBanners.length,
+                            })
                           }
                           className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
                           aria-label="Previous banner"
@@ -536,9 +689,11 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() =>
-                            setActiveBannerIndex(
-                              (current) => (current + 1) % Math.max(publishedHeroBanners.length, 1)
-                            )
+                            dispatchHeroTransition({
+                              type: "shift",
+                              step: 1,
+                              bannerCount: publishedHeroBanners.length,
+                            })
                           }
                           className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
                           aria-label="Next banner"
@@ -577,7 +732,13 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroMobileImage ? (
-                    <SmoothBannerImage src={activeHeroMobileImage} alt={activeHeroTitle} />
+                    <SmoothBannerImage
+                      currentSrc={activeHeroMobileImage}
+                      currentAlt={activeHeroTitle}
+                      previousSrc={previousHeroMobileImage}
+                      previousAlt={previousHeroBanner?.title || activeHeroTitle}
+                      transitionKey={heroTransitionState.transitionKey}
+                    />
                   ) : null}
                   {loading ? null : (
                     <>
@@ -602,9 +763,11 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() =>
-                              setActiveBannerIndex((current) =>
-                                current === 0 ? Math.max(publishedHeroBanners.length - 1, 0) : current - 1
-                              )
+                              dispatchHeroTransition({
+                                type: "shift",
+                                step: -1,
+                                bannerCount: publishedHeroBanners.length,
+                              })
                             }
                             className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
                             aria-label="Previous banner"
@@ -614,9 +777,11 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() =>
-                              setActiveBannerIndex(
-                                (current) => (current + 1) % Math.max(publishedHeroBanners.length, 1)
-                              )
+                              dispatchHeroTransition({
+                                type: "shift",
+                                step: 1,
+                                bannerCount: publishedHeroBanners.length,
+                              })
                             }
                             className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
                             aria-label="Next banner"
@@ -635,8 +800,13 @@ export default function Home() {
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroMobileImage ? (
                       <SmoothBannerImage
-                        src={secondaryHeroMobileImage}
-                        alt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        currentSrc={secondaryHeroMobileImage}
+                        currentAlt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        previousSrc={previousSecondaryHeroMobileImage}
+                        previousAlt={
+                          previousSecondaryHeroBanner?.title || "Hrushe featured campaign"
+                        }
+                        transitionKey={heroTransitionState.transitionKey}
                       />
                     ) : null}
                   </div>
@@ -649,8 +819,11 @@ export default function Home() {
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroMobileImage ? (
                       <SmoothBannerImage
-                        src={tertiaryHeroMobileImage}
-                        alt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        currentSrc={tertiaryHeroMobileImage}
+                        currentAlt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        previousSrc={previousTertiaryHeroMobileImage}
+                        previousAlt={previousTertiaryHeroBanner?.title || "Hrushe campaign"}
+                        transitionKey={heroTransitionState.transitionKey}
                         overlayOpacityClass="opacity-20"
                       />
                     ) : null}
@@ -682,7 +855,13 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroDesktopImage ? (
-                    <SmoothBannerImage src={activeHeroDesktopImage} alt={activeHeroTitle} />
+                    <SmoothBannerImage
+                      currentSrc={activeHeroDesktopImage}
+                      currentAlt={activeHeroTitle}
+                      previousSrc={previousHeroDesktopImage}
+                      previousAlt={previousHeroBanner?.title || activeHeroTitle}
+                      transitionKey={heroTransitionState.transitionKey}
+                    />
                   ) : null}
                 </div>
 
@@ -692,8 +871,13 @@ export default function Home() {
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroDesktopImage ? (
                       <SmoothBannerImage
-                        src={secondaryHeroDesktopImage}
-                        alt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        currentSrc={secondaryHeroDesktopImage}
+                        currentAlt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        previousSrc={previousSecondaryHeroDesktopImage}
+                        previousAlt={
+                          previousSecondaryHeroBanner?.title || "Hrushe featured campaign"
+                        }
+                        transitionKey={heroTransitionState.transitionKey}
                       />
                     ) : null}
                   </div>
@@ -706,8 +890,11 @@ export default function Home() {
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroDesktopImage ? (
                       <SmoothBannerImage
-                        src={tertiaryHeroDesktopImage}
-                        alt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        currentSrc={tertiaryHeroDesktopImage}
+                        currentAlt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        previousSrc={previousTertiaryHeroDesktopImage}
+                        previousAlt={previousTertiaryHeroBanner?.title || "Hrushe campaign"}
+                        transitionKey={heroTransitionState.transitionKey}
                         overlayOpacityClass="opacity-18"
                       />
                     ) : null}
