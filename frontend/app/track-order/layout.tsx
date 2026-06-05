@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical: "https://www.hrushe.in/track-order",
+    canonical: "https://hrushe.in/track-order",
   },
 };
 

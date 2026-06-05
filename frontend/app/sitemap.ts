@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { categories, toCollectionSlug } from "@/lib/catalog";
 
-const siteUrl = "https://www.hrushe.in";
+const siteUrl = "https://hrushe.in";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

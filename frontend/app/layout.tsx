@@ -24,7 +24,7 @@ const displayFont = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.hrushe.in"),
+  metadataBase: new URL("https://hrushe.in"),
   applicationName: "HRUSHE",
   title: {
     default: "HRUSHE | Modern Fashion Brand",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   description:
     "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
   alternates: {
-    canonical: "https://www.hrushe.in",
+    canonical: "https://hrushe.in",
   },
   manifest: "/manifest.webmanifest",
   icons: {
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     title: "HRUSHE | Modern Fashion Brand",
     description:
       "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
-    url: "https://www.hrushe.in",
+    url: "https://hrushe.in",
     siteName: "HRUSHE",
     type: "website",
     images: [
@@ -86,8 +86,8 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "HRUSHE",
-    url: "https://www.hrushe.in",
-    logo: "https://www.hrushe.in/brand/hrushe-sylogo-512.png",
+    url: "https://hrushe.in",
+    logo: "https://hrushe.in/brand/hrushe-sylogo-512.png",
   });
 
   return (
