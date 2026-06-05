@@ -27,11 +27,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://hrushe.in"),
   applicationName: "HRUSHE",
   title: {
-    default: "HRUSHE | Modern Fashion Brand",
+    default: "HRUSHE | Defined Quietly",
     template: "%s | HRUSHE",
   },
   description:
-    "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+    "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
   alternates: {
     canonical: "https://hrushe.in",
   },
@@ -45,9 +45,9 @@ export const metadata: Metadata = {
     apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
   },
   openGraph: {
-    title: "HRUSHE | Modern Fashion Brand",
+    title: "HRUSHE | Defined Quietly",
     description:
-      "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
     url: "https://hrushe.in",
     siteName: "HRUSHE",
     type: "website",
@@ -62,9 +62,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "HRUSHE | Modern Fashion Brand",
+    title: "HRUSHE | Defined Quietly",
     description:
-      "HRUSHE is a modern fashion brand for elevated essentials, seasonal drops, and statement silhouettes.",
+      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
     images: ["/brand/hrushe-sylogo-512.png"],
   },
 };

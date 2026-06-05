@@ -287,8 +287,9 @@ export const defaultAdminWorkspace: AdminWorkspace = {
     instagramUrl: "https://instagram.com/hrushe",
     facebookUrl: "https://facebook.com/hrushe",
     pinterestUrl: "https://pinterest.com/hrushe",
-    seoTitle: "HRUSHE | Modern Fashion Brand",
-    seoDescription: "Luxury minimal clothing for modern wardrobes.",
+    seoTitle: "HRUSHE | Defined Quietly",
+    seoDescription:
+      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
     analyticsId: "",
     metaPixelId: "",
     maintenanceMode: false,
