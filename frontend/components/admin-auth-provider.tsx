@@ -95,7 +95,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         try {
           const response = await apiRequest<AuthResponse>("/auth/login", {
             method: "POST",
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({
+              username,
+              identifier: username,
+              email: username,
+              password,
+            }),
           });
 
           if (response.user.role !== "admin") {

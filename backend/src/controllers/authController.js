@@ -177,54 +177,19 @@ const signup = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { email, phone, identifier, password, username } = req.body;
-
-  if (username === "admin" && password === "admin") {
-    const adminEmail = "team@hrushe.in";
-    let adminUser = await User.findOne({ email: adminEmail });
-
-    if (!adminUser) {
-      adminUser = await User.create({
-        name: "Admin",
-        email: adminEmail,
-        password: await bcrypt.hash("admin", PASSWORD_HASH_ROUNDS),
-        role: "admin",
-        isVerified: true,
-        emailVerifiedAt: new Date(),
-      });
-      await Cart.create({ userId: adminUser._id, items: [] });
-    } else if (adminUser.role !== "admin") {
-      adminUser.role = "admin";
-      adminUser.password = await bcrypt.hash("admin", PASSWORD_HASH_ROUNDS);
-      adminUser.name = adminUser.name || "Admin";
-      await adminUser.save();
-    }
-
-    const existingCart = await Cart.findOne({ userId: adminUser._id });
-    if (!existingCart) {
-      await Cart.create({ userId: adminUser._id, items: [] });
-    }
-
-    adminUser.lastLoginAt = new Date();
-    if (adminUser.isVerified !== true) {
-      adminUser.isVerified = true;
-      adminUser.emailVerifiedAt = adminUser.emailVerifiedAt || new Date();
-    }
-    await adminUser.save();
-
-    return sendAuthResponse(res, adminUser, "Login successful");
-  }
-
-  const loginIdentifier = (identifier || email || phone || "").trim();
+  const loginIdentifier = (identifier || email || phone || username || "").trim();
 
   if (!loginIdentifier || !password) {
     throw new AppError("Email or phone and password are required", 400);
   }
 
-  const isEmailLogin = loginIdentifier.includes("@");
+  const isAdminAlias = loginIdentifier.toLowerCase() === "admin" && env.ADMIN_EMAIL;
+  const resolvedIdentifier = isAdminAlias ? env.ADMIN_EMAIL : loginIdentifier;
+  const isEmailLogin = resolvedIdentifier.includes("@");
   const user = await User.findOne(
     isEmailLogin
-      ? { email: loginIdentifier.toLowerCase() }
-      : { phone: loginIdentifier }
+      ? { email: resolvedIdentifier.toLowerCase() }
+      : { phone: resolvedIdentifier }
   );
   if (!user) {
     throw new AppError("Invalid credentials", 401);

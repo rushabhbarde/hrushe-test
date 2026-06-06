@@ -70,8 +70,8 @@ export function AdminAuthPanel({
         />
         {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
         <p className="text-xs leading-5 text-[var(--muted)]">
-          Local fallback admin credentials: <span className="font-medium">admin</span> /{" "}
-          <span className="font-medium">admin</span>
+          Use the configured admin email, or the admin alias if it is enabled for this
+          environment.
         </p>
         <button
           type="submit"
