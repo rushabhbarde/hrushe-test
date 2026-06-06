@@ -1,6 +1,7 @@
 import type { Product, ProductStatus } from "@/lib/catalog";
 import type { OrderRecord } from "@/lib/orders";
-import type { AdminPermission } from "@/lib/admin-workspace";
+import type { AdminPermission, AdminRoleId } from "@/lib/admin-workspace";
+import type { SupportCategory } from "@/lib/account";
 import type {
   AddressRecord,
   AccountPreferences,
@@ -54,11 +55,25 @@ export type AdminCustomerDetail = AdminCustomer & {
 export type AdminSupportRequest = {
   id: string;
   _id?: string;
-  category: string;
+  ticketNumber?: number;
+  ticketCode?: string;
+  category: SupportCategory;
+  source?: "chatbot" | "account" | "admin";
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  assignedRole?: AdminRoleId | "";
   subject: string;
   message: string;
-  status: string;
+  status: "open" | "in-progress" | "waiting-customer" | "resolved";
   resolutionNote?: string;
+  transcript?: Array<{
+    role: "bot" | "customer" | "system";
+    message: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
   createdAt: string;
   updatedAt?: string;
   userId?: {
@@ -67,10 +82,7 @@ export type AdminSupportRequest = {
     email?: string;
     phone?: string;
   };
-  orderId?: {
-    id?: string;
-    orderNumber?: number | null;
-  };
+  orderId?: string;
 };
 
 export const adminNavigation: AdminNavItem[] = [

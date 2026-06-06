@@ -1,16 +1,20 @@
 const express = require("express");
 const {
+  createSupportTicket,
   getSupportRequests,
   getSupportRequestById,
   updateSupportRequest,
 } = require("../controllers/supportController");
 const {
+  attachUserIfAuthenticated,
   protect,
   adminOnly,
   requireAdminPermission,
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+router.post("/tickets", attachUserIfAuthenticated, createSupportTicket);
 
 router.use(protect, adminOnly);
 

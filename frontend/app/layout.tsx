@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WishlistDrawer } from "@/components/wishlist-drawer";
 import { WishlistProvider } from "@/components/wishlist-provider";
+import { SupportChatbot } from "@/components/support-chatbot";
 import { Manrope, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/components/cart-provider";
 import "./globals.css";
@@ -111,6 +112,7 @@ export default function RootLayout({
                         {children}
                         <CartDrawer />
                         <WishlistDrawer />
+                        <SupportChatbot />
                       </CartProvider>
                     </WishlistProvider>
                   </AuthModalProvider>

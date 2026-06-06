@@ -47,6 +47,27 @@ const protect = async (req, res, next) => {
   }
 };
 
+const attachUserIfAuthenticated = async (req, res, next) => {
+  const token = getTokenFromRequest(req);
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (user && (user.role === "admin" || user.isVerified !== false)) {
+      req.user = user;
+    }
+  } catch {
+    // Public support ticket creation should still work with a stale token.
+  }
+
+  return next();
+};
+
 const adminOnly = (req, res, next) => {
   if (!req.user || req.user.role !== "admin") {
     return next(new AppError("Admin access required", 403));
@@ -67,4 +88,4 @@ const requireAdminPermission = (permission) => (req, res, next) => {
   return next();
 };
 
-module.exports = { protect, adminOnly, requireAdminPermission };
+module.exports = { protect, attachUserIfAuthenticated, adminOnly, requireAdminPermission };

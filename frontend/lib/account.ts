@@ -80,7 +80,14 @@ export type SupportCategory =
   | "track-order"
   | "return-request"
   | "exchange-request"
-  | "contact-support";
+  | "login-help"
+  | "signup-help"
+  | "payment-refund"
+  | "product-size"
+  | "coupon-sale"
+  | "website-issue"
+  | "contact-support"
+  | "other";
 
 export type SupportRequestRecord = {
   id?: string;
@@ -92,12 +99,26 @@ export type SupportRequestRecord = {
     email?: string;
     phone?: string;
   };
+  ticketNumber?: number;
+  ticketCode?: string;
   category: SupportCategory;
+  source?: "chatbot" | "account" | "admin";
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
   orderId?: string;
   subject: string;
   message: string;
-  status: "open" | "in-progress" | "resolved";
+  status: "open" | "in-progress" | "waiting-customer" | "resolved";
+  priority?: "low" | "normal" | "high" | "urgent";
+  assignedRole?: "" | "super-admin" | "brand-growth-manager" | "operations-manager" | "catalog-manager";
   resolutionNote?: string;
+  transcript?: Array<{
+    role: "bot" | "customer" | "system";
+    message: string;
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 };

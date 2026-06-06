@@ -388,6 +388,12 @@ const buildSupportStatusEmail = ({ request, customerName }) =>
     intro: "Your support request has been updated. Here is the latest status from the HRUSHE team.",
     sections: [
       buildInfoTable([
+        {
+          label: "Ticket",
+          value: request.ticketNumber
+            ? `HRSH-${String(request.ticketNumber).padStart(4, "0")}`
+            : "",
+        },
         { label: "Subject", value: request.subject },
         { label: "Category", value: humanize(request.category) },
         { label: "Status", value: humanize(request.status) },
@@ -404,17 +410,34 @@ const buildSupportStatusEmail = ({ request, customerName }) =>
     closingNote: "Need more help? Reply to this email or write to team@hrushe.in.",
   });
 
-const buildSupportRequestAdminEmail = ({ customerName, customerEmail, category, orderId, message, subject }) =>
+const buildSupportRequestAdminEmail = ({
+  ticketCode,
+  customerName,
+  customerEmail,
+  customerPhone,
+  category,
+  priority,
+  source,
+  assignedRole,
+  orderId,
+  message,
+  subject,
+}) =>
   renderEmailContent({
     preheader: "A new HRUSHE support request was submitted.",
     eyebrow: "Customer Support",
-    title: "New support request.",
+    title: ticketCode ? `New support ticket ${ticketCode}.` : "New support request.",
     intro: "A customer has submitted a support request from the storefront.",
     sections: [
       buildInfoTable([
+        { label: "Ticket", value: ticketCode || "Pending" },
         { label: "Customer", value: customerName },
         { label: "Email", value: customerEmail },
+        { label: "Phone", value: customerPhone || "N/A" },
         { label: "Category", value: humanize(category) },
+        { label: "Priority", value: humanize(priority || "normal") },
+        { label: "Source", value: humanize(source || "account") },
+        { label: "Assigned role", value: humanize(assignedRole || "operations-manager") },
         { label: "Order", value: orderId || "N/A" },
         { label: "Subject", value: subject },
       ]),

@@ -547,9 +547,18 @@ const createSupportRequest = asyncHandler(async (req, res) => {
       )
         ? category
         : "contact-support",
-    orderId: orderId || null,
+    source: "account",
+    customerName: req.user.name,
+    customerEmail: req.user.email,
+    customerPhone: req.user.phone || "",
+    orderId: orderId || "",
     subject: String(subject).trim(),
     message: String(message).trim(),
+    priority:
+      ["return-request", "exchange-request"].includes(category)
+        ? "high"
+        : "normal",
+    assignedRole: "operations-manager",
   });
 
   try {
@@ -559,10 +568,17 @@ const createSupportRequest = asyncHandler(async (req, res) => {
       html: buildSupportRequestAdminEmail({
         customerName: req.user.name,
         customerEmail: req.user.email,
+        customerPhone: req.user.phone || "",
         category: supportRequest.category,
+        priority: supportRequest.priority,
+        source: supportRequest.source,
+        assignedRole: supportRequest.assignedRole,
         orderId,
         message: supportRequest.message,
         subject: supportRequest.subject,
+        ticketCode: supportRequest.ticketNumber
+          ? `HRSH-${String(supportRequest.ticketNumber).padStart(4, "0")}`
+          : "",
       }),
     });
     if (!delivery.delivered) {
