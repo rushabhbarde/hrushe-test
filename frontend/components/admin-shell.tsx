@@ -176,7 +176,7 @@ export function AdminShell({
                           href={item.href}
                           className={`flex items-center justify-between px-3 py-3 text-sm transition ${
                             active
-                              ? "bg-[var(--foreground)] text-[var(--background)] shadow-[0_16px_36px_rgba(17,17,17,0.16)]"
+                              ? "border border-[#111111] bg-[#111111] text-white shadow-[0_16px_36px_rgba(17,17,17,0.16)]"
                               : "text-[var(--muted)] hover:bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] hover:text-[var(--foreground)]"
                           }`}
                         >
@@ -347,7 +347,7 @@ export function AdminShell({
                               onClick={() => setMobileNavOpen(false)}
                               className={`px-3 py-3 text-sm ${
                                 active
-                                  ? "bg-[var(--foreground)] text-[var(--background)]"
+                                  ? "border border-[#111111] bg-[#111111] text-white"
                                   : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_88%,transparent)] text-[var(--foreground)]"
                               }`}
                             >
