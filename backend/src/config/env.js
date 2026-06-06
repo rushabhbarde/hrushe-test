@@ -29,6 +29,13 @@ const env = {
   MONGODB_URI:
     process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/hrushetest",
   JWT_SECRET: process.env.JWT_SECRET || "development-secret",
+  ADMIN_EMAIL:
+    process.env.ADMIN_EMAIL ||
+    (process.env.NODE_ENV === "production" ? "" : "team@hrushe.in"),
+  ADMIN_PASSWORD:
+    process.env.ADMIN_PASSWORD ||
+    (process.env.NODE_ENV === "production" ? "" : "admin"),
+  ADMIN_NAME: process.env.ADMIN_NAME || "Admin",
   COOKIE_SAME_SITE:
     process.env.COOKIE_SAME_SITE ||
     (process.env.NODE_ENV === "production" ? "none" : "lax"),

@@ -5,7 +5,7 @@
 - Frontend: Vercel
 - Backend: Render
 - Database: MongoDB Atlas
-- Checkout provider: GoKwik
+- Checkout provider: Razorpay
 
 ## Backend Production Environment
 
@@ -19,11 +19,16 @@ ALLOWED_ORIGINS=https://www.hrushe.in,https://hrushe.in,https://hrushe-test.verc
 BACKEND_PUBLIC_URL=https://your-backend-domain.onrender.com
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db>?retryWrites=true&w=majority
 JWT_SECRET=<strong-random-secret>
+ADMIN_EMAIL=team@hrushe.in
+ADMIN_PASSWORD=<strong-admin-password-at-least-12-characters>
+ADMIN_NAME=Admin
 COOKIE_SAME_SITE=none
 COOKIE_SECURE=true
 COOKIE_DOMAIN=
-GOKWIK_HOSTED_CHECKOUT_URL=https://<your-gokwik-production-checkout-url>
-GOKWIK_WEBHOOK_SECRET=<your-gokwik-webhook-secret>
+RAZORPAY_KEY_ID=<your-razorpay-key-id>
+RAZORPAY_KEY_SECRET=<your-razorpay-key-secret>
+RAZORPAY_CURRENCY=INR
+RAZORPAY_WEBHOOK_SECRET=<your-razorpay-webhook-secret>
 ```
 
 Notes:
@@ -31,7 +36,8 @@ Notes:
 - `ALLOWED_ORIGINS` accepts a comma-separated list.
 - Include both `https://www.hrushe.in` and `https://hrushe.in`, plus any Vercel preview or fallback domain that should be able to call the API.
 - `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true` are required for cross-site auth cookies between Vercel and Render.
-- `BACKEND_PUBLIC_URL` must be the public Render URL used in checkout success, failure, cancel, and webhook flows.
+- `ADMIN_PASSWORD` is required in production and must not be the default local password.
+- `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
 
 ## Frontend Production Environment
 
@@ -79,19 +85,24 @@ Use MongoDB Atlas for production:
 3. Add Render outbound IP access or temporarily allow `0.0.0.0/0` while testing.
 4. Copy the Atlas connection string into `MONGODB_URI`.
 
-## GoKwik Production URLs
+## Razorpay Production Setup
 
 Set:
 
-- `GOKWIK_HOSTED_CHECKOUT_URL` to the GoKwik production checkout endpoint
-- `GOKWIK_WEBHOOK_SECRET` to the production webhook secret
+- `RAZORPAY_KEY_ID` to the live Razorpay key ID
+- `RAZORPAY_KEY_SECRET` to the live Razorpay key secret
+- `RAZORPAY_WEBHOOK_SECRET` to the webhook secret configured in Razorpay
 
-Make sure GoKwik is configured to use these backend URLs:
+Make sure Razorpay is configured to send webhooks to:
 
-- Success: `https://your-backend-domain.onrender.com/order/checkout/success`
-- Failure: `https://your-backend-domain.onrender.com/order/checkout/failure`
-- Cancel: `https://your-backend-domain.onrender.com/order/checkout/cancel`
-- Webhook: `https://your-backend-domain.onrender.com/order/checkout/webhook/gokwik`
+- Webhook: `https://your-backend-domain.onrender.com/order/checkout/webhook/razorpay`
+
+Enable at least these Razorpay events:
+
+- `payment.captured`
+- `payment.failed`
+
+Checkout success is verified by the frontend calling `POST /order/checkout/verify`.
 
 ## Test Checklist
 
@@ -126,4 +137,4 @@ This repository is now prepared for deployment, but the actual live deployment s
 - your Render account access
 - your Vercel account access
 - your MongoDB Atlas production connection string
-- your real GoKwik production URL and webhook secret
+- your real Razorpay live keys and webhook secret

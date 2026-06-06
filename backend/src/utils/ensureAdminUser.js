@@ -1,12 +1,30 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
+const env = require("../config/env");
 
-const ADMIN_EMAIL = "team@hrushe.in";
-const ADMIN_PASSWORD = "admin";
-const ADMIN_NAME = "Admin";
+const ADMIN_EMAIL = env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
+const ADMIN_NAME = env.ADMIN_NAME;
+
+function validateAdminCredentials() {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be configured.");
+  }
+
+  if (
+    env.NODE_ENV === "production" &&
+    (ADMIN_PASSWORD === "admin" || ADMIN_PASSWORD.length < 12)
+  ) {
+    throw new Error(
+      "ADMIN_PASSWORD must be at least 12 characters and cannot be the default password in production."
+    );
+  }
+}
 
 async function ensureAdminUser() {
+  validateAdminCredentials();
+
   let adminUser = await User.findOne({ email: ADMIN_EMAIL });
 
   if (!adminUser) {

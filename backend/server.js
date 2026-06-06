@@ -17,6 +17,9 @@ const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
 
 const app = express();
+const shouldCaptureRawBody = (req) =>
+  req.originalUrl?.startsWith("/order/checkout/webhook/razorpay");
+
 const isAllowedDevOrigin = (origin) => {
   if (env.NODE_ENV === "production") {
     return false;
@@ -59,7 +62,16 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "50mb" }));
+app.use(
+  express.json({
+    limit: "50mb",
+    verify(req, res, buffer) {
+      if (shouldCaptureRawBody(req)) {
+        req.rawBody = Buffer.from(buffer);
+      }
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.get("/", (req, res) => {

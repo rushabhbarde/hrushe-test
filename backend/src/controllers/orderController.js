@@ -167,7 +167,14 @@ const verifyRazorpaySignature = ({ orderId, paymentId, signature }) => {
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
 
-  return expectedSignature === signature;
+  return safelyCompareSignatures(expectedSignature, signature);
+};
+
+const safelyCompareSignatures = (expectedSignature, receivedSignature) => {
+  const expected = Buffer.from(String(expectedSignature || ""), "utf8");
+  const received = Buffer.from(String(receivedSignature || ""), "utf8");
+
+  return expected.length === received.length && crypto.timingSafeEqual(expected, received);
 };
 
 const findOrderByReference = async (orderReference) => {
@@ -639,15 +646,23 @@ const cancelCheckout = asyncHandler(async (req, res) => {
 });
 
 const razorpayWebhook = asyncHandler(async (req, res) => {
-  const signature = req.headers["x-razorpay-signature"];
+  const signature = String(req.headers["x-razorpay-signature"] || "").trim();
 
-  if (env.RAZORPAY_WEBHOOK_SECRET && signature) {
+  if (env.RAZORPAY_WEBHOOK_SECRET) {
+    if (!signature) {
+      throw new AppError("Missing webhook signature", 401);
+    }
+
+    if (!req.rawBody) {
+      throw new AppError("Webhook payload unavailable for signature verification", 400);
+    }
+
     const expectedSignature = crypto
       .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET)
-      .update(JSON.stringify(req.body))
+      .update(req.rawBody)
       .digest("hex");
 
-    if (expectedSignature !== signature) {
+    if (!safelyCompareSignatures(expectedSignature, signature)) {
       throw new AppError("Invalid webhook signature", 401);
     }
   }
