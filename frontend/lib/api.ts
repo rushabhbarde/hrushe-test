@@ -1,3 +1,4 @@
+import { getAdminAuthHeaders } from "@/lib/admin-auth";
 import { getCustomerAuthHeaders } from "@/lib/customer-auth";
 
 // Keep browser requests same-origin so custom domains do not depend on
@@ -21,6 +22,12 @@ function buildHeaders(init?: RequestInit) {
   }
 
   Object.entries(customerAuthHeaders).forEach(([key, value]) => {
+    if (!headers.has(key)) {
+      headers.set(key, value);
+    }
+  });
+
+  Object.entries(getAdminAuthHeaders()).forEach(([key, value]) => {
     if (!headers.has(key)) {
       headers.set(key, value);
     }

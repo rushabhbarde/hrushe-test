@@ -2,10 +2,12 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
 const env = require("../config/env");
+const { normalizeAdminRoleId } = require("../config/adminRoles");
 
 const ADMIN_EMAIL = env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
 const ADMIN_NAME = env.ADMIN_NAME;
+const ADMIN_ROLE = normalizeAdminRoleId(env.ADMIN_ROLE);
 
 function validateAdminCredentials() {
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
@@ -33,6 +35,7 @@ async function ensureAdminUser() {
       email: ADMIN_EMAIL,
       password: await bcrypt.hash(ADMIN_PASSWORD, 10),
       role: "admin",
+      adminRole: ADMIN_ROLE,
       isVerified: true,
       emailVerifiedAt: new Date(),
     });
@@ -42,6 +45,11 @@ async function ensureAdminUser() {
 
     if (adminUser.role !== "admin") {
       adminUser.role = "admin";
+      shouldSave = true;
+    }
+
+    if (adminUser.adminRole !== ADMIN_ROLE) {
+      adminUser.adminRole = ADMIN_ROLE;
       shouldSave = true;
     }
 

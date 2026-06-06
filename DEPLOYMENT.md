@@ -22,6 +22,7 @@ JWT_SECRET=<strong-random-secret>
 ADMIN_EMAIL=team@hrushe.in
 ADMIN_PASSWORD=<strong-admin-password-at-least-12-characters>
 ADMIN_NAME=Admin
+ADMIN_ROLE=super-admin
 COOKIE_SAME_SITE=none
 COOKIE_SECURE=true
 COOKIE_DOMAIN=
@@ -37,6 +38,7 @@ Notes:
 - Include both `https://www.hrushe.in` and `https://hrushe.in`, plus any Vercel preview or fallback domain that should be able to call the API.
 - `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true` are required for cross-site auth cookies between Vercel and Render.
 - `ADMIN_PASSWORD` is required in production and must not be the default local password.
+- `ADMIN_ROLE=super-admin` keeps the bootstrap admin able to manage staff and role assignments.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
 
 ## Frontend Production Environment

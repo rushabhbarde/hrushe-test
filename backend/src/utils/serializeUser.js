@@ -1,3 +1,8 @@
+const {
+  getAdminPermissionsForUser,
+  getAdminRoleForUser,
+} = require("../config/adminRoles");
+
 const serializeAddress = (address) => ({
   id: address._id?.toString?.() || address.id || "",
   label: address.label || "Home",
@@ -12,36 +17,43 @@ const serializeAddress = (address) => ({
   isDefault: Boolean(address.isDefault),
 });
 
-const serializeUser = (user) => ({
-  id: user._id?.toString?.() || user.id,
-  name: user.name,
-  email: user.email,
-  phone: user.phone || "",
-  address: user.address || "",
-  gender: user.gender || "",
-  dateOfBirth: user.dateOfBirth || null,
-  profilePictureUrl: user.profilePictureUrl || "",
-  isVerified: user.isVerified !== false,
-  emailVerifiedAt: user.emailVerifiedAt || null,
-  lastLoginAt: user.lastLoginAt || null,
-  role: user.role,
-  addresses: Array.isArray(user.addresses) ? user.addresses.map(serializeAddress) : [],
-  preferences: {
-    preferredSize: user.preferences?.preferredSize || "",
-    preferredFit: user.preferences?.preferredFit || "",
-    favoriteColors: Array.isArray(user.preferences?.favoriteColors)
-      ? user.preferences.favoriteColors
-      : [],
-  },
-  communicationPreferences: {
-    emailNotifications:
-      user.communicationPreferences?.emailNotifications !== false,
-    whatsappOrderUpdates:
-      user.communicationPreferences?.whatsappOrderUpdates !== false,
-    marketingMessages: Boolean(user.communicationPreferences?.marketingMessages),
-  },
-  wishlistCount: Array.isArray(user.wishlist) ? user.wishlist.length : 0,
-});
+const serializeUser = (user) => {
+  const adminRole = getAdminRoleForUser(user);
+
+  return {
+    id: user._id?.toString?.() || user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || "",
+    address: user.address || "",
+    gender: user.gender || "",
+    dateOfBirth: user.dateOfBirth || null,
+    profilePictureUrl: user.profilePictureUrl || "",
+    isVerified: user.isVerified !== false,
+    emailVerifiedAt: user.emailVerifiedAt || null,
+    lastLoginAt: user.lastLoginAt || null,
+    role: user.role,
+    adminRole: adminRole?.id || "",
+    adminRoleName: adminRole?.name || "",
+    adminPermissions: getAdminPermissionsForUser(user),
+    addresses: Array.isArray(user.addresses) ? user.addresses.map(serializeAddress) : [],
+    preferences: {
+      preferredSize: user.preferences?.preferredSize || "",
+      preferredFit: user.preferences?.preferredFit || "",
+      favoriteColors: Array.isArray(user.preferences?.favoriteColors)
+        ? user.preferences.favoriteColors
+        : [],
+    },
+    communicationPreferences: {
+      emailNotifications:
+        user.communicationPreferences?.emailNotifications !== false,
+      whatsappOrderUpdates:
+        user.communicationPreferences?.whatsappOrderUpdates !== false,
+      marketingMessages: Boolean(user.communicationPreferences?.marketingMessages),
+    },
+    wishlistCount: Array.isArray(user.wishlist) ? user.wishlist.length : 0,
+  };
+};
 
 module.exports = {
   serializeAddress,

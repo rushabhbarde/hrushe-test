@@ -1,4 +1,5 @@
 import type { OrderRecord } from "@/lib/orders";
+import type { AdminPermission, AdminRoleId } from "@/lib/admin-workspace";
 
 export type AddressRecord = {
   id: string;
@@ -39,6 +40,9 @@ export type AccountUser = {
   emailVerifiedAt: string | null;
   lastLoginAt: string | null;
   role: string;
+  adminRole?: AdminRoleId | "";
+  adminRoleName?: string;
+  adminPermissions?: AdminPermission[];
   addresses: AddressRecord[];
   preferences: AccountPreferences;
   communicationPreferences: CommunicationPreferences;

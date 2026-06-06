@@ -27,6 +27,8 @@ services:
         sync: false
       - key: ADMIN_NAME
         value: Admin
+      - key: ADMIN_ROLE
+        value: super-admin
       - key: COOKIE_SAME_SITE
         value: none
       - key: COOKIE_SECURE

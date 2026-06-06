@@ -7,15 +7,15 @@ const {
   addProductReview,
   deleteProduct,
 } = require("../controllers/productController");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, requireAdminPermission } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.get("/", getProducts);
 router.get("/:id", getProductById);
 router.post("/:id/reviews", addProductReview);
-router.post("/", protect, adminOnly, createProduct);
-router.put("/:id", protect, adminOnly, updateProduct);
-router.delete("/:id", protect, adminOnly, deleteProduct);
+router.post("/", protect, requireAdminPermission("products.edit"), createProduct);
+router.put("/:id", protect, requireAdminPermission("products.edit"), updateProduct);
+router.delete("/:id", protect, requireAdminPermission("products.edit"), deleteProduct);
 
 module.exports = router;

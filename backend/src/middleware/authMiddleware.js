@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const env = require("../config/env");
 const AppError = require("../utils/AppError");
+const { hasAdminPermission } = require("../config/adminRoles");
 
 const getTokenFromRequest = (req) => {
   const authHeader = req.headers.authorization;
@@ -54,4 +55,16 @@ const adminOnly = (req, res, next) => {
   return next();
 };
 
-module.exports = { protect, adminOnly };
+const requireAdminPermission = (permission) => (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return next(new AppError("Admin access required", 403));
+  }
+
+  if (!hasAdminPermission(req.user, permission)) {
+    return next(new AppError("You do not have permission to perform this action", 403));
+  }
+
+  return next();
+};
+
+module.exports = { protect, adminOnly, requireAdminPermission };

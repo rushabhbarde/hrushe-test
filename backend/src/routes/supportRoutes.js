@@ -4,14 +4,18 @@ const {
   getSupportRequestById,
   updateSupportRequest,
 } = require("../controllers/supportController");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const {
+  protect,
+  adminOnly,
+  requireAdminPermission,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.use(protect, adminOnly);
 
-router.get("/requests", getSupportRequests);
-router.get("/requests/:id", getSupportRequestById);
-router.put("/requests/:id", updateSupportRequest);
+router.get("/requests", requireAdminPermission("support.manage"), getSupportRequests);
+router.get("/requests/:id", requireAdminPermission("support.manage"), getSupportRequestById);
+router.put("/requests/:id", requireAdminPermission("support.manage"), updateSupportRequest);
 
 module.exports = router;

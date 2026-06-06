@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminGuard } from "@/components/admin-guard";
-import { AdminBadge } from "@/components/admin-ui";
+import { AdminBadge, AdminPanel, AdminSectionLabel } from "@/components/admin-ui";
 import { useAdminAuth } from "@/components/admin-auth-provider";
 import { useTheme } from "@/components/theme-provider";
-import { adminNavigation } from "@/lib/admin";
+import { adminNavigation, getAdminRoutePermission } from "@/lib/admin";
 
-function groupNavigation() {
-  const navigationMap = new Map<string, typeof adminNavigation>();
+function groupNavigation(navigation: typeof adminNavigation) {
+  const navigationMap = new Map<string, typeof navigation>();
 
-  adminNavigation.forEach((item) => {
+  navigation.forEach((item) => {
     const current = navigationMap.get(item.group) || [];
     current.push(item);
     navigationMap.set(item.group, current);
@@ -77,12 +77,20 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const groupedNavigation = useMemo(() => groupNavigation(), []);
-  const { logout } = useAdminAuth();
+  const { logout, user, hasPermission } = useAdminAuth();
   const { isDark, toggleTheme } = useTheme();
   const [globalQuery, setGlobalQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const visibleNavigation = useMemo(
+    () => adminNavigation.filter((item) => hasPermission(item.permission)),
+    [hasPermission]
+  );
+  const groupedNavigation = useMemo(() => groupNavigation(visibleNavigation), [visibleNavigation]);
+  const routePermission = getAdminRoutePermission(pathname);
+  const canViewRoute = hasPermission(routePermission);
+  const canQuickCreate = hasPermission("products.edit");
+  const canOpenSettings = hasPermission("settings.manage");
 
   const activeItem = adminNavigation.find(
     (item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`))
@@ -103,17 +111,22 @@ export function AdminShell({
 
     const encodedQuery = encodeURIComponent(query);
 
-    if (query.includes("@") || /^\+?\d{8,}$/.test(query.replace(/\s/g, ""))) {
+    if (
+      hasPermission("customers.view") &&
+      (query.includes("@") || /^\+?\d{8,}$/.test(query.replace(/\s/g, "")))
+    ) {
       router.push(`/admin/customers?query=${encodedQuery}`);
       return;
     }
 
-    if (/^#?\d+$/.test(query)) {
+    if (hasPermission("orders.view") && /^#?\d+$/.test(query)) {
       router.push(`/admin/orders?query=${encodedQuery.replace(/^%23/, "")}`);
       return;
     }
 
-    router.push(`/admin/products?query=${encodedQuery}`);
+    if (hasPermission("products.view")) {
+      router.push(`/admin/products?query=${encodedQuery}`);
+    }
   }
 
   return (
@@ -222,9 +235,11 @@ export function AdminShell({
                     />
                   </form>
                   {contextualActions}
-                  <Link href="/admin/add-product" className="button-primary px-4 py-2.5 text-sm font-medium">
-                    Quick create
-                  </Link>
+                  {canQuickCreate ? (
+                    <Link href="/admin/add-product" className="button-primary px-4 py-2.5 text-sm font-medium">
+                      Quick create
+                    </Link>
+                  ) : null}
                   <button
                     type="button"
                     onClick={toggleTheme}
@@ -255,7 +270,12 @@ export function AdminShell({
                       <div className="absolute right-0 top-[calc(100%+0.75rem)] w-60 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-strong)_92%,transparent))] p-3 shadow-[0_24px_64px_rgba(17,17,17,0.14)]">
                         <div className="px-3 py-2">
                           <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Session</p>
-                          <p className="mt-2 text-sm font-medium text-[var(--foreground)]">Super admin</p>
+                          <p className="mt-2 text-sm font-medium text-[var(--foreground)]">
+                            {user?.adminRoleName || "Admin"}
+                          </p>
+                          {user?.email ? (
+                            <p className="mt-1 truncate text-xs text-[var(--muted)]">{user.email}</p>
+                          ) : null}
                         </div>
                         <button
                           type="button"
@@ -264,12 +284,14 @@ export function AdminShell({
                         >
                           Switch to {isDark ? "light" : "dark"} mode
                         </button>
-                        <Link
-                          href="/admin/settings"
-                          className="mt-1 block px-3 py-2 text-sm hover:bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)]"
-                        >
-                          Open settings
-                        </Link>
+                        {canOpenSettings ? (
+                          <Link
+                            href="/admin/settings"
+                            className="mt-1 block px-3 py-2 text-sm hover:bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)]"
+                          >
+                            Open settings
+                          </Link>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => void logout()}
@@ -301,9 +323,11 @@ export function AdminShell({
                     <button type="button" onClick={toggleTheme} className="button-secondary px-4 py-2.5 text-sm font-medium">
                       {isDark ? "Light mode" : "Dark mode"}
                     </button>
-                    <Link href="/admin/add-product" className="button-primary px-4 py-2.5 text-sm font-medium">
-                      Quick create
-                    </Link>
+                    {canQuickCreate ? (
+                      <Link href="/admin/add-product" className="button-primary px-4 py-2.5 text-sm font-medium">
+                        Quick create
+                      </Link>
+                    ) : null}
                   </div>
                   {groupedNavigation.map(([group, items]) => (
                     <div key={group}>
@@ -338,11 +362,28 @@ export function AdminShell({
               ) : null}
             </header>
 
-            <main className="flex-1 px-4 py-5 sm:px-5 lg:px-7 lg:py-7">{children}</main>
+            <main className="flex-1 px-4 py-5 sm:px-5 lg:px-7 lg:py-7">
+              {canViewRoute ? (
+                children
+              ) : (
+                <AdminPanel className="min-h-[360px]">
+                  <AdminSectionLabel>Restricted access</AdminSectionLabel>
+                  <h1 className="display-font mt-4 max-w-2xl text-5xl leading-none">
+                    This workspace area is outside your role.
+                  </h1>
+                  <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--muted)]">
+                    Your current role is {user?.adminRoleName || "Admin"}. Ask a Super Admin
+                    to change your role if you need access to this module.
+                  </p>
+                  <Link href="/admin" className="button-secondary mt-7 inline-flex px-5 py-3 text-sm font-medium">
+                    Back to overview
+                  </Link>
+                </AdminPanel>
+              )}
+            </main>
           </div>
         </div>
       </div>
     </AdminGuard>
   );
 }
-

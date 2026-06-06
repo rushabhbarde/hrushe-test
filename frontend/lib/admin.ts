@@ -1,5 +1,6 @@
 import type { Product, ProductStatus } from "@/lib/catalog";
 import type { OrderRecord } from "@/lib/orders";
+import type { AdminPermission } from "@/lib/admin-workspace";
 import type {
   AddressRecord,
   AccountPreferences,
@@ -12,6 +13,7 @@ export type AdminNavItem = {
   href: string;
   group: string;
   description?: string;
+  permission?: AdminPermission;
 };
 
 export type AdminMetric = {
@@ -72,20 +74,56 @@ export type AdminSupportRequest = {
 };
 
 export const adminNavigation: AdminNavItem[] = [
-  { group: "Dashboard", label: "Overview", href: "/admin" },
-  { group: "Storefront", label: "Home management", href: "/admin/homepage" },
-  { group: "Catalog", label: "Products", href: "/admin/products" },
-  { group: "Operations", label: "Orders", href: "/admin/orders" },
-  { group: "Operations", label: "Shipping", href: "/admin/shipping" },
-  { group: "Customers", label: "Customers", href: "/admin/customers" },
-  { group: "Marketing", label: "Coupons & promos", href: "/admin/coupons" },
-  { group: "Content", label: "Content", href: "/admin/content" },
-  { group: "Content", label: "Media library", href: "/admin/media" },
-  { group: "Content", label: "Reviews", href: "/admin/reviews" },
-  { group: "Reports", label: "Reports", href: "/admin/reports" },
-  { group: "Settings", label: "Website settings", href: "/admin/settings" },
-  { group: "Settings", label: "Roles & permissions", href: "/admin/roles" },
+  { group: "Dashboard", label: "Overview", href: "/admin", permission: "dashboard.view" },
+  { group: "Storefront", label: "Home management", href: "/admin/homepage", permission: "home.manage" },
+  { group: "Catalog", label: "Products", href: "/admin/products", permission: "products.view" },
+  { group: "Operations", label: "Orders", href: "/admin/orders", permission: "orders.view" },
+  { group: "Operations", label: "Shipping", href: "/admin/shipping", permission: "shipping.manage" },
+  { group: "Operations", label: "Returns", href: "/admin/returns", permission: "support.manage" },
+  { group: "Operations", label: "Support", href: "/admin/support", permission: "support.manage" },
+  { group: "Customers", label: "Customers", href: "/admin/customers", permission: "customers.view" },
+  { group: "Marketing", label: "Coupons & promos", href: "/admin/coupons", permission: "coupons.manage" },
+  { group: "Content", label: "Content", href: "/admin/content", permission: "content.manage" },
+  { group: "Content", label: "Media library", href: "/admin/media", permission: "media.manage" },
+  { group: "Content", label: "Reviews", href: "/admin/reviews", permission: "reviews.manage" },
+  { group: "Reports", label: "Reports", href: "/admin/reports", permission: "reports.view" },
+  { group: "Settings", label: "Website settings", href: "/admin/settings", permission: "settings.manage" },
+  { group: "Settings", label: "Roles & permissions", href: "/admin/roles", permission: "roles.manage" },
 ];
+
+const adminRoutePermissions: Array<{ prefix: string; permission: AdminPermission }> = [
+  { prefix: "/admin/add-product", permission: "products.edit" },
+  { prefix: "/admin/products", permission: "products.view" },
+  { prefix: "/admin/categories", permission: "products.edit" },
+  { prefix: "/admin/collections", permission: "products.edit" },
+  { prefix: "/admin/inventory", permission: "products.view" },
+  { prefix: "/admin/orders", permission: "orders.view" },
+  { prefix: "/admin/shipping", permission: "shipping.manage" },
+  { prefix: "/admin/returns", permission: "support.manage" },
+  { prefix: "/admin/support", permission: "support.manage" },
+  { prefix: "/admin/customers", permission: "customers.view" },
+  { prefix: "/admin/homepage", permission: "home.manage" },
+  { prefix: "/admin/storefront", permission: "home.manage" },
+  { prefix: "/admin/announcements", permission: "home.manage" },
+  { prefix: "/admin/audience", permission: "coupons.manage" },
+  { prefix: "/admin/coupons", permission: "coupons.manage" },
+  { prefix: "/admin/content", permission: "content.manage" },
+  { prefix: "/admin/media", permission: "media.manage" },
+  { prefix: "/admin/reviews", permission: "reviews.manage" },
+  { prefix: "/admin/reports", permission: "reports.view" },
+  { prefix: "/admin/settings", permission: "settings.manage" },
+  { prefix: "/admin/roles", permission: "roles.manage" },
+];
+
+export function getAdminRoutePermission(pathname: string): AdminPermission | undefined {
+  if (pathname === "/admin") {
+    return "dashboard.view";
+  }
+
+  return adminRoutePermissions
+    .filter((route) => pathname === route.prefix || pathname.startsWith(`${route.prefix}/`))
+    .sort((a, b) => b.prefix.length - a.prefix.length)[0]?.permission;
+}
 
 export function formatAdminCurrency(value: number) {
   return `Rs. ${Math.round(value || 0).toLocaleString("en-IN")}`;

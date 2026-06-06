@@ -8,6 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
+const { hasAdminPermission } = require("../config/adminRoles");
 
 const allowedStatuses = [
   "Pending",
@@ -307,6 +308,10 @@ const getOrderById = asyncHandler(async (req, res) => {
   const isOwner = order.userId?._id?.toString() === req.user._id.toString();
   const isAdmin = req.user.role === "admin";
 
+  if (isAdmin && !hasAdminPermission(req.user, "orders.view")) {
+    throw new AppError("You do not have permission to view this order", 403);
+  }
+
   if (!isOwner && !isAdmin) {
     throw new AppError("Not authorized to view this order", 403);
   }
@@ -326,6 +331,10 @@ const downloadInvoice = asyncHandler(async (req, res) => {
 
   const isOwner = order.userId?._id?.toString() === req.user._id.toString();
   const isAdmin = req.user.role === "admin";
+
+  if (isAdmin && !hasAdminPermission(req.user, "orders.view")) {
+    throw new AppError("You do not have permission to download this invoice", 403);
+  }
 
   if (!isOwner && !isAdmin) {
     throw new AppError("Not authorized to download this invoice", 403);

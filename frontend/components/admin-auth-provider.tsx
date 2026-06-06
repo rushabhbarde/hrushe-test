@@ -17,9 +17,13 @@ import {
   setAdminToken,
 } from "@/lib/admin-auth";
 import { clearCustomerToken } from "@/lib/customer-auth";
+import type { AdminPermission } from "@/lib/admin-workspace";
 
 type AdminAuthContextValue = {
   isAuthenticated: boolean;
+  user: AdminSessionUser | null;
+  permissions: AdminPermission[];
+  hasPermission: (permission?: AdminPermission) => boolean;
   login: (
     username: string,
     password: string
@@ -29,15 +33,23 @@ type AdminAuthContextValue = {
 
 const AdminAuthContext = createContext<AdminAuthContextValue | undefined>(undefined);
 
+type AdminSessionUser = {
+  role: string;
+  adminRole?: string;
+  adminRoleName?: string;
+  adminPermissions?: AdminPermission[];
+  name?: string;
+  email?: string;
+};
+
 type AuthResponse = {
   token?: string;
-  user: {
-    role: string;
-  };
+  user: AdminSessionUser;
 };
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<AdminSessionUser | null>(null);
   const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => {
@@ -49,11 +61,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           headers: getAdminAuthHeaders(),
         });
         if (active) {
-          setIsAuthenticated(response.user.role === "admin");
+          const isAdmin = response.user.role === "admin";
+          setUser(isAdmin ? response.user : null);
+          setIsAuthenticated(isAdmin);
         }
       } catch {
         if (active) {
           setIsAuthenticated(false);
+          setUser(null);
           clearAdminToken();
         }
       } finally {
@@ -78,6 +93,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const syncAdminSession = () => {
       if (!getAdminToken()) {
         setIsAuthenticated(false);
+        setUser(null);
       }
     };
 
@@ -89,55 +105,67 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({
-      isAuthenticated,
-      login: async (username: string, password: string) => {
-        try {
-          const response = await apiRequest<AuthResponse>("/auth/login", {
-            method: "POST",
-            body: JSON.stringify({
-              username,
-              identifier: username,
-              email: username,
-              password,
-            }),
-          });
+    () => {
+      const permissions = user?.adminPermissions || [];
 
-          if (response.user.role !== "admin") {
-            clearAdminToken();
+      return {
+        isAuthenticated,
+        user,
+        permissions,
+        hasPermission: (permission?: AdminPermission) =>
+          !permission || permissions.includes(permission),
+        login: async (username: string, password: string) => {
+          try {
+            const response = await apiRequest<AuthResponse>("/auth/login", {
+              method: "POST",
+              body: JSON.stringify({
+                username,
+                identifier: username,
+                email: username,
+                password,
+              }),
+            });
+
+            if (response.user.role !== "admin") {
+              clearAdminToken();
+              setUser(null);
+              setIsAuthenticated(false);
+              return { ok: false, error: "This account does not have admin access." };
+            }
+
+            clearCustomerToken();
+            setAdminToken(response.token || "");
+            setUser(response.user);
+            setIsAuthenticated(true);
+            return { ok: true };
+          } catch (error) {
             setIsAuthenticated(false);
-            return { ok: false, error: "This account does not have admin access." };
+            setUser(null);
+            clearAdminToken();
+            return {
+              ok: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Could not sign in to the admin panel.",
+            };
           }
-
-          clearCustomerToken();
-          setAdminToken(response.token || "");
-          setIsAuthenticated(true);
-          return { ok: true };
-        } catch (error) {
-          setIsAuthenticated(false);
-          clearAdminToken();
-          return {
-            ok: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Could not sign in to the admin panel.",
-          };
-        }
-      },
-      logout: async () => {
-        try {
-          await apiRequest("/auth/logout", {
-            method: "POST",
-            headers: getAdminAuthHeaders(),
-          });
-        } finally {
-          setIsAuthenticated(false);
-          clearAdminToken();
-        }
-      },
-    }),
-    [isAuthenticated]
+        },
+        logout: async () => {
+          try {
+            await apiRequest("/auth/logout", {
+              method: "POST",
+              headers: getAdminAuthHeaders(),
+            });
+          } finally {
+            setIsAuthenticated(false);
+            setUser(null);
+            clearAdminToken();
+          }
+        },
+      };
+    },
+    [isAuthenticated, user]
   );
 
   if (!isChecked) {

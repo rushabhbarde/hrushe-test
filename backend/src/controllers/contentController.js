@@ -1,5 +1,7 @@
 const SiteContent = require("../models/SiteContent");
 const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { hasAdminPermission } = require("../config/adminRoles");
 let homepageBannerCache = null;
 const HOMEPAGE_BANNER_CACHE_TTL = 2 * 60 * 1000;
 
@@ -89,6 +91,31 @@ function getPublishedWorkspaceBanners(adminWorkspace) {
   return rawBanners
     .map(normalizeWorkspaceBanner)
     .filter((banner) => banner.enabled && isBannerScheduledForNow(banner) && (banner.desktopImage || banner.mobileImage));
+}
+
+const adminWorkspacePermissionByKey = {
+  homeManagement: "home.manage",
+  catalogCategories: "products.edit",
+  productMeta: "products.edit",
+  orderMeta: "orders.manage",
+  customerMeta: "customers.manage",
+  coupons: "coupons.manage",
+  contentPages: "content.manage",
+  mediaLibrary: "media.manage",
+  reviewModeration: "reviews.manage",
+  websiteSettings: "settings.manage",
+  roles: "roles.manage",
+  shipping: "shipping.manage",
+};
+
+function assertCanUpdateAdminWorkspace(user, patch = {}) {
+  Object.keys(patch).forEach((key) => {
+    const permission = adminWorkspacePermissionByKey[key] || "settings.manage";
+
+    if (!hasAdminPermission(user, permission)) {
+      throw new AppError(`Missing permission: ${permission}`, 403);
+    }
+  });
 }
 
 function normalizeHomepageBanner(homepageBanner) {
@@ -190,6 +217,8 @@ const getAdminWorkspace = asyncHandler(async (req, res) => {
 });
 
 const updateAdminWorkspace = asyncHandler(async (req, res) => {
+  assertCanUpdateAdminWorkspace(req.user, req.body || {});
+
   const content = await getSiteContent();
   const currentWorkspace =
     content.adminWorkspace && typeof content.adminWorkspace === "object"

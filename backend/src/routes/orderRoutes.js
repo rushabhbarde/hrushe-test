@@ -14,7 +14,7 @@ const {
   razorpayWebhook,
   reorderOrder,
 } = require("../controllers/orderController");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, requireAdminPermission } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -28,8 +28,8 @@ router.post("/place", protect, placeOrder);
 router.get("/myorders", protect, getMyOrders);
 router.post("/:id/reorder", protect, reorderOrder);
 router.get("/:id/invoice", protect, downloadInvoice);
-router.get("/all", protect, adminOnly, getAllOrders);
-router.put("/status/:id", protect, adminOnly, updateOrderStatus);
+router.get("/all", protect, requireAdminPermission("orders.view"), getAllOrders);
+router.put("/status/:id", protect, requireAdminPermission("orders.manage"), updateOrderStatus);
 router.get("/:id", protect, getOrderById);
 
 module.exports = router;

@@ -176,6 +176,17 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "admin"],
       default: "customer",
     },
+    adminRole: {
+      type: String,
+      enum: [
+        "",
+        "super-admin",
+        "brand-growth-manager",
+        "operations-manager",
+        "catalog-manager",
+      ],
+      default: "",
+    },
     passwordResetOtp: {
       type: String,
       default: "",

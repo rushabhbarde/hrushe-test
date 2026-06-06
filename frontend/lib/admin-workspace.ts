@@ -130,6 +130,7 @@ export const adminPermissionCatalog = [
   "orders.view",
   "orders.manage",
   "shipping.manage",
+  "support.manage",
   "customers.view",
   "customers.manage",
   "coupons.manage",
@@ -138,16 +139,72 @@ export const adminPermissionCatalog = [
   "reviews.manage",
   "reports.view",
   "settings.manage",
+  "roles.manage",
 ] as const;
 
 export type AdminPermission = (typeof adminPermissionCatalog)[number];
+export type AdminRoleId =
+  | "super-admin"
+  | "brand-growth-manager"
+  | "operations-manager"
+  | "catalog-manager";
 
 export type AdminRoleRecord = {
-  id: string;
-  name: "Super Admin" | "Product Manager" | "Order Manager" | "Customer Support";
+  id: AdminRoleId;
+  name: string;
   description: string;
   permissions: AdminPermission[];
 };
+
+export const adminRoleDefinitions: AdminRoleRecord[] = [
+  {
+    id: "super-admin",
+    name: "Super Admin",
+    description: "Full control over storefront, operations, staff, settings, and reporting.",
+    permissions: [...adminPermissionCatalog],
+  },
+  {
+    id: "brand-growth-manager",
+    name: "Brand & Growth Manager",
+    description: "Owns homepage banners, content, media, reviews, coupons, and sales visibility.",
+    permissions: [
+      "dashboard.view",
+      "home.manage",
+      "orders.view",
+      "coupons.manage",
+      "content.manage",
+      "media.manage",
+      "reviews.manage",
+      "reports.view",
+    ],
+  },
+  {
+    id: "operations-manager",
+    name: "Operations Manager",
+    description: "Owns order fulfillment, tracking, shipping, returns, support, and customer context.",
+    permissions: [
+      "dashboard.view",
+      "orders.view",
+      "orders.manage",
+      "shipping.manage",
+      "support.manage",
+      "customers.view",
+      "reports.view",
+    ],
+  },
+  {
+    id: "catalog-manager",
+    name: "Catalog Manager",
+    description: "Owns product catalog, categories, product media, merchandising status, and review visibility.",
+    permissions: [
+      "dashboard.view",
+      "products.view",
+      "products.edit",
+      "media.manage",
+      "reviews.manage",
+    ],
+  },
+];
 
 export type ShippingSettings = {
   defaultCourierPartner: string;
@@ -294,53 +351,7 @@ export const defaultAdminWorkspace: AdminWorkspace = {
     metaPixelId: "",
     maintenanceMode: false,
   },
-  roles: [
-    {
-      id: "role-super-admin",
-      name: "Super Admin",
-      description: "Full control over storefront, operations, reporting, and settings.",
-      permissions: [...adminPermissionCatalog],
-    },
-    {
-      id: "role-product-manager",
-      name: "Product Manager",
-      description: "Owns catalog launches, homepage edits, media, and review presentation.",
-      permissions: [
-        "dashboard.view",
-        "home.manage",
-        "products.view",
-        "products.edit",
-        "content.manage",
-        "media.manage",
-        "reviews.manage",
-        "reports.view",
-      ],
-    },
-    {
-      id: "role-order-manager",
-      name: "Order Manager",
-      description: "Handles fulfillment, shipping, refunds, and order operations.",
-      permissions: [
-        "dashboard.view",
-        "orders.view",
-        "orders.manage",
-        "shipping.manage",
-        "reports.view",
-      ],
-    },
-    {
-      id: "role-customer-support",
-      name: "Customer Support",
-      description: "Supports customers, reviews, and account status operations.",
-      permissions: [
-        "dashboard.view",
-        "customers.view",
-        "customers.manage",
-        "orders.view",
-        "reviews.manage",
-      ],
-    },
-  ],
+  roles: adminRoleDefinitions,
   shipping: {
     defaultCourierPartner: "Delhivery",
     supportEmail: "support@hrushe.in",
