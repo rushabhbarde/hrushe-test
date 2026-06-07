@@ -68,6 +68,12 @@ function BellIcon() {
   );
 }
 
+const activeNavigationStyle = {
+  backgroundColor: "#111111",
+  borderColor: "#111111",
+  color: "#ffffff",
+};
+
 export function AdminShell({
   children,
   contextualActions,
@@ -174,14 +180,18 @@ export function AdminShell({
                         <Link
                           key={item.href}
                           href={item.href}
+                          aria-current={active ? "page" : undefined}
+                          style={active ? activeNavigationStyle : undefined}
                           className={`flex items-center justify-between px-3 py-3 text-sm transition ${
                             active
-                              ? "border border-[#111111] bg-[#111111] text-white shadow-[0_16px_36px_rgba(17,17,17,0.16)]"
+                              ? "border shadow-[0_16px_36px_rgba(17,17,17,0.16)]"
                               : "text-[var(--muted)] hover:bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] hover:text-[var(--foreground)]"
                           }`}
                         >
-                          <span>{item.label}</span>
-                          {active ? <span className="h-2 w-2 bg-current" /> : null}
+                          <span style={active ? { color: "#ffffff" } : undefined}>
+                            {item.label}
+                          </span>
+                          {active ? <span className="h-2 w-2 bg-white" /> : null}
                         </Link>
                       );
                     })}
@@ -345,13 +355,17 @@ export function AdminShell({
                               key={item.href}
                               href={item.href}
                               onClick={() => setMobileNavOpen(false)}
+                              aria-current={active ? "page" : undefined}
+                              style={active ? activeNavigationStyle : undefined}
                               className={`px-3 py-3 text-sm ${
                                 active
-                                  ? "border border-[#111111] bg-[#111111] text-white"
+                                  ? "border"
                                   : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_88%,transparent)] text-[var(--foreground)]"
                               }`}
                             >
-                              {item.label}
+                              <span style={active ? { color: "#ffffff" } : undefined}>
+                                {item.label}
+                              </span>
                             </Link>
                           );
                         })}
