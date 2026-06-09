@@ -112,6 +112,10 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    galleryImages: {
+      type: [String],
+      default: [],
+    },
     videos: {
       type: [productVideoSchema],
       default: [],

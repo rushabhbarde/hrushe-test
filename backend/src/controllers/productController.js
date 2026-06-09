@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const SiteContent = require("../models/SiteContent");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
@@ -130,6 +131,12 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.images = Array.isArray(payload.images) ? payload.images : [];
   }
 
+  if (!partial || payload.galleryImages !== undefined) {
+    normalized.galleryImages = Array.isArray(payload.galleryImages)
+      ? payload.galleryImages
+      : [];
+  }
+
   if (!partial || payload.videos !== undefined) {
     normalized.videos = normalizeProductVideos(payload.videos);
   }
@@ -188,6 +195,27 @@ const mapProductListItem = (product) => ({
 
 const clearProductListCache = () => {
   productListCache.clear();
+};
+
+const getProductDetailResponse = async (product) => {
+  const productData = product.toJSON ? product.toJSON() : product;
+
+  if (Array.isArray(productData.galleryImages) && productData.galleryImages.length > 0) {
+    return productData;
+  }
+
+  const content = await SiteContent.findOne({ key: "main" }).lean();
+  const galleryImages =
+    content?.adminWorkspace?.productMeta?.[productData.id]?.galleryImages;
+
+  return {
+    ...productData,
+    galleryImages: Array.isArray(galleryImages)
+      ? galleryImages.filter(Boolean)
+      : Array.isArray(productData.galleryImages)
+        ? productData.galleryImages
+        : [],
+  };
 };
 
 const getProducts = asyncHandler(async (req, res) => {
@@ -287,7 +315,7 @@ const getProductById = asyncHandler(async (req, res) => {
   }
 
   res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
-  return res.json(product);
+  return res.json(await getProductDetailResponse(product));
 });
 
 const createProduct = asyncHandler(async (req, res) => {

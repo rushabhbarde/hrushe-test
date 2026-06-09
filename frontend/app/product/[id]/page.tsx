@@ -67,6 +67,9 @@ function normalizeProduct(product: Product): Product {
     colors: Array.isArray(product.colors) ? product.colors.filter(Boolean) : [],
     sizes: Array.isArray(product.sizes) ? product.sizes.filter(Boolean) : [],
     images: Array.isArray(product.images) ? product.images.filter(Boolean) : [],
+    galleryImages: Array.isArray(product.galleryImages)
+      ? product.galleryImages.filter(Boolean)
+      : [],
     videos: Array.isArray(product.videos)
       ? product.videos.filter((video) => video?.url)
       : [],
@@ -126,7 +129,7 @@ function CarouselArrow({
     <button
       type="button"
       onClick={onClick}
-      aria-label={direction === "previous" ? "Previous image" : "Next image"}
+      aria-label={direction === "previous" ? "Previous media" : "Next media"}
       className={`inline-flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.14)] bg-[rgba(255,255,255,0.82)] text-[var(--foreground)] backdrop-blur transition hover:bg-[var(--surface)] ${className}`}
     >
       <svg
@@ -145,38 +148,92 @@ function CarouselArrow({
   );
 }
 
-function ProductDescriptionVideos({ product }: { product: Product }) {
-  const videos = product.videos || [];
+type ProductMediaItem =
+  | {
+      id: string;
+      type: "image";
+      src: string;
+      alt: string;
+    }
+  | {
+      id: string;
+      type: "video";
+      src: string;
+      title: string;
+      posterUrl?: string;
+    };
 
-  if (!videos.length) {
-    return null;
+function buildProductMediaItems(product: Product): ProductMediaItem[] {
+  const seenImages = new Set<string>();
+  const imageItems = [...product.images, ...(product.galleryImages || [])]
+    .filter(Boolean)
+    .filter((src) => {
+      if (seenImages.has(src)) {
+        return false;
+      }
+
+      seenImages.add(src);
+      return true;
+    })
+    .map((src, index) => ({
+      id: `${product.id}-image-${index}`,
+      type: "image" as const,
+      src,
+      alt: index === 0 ? product.name : `${product.name} image ${index + 1}`,
+    }));
+
+  const videoItems = (product.videos || [])
+    .filter((video) => video?.url)
+    .map((video, index) => ({
+      id: video.id || `${product.id}-video-${index}`,
+      type: "video" as const,
+      src: video.url,
+      title: video.title || `${product.name} video ${index + 1}`,
+      posterUrl: video.posterUrl,
+    }));
+
+  return [...imageItems, ...videoItems];
+}
+
+function ProductMediaFrame({
+  item,
+  product,
+  imageClassName,
+}: {
+  item: ProductMediaItem | null;
+  product: Product;
+  imageClassName: string;
+}) {
+  if (!item) {
+    return (
+      <div
+        className="h-full w-full"
+        style={{ backgroundColor: product.accent || "#f3f3f0" }}
+      />
+    );
+  }
+
+  if (item.type === "video") {
+    return (
+      <video
+        src={item.src}
+        poster={item.posterUrl || undefined}
+        controls
+        playsInline
+        preload="metadata"
+        className="h-full w-full bg-black object-contain"
+      />
+    );
   }
 
   return (
-    <div className="mt-5 space-y-4">
-      {videos.map((video, index) => (
-        <div
-          key={video.id || `${product.id}-video-${index}`}
-          className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface)]"
-        >
-          <div className="aspect-video bg-black">
-            <video
-              src={video.url}
-              poster={video.posterUrl || undefined}
-              controls
-              playsInline
-              preload="metadata"
-              className="h-full w-full object-cover"
-            />
-          </div>
-          {video.title ? (
-            <p className="px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-              {video.title}
-            </p>
-          ) : null}
-        </div>
-      ))}
-    </div>
+    <Image
+      src={item.src}
+      alt={item.alt}
+      fill
+      unoptimized
+      className={imageClassName}
+    />
   );
 }
 
@@ -388,7 +445,7 @@ export default function ProductDetailPage() {
   );
   const [product, setProduct] = useState<Product | null>(normalizedMatchedProduct);
   const [productLoading, setProductLoading] = useState(!normalizedMatchedProduct);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(
     matchedProduct?.colors[0] || ""
   );
@@ -459,7 +516,7 @@ export default function ProductDetailPage() {
       return;
     }
 
-    setActiveImageIndex(0);
+    setActiveMediaIndex(0);
     setSelectedColor(product.colors[0] || "");
     setSelectedSize("");
     setAddError("");
@@ -473,18 +530,19 @@ export default function ProductDetailPage() {
   }, [reviewSaved]);
 
   useEffect(() => {
-    const imageCount = product?.images?.length || 0;
+    const mediaItems = product ? buildProductMediaItems(product) : [];
+    const activeMediaType = mediaItems[activeMediaIndex]?.type;
 
-    if (imageCount <= 1 || isCarouselPaused) {
+    if (mediaItems.length <= 1 || isCarouselPaused || activeMediaType === "video") {
       return;
     }
 
     const timerId = window.setInterval(() => {
-      setActiveImageIndex((current) => (current + 1) % imageCount);
+      setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
     }, 4000);
 
     return () => window.clearInterval(timerId);
-  }, [isCarouselPaused, product?.images?.length]);
+  }, [activeMediaIndex, isCarouselPaused, product]);
 
   if (loading || productLoading) {
     return (
@@ -526,8 +584,8 @@ export default function ProductDetailPage() {
     );
   }
 
-  const images = product.images.length > 0 ? product.images : [""];
-  const activeImage = images[activeImageIndex] || images[0];
+  const mediaItems = buildProductMediaItems(product);
+  const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0] || null;
   const requiresSize = product.sizes.length > 0;
   const effectiveColor = selectedColor || product.colors[0] || "";
   const canAddToCart = !requiresSize || Boolean(selectedSize);
@@ -548,22 +606,22 @@ export default function ProductDetailPage() {
   const compareAtPriceText = `Rs.${compareAtPrice.toLocaleString("en-IN")}`;
   const discountLabel = `-${discountPercent}%`;
   const productSummary = getProductSummary(product.description);
-  const hasMultipleImages = images.length > 1;
+  const hasMultipleMedia = mediaItems.length > 1;
 
-  const showPreviousImage = () => {
-    if (!hasMultipleImages) {
+  const showPreviousMedia = () => {
+    if (!hasMultipleMedia) {
       return;
     }
 
-    setActiveImageIndex((current) => (current - 1 + images.length) % images.length);
+    setActiveMediaIndex((current) => (current - 1 + mediaItems.length) % mediaItems.length);
   };
 
-  const showNextImage = () => {
-    if (!hasMultipleImages) {
+  const showNextMedia = () => {
+    if (!hasMultipleMedia) {
       return;
     }
 
-    setActiveImageIndex((current) => (current + 1) % images.length);
+    setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
   };
 
   const readPhoto = async (file: File) => {
@@ -655,7 +713,7 @@ export default function ProductDetailPage() {
       <main className="mx-auto w-full pb-28 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16 xl:pt-20">
         <div>
           <div className="lg:hidden">
-            <section aria-label="Product image gallery">
+            <section aria-label="Product media gallery">
               <div
                 className="relative overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
                 onMouseEnter={() => setIsCarouselPaused(true)}
@@ -664,37 +722,28 @@ export default function ProductDetailPage() {
                 onBlur={() => setIsCarouselPaused(false)}
               >
                 <div className="relative aspect-[4/5.2]">
-                  {activeImage ? (
-                    <Image
-                      src={activeImage}
-                      alt={product.name}
-                      fill
-                      unoptimized
-                      className="object-contain p-1"
-                    />
-                  ) : (
-                    <div
-                      className="h-full w-full"
-                      style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                    />
-                  )}
+                  <ProductMediaFrame
+                    item={activeMedia}
+                    product={product}
+                    imageClassName="object-contain p-1"
+                  />
                 </div>
 
-                {hasMultipleImages ? (
+                {hasMultipleMedia ? (
                   <>
                     <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 items-center justify-between">
-                      <CarouselArrow direction="previous" onClick={showPreviousImage} className="h-10 w-10" />
-                      <CarouselArrow direction="next" onClick={showNextImage} className="h-10 w-10" />
+                      <CarouselArrow direction="previous" onClick={showPreviousMedia} className="h-10 w-10" />
+                      <CarouselArrow direction="next" onClick={showNextMedia} className="h-10 w-10" />
                     </div>
                     <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
-                      {images.map((_, index) => (
+                      {mediaItems.map((item, index) => (
                         <button
-                          key={`${product.id}-mobile-dot-${index}`}
+                          key={`${item.id}-mobile-dot-${index}`}
                           type="button"
-                          onClick={() => setActiveImageIndex(index)}
-                          aria-label={`Show image ${index + 1}`}
+                          onClick={() => setActiveMediaIndex(index)}
+                          aria-label={`Show ${item.type} ${index + 1}`}
                           className={`h-1.5 transition ${
-                            activeImageIndex === index
+                            activeMediaIndex === index
                               ? "w-7 bg-[var(--foreground)]"
                               : "w-3 bg-[rgba(17,17,17,0.22)]"
                           }`}
@@ -735,7 +784,7 @@ export default function ProductDetailPage() {
 
           <div className="hidden lg:mx-auto lg:grid lg:h-[min(620px,calc(100vh-12rem))] lg:max-w-[1180px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
             <section
-              aria-label="Product image gallery"
+              aria-label="Product media gallery"
               className="relative h-full overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
@@ -743,37 +792,28 @@ export default function ProductDetailPage() {
               onBlur={() => setIsCarouselPaused(false)}
             >
               <div className="relative h-full w-full overflow-hidden">
-                {activeImage ? (
-                  <Image
-                    src={activeImage}
-                    alt={product.name}
-                    fill
-                    unoptimized
-                    className="object-contain"
-                  />
-                ) : (
-                  <div
-                    className="h-full w-full"
-                    style={{ backgroundColor: product.accent || "#f3f3f0" }}
-                  />
-                )}
+                <ProductMediaFrame
+                  item={activeMedia}
+                  product={product}
+                  imageClassName="object-contain"
+                />
               </div>
 
-              {hasMultipleImages ? (
+              {hasMultipleMedia ? (
                 <>
                   <div className="absolute inset-x-5 top-1/2 flex -translate-y-1/2 items-center justify-between">
-                    <CarouselArrow direction="previous" onClick={showPreviousImage} />
-                    <CarouselArrow direction="next" onClick={showNextImage} />
+                    <CarouselArrow direction="previous" onClick={showPreviousMedia} />
+                    <CarouselArrow direction="next" onClick={showNextMedia} />
                   </div>
                   <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
-                    {images.map((_, index) => (
+                    {mediaItems.map((item, index) => (
                       <button
-                        key={`${product.id}-desktop-dot-${index}`}
+                        key={`${item.id}-desktop-dot-${index}`}
                         type="button"
-                        onClick={() => setActiveImageIndex(index)}
-                        aria-label={`Show image ${index + 1}`}
+                        onClick={() => setActiveMediaIndex(index)}
+                        aria-label={`Show ${item.type} ${index + 1}`}
                         className={`h-1.5 transition ${
-                          activeImageIndex === index
+                          activeMediaIndex === index
                             ? "w-8 bg-[var(--foreground)]"
                             : "w-3 bg-[rgba(17,17,17,0.22)]"
                         }`}
@@ -847,7 +887,6 @@ export default function ProductDetailPage() {
                               Relaxed, everyday fit with a clean silhouette designed for repeat wear.
                             </p>
                             <p>Art. No.: {product.id}</p>
-                            <ProductDescriptionVideos product={product} />
                           </div>
                         ) : null}
                         {section.key === "materials" ? (

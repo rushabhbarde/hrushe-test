@@ -523,7 +523,7 @@ export function AdminProductForm({
                   className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                 />
               </AdminField>
-              <AdminField label="Product description videos" hint="Upload one video used responsively inside the product description section.">
+              <AdminField label="Product gallery videos" hint="Videos appear inside the storefront product media gallery with the product images.">
                 <input
                   type="file"
                   accept="video/mp4,video/webm,video/ogg"
@@ -590,7 +590,7 @@ export function AdminProductForm({
 
             {form.videos.length ? (
               <>
-                <p className="mt-5 text-sm font-medium text-[var(--foreground)]">Description videos</p>
+                <p className="mt-5 text-sm font-medium text-[var(--foreground)]">Gallery videos</p>
                 <div className="mt-3 space-y-3">
                   {form.videos.map((video, index) => (
                     <VideoCard
