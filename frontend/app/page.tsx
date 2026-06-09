@@ -154,18 +154,34 @@ function heroTransitionReducer(
   }
 }
 
-function SmoothBannerImage({
+function isVideoMedia(mediaUrl = "", mediaType?: "image" | "video") {
+  return (
+    mediaType === "video" ||
+    /^data:video\//i.test(mediaUrl) ||
+    /\.(mp4|webm|ogg)(\?|#|$)/i.test(mediaUrl)
+  );
+}
+
+function SmoothBannerMedia({
   currentSrc,
   currentAlt,
+  currentType = "image",
+  currentPoster = "",
   previousSrc,
   previousAlt,
+  previousType = "image",
+  previousPoster = "",
   transitionKey,
   overlayOpacityClass = "",
 }: {
   currentSrc: string;
   currentAlt: string;
+  currentType?: "image" | "video";
+  currentPoster?: string;
   previousSrc?: string | null;
   previousAlt?: string;
+  previousType?: "image" | "video";
+  previousPoster?: string;
   transitionKey: number;
   overlayOpacityClass?: string;
 }) {
@@ -180,13 +196,26 @@ function SmoothBannerImage({
           key={`previous-${transitionKey}-${previousSrc}`}
           className="absolute inset-0 hero-banner-motion-out"
         >
-          <Image
-            src={previousSrc}
-            alt={previousAlt || currentAlt}
-            fill
-            unoptimized
-            className={`object-cover object-center ${overlayOpacityClass || ""}`}
-          />
+          {isVideoMedia(previousSrc, previousType) ? (
+            <video
+              src={previousSrc}
+              poster={previousPoster || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className={`h-full w-full object-cover object-center ${overlayOpacityClass || ""}`}
+              aria-label={previousAlt || currentAlt}
+            />
+          ) : (
+            <Image
+              src={previousSrc}
+              alt={previousAlt || currentAlt}
+              fill
+              unoptimized
+              className={`object-cover object-center ${overlayOpacityClass || ""}`}
+            />
+          )}
         </div>
       ) : null}
       {currentSrc ? (
@@ -194,13 +223,26 @@ function SmoothBannerImage({
           key={`current-${transitionKey}-${currentSrc}`}
           className="absolute inset-0 hero-banner-motion-in"
         >
-          <Image
-            src={currentSrc}
-            alt={currentAlt}
-            fill
-            unoptimized
-            className={`object-cover object-center ${overlayOpacityClass || ""}`}
-          />
+          {isVideoMedia(currentSrc, currentType) ? (
+            <video
+              src={currentSrc}
+              poster={currentPoster || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className={`h-full w-full object-cover object-center ${overlayOpacityClass || ""}`}
+              aria-label={currentAlt}
+            />
+          ) : (
+            <Image
+              src={currentSrc}
+              alt={currentAlt}
+              fill
+              unoptimized
+              className={`object-cover object-center ${overlayOpacityClass || ""}`}
+            />
+          )}
         </div>
       ) : null}
     </>
@@ -253,17 +295,25 @@ export default function Home() {
     : collectionProducts;
 
   const publishedHeroBanners = useMemo(() => {
-    const fallbackImage = homepageBanner.imageUrl || "/uploads/banners/banner1.png";
+    const fallbackImage =
+      homepageBanner.mediaUrl || homepageBanner.imageUrl || "/uploads/banners/banner1.png";
     const publishedBanners = (homepageBanner.banners || [])
-      .filter((banner) => banner.desktopImage || banner.mobileImage)
+      .filter((banner) => banner.mediaUrl || banner.desktopImage || banner.mobileImage)
       .map((banner) => ({
         ...banner,
         title: banner.title?.trim() || homepageBanner.title,
         subtitle: banner.subtitle?.trim() || homepageBanner.description,
         ctaText: banner.ctaText?.trim() || homepageBanner.primaryCtaLabel || "Go to shop",
         ctaLink: banner.ctaLink?.trim() || homepageBanner.primaryCtaHref || "/shop",
-        desktopImage: banner.desktopImage || banner.mobileImage || fallbackImage,
-        mobileImage: banner.mobileImage || banner.desktopImage || fallbackImage,
+        mediaUrl: banner.mediaUrl || banner.desktopImage || banner.mobileImage || fallbackImage,
+        mediaType:
+          banner.mediaType === "video" ||
+          isVideoMedia(banner.mediaUrl || banner.desktopImage || banner.mobileImage)
+            ? "video"
+            : "image",
+        posterImage: banner.posterImage || "",
+        desktopImage: banner.mediaUrl || banner.desktopImage || banner.mobileImage || fallbackImage,
+        mobileImage: banner.mediaUrl || banner.mobileImage || banner.desktopImage || fallbackImage,
       }));
 
     if (publishedBanners.length > 0) {
@@ -278,6 +328,12 @@ export default function Home() {
         subtitle: homepageBanner.description,
         ctaText: homepageBanner.primaryCtaLabel || "Go to shop",
         ctaLink: homepageBanner.primaryCtaHref || "/shop",
+        mediaType:
+          homepageBanner.mediaType === "video" || isVideoMedia(fallbackImage)
+            ? "video"
+            : "image",
+        mediaUrl: fallbackImage,
+        posterImage: homepageBanner.posterImage || "",
         desktopImage: fallbackImage,
         mobileImage: fallbackImage,
         enabled: true,
@@ -289,6 +345,9 @@ export default function Home() {
     homepageBanner.banners,
     homepageBanner.description,
     homepageBanner.imageUrl,
+    homepageBanner.mediaType,
+    homepageBanner.mediaUrl,
+    homepageBanner.posterImage,
     homepageBanner.primaryCtaHref,
     homepageBanner.primaryCtaLabel,
     homepageBanner.title,
@@ -367,13 +426,31 @@ export default function Home() {
       : publishedHeroBanners[(previousBannerIndex + 2) % heroBannerCount] ||
         previousSecondaryHeroBanner;
   const activeHeroDesktopImage = activeHeroBanner?.desktopImage || "";
+  const activeHeroMediaType: "image" | "video" =
+    activeHeroBanner?.mediaType === "video" ? "video" : "image";
+  const activeHeroPoster = activeHeroBanner?.posterImage || "";
   const secondaryHeroDesktopImage = secondaryHeroBanner?.desktopImage || activeHeroDesktopImage;
+  const secondaryHeroMediaType: "image" | "video" =
+    secondaryHeroBanner?.mediaType === "video" ? "video" : "image";
+  const secondaryHeroPoster = secondaryHeroBanner?.posterImage || "";
   const tertiaryHeroDesktopImage = tertiaryHeroBanner?.desktopImage || secondaryHeroDesktopImage;
+  const tertiaryHeroMediaType: "image" | "video" =
+    tertiaryHeroBanner?.mediaType === "video" ? "video" : "image";
+  const tertiaryHeroPoster = tertiaryHeroBanner?.posterImage || "";
   const previousHeroDesktopImage = previousHeroBanner?.desktopImage || null;
+  const previousHeroMediaType: "image" | "video" =
+    previousHeroBanner?.mediaType === "video" ? "video" : "image";
+  const previousHeroPoster = previousHeroBanner?.posterImage || "";
   const previousSecondaryHeroDesktopImage =
     previousSecondaryHeroBanner?.desktopImage || previousHeroDesktopImage;
+  const previousSecondaryHeroMediaType: "image" | "video" =
+    previousSecondaryHeroBanner?.mediaType === "video" ? "video" : "image";
+  const previousSecondaryHeroPoster = previousSecondaryHeroBanner?.posterImage || "";
   const previousTertiaryHeroDesktopImage =
     previousTertiaryHeroBanner?.desktopImage || previousSecondaryHeroDesktopImage;
+  const previousTertiaryHeroMediaType: "image" | "video" =
+    previousTertiaryHeroBanner?.mediaType === "video" ? "video" : "image";
+  const previousTertiaryHeroPoster = previousTertiaryHeroBanner?.posterImage || "";
   const activeHeroMobileImage = activeHeroBanner?.mobileImage || activeHeroDesktopImage;
   const secondaryHeroMobileImage = secondaryHeroBanner?.mobileImage || secondaryHeroDesktopImage;
   const tertiaryHeroMobileImage = tertiaryHeroBanner?.mobileImage || tertiaryHeroDesktopImage;
@@ -732,11 +809,15 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroMobileImage ? (
-                    <SmoothBannerImage
+                    <SmoothBannerMedia
                       currentSrc={activeHeroMobileImage}
                       currentAlt={activeHeroTitle}
+                      currentType={activeHeroMediaType}
+                      currentPoster={activeHeroPoster}
                       previousSrc={previousHeroMobileImage}
                       previousAlt={previousHeroBanner?.title || activeHeroTitle}
+                      previousType={previousHeroMediaType}
+                      previousPoster={previousHeroPoster}
                       transitionKey={heroTransitionState.transitionKey}
                     />
                   ) : null}
@@ -799,13 +880,17 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroMobileImage ? (
-                      <SmoothBannerImage
+                      <SmoothBannerMedia
                         currentSrc={secondaryHeroMobileImage}
                         currentAlt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        currentType={secondaryHeroMediaType}
+                        currentPoster={secondaryHeroPoster}
                         previousSrc={previousSecondaryHeroMobileImage}
                         previousAlt={
                           previousSecondaryHeroBanner?.title || "Hrushe featured campaign"
                         }
+                        previousType={previousSecondaryHeroMediaType}
+                        previousPoster={previousSecondaryHeroPoster}
                         transitionKey={heroTransitionState.transitionKey}
                       />
                     ) : null}
@@ -818,11 +903,15 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroMobileImage ? (
-                      <SmoothBannerImage
+                      <SmoothBannerMedia
                         currentSrc={tertiaryHeroMobileImage}
                         currentAlt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        currentType={tertiaryHeroMediaType}
+                        currentPoster={tertiaryHeroPoster}
                         previousSrc={previousTertiaryHeroMobileImage}
                         previousAlt={previousTertiaryHeroBanner?.title || "Hrushe campaign"}
+                        previousType={previousTertiaryHeroMediaType}
+                        previousPoster={previousTertiaryHeroPoster}
                         transitionKey={heroTransitionState.transitionKey}
                         overlayOpacityClass="opacity-20"
                       />
@@ -855,11 +944,15 @@ export default function Home() {
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroDesktopImage ? (
-                    <SmoothBannerImage
+                    <SmoothBannerMedia
                       currentSrc={activeHeroDesktopImage}
                       currentAlt={activeHeroTitle}
+                      currentType={activeHeroMediaType}
+                      currentPoster={activeHeroPoster}
                       previousSrc={previousHeroDesktopImage}
                       previousAlt={previousHeroBanner?.title || activeHeroTitle}
+                      previousType={previousHeroMediaType}
+                      previousPoster={previousHeroPoster}
                       transitionKey={heroTransitionState.transitionKey}
                     />
                   ) : null}
@@ -870,13 +963,17 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : secondaryHeroDesktopImage ? (
-                      <SmoothBannerImage
+                      <SmoothBannerMedia
                         currentSrc={secondaryHeroDesktopImage}
                         currentAlt={secondaryHeroBanner?.title || "Hrushe featured campaign"}
+                        currentType={secondaryHeroMediaType}
+                        currentPoster={secondaryHeroPoster}
                         previousSrc={previousSecondaryHeroDesktopImage}
                         previousAlt={
                           previousSecondaryHeroBanner?.title || "Hrushe featured campaign"
                         }
+                        previousType={previousSecondaryHeroMediaType}
+                        previousPoster={previousSecondaryHeroPoster}
                         transitionKey={heroTransitionState.transitionKey}
                       />
                     ) : null}
@@ -889,11 +986,15 @@ export default function Home() {
                     {loading ? (
                       <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                     ) : tertiaryHeroDesktopImage ? (
-                      <SmoothBannerImage
+                      <SmoothBannerMedia
                         currentSrc={tertiaryHeroDesktopImage}
                         currentAlt={tertiaryHeroBanner?.title || "Hrushe campaign"}
+                        currentType={tertiaryHeroMediaType}
+                        currentPoster={tertiaryHeroPoster}
                         previousSrc={previousTertiaryHeroDesktopImage}
                         previousAlt={previousTertiaryHeroBanner?.title || "Hrushe campaign"}
+                        previousType={previousTertiaryHeroMediaType}
+                        previousPoster={previousTertiaryHeroPoster}
                         transitionKey={heroTransitionState.transitionKey}
                         overlayOpacityClass="opacity-18"
                       />

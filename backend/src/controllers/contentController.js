@@ -16,6 +16,9 @@ const CURRENT_HOMEPAGE_BANNER = Object.freeze({
   secondaryCtaLabel: "View collection",
   secondaryCtaHref: "/shop",
   imageUrl: "/uploads/banners/banner1.png",
+  mediaType: "image",
+  mediaUrl: "/uploads/banners/banner1.png",
+  posterImage: "",
 });
 
 const LEGACY_HOMEPAGE_BANNER = Object.freeze({
@@ -52,6 +55,13 @@ function mergePlainObjects(baseValue, nextValue) {
 }
 
 function normalizeWorkspaceBanner(banner = {}) {
+  const legacyImage = String(banner.desktopImage || banner.mobileImage || "").trim();
+  const mediaUrl = String(banner.mediaUrl || legacyImage).trim();
+  const inferredMediaType =
+    banner.mediaType === "video" || /^data:video\//i.test(mediaUrl) || /\.(mp4|webm|ogg)(\?|#|$)/i.test(mediaUrl)
+      ? "video"
+      : "image";
+
   return {
     id: String(banner.id || "").trim(),
     label: String(banner.label || "").trim(),
@@ -59,8 +69,11 @@ function normalizeWorkspaceBanner(banner = {}) {
     subtitle: String(banner.subtitle || "").trim(),
     ctaText: String(banner.ctaText || "").trim(),
     ctaLink: String(banner.ctaLink || "").trim(),
-    desktopImage: String(banner.desktopImage || "").trim(),
-    mobileImage: String(banner.mobileImage || "").trim(),
+    mediaType: inferredMediaType,
+    mediaUrl,
+    posterImage: String(banner.posterImage || "").trim(),
+    desktopImage: String(banner.desktopImage || mediaUrl).trim(),
+    mobileImage: String(banner.mobileImage || mediaUrl).trim(),
     enabled: banner.enabled !== false,
     scheduleStart: banner.scheduleStart || null,
     scheduleEnd: banner.scheduleEnd || null,
@@ -90,7 +103,7 @@ function getPublishedWorkspaceBanners(adminWorkspace) {
 
   return rawBanners
     .map(normalizeWorkspaceBanner)
-    .filter((banner) => banner.enabled && isBannerScheduledForNow(banner) && (banner.desktopImage || banner.mobileImage));
+    .filter((banner) => banner.enabled && isBannerScheduledForNow(banner) && banner.mediaUrl);
 }
 
 const adminWorkspacePermissionByKey = {
@@ -191,7 +204,12 @@ const getHomepageBanner = asyncHandler(async (req, res) => {
             primaryCtaHref:
               activeWorkspaceBanner.ctaLink || normalizedHomepageBanner.primaryCtaHref,
             imageUrl:
-              activeWorkspaceBanner.desktopImage || normalizedHomepageBanner.imageUrl,
+              activeWorkspaceBanner.mediaType === "image"
+                ? activeWorkspaceBanner.mediaUrl
+                : activeWorkspaceBanner.posterImage || normalizedHomepageBanner.imageUrl,
+            mediaType: activeWorkspaceBanner.mediaType,
+            mediaUrl: activeWorkspaceBanner.mediaUrl,
+            posterImage: activeWorkspaceBanner.posterImage,
           }
         : {}),
       banners: publishedBanners,

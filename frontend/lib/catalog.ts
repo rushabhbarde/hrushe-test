@@ -7,6 +7,13 @@ export type ProductReview = {
   createdAt?: string;
 };
 
+export type ProductVideo = {
+  id: string;
+  title: string;
+  url: string;
+  posterUrl?: string;
+};
+
 export type ProductStatus = "Active" | "Draft" | "Hidden" | "Sold Out";
 export type ProductFitType = "Oversized" | "Regular";
 export type ProductGender = "Men" | "Women" | "Unisex";
@@ -29,6 +36,7 @@ export type Product = {
   newIn?: boolean;
   newArrival?: boolean;
   images: string[];
+  videos?: ProductVideo[];
   compareAtPrice?: number;
   reviews?: ProductReview[];
   galleryImages?: string[];

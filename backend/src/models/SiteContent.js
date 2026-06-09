@@ -18,6 +18,9 @@ const homepageBannerSchema = new mongoose.Schema(
     secondaryCtaLabel: { type: String, default: "View collection" },
     secondaryCtaHref: { type: String, default: "/shop" },
     imageUrl: { type: String, default: "/uploads/banners/banner1.png" },
+    mediaType: { type: String, enum: ["image", "video"], default: "image" },
+    mediaUrl: { type: String, default: "/uploads/banners/banner1.png" },
+    posterImage: { type: String, default: "" },
   },
   { _id: false }
 );

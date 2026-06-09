@@ -35,6 +35,34 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+const productVideoSchema = new mongoose.Schema(
+  {
+    id: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    posterUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -82,6 +110,10 @@ const productSchema = new mongoose.Schema(
     },
     images: {
       type: [String],
+      default: [],
+    },
+    videos: {
+      type: [productVideoSchema],
       default: [],
     },
     featured: {

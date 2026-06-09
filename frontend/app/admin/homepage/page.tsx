@@ -16,9 +16,28 @@ import {
   AdminTextArea,
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
-import { compressSingleImage } from "@/lib/image-upload";
+import { compressSingleImage, readFileAsDataUrl } from "@/lib/image-upload";
 import { type AdminBanner } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
+
+const VIDEO_UPLOAD_LIMIT_BYTES = 12 * 1024 * 1024;
+
+function isVideoMedia(mediaUrl = "", mediaType?: "image" | "video") {
+  return (
+    mediaType === "video" ||
+    /^data:video\//i.test(mediaUrl) ||
+    /\.(mp4|webm|ogg)(\?|#|$)/i.test(mediaUrl)
+  );
+}
+
+function getBannerMediaUrl(banner: AdminBanner) {
+  return banner.mediaUrl || banner.desktopImage || banner.mobileImage || "";
+}
+
+function getBannerMediaType(banner: AdminBanner) {
+  const mediaUrl = getBannerMediaUrl(banner);
+  return isVideoMedia(mediaUrl, banner.mediaType) ? "video" : "image";
+}
 
 function createBanner(): AdminBanner {
   const id =
@@ -33,8 +52,9 @@ function createBanner(): AdminBanner {
     subtitle: "Add luxury-led copy for the homepage hero and campaign handoff.",
     ctaText: "Shop now",
     ctaLink: "/shop",
-    desktopImage: "/uploads/banners/banner1.png",
-    mobileImage: "/uploads/banners/banner1.png",
+    mediaType: "image",
+    mediaUrl: "/uploads/banners/banner1.png",
+    posterImage: "",
     enabled: true,
     scheduleStart: null,
     scheduleEnd: null,
@@ -73,10 +93,7 @@ export default function AdminHomepagePage() {
     );
   }
 
-  async function handleImageUpload(
-    event: React.ChangeEvent<HTMLInputElement>,
-    field: "desktopImage" | "mobileImage"
-  ) {
+  async function handleMediaUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file || !selectedBanner) {
@@ -84,11 +101,56 @@ export default function AdminHomepagePage() {
     }
 
     try {
-      const compressed = await compressSingleImage(file, field === "desktopImage" ? 1440 : 960);
-      updateSelectedBanner({ [field]: compressed });
-      pushToast(`${field === "desktopImage" ? "Desktop" : "Mobile"} banner uploaded.`);
+      if (file.type.startsWith("video/")) {
+        if (file.size > VIDEO_UPLOAD_LIMIT_BYTES) {
+          throw new Error("Video must be under 12 MB for direct upload. Use a hosted video URL for larger files.");
+        }
+
+        const mediaUrl = await readFileAsDataUrl(file);
+        updateSelectedBanner({
+          mediaType: "video",
+          mediaUrl,
+          desktopImage: "",
+          mobileImage: "",
+        });
+        pushToast("Responsive video banner uploaded.");
+        return;
+      }
+
+      const compressed = await compressSingleImage(file, 1440);
+      updateSelectedBanner({
+        mediaType: "image",
+        mediaUrl: compressed,
+        posterImage: "",
+        desktopImage: compressed,
+        mobileImage: compressed,
+      });
+      pushToast("Responsive banner image uploaded.");
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : "Could not process that banner media.",
+        "error"
+      );
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file || !selectedBanner) {
+      return;
+    }
+
+    try {
+      const compressed = await compressSingleImage(file, 960);
+      updateSelectedBanner({ posterImage: compressed });
+      pushToast("Video poster uploaded.");
     } catch {
-      pushToast("Could not process that banner image.", "error");
+      pushToast("Could not process that poster image.", "error");
+    } finally {
+      event.target.value = "";
     }
   }
 
@@ -142,7 +204,7 @@ export default function AdminHomepagePage() {
         <AdminPageHeader
           eyebrow="Home management"
           title="Compose luxury homepage campaigns before you publish."
-          description="Upload separate desktop and mobile visuals, reorder banners with drag-and-drop, schedule launches, and preview the live hero before publishing."
+          description="Upload one responsive image or video, reorder banners with drag-and-drop, schedule launches, and preview how the same media adapts across desktop and mobile."
           actions={
             <>
               <button
@@ -191,8 +253,16 @@ export default function AdminHomepagePage() {
                 >
                   <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">Drag</span>
                   <div className="relative h-18 w-18 shrink-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-strong)_82%,transparent)]">
-                    {banner.desktopImage ? (
-                      <Image src={banner.desktopImage} alt={banner.title} fill unoptimized className="object-cover" />
+                    {isVideoMedia(getBannerMediaUrl(banner), getBannerMediaType(banner)) ? (
+                      <video
+                        src={getBannerMediaUrl(banner)}
+                        poster={banner.posterImage || undefined}
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                      />
+                    ) : getBannerMediaUrl(banner) ? (
+                      <Image src={getBannerMediaUrl(banner)} alt={banner.title} fill unoptimized className="object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -227,7 +297,7 @@ export default function AdminHomepagePage() {
           <AdminPanel>
             <AdminSubhead
               title="Banner editor"
-              description="Craft title, subtitle, CTA, device-specific imagery, and campaign timing."
+              description="Craft title, subtitle, CTA, one responsive media asset, and campaign timing."
               action={
                 selectedBanner ? (
                   <button
@@ -317,23 +387,49 @@ export default function AdminHomepagePage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <AdminField label="Desktop banner image" hint="Upload the widescreen version shown on larger breakpoints.">
+                  <AdminField label="Banner media" hint="Upload one image or video. The same asset adapts to desktop and mobile with responsive cropping.">
                     <input
                       type="file"
-                      accept="image/*"
-                      onChange={(event) => void handleImageUpload(event, "desktopImage")}
+                      accept="image/*,video/mp4,video/webm,video/ogg"
+                      onChange={(event) => void handleMediaUpload(event)}
                       className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                     />
                   </AdminField>
-                  <AdminField label="Mobile banner image" hint="Upload the portrait crop used on smaller screens.">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => void handleImageUpload(event, "mobileImage")}
-                      className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                  <AdminField label="Media URL" hint="Optional: paste a hosted image/video URL instead of uploading.">
+                    <AdminFilterInput
+                      value={getBannerMediaUrl(selectedBanner)}
+                      onChange={(event) => {
+                        const mediaUrl = event.target.value;
+                        const mediaType = isVideoMedia(mediaUrl) ? "video" : "image";
+                        updateSelectedBanner({
+                          mediaUrl,
+                          mediaType,
+                          desktopImage: mediaType === "image" ? mediaUrl : "",
+                          mobileImage: mediaType === "image" ? mediaUrl : "",
+                        });
+                      }}
                     />
                   </AdminField>
                 </div>
+
+                {getBannerMediaType(selectedBanner) === "video" ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <AdminField label="Video poster image" hint="Optional fallback frame while the video loads.">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => void handlePosterUpload(event)}
+                        className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                      />
+                    </AdminField>
+                    <AdminField label="Poster URL" hint="Optional hosted poster image URL.">
+                      <AdminFilterInput
+                        value={selectedBanner.posterImage || ""}
+                        onChange={(event) => updateSelectedBanner({ posterImage: event.target.value })}
+                      />
+                    </AdminField>
+                  </div>
+                ) : null}
 
                 <div className="grid gap-5 lg:grid-cols-[150px_minmax(0,1fr)]">
                   <div className="flex flex-wrap gap-2 lg:flex-col">
@@ -367,17 +463,26 @@ export default function AdminHomepagePage() {
                         previewMode === "desktop" ? "aspect-[16/9]" : "mx-auto aspect-[9/16] max-w-[280px]"
                       }`}
                     >
-                      <Image
-                        src={
-                          previewMode === "desktop"
-                            ? selectedBanner.desktopImage
-                            : selectedBanner.mobileImage
-                        }
-                        alt={selectedBanner.title}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
+                      {getBannerMediaType(selectedBanner) === "video" ? (
+                        <video
+                          src={getBannerMediaUrl(selectedBanner)}
+                          poster={selectedBanner.posterImage || undefined}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="h-full w-full object-cover"
+                          aria-label={selectedBanner.title}
+                        />
+                      ) : getBannerMediaUrl(selectedBanner) ? (
+                        <Image
+                          src={getBannerMediaUrl(selectedBanner)}
+                          alt={selectedBanner.title}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : null}
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.15),rgba(0,0,0,0.5))]" />
                       <div className="absolute bottom-0 left-0 max-w-[80%] p-6 text-white">
                         <p className="text-[11px] uppercase tracking-[0.24em]">

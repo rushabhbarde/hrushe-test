@@ -18,6 +18,7 @@ import { useToast } from "@/components/toast-provider";
 import {
   type Product,
   type ProductCollectionLabel,
+  type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
 import { formatAdminCurrency, productStatusTone } from "@/lib/admin";
@@ -39,6 +40,7 @@ type BulkUploadPayload = Array<{
   gender?: "Men" | "Women" | "Unisex";
   collectionLabels?: ProductCollectionLabel[];
   images?: string[];
+  videos?: ProductVideo[];
   galleryImages?: string[];
 }>;
 
@@ -167,6 +169,7 @@ export default function AdminProductsPage() {
           colors: entry.colors || [],
           sizes: entry.sizes || ["M"],
           images: entry.images || [],
+          videos: entry.videos || [],
           galleryImages: entry.galleryImages || [],
           fitType: entry.fitType || "Regular",
           gender: entry.gender || "Unisex",

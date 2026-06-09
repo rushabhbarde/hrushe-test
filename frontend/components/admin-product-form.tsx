@@ -17,11 +17,13 @@ import {
   type ProductCollectionLabel,
   type ProductFitType,
   type ProductGender,
+  type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
-import { compressSingleImage } from "@/lib/image-upload";
+import { compressSingleImage, readFileAsDataUrl } from "@/lib/image-upload";
 import { type ProductAdminMeta } from "@/lib/admin-workspace";
 
+const VIDEO_UPLOAD_LIMIT_BYTES = 12 * 1024 * 1024;
 const sizeOptions = ["S", "M", "L", "XL", "XXL"] as const;
 const statusOptions: ProductStatus[] = ["Active", "Draft", "Hidden", "Sold Out"];
 const fitOptions: ProductFitType[] = ["Oversized", "Regular"];
@@ -43,6 +45,9 @@ type FormState = {
   collectionLabels: ProductCollectionLabel[];
   images: string[];
   galleryImages: string[];
+  videos: ProductVideo[];
+  videoUrlDraft: string;
+  videoTitleDraft: string;
 };
 
 export type AdminProductFormSubmit = {
@@ -106,6 +111,9 @@ function buildInitialState(
     collectionLabels: meta?.collectionLabels || product?.collectionLabels || [],
     images: product?.images || [],
     galleryImages: meta?.galleryImages || product?.galleryImages || [],
+    videos: product?.videos || [],
+    videoUrlDraft: "",
+    videoTitleDraft: "",
   };
 }
 
@@ -167,6 +175,62 @@ export function AdminProductForm({
     }
   }
 
+  async function uploadProductVideos(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    try {
+      const uploaded = await Promise.all(
+        Array.from(files).map(async (file, index) => {
+          if (!file.type.startsWith("video/")) {
+            throw new Error("Please upload video files only.");
+          }
+
+          if (file.size > VIDEO_UPLOAD_LIMIT_BYTES) {
+            throw new Error("Video must be under 12 MB for direct upload. Use a hosted video URL for larger files.");
+          }
+
+          return {
+            id: `video-${Date.now()}-${index}`,
+            title: file.name.replace(/\.[^.]+$/, "") || `Product video ${form.videos.length + index + 1}`,
+            url: await readFileAsDataUrl(file),
+            posterUrl: "",
+          };
+        })
+      );
+      updateForm("videos", [...form.videos, ...uploaded]);
+      pushToast("Product video added.");
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : "Could not process that product video.",
+        "error"
+      );
+    }
+  }
+
+  function addProductVideoUrl() {
+    const url = form.videoUrlDraft.trim();
+
+    if (!url) {
+      pushToast("Paste a video URL first.", "error");
+      return;
+    }
+
+    updateForm("videos", [
+      ...form.videos,
+      {
+        id: `video-${Date.now()}`,
+        title: form.videoTitleDraft.trim() || `Product video ${form.videos.length + 1}`,
+        url,
+        posterUrl: "",
+      },
+    ]);
+    updateForm("videoUrlDraft", "");
+    updateForm("videoTitleDraft", "");
+    pushToast("Product video URL added.");
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -190,6 +254,7 @@ export function AdminProductForm({
         colors,
         sizes: form.sizes,
         images: form.images,
+        videos: form.videos,
         galleryImages: form.galleryImages,
         fitType: form.fitType,
         gender: form.gender,
@@ -452,6 +517,37 @@ export function AdminProductForm({
                   className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                 />
               </AdminField>
+              <AdminField label="Product description videos" hint="Upload one video used responsively inside the product description section.">
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/ogg"
+                  multiple
+                  onChange={(event) => {
+                    void uploadProductVideos(event.target.files);
+                    event.target.value = "";
+                  }}
+                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                />
+              </AdminField>
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <AdminFilterInput
+                  value={form.videoTitleDraft}
+                  onChange={(event) => updateForm("videoTitleDraft", event.target.value)}
+                  placeholder="Video title"
+                />
+                <AdminFilterInput
+                  value={form.videoUrlDraft}
+                  onChange={(event) => updateForm("videoUrlDraft", event.target.value)}
+                  placeholder="Hosted video URL"
+                />
+                <button
+                  type="button"
+                  onClick={addProductVideoUrl}
+                  className="button-secondary min-h-12 px-4 text-sm font-medium"
+                >
+                  Add video
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -478,6 +574,27 @@ export function AdminProductForm({
                         updateForm(
                           "galleryImages",
                           form.galleryImages.filter((_, itemIndex) => itemIndex !== index)
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </>
+            ) : null}
+
+            {form.videos.length ? (
+              <>
+                <p className="mt-5 text-sm font-medium text-[var(--foreground)]">Description videos</p>
+                <div className="mt-3 space-y-3">
+                  {form.videos.map((video, index) => (
+                    <VideoCard
+                      key={`${video.id}-${index}`}
+                      video={video}
+                      label={`Video ${index + 1}`}
+                      onRemove={() =>
+                        updateForm(
+                          "videos",
+                          form.videos.filter((_, itemIndex) => itemIndex !== index)
                         )
                       }
                     />
@@ -542,6 +659,39 @@ function MediaCard({
       </div>
       <div className="flex items-center justify-between gap-3 px-3 py-3">
         <span className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+        <button type="button" onClick={onRemove} className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--danger)]">
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function VideoCard({
+  video,
+  label,
+  onRemove,
+}: {
+  video: ProductVideo;
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-strong)_84%,transparent)]">
+      <div className="relative aspect-video bg-black">
+        <video
+          src={video.url}
+          poster={video.posterUrl || undefined}
+          controls
+          playsInline
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3 px-3 py-3">
+        <div className="min-w-0">
+          <span className="block text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+          <p className="mt-1 truncate text-sm font-medium text-[var(--foreground)]">{video.title}</p>
+        </div>
         <button type="button" onClick={onRemove} className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--danger)]">
           Remove
         </button>

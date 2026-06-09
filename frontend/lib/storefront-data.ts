@@ -11,6 +11,9 @@ export type HomepageBanner = {
   secondaryCtaLabel: string;
   secondaryCtaHref: string;
   imageUrl: string;
+  mediaType?: "image" | "video";
+  mediaUrl?: string;
+  posterImage?: string;
   banners?: AdminBanner[];
 };
 
@@ -27,5 +30,8 @@ export const defaultHomepageBanner: HomepageBanner = {
   secondaryCtaLabel: "View collection",
   secondaryCtaHref: "/shop",
   imageUrl: "/uploads/banners/banner1.png",
+  mediaType: "image",
+  mediaUrl: "/uploads/banners/banner1.png",
+  posterImage: "",
   banners: [],
 };

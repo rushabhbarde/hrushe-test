@@ -49,6 +49,29 @@ const parseBooleanQuery = (value) => {
   return undefined;
 };
 
+const normalizeProductVideos = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((video, index) => {
+      const url = String(video?.url || "").trim();
+
+      if (!url) {
+        return null;
+      }
+
+      return {
+        id: String(video?.id || `video-${Date.now()}-${index}`).trim(),
+        title: String(video?.title || `Product video ${index + 1}`).trim(),
+        url,
+        posterUrl: String(video?.posterUrl || "").trim(),
+      };
+    })
+    .filter(Boolean);
+};
+
 const normalizeProductPayload = (payload, { partial = false } = {}) => {
   const normalized = {};
 
@@ -100,6 +123,10 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.images = Array.isArray(payload.images) ? payload.images : [];
   }
 
+  if (!partial || payload.videos !== undefined) {
+    normalized.videos = normalizeProductVideos(payload.videos);
+  }
+
   if (!partial || payload.featured !== undefined) {
     normalized.featured = Boolean(payload.featured);
   }
@@ -140,6 +167,7 @@ const mapProductListItem = (product) => ({
   sizes: Array.isArray(product.sizes) ? product.sizes : [],
   colors: Array.isArray(product.colors) ? product.colors : [],
   images: Array.isArray(product.images) ? product.images.slice(0, 1) : [],
+  videos: Array.isArray(product.videos) ? product.videos : [],
   featured: Boolean(product.featured),
   bestSeller: Boolean(product.bestSeller),
   newIn: Boolean(product.newIn),

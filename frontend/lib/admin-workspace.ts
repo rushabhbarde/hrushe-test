@@ -17,8 +17,11 @@ export type AdminBanner = {
   subtitle: string;
   ctaText: string;
   ctaLink: string;
-  desktopImage: string;
-  mobileImage: string;
+  mediaType: "image" | "video";
+  mediaUrl: string;
+  posterImage: string;
+  desktopImage?: string;
+  mobileImage?: string;
   enabled: boolean;
   scheduleStart: string | null;
   scheduleEnd: string | null;
@@ -274,8 +277,9 @@ export const defaultAdminWorkspace: AdminWorkspace = {
         subtitle: "Launch premium hero stories across desktop and mobile with the same quiet luxury tone as the storefront.",
         ctaText: "Shop new arrivals",
         ctaLink: "/new-in",
-        desktopImage: "/uploads/banners/banner1.png",
-        mobileImage: "/uploads/banners/banner1.png",
+        mediaType: "image",
+        mediaUrl: "/uploads/banners/banner1.png",
+        posterImage: "",
         enabled: true,
         scheduleStart: null,
         scheduleEnd: null,
@@ -287,8 +291,9 @@ export const defaultAdminWorkspace: AdminWorkspace = {
         subtitle: "Use scheduling to line up drops, campaigns, and editorial homepage swaps without touching code.",
         ctaText: "View collection",
         ctaLink: "/shop",
-        desktopImage: "/uploads/banners/banner2.png",
-        mobileImage: "/uploads/banners/banner2.png",
+        mediaType: "image",
+        mediaUrl: "/uploads/banners/banner2.png",
+        posterImage: "",
         enabled: true,
         scheduleStart: null,
         scheduleEnd: null,

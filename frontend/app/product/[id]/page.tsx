@@ -67,6 +67,9 @@ function normalizeProduct(product: Product): Product {
     colors: Array.isArray(product.colors) ? product.colors.filter(Boolean) : [],
     sizes: Array.isArray(product.sizes) ? product.sizes.filter(Boolean) : [],
     images: Array.isArray(product.images) ? product.images.filter(Boolean) : [],
+    videos: Array.isArray(product.videos)
+      ? product.videos.filter((video) => video?.url)
+      : [],
     reviews: Array.isArray(product.reviews)
       ? product.reviews
           .filter(Boolean)
@@ -139,6 +142,41 @@ function CarouselArrow({
         {direction === "previous" ? <path d="M15 5 8 12l7 7" /> : <path d="m9 5 7 7-7 7" />}
       </svg>
     </button>
+  );
+}
+
+function ProductDescriptionVideos({ product }: { product: Product }) {
+  const videos = product.videos || [];
+
+  if (!videos.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-5 space-y-4">
+      {videos.map((video, index) => (
+        <div
+          key={video.id || `${product.id}-video-${index}`}
+          className="overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface)]"
+        >
+          <div className="aspect-video bg-black">
+            <video
+              src={video.url}
+              poster={video.posterUrl || undefined}
+              controls
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          {video.title ? (
+            <p className="px-4 py-3 text-xs font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+              {video.title}
+            </p>
+          ) : null}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -809,6 +847,7 @@ export default function ProductDetailPage() {
                               Relaxed, everyday fit with a clean silhouette designed for repeat wear.
                             </p>
                             <p>Art. No.: {product.id}</p>
+                            <ProductDescriptionVideos product={product} />
                           </div>
                         ) : null}
                         {section.key === "materials" ? (
