@@ -16,11 +16,10 @@ import {
   AdminTextArea,
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
-import { compressSingleImage, readFileAsDataUrl } from "@/lib/image-upload";
+import { uploadAdminMedia, ADMIN_MEDIA_UPLOAD_LIMIT_BYTES } from "@/lib/admin-media-upload";
+import { compressSingleImage } from "@/lib/image-upload";
 import { type AdminBanner } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
-
-const VIDEO_UPLOAD_LIMIT_BYTES = 12 * 1024 * 1024;
 
 function isVideoMedia(mediaUrl = "", mediaType?: "image" | "video") {
   return (
@@ -102,14 +101,14 @@ export default function AdminHomepagePage() {
 
     try {
       if (file.type.startsWith("video/")) {
-        if (file.size > VIDEO_UPLOAD_LIMIT_BYTES) {
-          throw new Error("Video must be under 12 MB for direct upload. Use a hosted video URL for larger files.");
+        if (file.size > ADMIN_MEDIA_UPLOAD_LIMIT_BYTES) {
+          throw new Error("Video must be under 25 MB for direct upload. Use a hosted video URL for larger files.");
         }
 
-        const mediaUrl = await readFileAsDataUrl(file);
+        const uploadedMedia = await uploadAdminMedia(file);
         updateSelectedBanner({
           mediaType: "video",
-          mediaUrl,
+          mediaUrl: uploadedMedia.url,
           desktopImage: "",
           mobileImage: "",
         });
@@ -155,6 +154,15 @@ export default function AdminHomepagePage() {
   }
 
   async function publishChanges() {
+    if (banners.some((banner) => /^data:video\//i.test(getBannerMediaUrl(banner)))) {
+      pushToast(
+        "Remove and re-upload old video banner drafts before publishing. Videos now save through MongoDB media storage.",
+        "error"
+      );
+      setPublishOpen(false);
+      return;
+    }
+
     await saveWorkspace({
       homeManagement: {
         banners,

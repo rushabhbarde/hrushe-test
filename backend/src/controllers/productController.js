@@ -62,6 +62,13 @@ const normalizeProductVideos = (value) => {
         return null;
       }
 
+      if (/^data:video\//i.test(url)) {
+        throw new AppError(
+          "Video files must be uploaded through media storage. Remove and re-upload the video, then save again.",
+          400
+        );
+      }
+
       return {
         id: String(video?.id || `video-${Date.now()}-${index}`).trim(),
         title: String(video?.title || `Product video ${index + 1}`).trim(),

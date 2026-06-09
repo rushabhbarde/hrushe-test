@@ -20,10 +20,10 @@ import {
   type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
-import { compressSingleImage, readFileAsDataUrl } from "@/lib/image-upload";
+import { uploadAdminMedia, ADMIN_MEDIA_UPLOAD_LIMIT_BYTES } from "@/lib/admin-media-upload";
+import { compressSingleImage } from "@/lib/image-upload";
 import { type ProductAdminMeta } from "@/lib/admin-workspace";
 
-const VIDEO_UPLOAD_LIMIT_BYTES = 12 * 1024 * 1024;
 const sizeOptions = ["S", "M", "L", "XL", "XXL"] as const;
 const statusOptions: ProductStatus[] = ["Active", "Draft", "Hidden", "Sold Out"];
 const fitOptions: ProductFitType[] = ["Oversized", "Regular"];
@@ -187,14 +187,16 @@ export function AdminProductForm({
             throw new Error("Please upload video files only.");
           }
 
-          if (file.size > VIDEO_UPLOAD_LIMIT_BYTES) {
-            throw new Error("Video must be under 12 MB for direct upload. Use a hosted video URL for larger files.");
+          if (file.size > ADMIN_MEDIA_UPLOAD_LIMIT_BYTES) {
+            throw new Error("Video must be under 25 MB for direct upload. Use a hosted video URL for larger files.");
           }
+
+          const uploadedMedia = await uploadAdminMedia(file);
 
           return {
             id: `video-${Date.now()}-${index}`,
             title: file.name.replace(/\.[^.]+$/, "") || `Product video ${form.videos.length + index + 1}`,
-            url: await readFileAsDataUrl(file),
+            url: uploadedMedia.url,
             posterUrl: "",
           };
         })
@@ -238,6 +240,10 @@ export function AdminProductForm({
     try {
       if (!form.category) {
         throw new Error("Add a category in Admin > Categories before saving a product.");
+      }
+
+      if (form.videos.some((video) => /^data:video\//i.test(video.url))) {
+        throw new Error("Remove and re-upload old video drafts before saving. Videos now save through MongoDB media storage.");
       }
 
       const colors = parsedColors;

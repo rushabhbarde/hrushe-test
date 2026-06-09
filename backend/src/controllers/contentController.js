@@ -80,6 +80,32 @@ function normalizeWorkspaceBanner(banner = {}) {
   };
 }
 
+function hasEmbeddedVideoMedia(value) {
+  return /^data:video\//i.test(String(value || ""));
+}
+
+function assertWorkspaceMediaIsStorable(patch = {}) {
+  const banners = Array.isArray(patch?.homeManagement?.banners)
+    ? patch.homeManagement.banners
+    : [];
+
+  if (
+    hasEmbeddedVideoMedia(patch?.homepageBanner?.mediaUrl) ||
+    banners.some((banner) =>
+      [
+        banner?.mediaUrl,
+        banner?.desktopImage,
+        banner?.mobileImage,
+      ].some(hasEmbeddedVideoMedia)
+    )
+  ) {
+    throw new AppError(
+      "Video files must be uploaded through media storage. Remove and re-upload the video, then save again.",
+      400
+    );
+  }
+}
+
 function isBannerScheduledForNow(banner) {
   const now = Date.now();
   const startsAt = banner.scheduleStart ? new Date(banner.scheduleStart).getTime() : null;
@@ -221,6 +247,8 @@ const getHomepageBanner = asyncHandler(async (req, res) => {
 });
 
 const updateHomepageBanner = asyncHandler(async (req, res) => {
+  assertWorkspaceMediaIsStorable({ homepageBanner: req.body });
+
   const content = await getSiteContent();
   content.homepageBanner = { ...content.homepageBanner.toObject(), ...req.body };
   await content.save();
@@ -236,6 +264,7 @@ const getAdminWorkspace = asyncHandler(async (req, res) => {
 
 const updateAdminWorkspace = asyncHandler(async (req, res) => {
   assertCanUpdateAdminWorkspace(req.user, req.body || {});
+  assertWorkspaceMediaIsStorable(req.body || {});
 
   const content = await getSiteContent();
   const currentWorkspace =
