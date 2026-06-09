@@ -40,6 +40,13 @@ export type Product = {
   compareAtPrice?: number;
   reviews?: ProductReview[];
   galleryImages?: string[];
+  fabric?: string;
+  gsm?: string;
+  cottonType?: string;
+  feel?: string;
+  weight?: string;
+  washCare?: string;
+  qualityNote?: string;
   fitType?: ProductFitType;
   gender?: ProductGender;
   collectionLabels?: ProductCollectionLabel[];

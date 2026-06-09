@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { LoadingState } from "@/components/loading-state";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SizeGuideModal, SizeGuideTable } from "@/components/size-guide";
+import { TrustBadges } from "@/components/trust-badges";
 import { WishlistButton } from "@/components/wishlist-button";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
@@ -22,8 +23,16 @@ const productInfoSections = [
     title: "Description & fit",
   },
   {
-    key: "materials",
-    title: "Materials",
+    key: "fabric",
+    title: "Fabric & feel",
+  },
+  {
+    key: "wash",
+    title: "Wash care",
+  },
+  {
+    key: "size",
+    title: "Size guide",
   },
   {
     key: "delivery",
@@ -116,6 +125,73 @@ function getProductSummary(description: string) {
   return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
 }
 
+function getProductFit(product: Product) {
+  const searchable = [
+    product.fitType,
+    product.name,
+    product.category,
+    product.categories?.join(" ") || "",
+    product.description,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (searchable.includes("oversize")) {
+    return "Oversized";
+  }
+
+  return product.fitType || "Regular";
+}
+
+function getProductDetailRows(product: Product) {
+  return [
+    { label: "Fabric", value: product.fabric || product.cottonType || "Premium cotton jersey" },
+    { label: "GSM", value: product.gsm || "Mid-weight everyday GSM" },
+    { label: "Fit", value: getProductFit(product) },
+    { label: "Feel", value: product.feel || "Soft, breathable, and clean against skin" },
+    { label: "Weight", value: product.weight || "Balanced daily-wear weight" },
+    {
+      label: "Quality note",
+      value:
+        product.qualityNote ||
+        "Made for repeat wear with a quiet structure and minimal finish.",
+    },
+  ].filter((item) => item.value);
+}
+
+function getWashCare(product: Product) {
+  return (
+    product.washCare ||
+    "Machine wash cold with similar colors. Do not bleach. Dry in shade. Iron inside out on low heat."
+  );
+}
+
+function ProductDetailSkeleton() {
+  return (
+    <div className="grid gap-10 lg:grid-cols-2">
+      <div className="loading-pulse border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8">
+        <div className="aspect-[4/5] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]" />
+      </div>
+      <div className="loading-pulse border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.58)] p-8">
+        <div className="h-4 w-24 bg-[var(--surface-strong)]" />
+        <div className="mt-5 h-8 w-2/3 bg-[var(--surface-strong)]" />
+        <div className="mt-4 h-5 w-36 bg-[var(--surface-strong)]" />
+        <div className="mt-10 space-y-3">
+          <div className="h-4 w-full bg-[var(--surface-strong)]" />
+          <div className="h-4 w-4/5 bg-[var(--surface-strong)]" />
+          <div className="h-4 w-3/5 bg-[var(--surface-strong)]" />
+        </div>
+        <div className="mt-14 grid grid-cols-3 gap-2">
+          <div className="h-10 bg-[var(--surface-strong)]" />
+          <div className="h-10 bg-[var(--surface-strong)]" />
+          <div className="h-10 bg-[var(--surface-strong)]" />
+        </div>
+        <div className="mt-8 h-12 bg-[var(--surface-strong)]" />
+      </div>
+    </div>
+  );
+}
+
 type ProductMediaItem =
   | {
       id: string;
@@ -206,6 +282,7 @@ function ProductMediaFrame({
       alt={item.alt}
       fill
       unoptimized
+      sizes="(max-width: 1024px) 100vw, 50vw"
       className={imageClassName}
     />
   );
@@ -226,6 +303,8 @@ type ProductInfoPanelProps = {
   onColorSelect: (color: string) => void;
   onSizeSelect: (size: string) => void;
   onAddToCart: () => void;
+  onOpenSizeGuide: () => void;
+  actionRef?: React.Ref<HTMLDivElement>;
   mobile?: boolean;
 };
 
@@ -244,6 +323,8 @@ function ProductInfoPanel({
   onColorSelect,
   onSizeSelect,
   onAddToCart,
+  onOpenSizeGuide,
+  actionRef,
   mobile = false,
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
@@ -380,30 +461,42 @@ function ProductInfoPanel({
             })}
           </div>
           <p className="mt-4 text-[0.62rem] uppercase text-[var(--muted)]">
-            Find your size <span className="mx-2">|</span> Measurement guide
+            <button type="button" onClick={onOpenSizeGuide} className="underline underline-offset-4">
+              Find your size
+            </button>
+            <span className="mx-2">|</span>
+            <button type="button" onClick={onOpenSizeGuide} className="underline underline-offset-4">
+              Measurement guide
+            </button>
           </p>
         </div>
       ) : null}
 
-      {!mobile ? (
-        <div className="mt-auto pt-8">
-          <button
-            type="button"
-            onClick={onAddToCart}
-            disabled={!canAddToCart}
-            className="inline-flex min-h-10 w-full items-center justify-center bg-[rgba(17,17,17,0.1)] px-6 text-[0.8rem] font-semibold uppercase text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.15)] disabled:cursor-not-allowed disabled:opacity-55"
-          >
-            Add
-          </button>
-          {addError ? <p className="mt-3 text-sm text-[var(--accent)]">{addError}</p> : null}
-        </div>
-      ) : addError ? (
-        <p className="mt-5 text-sm text-[var(--accent)]">{addError}</p>
-      ) : null}
+      <div ref={actionRef} className={mobile ? "mt-7 space-y-4" : "mt-auto space-y-4 pt-8"}>
+        <button
+          type="button"
+          onClick={onAddToCart}
+          disabled={!canAddToCart}
+          className={`inline-flex min-h-12 w-full items-center justify-center px-6 text-[0.8rem] font-semibold uppercase transition disabled:cursor-not-allowed disabled:opacity-55 ${
+            mobile
+              ? "bg-[var(--foreground)] text-[var(--background)]"
+              : "bg-[rgba(17,17,17,0.1)] text-[var(--foreground)] hover:bg-[rgba(17,17,17,0.15)]"
+          }`}
+        >
+          Add
+        </button>
+        {addError ? <p className="text-sm text-[var(--accent)]">{addError}</p> : null}
+        {mobile ? (
+          <div className="border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.54)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
+            Secure payment, easy exchange, and tracked dispatch on every order.
+          </div>
+        ) : (
+          <TrustBadges compact />
+        )}
+      </div>
     </div>
   );
 }
-
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const { products, addProductReview, loading } = useStorefrontData();
@@ -433,6 +526,9 @@ export default function ProductDetailPage() {
   const [reviewSaved, setReviewSaved] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const mainAddToCartRef = useRef<HTMLDivElement>(null);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [showStickyAddToCart, setShowStickyAddToCart] = useState(false);
   const [openSection, setOpenSection] =
     useState<(typeof productInfoSections)[number]["key"]>("description");
 
@@ -518,17 +614,32 @@ export default function ProductDetailPage() {
     return () => window.clearTimeout(timerId);
   }, [activeMediaIndex, product]);
 
+  useEffect(() => {
+    const actionElement = mainAddToCartRef.current;
+
+    if (!actionElement) {
+      setShowStickyAddToCart(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyAddToCart(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(actionElement);
+
+    return () => observer.disconnect();
+  }, [product]);
+
   if (loading || productLoading) {
     return (
       <div className="page-shell bg-[var(--background)] paper-texture">
         <SiteHeader />
-        <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-          <div className="mt-4">
-            <LoadingState
-              title="Loading product"
-              description="We are preparing the product gallery, sizing, and details."
-            />
-          </div>
+        <main className="mx-auto w-full px-4 pb-24 pt-6 sm:px-6 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16">
+          <ProductDetailSkeleton />
         </main>
       </div>
     );
@@ -580,6 +691,8 @@ export default function ProductDetailPage() {
   const compareAtPriceText = `Rs.${compareAtPrice.toLocaleString("en-IN")}`;
   const discountLabel = `-${discountPercent}%`;
   const productSummary = getProductSummary(product.description);
+  const detailRows = getProductDetailRows(product);
+  const washCare = getWashCare(product);
   const hasMultipleMedia = mediaItems.length > 1;
 
   const showPreviousMedia = () => {
@@ -783,6 +896,8 @@ export default function ProductDetailPage() {
                   setAddError("");
                 }}
                 onAddToCart={handleAddToCart}
+                onOpenSizeGuide={() => setSizeGuideOpen(true)}
+                actionRef={mainAddToCartRef}
                 mobile
               />
             </section>
@@ -849,6 +964,7 @@ export default function ProductDetailPage() {
                   setAddError("");
                 }}
                 onAddToCart={handleAddToCart}
+                onOpenSizeGuide={() => setSizeGuideOpen(true)}
               />
             </section>
           </div>
@@ -892,11 +1008,37 @@ export default function ProductDetailPage() {
                             <p>Art. No.: {product.id}</p>
                           </div>
                         ) : null}
-                        {section.key === "materials" ? (
+                        {section.key === "fabric" ? (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {detailRows.map((item) => (
+                              <div
+                                key={item.label}
+                                className="border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.55)] px-4 py-3"
+                              >
+                                <p className="text-[0.64rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                                  {item.label}
+                                </p>
+                                <p className="mt-1 font-medium text-[var(--foreground)]">
+                                  {item.value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {section.key === "wash" ? (
                           <div className="space-y-3">
-                            <p>Composition: 100% Cotton</p>
-                            <p>Material: Premium cotton jersey</p>
-                            <p>Care: Gentle wash, line dry, medium iron</p>
+                            <p>{washCare}</p>
+                            <p>
+                              Wash inside out and avoid harsh drying cycles to keep the fabric surface clean.
+                            </p>
+                          </div>
+                        ) : null}
+                        {section.key === "size" ? (
+                          <div className="space-y-4">
+                            <p>
+                              Oversized t-shirt measurements are garment measurements in inches.
+                            </p>
+                            <SizeGuideTable />
                           </div>
                         ) : null}
                         {section.key === "delivery" ? (
@@ -906,6 +1048,7 @@ export default function ProductDetailPage() {
                             <p>
                               Returns, payment confirmation, and dispatch updates appear on your order page after checkout.
                             </p>
+                            <TrustBadges />
                           </div>
                         ) : null}
                       </div>
@@ -1107,18 +1250,34 @@ export default function ProductDetailPage() {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.96)] p-4 backdrop-blur-xl lg:hidden">
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={!canAddToCart}
-          className="inline-flex min-h-12 w-full items-center justify-center bg-[rgba(17,17,17,0.1)] px-6 text-[0.82rem] font-semibold uppercase text-[var(--foreground)] transition hover:bg-[rgba(17,17,17,0.15)] disabled:cursor-not-allowed disabled:opacity-55"
-        >
-          Add
-        </button>
-        {addError ? <p className="mt-2 text-xs text-[var(--accent)]">{addError}</p> : null}
-      </div>
+      {showStickyAddToCart ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.96)] px-4 py-3 backdrop-blur-xl lg:hidden">
+          <div className="mx-auto flex max-w-xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.92rem] font-semibold text-[var(--foreground)]">
+                {priceText}
+              </p>
+              <p className="mt-0.5 truncate text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">
+                {requiresSize
+                  ? selectedSize
+                    ? `Size ${selectedSize} selected`
+                    : "Select size"
+                  : "Ready to add"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canAddToCart}
+              className="inline-flex min-h-11 min-w-[132px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      ) : null}
 
+      <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
       <SiteFooter />
     </div>
   );

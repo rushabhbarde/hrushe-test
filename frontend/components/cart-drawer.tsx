@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
+import { TrustBadges } from "@/components/trust-badges";
 
 export function CartDrawer() {
   const {
@@ -54,7 +55,7 @@ export function CartDrawer() {
             <div className="empty-shell p-6">
               <p className="text-lg font-semibold">Your cart is empty.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
-                Add a few pieces and come back here for a quick checkout jump.
+                Add pieces you are considering and return here for one clean checkout.
               </p>
               <Link
                 href="/shop"
@@ -141,6 +142,9 @@ export function CartDrawer() {
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>{itemCount} items</span>
             <span>Subtotal Rs. {subtotal.toLocaleString("en-IN")}</span>
+          </div>
+          <div className="mt-4">
+            <TrustBadges compact />
           </div>
           <div className="mt-4 grid gap-3">
             <Link

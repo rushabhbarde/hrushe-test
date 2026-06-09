@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
@@ -62,6 +63,8 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
   const hasImage = Boolean(product.images[0]);
+  const hoverImage = product.images[1] || product.galleryImages?.[0] || "";
+  const hasHoverImage = Boolean(hoverImage && hoverImage !== product.images[0]);
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const hasDiscount = compareAtPrice > product.price;
@@ -83,6 +86,11 @@ export function ProductCard({ product }: { product: Product }) {
     pushToast(`${product.name} added to bag.`);
     openCart();
   };
+  const labels = [
+    product.newIn || product.newArrival ? "New" : "",
+    product.featured ? "Featured" : "",
+  ].filter(Boolean).slice(0, 2);
+  const visibleSizes = product.sizes.slice(0, 4);
 
   return (
     <article data-product-card className="group/product reveal-up-soft block min-w-0">
@@ -91,18 +99,33 @@ export function ProductCard({ product }: { product: Product }) {
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
         <Link href={productHref} className="absolute inset-0 z-10" aria-label={product.name} />
-        {hasDiscount ? (
-          <span className="pointer-events-none absolute left-2 top-2 z-20 border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)] md:left-2.5 md:top-2.5">
-            -{discountPercent}%
-          </span>
+        {labels.length || hasDiscount ? (
+          <div className="pointer-events-none absolute left-2 top-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap gap-1.5 md:left-2.5 md:top-2.5">
+            {labels.map((label) => (
+              <span
+                key={label}
+                className="border border-[rgba(17,17,17,0.16)] bg-white/92 px-2 py-[5px] text-[0.54rem] font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
+              >
+                {label}
+              </span>
+            ))}
+            {hasDiscount ? (
+              <span className="border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.54rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)]">
+                -{discountPercent}%
+              </span>
+            ) : null}
+          </div>
         ) : null}
         {hasImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.images[0]}
             alt={product.name}
-            className="pointer-events-none h-full w-full object-cover object-center transition duration-700 md:group-hover/product:scale-[1.02]"
-            loading="lazy"
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className={`pointer-events-none object-cover object-center transition duration-700 md:group-hover/product:scale-[1.02] ${
+              hasHoverImage ? "md:group-hover/product:opacity-0" : ""
+            }`}
           />
         ) : (
           <div
@@ -110,6 +133,16 @@ export function ProductCard({ product }: { product: Product }) {
             style={{ backgroundColor: product.accent || "var(--surface-strong)" }}
           />
         )}
+        {hasHoverImage ? (
+          <Image
+            src={hoverImage}
+            alt={`${product.name} alternate view`}
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="pointer-events-none object-cover object-center opacity-0 transition duration-700 md:group-hover/product:scale-[1.02] md:group-hover/product:opacity-100"
+          />
+        ) : null}
       </div>
 
       <div className="shop-card-copy block px-0 pb-1 pt-1">
@@ -149,24 +182,29 @@ export function ProductCard({ product }: { product: Product }) {
             </button>
           </div>
         </div>
-        <div className="mt-1.5 flex min-h-3 items-center gap-1">
-          {product.colors.slice(0, 4).map((color) => (
-            <span
-              key={color}
-              className="h-2.5 w-2.5 rounded-none border border-[var(--border)]"
-              style={{
-                backgroundColor:
-                  swatchColors[color.toLowerCase().trim()] ||
-                  product.accent ||
-                  "#d9d9d9",
-              }}
-            />
-          ))}
-          {product.colors.length > 4 ? (
-            <span className="ml-0.5 text-[0.74rem] text-[var(--muted)]">
-              +{product.colors.length - 4}
-            </span>
-          ) : null}
+        <div className="mt-1.5 flex min-h-5 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <div className="flex items-center gap-1">
+            {product.colors.slice(0, 4).map((color) => (
+              <span
+                key={color}
+                className="h-2.5 w-2.5 rounded-none border border-[var(--border)]"
+                style={{
+                  backgroundColor:
+                    swatchColors[color.toLowerCase().trim()] ||
+                    product.accent ||
+                    "#d9d9d9",
+                }}
+              />
+            ))}
+            {product.colors.length > 4 ? (
+              <span className="ml-0.5 text-[0.72rem] text-[var(--muted)]">
+                +{product.colors.length - 4}
+              </span>
+            ) : null}
+          </div>
+          <p className="truncate text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+            {visibleSizes.length ? visibleSizes.join(" ") : "Sold out"}
+          </p>
         </div>
       </div>
     </article>

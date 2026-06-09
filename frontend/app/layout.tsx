@@ -28,11 +28,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://hrushe.in"),
   applicationName: "HRUSHE",
   title: {
-    default: "HRUSHE | Defined Quietly",
+    default: "HRUSHE | Modern Minimal Premium Streetwear",
     template: "%s | HRUSHE",
   },
   description:
-    "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
+    "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
   alternates: {
     canonical: "https://hrushe.in",
   },
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
     apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
   },
   openGraph: {
-    title: "HRUSHE | Defined Quietly",
+    title: "HRUSHE | Modern Minimal Premium Streetwear",
     description:
-      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
+      "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
     url: "https://hrushe.in",
     siteName: "HRUSHE",
     type: "website",
@@ -63,9 +63,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "HRUSHE | Defined Quietly",
+    title: "HRUSHE | Modern Minimal Premium Streetwear",
     description:
-      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
+      "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
     images: ["/brand/hrushe-sylogo-512.png"],
   },
 };

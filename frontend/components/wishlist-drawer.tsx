@@ -68,15 +68,15 @@ export function WishlistDrawer() {
         <div className="hide-scrollbar mt-6 flex-1 space-y-5 overflow-y-auto">
           {wishlistProducts.length === 0 ? (
             <div className="empty-shell p-6">
-              <p className="text-lg font-semibold">Your favourites are empty.</p>
+              <p className="text-lg font-semibold">Your wishlist is empty.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
-                Tap the heart on any product to save it here for later.
+                Save pieces you love and find them here later.
               </p>
               <Link
                 href="/shop"
                 className="button-primary mt-5 inline-flex px-5 py-3 transition"
               >
-                Explore products
+                Explore collection
               </Link>
             </div>
           ) : (

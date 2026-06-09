@@ -698,9 +698,9 @@ export default function AccountPage() {
                     {orders.length === 0 ? (
                       <EmptyState
                         title="No orders yet."
-                        description="Your first purchase will appear here with tracking, status, and reorder actions."
+                        description="Your first HRUSHE order will appear here with tracking, status, and support shortcuts."
                         ctaHref="/shop"
-                        ctaLabel="Shop now"
+                        ctaLabel="Explore collection"
                       />
                     ) : (
                       <div className="space-y-4">
@@ -1195,9 +1195,9 @@ export default function AccountPage() {
                 ) : orders.length === 0 ? (
                   <EmptyState
                     title="No orders yet."
-                    description="Your purchases will show up here once you complete checkout."
+                    description="Your purchases will show up here once you complete checkout, with tracking and delivery updates."
                     ctaHref="/shop"
-                    ctaLabel="Shop now"
+                    ctaLabel="Explore collection"
                   />
                 ) : (
                   <div className="space-y-4">
@@ -1314,9 +1314,9 @@ export default function AccountPage() {
                 {wishlistProducts.length === 0 ? (
                   <EmptyState
                     title="Your wishlist is empty."
-                    description="Save products you want to revisit and they will stay here for later."
+                    description="Save pieces you love and find them here later."
                     ctaHref="/shop"
-                    ctaLabel="Explore products"
+                    ctaLabel="Explore collection"
                   />
                 ) : (
                   <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

@@ -9,11 +9,13 @@ import { ProductCard } from "@/components/product-card";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { TrustBadges } from "@/components/trust-badges";
 import { useWishlist } from "@/components/wishlist-provider";
 import type { Product } from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const shipping = 0;
+const freeShippingThreshold = 1499;
 
 function formatPrice(value: number) {
   return `Rs. ${value.toLocaleString("en-IN")}`;
@@ -72,6 +74,7 @@ export default function CartPage() {
   const [removingKeys, setRemovingKeys] = useState<string[]>([]);
   const [bumpedKey, setBumpedKey] = useState("");
   const total = subtotal + shipping;
+  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const hasSavedProducts = wishlistIds.length > 0;
   const canCheckout = acceptedTerms && items.length > 0;
   const wishlistProducts = useMemo<Product[]>(
@@ -80,6 +83,13 @@ export default function CartPage() {
         .map((productId) => products.find((product) => product.id === productId))
         .filter((product): product is Product => Boolean(product)),
     [products, wishlistIds]
+  );
+  const recommendedProducts = useMemo(
+    () =>
+      products
+        .filter((product) => !items.some((item) => item.productId === product.id))
+        .slice(0, 4),
+    [items, products]
   );
 
   const removeCartLine = (item: CartLine, toast = "Item removed") => {
@@ -134,9 +144,9 @@ export default function CartPage() {
             <section className="mx-auto max-w-3xl py-10">
               <EmptyState
                 title="Your shopping bag is empty."
-                description="Save a few premium everyday pieces here, then return to finish checkout in one clean flow."
+                description="Your bag is waiting. Add everyday pieces you will actually reach for."
                 ctaHref="/shop"
-                ctaLabel="Explore products"
+                ctaLabel="Explore collection"
               />
             </section>
           ) : (
@@ -365,6 +375,11 @@ export default function CartPage() {
                       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                         India-wide delivery in 3-5 business days. Tracking appears after dispatch.
                       </p>
+                      <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                        {remainingForFreeShipping > 0
+                          ? `Add ${formatPrice(remainingForFreeShipping)} more to unlock free shipping.`
+                          : "Free shipping is active on this bag."}
+                      </p>
                     </div>
 
                     <label className="mt-6 flex items-start gap-3 text-sm text-[var(--muted)]">
@@ -399,12 +414,27 @@ export default function CartPage() {
                     <Link href="/shop" className="lux-action-muted mt-3 w-full">
                       Continue shopping
                     </Link>
+                    <div className="mt-5">
+                      <TrustBadges compact />
+                    </div>
                     <p className="mt-5 text-center text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                       {itemCount} item{itemCount === 1 ? "" : "s"} in bag
                     </p>
                   </div>
                 </aside>
               </div>
+              {recommendedProducts.length > 0 ? (
+                <section className="mt-12">
+                  <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                    You may also like
+                  </p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
+                    {recommendedProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </>
           )}
         </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
-import { ProductListingGrid } from "@/components/product-listing-grid";
+import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -12,7 +12,7 @@ import { useStorefrontData } from "@/lib/use-storefront";
 
 export default function CollectionPage() {
   const params = useParams<{ slug: string }>();
-  const { products } = useStorefrontData();
+  const { products, loading } = useStorefrontData();
 
   const matchedCategory = Array.from(
     new Set(
@@ -53,9 +53,15 @@ export default function CollectionPage() {
               </Link>
             </div>
             <div className="mt-10">
-              <ProductListingGrid products={visibleProducts} />
+              {loading ? (
+                <ProductListingSkeleton count={8} />
+              ) : (
+                <ProductListingGrid products={visibleProducts} />
+              )}
             </div>
           </>
+        ) : loading ? (
+          <ProductListingSkeleton count={8} />
         ) : (
           <EmptyState
             title="Collection not found."
