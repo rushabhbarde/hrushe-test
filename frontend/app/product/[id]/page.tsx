@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { LoadingState } from "@/components/loading-state";
 import { ProductCard } from "@/components/product-card";
@@ -116,38 +116,6 @@ function getProductSummary(description: string) {
   return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
 }
 
-function CarouselArrow({
-  direction,
-  onClick,
-  className = "",
-}: {
-  direction: "previous" | "next";
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={direction === "previous" ? "Previous media" : "Next media"}
-      className={`inline-flex h-11 w-11 items-center justify-center border border-[rgba(17,17,17,0.14)] bg-[rgba(255,255,255,0.82)] text-[var(--foreground)] backdrop-blur transition hover:bg-[var(--surface)] ${className}`}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        {direction === "previous" ? <path d="M15 5 8 12l7 7" /> : <path d="m9 5 7 7-7 7" />}
-      </svg>
-    </button>
-  );
-}
-
 type ProductMediaItem =
   | {
       id: string;
@@ -199,10 +167,12 @@ function ProductMediaFrame({
   item,
   product,
   imageClassName,
+  onVideoEnded,
 }: {
   item: ProductMediaItem | null;
   product: Product;
   imageClassName: string;
+  onVideoEnded: () => void;
 }) {
   if (!item) {
     return (
@@ -216,9 +186,13 @@ function ProductMediaFrame({
   if (item.type === "video") {
     return (
       <video
+        key={item.id}
         src={item.src}
         poster={item.posterUrl || undefined}
+        autoPlay
         controls
+        muted
+        onEnded={onVideoEnded}
         playsInline
         preload="metadata"
         className="h-full w-full bg-black object-contain"
@@ -458,7 +432,7 @@ export default function ProductDetailPage() {
   const [reviewError, setReviewError] = useState("");
   const [reviewSaved, setReviewSaved] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [openSection, setOpenSection] =
     useState<(typeof productInfoSections)[number]["key"]>("description");
 
@@ -533,16 +507,16 @@ export default function ProductDetailPage() {
     const mediaItems = product ? buildProductMediaItems(product) : [];
     const activeMediaType = mediaItems[activeMediaIndex]?.type;
 
-    if (mediaItems.length <= 1 || isCarouselPaused || activeMediaType === "video") {
+    if (mediaItems.length <= 1 || activeMediaType === "video") {
       return;
     }
 
-    const timerId = window.setInterval(() => {
+    const timerId = window.setTimeout(() => {
       setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
     }, 4000);
 
-    return () => window.clearInterval(timerId);
-  }, [activeMediaIndex, isCarouselPaused, product]);
+    return () => window.clearTimeout(timerId);
+  }, [activeMediaIndex, product]);
 
   if (loading || productLoading) {
     return (
@@ -622,6 +596,41 @@ export default function ProductDetailPage() {
     }
 
     setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
+  };
+
+  const handleSwipeStart = (event: React.PointerEvent<HTMLElement>) => {
+    if (!hasMultipleMedia || event.button !== 0) {
+      return;
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    swipeStartRef.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handleSwipeEnd = (event: React.PointerEvent<HTMLElement>) => {
+    if (!hasMultipleMedia || !swipeStartRef.current) {
+      swipeStartRef.current = null;
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const deltaX = event.clientX - swipeStartRef.current.x;
+    const deltaY = event.clientY - swipeStartRef.current.y;
+    swipeStartRef.current = null;
+
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      showNextMedia();
+      return;
+    }
+
+    showPreviousMedia();
   };
 
   const readPhoto = async (file: File) => {
@@ -716,41 +725,38 @@ export default function ProductDetailPage() {
             <section aria-label="Product media gallery">
               <div
                 className="relative overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
-                onMouseEnter={() => setIsCarouselPaused(true)}
-                onMouseLeave={() => setIsCarouselPaused(false)}
-                onFocus={() => setIsCarouselPaused(true)}
-                onBlur={() => setIsCarouselPaused(false)}
+                onPointerDown={handleSwipeStart}
+                onPointerUp={handleSwipeEnd}
+                onPointerCancel={() => {
+                  swipeStartRef.current = null;
+                }}
+                style={{ touchAction: "pan-y" }}
               >
                 <div className="relative aspect-[4/5.2]">
                   <ProductMediaFrame
                     item={activeMedia}
                     product={product}
                     imageClassName="object-contain p-1"
+                    onVideoEnded={showNextMedia}
                   />
                 </div>
 
                 {hasMultipleMedia ? (
-                  <>
-                    <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 items-center justify-between">
-                      <CarouselArrow direction="previous" onClick={showPreviousMedia} className="h-10 w-10" />
-                      <CarouselArrow direction="next" onClick={showNextMedia} className="h-10 w-10" />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
-                      {mediaItems.map((item, index) => (
-                        <button
-                          key={`${item.id}-mobile-dot-${index}`}
-                          type="button"
-                          onClick={() => setActiveMediaIndex(index)}
-                          aria-label={`Show ${item.type} ${index + 1}`}
-                          className={`h-1.5 transition ${
-                            activeMediaIndex === index
-                              ? "w-7 bg-[var(--foreground)]"
-                              : "w-3 bg-[rgba(17,17,17,0.22)]"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </>
+                  <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+                    {mediaItems.map((item, index) => (
+                      <button
+                        key={`${item.id}-mobile-dot-${index}`}
+                        type="button"
+                        onClick={() => setActiveMediaIndex(index)}
+                        aria-label={`Show ${item.type} ${index + 1}`}
+                        className={`h-1.5 transition ${
+                          activeMediaIndex === index
+                            ? "w-7 bg-[var(--foreground)]"
+                            : "w-3 bg-[rgba(17,17,17,0.22)]"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 ) : null}
               </div>
             </section>
@@ -786,41 +792,38 @@ export default function ProductDetailPage() {
             <section
               aria-label="Product media gallery"
               className="relative h-full overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
-              onMouseEnter={() => setIsCarouselPaused(true)}
-              onMouseLeave={() => setIsCarouselPaused(false)}
-              onFocus={() => setIsCarouselPaused(true)}
-              onBlur={() => setIsCarouselPaused(false)}
+              onPointerDown={handleSwipeStart}
+              onPointerUp={handleSwipeEnd}
+              onPointerCancel={() => {
+                swipeStartRef.current = null;
+              }}
+              style={{ touchAction: "pan-y" }}
             >
               <div className="relative h-full w-full overflow-hidden">
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
                   imageClassName="object-contain"
+                  onVideoEnded={showNextMedia}
                 />
               </div>
 
               {hasMultipleMedia ? (
-                <>
-                  <div className="absolute inset-x-5 top-1/2 flex -translate-y-1/2 items-center justify-between">
-                    <CarouselArrow direction="previous" onClick={showPreviousMedia} />
-                    <CarouselArrow direction="next" onClick={showNextMedia} />
-                  </div>
-                  <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
-                    {mediaItems.map((item, index) => (
-                      <button
-                        key={`${item.id}-desktop-dot-${index}`}
-                        type="button"
-                        onClick={() => setActiveMediaIndex(index)}
-                        aria-label={`Show ${item.type} ${index + 1}`}
-                        className={`h-1.5 transition ${
-                          activeMediaIndex === index
-                            ? "w-8 bg-[var(--foreground)]"
-                            : "w-3 bg-[rgba(17,17,17,0.22)]"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
+                <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
+                  {mediaItems.map((item, index) => (
+                    <button
+                      key={`${item.id}-desktop-dot-${index}`}
+                      type="button"
+                      onClick={() => setActiveMediaIndex(index)}
+                      aria-label={`Show ${item.type} ${index + 1}`}
+                      className={`h-1.5 transition ${
+                        activeMediaIndex === index
+                          ? "w-8 bg-[var(--foreground)]"
+                          : "w-3 bg-[rgba(17,17,17,0.22)]"
+                      }`}
+                    />
+                  ))}
+                </div>
               ) : null}
             </section>
 
