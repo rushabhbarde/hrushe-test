@@ -42,6 +42,13 @@ type BulkUploadPayload = Array<{
   images?: string[];
   videos?: ProductVideo[];
   galleryImages?: string[];
+  fabric?: string;
+  gsm?: string;
+  cottonType?: string;
+  feel?: string;
+  weight?: string;
+  washCare?: string;
+  qualityNote?: string;
 }>;
 
 export default function AdminProductsPage() {
@@ -171,6 +178,13 @@ export default function AdminProductsPage() {
           images: entry.images || [],
           videos: entry.videos || [],
           galleryImages: entry.galleryImages || [],
+          fabric: entry.fabric || "",
+          gsm: entry.gsm || "",
+          cottonType: entry.cottonType || "",
+          feel: entry.feel || "",
+          weight: entry.weight || "",
+          washCare: entry.washCare || "",
+          qualityNote: entry.qualityNote || "",
           fitType: entry.fitType || "Regular",
           gender: entry.gender || "Unisex",
           collectionLabels: entry.collectionLabels || [],

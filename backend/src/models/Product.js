@@ -116,6 +116,41 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    fabric: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    gsm: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    cottonType: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    feel: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    weight: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    washCare: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    qualityNote: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     videos: {
       type: [productVideoSchema],
       default: [],
@@ -163,6 +198,13 @@ productSchema.index({
   category: "text",
   categories: "text",
   colors: "text",
+  fabric: "text",
+  gsm: "text",
+  cottonType: "text",
+  feel: "text",
+  weight: "text",
+  washCare: "text",
+  qualityNote: "text",
 });
 
 productSchema.pre("validate", function productPreValidate() {

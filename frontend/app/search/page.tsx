@@ -60,6 +60,12 @@ export default function SearchPage() {
         product.categories?.join(" ") || "",
         product.description,
         product.colors.join(" "),
+        product.fabric || "",
+        product.gsm || "",
+        product.cottonType || "",
+        product.feel || "",
+        product.weight || "",
+        product.washCare || "",
       ]
         .join(" ")
         .toLowerCase();
@@ -82,6 +88,13 @@ export default function SearchPage() {
       .filter((product) =>
         queryTerms.some((term) =>
           [product.category, ...(product.categories || []), ...product.colors]
+            .concat([
+              product.fabric || "",
+              product.gsm || "",
+              product.cottonType || "",
+              product.feel || "",
+              product.weight || "",
+            ])
             .join(" ")
             .toLowerCase()
             .includes(term)

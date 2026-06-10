@@ -80,6 +80,19 @@ const normalizeProductVideos = (value) => {
     .filter(Boolean);
 };
 
+const PRODUCT_DETAIL_FIELDS = [
+  "fabric",
+  "gsm",
+  "cottonType",
+  "feel",
+  "weight",
+  "washCare",
+  "qualityNote",
+];
+
+const normalizeOptionalText = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
 const normalizeProductPayload = (payload, { partial = false } = {}) => {
   const normalized = {};
 
@@ -137,6 +150,12 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
       : [];
   }
 
+  PRODUCT_DETAIL_FIELDS.forEach((field) => {
+    if (!partial || payload[field] !== undefined) {
+      normalized[field] = normalizeOptionalText(payload[field]);
+    }
+  });
+
   if (!partial || payload.videos !== undefined) {
     normalized.videos = normalizeProductVideos(payload.videos);
   }
@@ -180,7 +199,17 @@ const mapProductListItem = (product) => ({
         : [],
   sizes: Array.isArray(product.sizes) ? product.sizes : [],
   colors: Array.isArray(product.colors) ? product.colors : [],
-  images: Array.isArray(product.images) ? product.images.slice(0, 1) : [],
+  images: Array.isArray(product.images) ? product.images.slice(0, 2) : [],
+  galleryImages: Array.isArray(product.galleryImages)
+    ? product.galleryImages.slice(0, 1)
+    : [],
+  fabric: product.fabric || "",
+  gsm: product.gsm || "",
+  cottonType: product.cottonType || "",
+  feel: product.feel || "",
+  weight: product.weight || "",
+  washCare: product.washCare || "",
+  qualityNote: product.qualityNote || "",
   videos: Array.isArray(product.videos) ? product.videos : [],
   featured: Boolean(product.featured),
   bestSeller: Boolean(product.bestSeller),
@@ -277,6 +306,13 @@ const getProducts = asyncHandler(async (req, res) => {
         { category: searchRegex },
         { categories: searchRegex },
         { colors: searchRegex },
+        { fabric: searchRegex },
+        { gsm: searchRegex },
+        { cottonType: searchRegex },
+        { feel: searchRegex },
+        { weight: searchRegex },
+        { washCare: searchRegex },
+        { qualityNote: searchRegex },
         { slug: searchRegex },
       ],
     });

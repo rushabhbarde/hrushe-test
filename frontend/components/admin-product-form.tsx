@@ -45,6 +45,13 @@ type FormState = {
   collectionLabels: ProductCollectionLabel[];
   images: string[];
   galleryImages: string[];
+  fabric: string;
+  gsm: string;
+  cottonType: string;
+  feel: string;
+  weight: string;
+  washCare: string;
+  qualityNote: string;
   videos: ProductVideo[];
   videoUrlDraft: string;
   videoTitleDraft: string;
@@ -111,6 +118,13 @@ function buildInitialState(
     collectionLabels: meta?.collectionLabels || product?.collectionLabels || [],
     images: product?.images || [],
     galleryImages: meta?.galleryImages || product?.galleryImages || [],
+    fabric: product?.fabric || "",
+    gsm: product?.gsm || "",
+    cottonType: product?.cottonType || "",
+    feel: product?.feel || "",
+    weight: product?.weight || "",
+    washCare: product?.washCare || "",
+    qualityNote: product?.qualityNote || "",
     videos: product?.videos || [],
     videoUrlDraft: "",
     videoTitleDraft: "",
@@ -262,6 +276,13 @@ export function AdminProductForm({
         images: form.images,
         videos: form.videos,
         galleryImages: form.galleryImages,
+        fabric: form.fabric.trim(),
+        gsm: form.gsm.trim(),
+        cottonType: form.cottonType.trim(),
+        feel: form.feel.trim(),
+        weight: form.weight.trim(),
+        washCare: form.washCare.trim(),
+        qualityNote: form.qualityNote.trim(),
         fitType: form.fitType,
         gender: form.gender,
         collectionLabels,
@@ -499,6 +520,56 @@ export function AdminProductForm({
               </div>
             </div>
           </AdminPanel>
+
+          <AdminPanel>
+            <AdminSectionLabel>Fabric & care</AdminSectionLabel>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <AdminField label="Fabric" hint="Example: Premium cotton jersey.">
+                <AdminFilterInput
+                  value={form.fabric}
+                  onChange={(event) => updateForm("fabric", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="GSM" hint="Example: 240 GSM.">
+                <AdminFilterInput
+                  value={form.gsm}
+                  onChange={(event) => updateForm("gsm", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Cotton type" hint="Example: Combed compact cotton.">
+                <AdminFilterInput
+                  value={form.cottonType}
+                  onChange={(event) => updateForm("cottonType", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Feel" hint="Short customer-facing texture note.">
+                <AdminFilterInput
+                  value={form.feel}
+                  onChange={(event) => updateForm("feel", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Weight" hint="Example: Mid-weight everyday structure.">
+                <AdminFilterInput
+                  value={form.weight}
+                  onChange={(event) => updateForm("weight", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Quality note" hint="Quiet reassurance shown on the PDP.">
+                <AdminFilterInput
+                  value={form.qualityNote}
+                  onChange={(event) => updateForm("qualityNote", event.target.value)}
+                />
+              </AdminField>
+            </div>
+            <div className="mt-4">
+              <AdminField label="Wash care" hint="Shown in the Wash care section on product pages.">
+                <AdminTextArea
+                  value={form.washCare}
+                  onChange={(event) => updateForm("washCare", event.target.value)}
+                />
+              </AdminField>
+            </div>
+          </AdminPanel>
         </div>
 
         <div className="space-y-6">
@@ -616,6 +687,7 @@ export function AdminProductForm({
               <SummaryRow label="Category structure" value={parsedCategories.join(", ") || "Not set"} />
               <SummaryRow label="Color palette" value={parsedColors.join(", ") || "Not set"} />
               <SummaryRow label="Discount" value={discountPercentage > 0 ? `${discountPercentage}% off` : "No compare-at price"} />
+              <SummaryRow label="Fabric notes" value={form.fabric || form.cottonType || "Fallback copy"} />
               <SummaryRow label="Visibility" value={form.status} />
             </div>
             <div className="mt-5">
