@@ -330,7 +330,7 @@ function ProductInfoPanel({
 }: ProductInfoPanelProps) {
   const shellClassName = mobile
     ? "border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-8 pt-5"
-    : "flex h-full flex-col overflow-y-auto border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-10 xl:px-12 xl:py-12";
+    : "flex min-h-[620px] flex-col border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-10 xl:px-12 xl:py-12";
 
   return (
     <div className={shellClassName}>
@@ -928,10 +928,10 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:h-[min(620px,calc(100vh-12rem))] lg:max-w-[1180px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
+          <div className="hidden lg:mx-auto lg:grid lg:min-h-[620px] lg:max-w-[1180px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
             <section
               aria-label="Product media gallery"
-              className="relative h-full overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
+              className="relative min-h-[620px] overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -967,7 +967,7 @@ export default function ProductDetailPage() {
               ) : null}
             </section>
 
-            <section aria-label="Product details and purchase options" className="h-full">
+            <section aria-label="Product details and purchase options" className="min-h-[620px]">
               <ProductInfoPanel
                 product={product}
                 priceText={priceText}
@@ -1070,7 +1070,7 @@ export default function ProductDetailPage() {
                         {section.key === "delivery" ? (
                           <div className="space-y-3">
                             <p>Delivery time: 2-7 days</p>
-                            <p>Free shipping on selected orders.</p>
+                            <p>Complimentary shipping across India.</p>
                             <p>
                               Returns, payment confirmation, and dispatch updates appear on your order page after checkout.
                             </p>
