@@ -338,9 +338,9 @@ function ProductInfoPanel({
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="max-w-[18ch] text-[0.98rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
+              <h2 className="max-w-[18ch] text-[0.98rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
-              </h1>
+              </h2>
               <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <p className="text-[1rem] font-semibold leading-none text-[var(--foreground)]">
                   {priceText}
@@ -377,9 +377,9 @@ function ProductInfoPanel({
         <>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="max-w-[19ch] text-[1rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
+              <h2 className="max-w-[19ch] text-[1rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
                 {product.name}
-              </h1>
+              </h2>
               <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <p className="text-[0.95rem] font-semibold leading-none text-[var(--foreground)]">
                   {priceText}
@@ -856,6 +856,7 @@ export default function ProductDetailPage() {
     <div className="page-shell bg-[var(--background)] paper-texture">
       <SiteHeader />
       <main className="mx-auto w-full pb-28 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16 xl:pt-20">
+        <h1 className="sr-only">{product.name}</h1>
         <div>
           <div className="lg:hidden">
             <section aria-label="Product media gallery">

@@ -21,6 +21,7 @@ import type { AdminPermission } from "@/lib/admin-workspace";
 
 type AdminAuthContextValue = {
   isAuthenticated: boolean;
+  isChecked: boolean;
   user: AdminSessionUser | null;
   permissions: AdminPermission[];
   hasPermission: (permission?: AdminPermission) => boolean;
@@ -113,6 +114,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       return {
         isAuthenticated,
+        isChecked,
         user,
         permissions,
         hasPermission: (permission?: AdminPermission) =>
@@ -168,12 +170,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         },
       };
     },
-    [isAuthenticated, user]
+    [isAuthenticated, isChecked, user]
   );
-
-  if (!isChecked) {
-    return null;
-  }
 
   return (
     <AdminAuthContext.Provider value={value}>

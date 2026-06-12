@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AccountGuard } from "@/components/account-guard";
 import {
@@ -155,7 +155,7 @@ function AccountMetric({
   );
 }
 
-export default function AccountPage() {
+function AccountPageContent() {
   const { user, isChecking, refreshUser, changePassword } = useCustomerAuth();
   const { pushToast } = useToast();
   const router = useRouter();
@@ -1681,5 +1681,13 @@ export default function AccountPage() {
       </AccountGuard>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={null}>
+      <AccountPageContent />
+    </Suspense>
   );
 }

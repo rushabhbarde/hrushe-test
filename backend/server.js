@@ -23,6 +23,7 @@ const {
 
 const app = express();
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
 const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/order/checkout/webhook/razorpay");
 

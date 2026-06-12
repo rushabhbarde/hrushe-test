@@ -463,6 +463,29 @@ const getProducts = asyncHandler(async (req, res) => {
   return res.json(data);
 });
 
+const getProductSitemapEntries = asyncHandler(async (req, res) => {
+  const products = await Product.find({ $and: publicProductConditions })
+    .select("slug category categories updatedAt")
+    .sort({ updatedAt: -1 })
+    .lean();
+
+  const entries = products.map((product) => ({
+    id: product._id.toString(),
+    slug: product.slug || "",
+    category: product.category || "",
+    categories:
+      Array.isArray(product.categories) && product.categories.length > 0
+        ? product.categories
+        : product.category
+          ? [product.category]
+          : [],
+    updatedAt: product.updatedAt,
+  }));
+
+  res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
+  return res.json(entries);
+});
+
 const getProductById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const includePrivate = canViewUnpublishedProducts(req);
@@ -628,6 +651,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 
 module.exports = {
   getProducts,
+  getProductSitemapEntries,
   getProductById,
   createProduct,
   updateProduct,

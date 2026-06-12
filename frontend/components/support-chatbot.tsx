@@ -104,6 +104,8 @@ export function SupportChatbot() {
   const selectedOption =
     issueOptions.find((option) => option.value === selectedValue) || null;
   const shouldHide = pathname.startsWith("/admin");
+  const shouldClearStickyAction =
+    pathname.startsWith("/product/") || pathname === "/cart" || pathname === "/checkout";
 
   useEffect(() => {
     if (!user) {
@@ -184,7 +186,13 @@ export function SupportChatbot() {
   }
 
   return (
-    <div className="fixed bottom-5 right-4 z-[65] sm:bottom-6 sm:right-6">
+    <div
+      className={`fixed right-4 z-[65] sm:bottom-6 sm:right-6 ${
+        shouldClearStickyAction
+          ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+      }`}
+    >
       {isOpen ? (
         <div className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_28px_80px_rgba(0,0,0,0.22)]">
           <div className="bg-[#111111] px-5 py-4 text-white">
@@ -324,13 +332,14 @@ export function SupportChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group flex min-h-14 items-center gap-3 border border-black bg-[#111111] px-4 text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.2)]"
+        className="group flex h-12 w-12 items-center justify-center border border-black bg-[#111111] text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.2)] sm:min-h-14 sm:w-auto sm:gap-3 sm:px-4"
         aria-expanded={isOpen}
+        aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
       >
-        <span className="flex h-8 w-8 items-center justify-center bg-white text-black">
+        <span className="flex h-7 w-7 items-center justify-center bg-white text-black sm:h-8 sm:w-8">
           ?
         </span>
-        Support
+        <span className="hidden sm:inline">Support</span>
       </button>
     </div>
   );

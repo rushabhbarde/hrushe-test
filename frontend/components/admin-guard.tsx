@@ -14,7 +14,7 @@ function useHydrated() {
 }
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAdminAuth();
+  const { isAuthenticated, isChecked } = useAdminAuth();
   const pathname = usePathname();
   const {
     openAdminLogin,
@@ -25,7 +25,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const isHydrated = useHydrated();
 
   useEffect(() => {
-    if (isHydrated && !isAuthenticated && !isOpen) {
+    if (isHydrated && isChecked && !isAuthenticated && !isOpen) {
       if (suppressAdminPrompt) {
         clearAdminPromptSuppression();
         return;
@@ -35,6 +35,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   }, [
     clearAdminPromptSuppression,
     isAuthenticated,
+    isChecked,
     isHydrated,
     isOpen,
     openAdminLogin,
@@ -42,7 +43,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     suppressAdminPrompt,
   ]);
 
-  if (!isHydrated || !isAuthenticated) {
+  if (!isHydrated || !isChecked || !isAuthenticated) {
     return null;
   }
 

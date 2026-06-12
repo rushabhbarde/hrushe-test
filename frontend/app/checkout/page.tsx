@@ -178,7 +178,7 @@ function OrderSummary({
         </div>
         <div className="flex items-center justify-between">
           <span>Shipping</span>
-          <span>{shipping ? formatPrice(shipping) : "Calculated at next step"}</span>
+          <span>{shipping ? formatPrice(shipping) : "Free"}</span>
         </div>
       </div>
 

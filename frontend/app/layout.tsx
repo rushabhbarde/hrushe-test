@@ -54,19 +54,19 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/brand/hrushe-sylogo-512.png",
-        width: 512,
-        height: 512,
-        alt: "HRUSHE symbol logo",
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "HRUSHE | Defined Quietly",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "HRUSHE | Modern Minimal Premium Streetwear",
     description:
       "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
-    images: ["/brand/hrushe-sylogo-512.png"],
+    images: ["/opengraph-image"],
   },
 };
 

@@ -260,6 +260,7 @@ export default function Home() {
   const { homepageBanner, loading: bannerLoading } = useHomepageBannerData();
   const loading = productsLoading || bannerLoading;
   const newInRailRef = useRef<HTMLDivElement | null>(null);
+  const heroSwipeStartRef = useRef<number | null>(null);
   const [heroTransitionState, dispatchHeroTransition] = useReducer(heroTransitionReducer, {
     activeIndex: 0,
     previousIndex: null,
@@ -492,6 +493,31 @@ export default function Home() {
       window.clearInterval(intervalId);
     };
   }, [publishedHeroBanners.length]);
+
+  const handleHeroSwipeStart = (event: React.PointerEvent<HTMLElement>) => {
+    heroSwipeStartRef.current = event.clientX;
+  };
+
+  const handleHeroSwipeEnd = (event: React.PointerEvent<HTMLElement>) => {
+    const startX = heroSwipeStartRef.current;
+    heroSwipeStartRef.current = null;
+
+    if (startX === null || publishedHeroBanners.length <= 1) {
+      return;
+    }
+
+    const distance = event.clientX - startX;
+
+    if (Math.abs(distance) < 45) {
+      return;
+    }
+
+    dispatchHeroTransition({
+      type: "shift",
+      step: distance < 0 ? 1 : -1,
+      bannerCount: publishedHeroBanners.length,
+    });
+  };
 
   useEffect(() => {
     if (heroTransitionState.previousIndex === null) {
@@ -754,37 +780,6 @@ export default function Home() {
                         <span>{activeHeroCtaLabel}</span>
                         <span aria-hidden="true">→</span>
                       </Link>
-
-                      <div className="hidden items-center gap-2 sm:flex">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            dispatchHeroTransition({
-                              type: "shift",
-                              step: -1,
-                              bannerCount: publishedHeroBanners.length,
-                            })
-                          }
-                          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                          aria-label="Previous banner"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            dispatchHeroTransition({
-                              type: "shift",
-                              step: 1,
-                              bannerCount: publishedHeroBanners.length,
-                            })
-                          }
-                          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] text-[var(--foreground)] transition hover:border-[var(--foreground)]"
-                          aria-label="Next banner"
-                        >
-                          ›
-                        </button>
-                      </div>
                     </div>
                   </>
                 )}
@@ -812,7 +807,15 @@ export default function Home() {
 
             <div className="order-1 min-w-0 reveal-up-delayed lg:order-2">
               <div className="space-y-3 sm:space-y-4 lg:hidden">
-                <div className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]">
+                <div
+                  className="relative aspect-[4/5] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]"
+                  onPointerDown={handleHeroSwipeStart}
+                  onPointerUp={handleHeroSwipeEnd}
+                  onPointerCancel={() => {
+                    heroSwipeStartRef.current = null;
+                  }}
+                  style={{ touchAction: "pan-y" }}
+                >
                   {loading ? (
                     <div className="h-full w-full animate-pulse bg-[rgba(17,17,17,0.06)]" />
                   ) : activeHeroMobileImage ? (
@@ -847,36 +850,11 @@ export default function Home() {
                             Defined quietly.
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              dispatchHeroTransition({
-                                type: "shift",
-                                step: -1,
-                                bannerCount: publishedHeroBanners.length,
-                              })
-                            }
-                            className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
-                            aria-label="Previous banner"
-                          >
-                            ‹
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              dispatchHeroTransition({
-                                type: "shift",
-                                step: 1,
-                                bannerCount: publishedHeroBanners.length,
-                              })
-                            }
-                            className="inline-flex h-10 w-10 items-center justify-center border border-white/35 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/16"
-                            aria-label="Next banner"
-                          >
-                            ›
-                          </button>
-                        </div>
+                        {publishedHeroBanners.length > 1 ? (
+                          <span className="text-[0.62rem] uppercase tracking-[0.16em] text-white/72">
+                            Swipe to explore
+                          </span>
+                        ) : null}
                       </div>
                     </>
                   )}

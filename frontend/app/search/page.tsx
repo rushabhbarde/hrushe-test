@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
@@ -10,7 +10,7 @@ import { useStorefrontData } from "@/lib/use-storefront";
 
 const RECENT_SEARCHES_KEY = "hrushe_recent_searches";
 
-export default function SearchPage() {
+function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -204,5 +204,13 @@ export default function SearchPage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={null}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

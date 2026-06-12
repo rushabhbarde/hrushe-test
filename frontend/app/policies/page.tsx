@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
@@ -173,7 +173,7 @@ const policyTabs = [
   },
 ] as const;
 
-export default function PoliciesPage() {
+function PoliciesPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -257,5 +257,13 @@ export default function PoliciesPage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function PoliciesPage() {
+  return (
+    <Suspense fallback={null}>
+      <PoliciesPageContent />
+    </Suspense>
   );
 }

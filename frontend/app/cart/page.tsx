@@ -16,7 +16,6 @@ import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const shipping = 0;
-const freeShippingThreshold = 1499;
 
 function formatPrice(value: number) {
   return `Rs. ${value.toLocaleString("en-IN")}`;
@@ -107,7 +106,6 @@ export default function CartPage() {
   const [removingKeys, setRemovingKeys] = useState<string[]>([]);
   const [bumpedKey, setBumpedKey] = useState("");
   const total = subtotal + shipping;
-  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const hasSavedProducts = wishlistIds.length > 0;
   const canCheckout = acceptedTerms && items.length > 0;
   const wishlistProducts = useMemo<Product[]>(
@@ -413,9 +411,7 @@ export default function CartPage() {
                         India-wide delivery in 3-5 business days. Tracking appears after dispatch.
                       </p>
                       <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                        {remainingForFreeShipping > 0
-                          ? `Add ${formatPrice(remainingForFreeShipping)} more to unlock free shipping.`
-                          : "Free shipping is active on this bag."}
+                        Complimentary India-wide shipping is active on this bag.
                       </p>
                     </div>
 

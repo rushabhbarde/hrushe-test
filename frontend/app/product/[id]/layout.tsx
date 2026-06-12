@@ -29,7 +29,7 @@ function getMetadataImage(product: Product) {
   const image = product.images?.[0] || "";
   return image.startsWith("http://") || image.startsWith("https://") || image.startsWith("/")
     ? image
-    : "";
+    : "/opengraph-image";
 }
 
 const getProduct = cache(async (id: string) => {

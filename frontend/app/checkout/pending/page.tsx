@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
-export default function CheckoutPendingPage() {
+function CheckoutPendingPageContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const trackingLookup = orderId ? `/track-order?orderId=${encodeURIComponent(orderId)}` : "/track-order";
@@ -67,5 +68,13 @@ export default function CheckoutPendingPage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function CheckoutPendingPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutPendingPageContent />
+    </Suspense>
   );
 }

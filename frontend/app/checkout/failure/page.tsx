@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
-export default function CheckoutFailurePage() {
+function CheckoutFailurePageContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
@@ -66,5 +67,13 @@ export default function CheckoutFailurePage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function CheckoutFailurePage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutFailurePageContent />
+    </Suspense>
   );
 }

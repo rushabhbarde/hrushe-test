@@ -20,7 +20,7 @@ export type HomepageBanner = {
 export const defaultProducts: Product[] = [];
 
 export const defaultHomepageBanner: HomepageBanner = {
-  announcementText: "FREE SHIPPING ON SELECTED STYLES",
+  announcementText: "COMPLIMENTARY INDIA-WIDE SHIPPING",
   eyebrow: "New season, everyday essentials",
   title: "Elevated basics for everyday dressing.",
   description:

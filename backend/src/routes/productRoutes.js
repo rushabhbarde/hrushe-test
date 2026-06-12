@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getProducts,
+  getProductSitemapEntries,
   getProductById,
   createProduct,
   updateProduct,
@@ -19,6 +20,7 @@ const { createRateLimiter } = require("../middleware/rateLimitMiddleware");
 const router = express.Router();
 
 router.get("/", attachUserIfAuthenticated, getProducts);
+router.get("/sitemap", getProductSitemapEntries);
 router.get(
   "/admin/reviews",
   protect,

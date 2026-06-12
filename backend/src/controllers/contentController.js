@@ -6,7 +6,7 @@ let homepageBannerCache = null;
 const HOMEPAGE_BANNER_CACHE_TTL = 2 * 60 * 1000;
 
 const CURRENT_HOMEPAGE_BANNER = Object.freeze({
-  announcementText: "FREE SHIPPING ON SELECTED STYLES",
+  announcementText: "COMPLIMENTARY INDIA-WIDE SHIPPING",
   eyebrow: "New season, everyday essentials",
   title: "Elevated basics for everyday dressing.",
   description:
@@ -27,6 +27,17 @@ const LEGACY_HOMEPAGE_BANNER = Object.freeze({
   description:
     "A clean black-and-white storefront with red accent moments that draw attention exactly where you want it: active navigation, campaign messaging, and purchase actions.",
 });
+
+const LEGACY_WORKSPACE_SUBTITLES = new Map([
+  [
+    "Launch premium hero stories across desktop and mobile with the same quiet luxury tone as the storefront.",
+    "A considered edit of modern layers, calm colour, and everyday ease.",
+  ],
+  [
+    "Use scheduling to line up drops, campaigns, and editorial homepage swaps without touching code.",
+    "Relaxed proportions and understated essentials for off-duty dressing.",
+  ],
+]);
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === "[object Object]";
@@ -66,7 +77,9 @@ function normalizeWorkspaceBanner(banner = {}) {
     id: String(banner.id || "").trim(),
     label: String(banner.label || "").trim(),
     title: String(banner.title || "").trim(),
-    subtitle: String(banner.subtitle || "").trim(),
+    subtitle:
+      LEGACY_WORKSPACE_SUBTITLES.get(String(banner.subtitle || "").trim()) ||
+      String(banner.subtitle || "").trim(),
     ctaText: String(banner.ctaText || "").trim(),
     ctaLink: String(banner.ctaLink || "").trim(),
     mediaType: inferredMediaType,
