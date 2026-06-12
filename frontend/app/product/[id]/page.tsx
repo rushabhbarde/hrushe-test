@@ -14,6 +14,7 @@ import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -281,7 +282,7 @@ function ProductMediaFrame({
       src={item.src}
       alt={item.alt}
       fill
-      unoptimized
+      unoptimized={shouldBypassImageOptimization(item.src)}
       sizes="(max-width: 1024px) 100vw, 50vw"
       className={imageClassName}
     />

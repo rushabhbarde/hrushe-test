@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountGuard } from "@/components/account-guard";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/loading-state";
 import { useCart, type CartLine } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
@@ -12,6 +13,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 
 type CheckoutResponse = {
   appOrderId: string;
@@ -148,7 +150,7 @@ function OrderSummary({
                   src={item.image}
                   alt={item.name}
                   fill
-                  unoptimized
+                  unoptimized={shouldBypassImageOptimization(item.image)}
                   sizes="88px"
                   className="object-cover"
                 />
@@ -192,7 +194,7 @@ function OrderSummary({
 }
 
 export default function CheckoutPage() {
-  const { items, itemCount, subtotal } = useCart();
+  const { items, itemCount, subtotal, isReady } = useCart();
   const { user } = useCustomerAuth();
   const { pushToast } = useToast();
   const [form, setForm] = useState(() => buildInitialForm(user));
@@ -413,7 +415,12 @@ export default function CheckoutPage() {
       <AccountGuard>
         <main className="lux-page py-8 sm:py-10 lg:py-14">
           <div className="lux-container">
-            {items.length === 0 ? (
+            {!isReady ? (
+              <LoadingState
+                title="Preparing your checkout"
+                description="We are syncing your saved bag before payment details are shown."
+              />
+            ) : items.length === 0 ? (
               <section className="mx-auto max-w-3xl py-10">
                 <EmptyState
                   title="Your checkout is waiting for products."

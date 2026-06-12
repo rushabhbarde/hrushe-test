@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ProductCard } from "@/components/product-card";
 import { apiRequest } from "@/lib/api";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 type HomepageReviewSlide = {
@@ -212,7 +213,7 @@ function SmoothBannerMedia({
               src={previousSrc}
               alt={previousAlt || currentAlt}
               fill
-              unoptimized
+              unoptimized={shouldBypassImageOptimization(previousSrc)}
               className={`object-cover object-center ${overlayOpacityClass || ""}`}
             />
           )}
@@ -239,7 +240,7 @@ function SmoothBannerMedia({
               src={currentSrc}
               alt={currentAlt}
               fill
-              unoptimized
+              unoptimized={shouldBypassImageOptimization(currentSrc)}
               className={`object-cover object-center ${overlayOpacityClass || ""}`}
             />
           )}
@@ -1283,7 +1284,7 @@ export default function Home() {
                                   src={reviewImage}
                                   alt={`${review.reviewerName} review for ${review.productName}`}
                                   fill
-                                  unoptimized
+                                  unoptimized={shouldBypassImageOptimization(reviewImage)}
                                   className="object-cover object-center"
                                 />
                               ) : (

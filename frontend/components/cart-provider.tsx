@@ -6,7 +6,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -81,6 +80,7 @@ type CartContextValue = {
   itemCount: number;
   subtotal: number;
   isCartOpen: boolean;
+  isReady: boolean;
   addItem: (item: AddCartItemInput) => void;
   removeItem: (productId: string, size?: string, color?: string, fit?: string) => void;
   updateQuantity: (
@@ -110,9 +110,9 @@ const sameVariant = (
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isChecking } = useCustomerAuth();
   const storageKey = user?.id ? `hrushetest-cart-${user.id}` : GUEST_CART_STORAGE_KEY;
-  const [items, setItems] = useState<CartLine[]>(() => readStoredCart(GUEST_CART_STORAGE_KEY));
+  const [items, setItems] = useState<CartLine[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const isSyncingRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
@@ -133,18 +133,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, storageKey]);
 
   useEffect(() => {
-    if (isChecking || isSyncingRef.current) {
+    if (isChecking) {
+      setIsReady(false);
       return;
     }
 
     if (!isAuthenticated || !user?.id) {
       const guestItems = readStoredCart(GUEST_CART_STORAGE_KEY);
       setItems(guestItems);
+      setIsReady(true);
       return;
     }
 
     let cancelled = false;
-    isSyncingRef.current = true;
+    setIsReady(false);
 
     const syncCart = async () => {
       const guestItems = readStoredCart(GUEST_CART_STORAGE_KEY);
@@ -170,7 +172,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           setItems(cachedUserItems.length ? cachedUserItems : guestItems);
         }
       } finally {
-        isSyncingRef.current = false;
+        if (!cancelled) {
+          setIsReady(true);
+        }
       }
     };
 
@@ -182,8 +186,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isChecking, storageKey, user?.id]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
     writeStoredCart(storageKey, items);
-  }, [items, storageKey]);
+  }, [isReady, items, storageKey]);
 
   const addItem = useCallback(
     ({
@@ -317,6 +325,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       itemCount,
       subtotal,
       isCartOpen,
+      isReady,
       addItem,
       removeItem,
       updateQuantity,
@@ -330,6 +339,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     clearCart,
     closeCart,
     isCartOpen,
+    isReady,
     items,
     openCart,
     refreshServerCart,

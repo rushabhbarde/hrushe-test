@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { TrustBadges } from "@/components/trust-badges";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 
 export function CartDrawer() {
   const {
@@ -13,6 +14,7 @@ export function CartDrawer() {
     subtotal,
     itemCount,
     isCartOpen,
+    isReady,
     closeCart,
     removeItem,
     updateQuantity,
@@ -51,7 +53,20 @@ export function CartDrawer() {
         </div>
 
         <div className="hide-scrollbar mt-6 flex-1 space-y-4 overflow-y-auto">
-          {items.length === 0 ? (
+          {!isReady ? (
+            <div className="loading-pulse space-y-4">
+              {[0, 1].map((item) => (
+                <div key={item} className="flex gap-4 border border-[var(--border)] p-4">
+                  <div className="h-20 w-20 shrink-0 bg-[var(--surface-strong)]" />
+                  <div className="flex-1">
+                    <div className="h-4 w-3/4 bg-[var(--surface-strong)]" />
+                    <div className="mt-3 h-3 w-1/2 bg-[var(--surface-strong)]" />
+                    <div className="mt-5 h-9 w-full bg-[var(--surface-strong)]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
             <div className="empty-shell p-6">
               <p className="text-lg font-semibold">Your cart is empty.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
@@ -77,7 +92,7 @@ export function CartDrawer() {
                         src={item.image}
                         alt={item.name}
                         fill
-                        unoptimized
+                        unoptimized={shouldBypassImageOptimization(item.image)}
                         className="object-cover"
                       />
                     ) : (
@@ -138,7 +153,8 @@ export function CartDrawer() {
           )}
         </div>
 
-        <div className="border-t border-[var(--border)] pt-5">
+        {isReady ? (
+          <div className="border-t border-[var(--border)] pt-5">
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>{itemCount} items</span>
             <span>Subtotal Rs. {subtotal.toLocaleString("en-IN")}</span>
@@ -160,7 +176,8 @@ export function CartDrawer() {
               View cart
             </Link>
           </div>
-        </div>
+          </div>
+        ) : null}
       </aside>
     </div>
   );

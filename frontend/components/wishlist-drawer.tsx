@@ -9,6 +9,7 @@ import { useToast } from "@/components/toast-provider";
 import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useWishlist } from "@/components/wishlist-provider";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 
 export function WishlistDrawer() {
   const {
@@ -97,7 +98,7 @@ export function WishlistDrawer() {
                         src={product.images[0]}
                         alt={product.name}
                         fill
-                        unoptimized
+                        unoptimized={shouldBypassImageOptimization(product.images[0])}
                         className="object-cover"
                       />
                     ) : (

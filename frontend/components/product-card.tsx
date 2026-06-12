@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import type { Product } from "@/lib/catalog";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
 
@@ -121,7 +122,7 @@ export function ProductCard({ product }: { product: Product }) {
             src={product.images[0]}
             alt={product.name}
             fill
-            unoptimized
+            unoptimized={shouldBypassImageOptimization(product.images[0])}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={`pointer-events-none object-cover object-center transition duration-700 md:group-hover/product:scale-[1.02] ${
               hasHoverImage ? "md:group-hover/product:opacity-0" : ""
@@ -138,7 +139,7 @@ export function ProductCard({ product }: { product: Product }) {
             src={hoverImage}
             alt={`${product.name} alternate view`}
             fill
-            unoptimized
+            unoptimized={shouldBypassImageOptimization(hoverImage)}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="pointer-events-none object-cover object-center opacity-0 transition duration-700 md:group-hover/product:scale-[1.02] md:group-hover/product:opacity-100"
           />

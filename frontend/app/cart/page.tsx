@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/site-header";
 import { TrustBadges } from "@/components/trust-badges";
 import { useWishlist } from "@/components/wishlist-provider";
 import type { Product } from "@/lib/catalog";
+import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const shipping = 0;
@@ -64,8 +65,40 @@ function QuantityControl({
   );
 }
 
+function CartPageSkeleton() {
+  return (
+    <div className="page-shell">
+      <SiteHeader />
+      <main className="lux-page py-8 sm:py-10 lg:py-14">
+        <div className="lux-container loading-pulse">
+          <div className="h-3 w-24 bg-[var(--surface-strong)]" />
+          <div className="mt-4 h-12 w-64 max-w-full bg-[var(--surface-strong)]" />
+          <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:gap-12">
+            <div className="grid gap-6 md:grid-cols-2">
+              {[0, 1].map((item) => (
+                <div key={item} className="border border-[var(--border)] p-4">
+                  <div className="aspect-[0.84/1] bg-[var(--surface-strong)]" />
+                  <div className="mt-4 h-4 w-3/4 bg-[var(--surface-strong)]" />
+                  <div className="mt-3 h-3 w-1/2 bg-[var(--surface-strong)]" />
+                </div>
+              ))}
+            </div>
+            <div className="h-72 border border-[var(--border)] bg-[rgba(255,255,255,0.5)] p-5">
+              <div className="h-4 w-32 bg-[var(--surface-strong)]" />
+              <div className="mt-8 h-3 w-full bg-[var(--surface-strong)]" />
+              <div className="mt-4 h-3 w-4/5 bg-[var(--surface-strong)]" />
+              <div className="mt-10 h-12 w-full bg-[var(--surface-strong)]" />
+            </div>
+          </div>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
 export default function CartPage() {
-  const { items, subtotal, itemCount, addItem, removeItem, updateQuantity } = useCart();
+  const { items, subtotal, itemCount, isReady, addItem, removeItem, updateQuantity } = useCart();
   const { wishlistIds, isWishlisted, toggleWishlist, removeWishlistItem } = useWishlist();
   const { products } = useStorefrontData();
   const { pushToast } = useToast();
@@ -134,6 +167,10 @@ export default function CartPage() {
     setActiveCartTab("bag");
     pushToast("Moved favourite to bag.");
   };
+
+  if (!isReady) {
+    return <CartPageSkeleton />;
+  }
 
   return (
     <div className="page-shell">
@@ -216,7 +253,7 @@ export default function CartPage() {
                                       src={item.image}
                                       alt={item.name}
                                       fill
-                                      unoptimized
+                                      unoptimized={shouldBypassImageOptimization(item.image)}
                                       sizes="(max-width: 768px) 74vw, 34vw"
                                       className="object-cover transition duration-500 group-hover:scale-[1.025]"
                                     />
