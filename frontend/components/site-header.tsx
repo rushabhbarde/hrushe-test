@@ -163,7 +163,7 @@ export function SiteHeader() {
 
           <Link href="/" className="flex items-center justify-center">
             <Image
-              src="/HRUSHE-LOGO.png"
+              src="/NEW_LOGO.png"
               alt="Hrushe logo"
               width={220}
               height={72}
