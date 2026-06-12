@@ -18,6 +18,7 @@ import { useToast } from "@/components/toast-provider";
 import {
   type Product,
   type ProductCollectionLabel,
+  type ProductSizeMeasurement,
   type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
@@ -49,6 +50,7 @@ type BulkUploadPayload = Array<{
   weight?: string;
   washCare?: string;
   qualityNote?: string;
+  sizeGuide?: ProductSizeMeasurement[];
 }>;
 
 export default function AdminProductsPage() {
@@ -185,6 +187,7 @@ export default function AdminProductsPage() {
           weight: entry.weight || "",
           washCare: entry.washCare || "",
           qualityNote: entry.qualityNote || "",
+          sizeGuide: entry.sizeGuide || [],
           fitType: entry.fitType || "Regular",
           gender: entry.gender || "Unisex",
           collectionLabels: entry.collectionLabels || [],

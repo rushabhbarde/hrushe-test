@@ -17,6 +17,7 @@ import {
   type ProductCollectionLabel,
   type ProductFitType,
   type ProductGender,
+  type ProductSizeMeasurement,
   type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
@@ -52,6 +53,7 @@ type FormState = {
   weight: string;
   washCare: string;
   qualityNote: string;
+  sizeGuide: ProductSizeMeasurement[];
   videos: ProductVideo[];
   videoUrlDraft: string;
   videoTitleDraft: string;
@@ -125,6 +127,7 @@ function buildInitialState(
     weight: product?.weight || "",
     washCare: product?.washCare || "",
     qualityNote: product?.qualityNote || "",
+    sizeGuide: product?.sizeGuide || [],
     videos: product?.videos || [],
     videoUrlDraft: "",
     videoTitleDraft: "",
@@ -157,6 +160,20 @@ export function AdminProductForm({
     [form.colors]
   );
   const parsedCategories = useMemo(() => [form.category].filter(Boolean), [form.category]);
+  const selectedSizeGuideRows = useMemo(
+    () =>
+      form.sizes.map(
+        (size) =>
+          form.sizeGuide.find((row) => row.size === size) || {
+            size,
+            chest: "",
+            length: "",
+            shoulder: "",
+            sleeve: "",
+          }
+      ),
+    [form.sizeGuide, form.sizes]
+  );
 
   const sellingPrice = Number(form.price);
   const comparePrice = Number(form.compareAtPrice);
@@ -167,6 +184,31 @@ export function AdminProductForm({
 
   function updateForm<T extends keyof FormState>(key: T, value: FormState[T]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateSizeMeasurement(
+    size: string,
+    key: Exclude<keyof ProductSizeMeasurement, "size">,
+    value: string
+  ) {
+    setForm((current) => {
+      const existing = current.sizeGuide.find((row) => row.size === size);
+      const nextRow: ProductSizeMeasurement = {
+        size,
+        chest: existing?.chest || "",
+        length: existing?.length || "",
+        shoulder: existing?.shoulder || "",
+        sleeve: existing?.sleeve || "",
+        [key]: value,
+      };
+
+      return {
+        ...current,
+        sizeGuide: existing
+          ? current.sizeGuide.map((row) => (row.size === size ? nextRow : row))
+          : [...current.sizeGuide, nextRow],
+      };
+    });
   }
 
   async function uploadImages(
@@ -283,6 +325,9 @@ export function AdminProductForm({
         weight: form.weight.trim(),
         washCare: form.washCare.trim(),
         qualityNote: form.qualityNote.trim(),
+        sizeGuide: selectedSizeGuideRows.filter(
+          (row) => row.chest || row.length || row.shoulder || row.sleeve
+        ),
         fitType: form.fitType,
         gender: form.gender,
         collectionLabels,
@@ -568,6 +613,68 @@ export function AdminProductForm({
                   onChange={(event) => updateForm("washCare", event.target.value)}
                 />
               </AdminField>
+            </div>
+            <div className="mt-6 border-t border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] pt-5">
+              <p className="text-sm font-medium text-[var(--foreground)]">Size measurements</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                Garment measurements in inches. Select product sizes above to edit their chart rows.
+              </p>
+              {selectedSizeGuideRows.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {selectedSizeGuideRows.map((row) => (
+                    <div
+                      key={row.size}
+                      className="border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] p-4"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]">
+                        Size {row.size}
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <AdminField label="Chest">
+                          <AdminFilterInput
+                            value={row.chest}
+                            inputMode="decimal"
+                            onChange={(event) =>
+                              updateSizeMeasurement(row.size, "chest", event.target.value)
+                            }
+                          />
+                        </AdminField>
+                        <AdminField label="Length">
+                          <AdminFilterInput
+                            value={row.length}
+                            inputMode="decimal"
+                            onChange={(event) =>
+                              updateSizeMeasurement(row.size, "length", event.target.value)
+                            }
+                          />
+                        </AdminField>
+                        <AdminField label="Shoulder">
+                          <AdminFilterInput
+                            value={row.shoulder}
+                            inputMode="decimal"
+                            onChange={(event) =>
+                              updateSizeMeasurement(row.size, "shoulder", event.target.value)
+                            }
+                          />
+                        </AdminField>
+                        <AdminField label="Sleeve">
+                          <AdminFilterInput
+                            value={row.sleeve}
+                            inputMode="decimal"
+                            onChange={(event) =>
+                              updateSizeMeasurement(row.size, "sleeve", event.target.value)
+                            }
+                          />
+                        </AdminField>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] px-4 py-3 text-sm text-[var(--muted)]">
+                  Select at least one product size to build the size chart.
+                </p>
+              )}
             </div>
           </AdminPanel>
         </div>

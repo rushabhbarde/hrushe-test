@@ -14,6 +14,14 @@ export type ProductVideo = {
   posterUrl?: string;
 };
 
+export type ProductSizeMeasurement = {
+  size: string;
+  chest: string;
+  length: string;
+  shoulder: string;
+  sleeve: string;
+};
+
 export type ProductStatus = "Active" | "Draft" | "Hidden" | "Sold Out";
 export type ProductFitType = "Oversized" | "Regular";
 export type ProductGender = "Men" | "Women" | "Unisex";
@@ -47,6 +55,7 @@ export type Product = {
   weight?: string;
   washCare?: string;
   qualityNote?: string;
+  sizeGuide?: ProductSizeMeasurement[];
   fitType?: ProductFitType;
   gender?: ProductGender;
   collectionLabels?: ProductCollectionLabel[];

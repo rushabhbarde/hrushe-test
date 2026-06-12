@@ -1,14 +1,11 @@
 "use client";
 
-const oversizedTeeSizeRows = [
-  { size: "S", chest: "40", length: "27", shoulder: "18", sleeve: "8.5" },
-  { size: "M", chest: "42", length: "28", shoulder: "19", sleeve: "9" },
-  { size: "L", chest: "44", length: "29", shoulder: "20", sleeve: "9.5" },
-  { size: "XL", chest: "46", length: "30", shoulder: "21", sleeve: "10" },
-  { size: "XXL", chest: "48", length: "31", shoulder: "22", sleeve: "10.5" },
-];
+import type { ProductSizeMeasurement } from "@/lib/catalog";
+import { resolveProductSizeGuide } from "@/lib/size-guide";
 
-export function SizeGuideTable() {
+export function SizeGuideTable({ rows }: { rows?: ProductSizeMeasurement[] }) {
+  const resolvedRows = resolveProductSizeGuide(rows);
+
   return (
     <div className="overflow-x-auto border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.58)]">
       <table className="w-full min-w-[520px] border-collapse text-left text-sm">
@@ -23,7 +20,7 @@ export function SizeGuideTable() {
           </tr>
         </thead>
         <tbody>
-          {oversizedTeeSizeRows.map((row) => (
+          {resolvedRows.map((row) => (
             <tr key={row.size} className="border-b border-[rgba(17,17,17,0.06)] last:border-0">
               <td className="px-4 py-3 font-semibold">{row.size}</td>
               <td className="px-4 py-3 text-[var(--muted)]">{row.chest}&quot;</td>
@@ -41,9 +38,13 @@ export function SizeGuideTable() {
 export function SizeGuideModal({
   open,
   onClose,
+  rows,
+  title = "Oversized t-shirt fit",
 }: {
   open: boolean;
   onClose: () => void;
+  rows?: ProductSizeMeasurement[];
+  title?: string;
 }) {
   if (!open) {
     return null;
@@ -64,10 +65,10 @@ export function SizeGuideModal({
               Size guide
             </p>
             <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[-0.05em]">
-              Oversized t-shirt fit
+              {title}
             </h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
-              Measurements are garment measurements in inches. Choose your usual size for a relaxed oversized shape, or size down for a cleaner fall.
+              Measurements are garment measurements in inches. Compare them with a piece you already own for the clearest fit reference.
             </p>
           </div>
           <button
@@ -80,7 +81,7 @@ export function SizeGuideModal({
           </button>
         </div>
         <div className="mt-6">
-          <SizeGuideTable />
+          <SizeGuideTable rows={rows} />
         </div>
       </section>
     </div>

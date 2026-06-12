@@ -93,6 +93,26 @@ const PRODUCT_DETAIL_FIELDS = [
 const normalizeOptionalText = (value) =>
   typeof value === "string" ? value.trim() : "";
 
+const normalizeProductSizeGuide = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((row) => ({
+      size: normalizeOptionalText(row?.size),
+      chest: normalizeOptionalText(row?.chest),
+      length: normalizeOptionalText(row?.length),
+      shoulder: normalizeOptionalText(row?.shoulder),
+      sleeve: normalizeOptionalText(row?.sleeve),
+    }))
+    .filter(
+      (row) =>
+        row.size &&
+        (row.chest || row.length || row.shoulder || row.sleeve)
+    );
+};
+
 const normalizeProductPayload = (payload, { partial = false } = {}) => {
   const normalized = {};
 
@@ -155,6 +175,10 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
       normalized[field] = normalizeOptionalText(payload[field]);
     }
   });
+
+  if (!partial || payload.sizeGuide !== undefined) {
+    normalized.sizeGuide = normalizeProductSizeGuide(payload.sizeGuide);
+  }
 
   if (!partial || payload.videos !== undefined) {
     normalized.videos = normalizeProductVideos(payload.videos);

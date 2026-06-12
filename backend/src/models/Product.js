@@ -63,6 +63,39 @@ const productVideoSchema = new mongoose.Schema(
   }
 );
 
+const productSizeMeasurementSchema = new mongoose.Schema(
+  {
+    size: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    chest: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    length: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    shoulder: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    sleeve: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -150,6 +183,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+    sizeGuide: {
+      type: [productSizeMeasurementSchema],
+      default: [],
     },
     videos: {
       type: [productVideoSchema],

@@ -1036,9 +1036,9 @@ export default function ProductDetailPage() {
                         {section.key === "size" ? (
                           <div className="space-y-4">
                             <p>
-                              Oversized t-shirt measurements are garment measurements in inches.
+                              {getProductFit(product)} t-shirt measurements are garment measurements in inches.
                             </p>
-                            <SizeGuideTable />
+                            <SizeGuideTable rows={product.sizeGuide} />
                           </div>
                         ) : null}
                         {section.key === "delivery" ? (
@@ -1277,7 +1277,12 @@ export default function ProductDetailPage() {
         </div>
       ) : null}
 
-      <SizeGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+      <SizeGuideModal
+        open={sizeGuideOpen}
+        onClose={() => setSizeGuideOpen(false)}
+        rows={product.sizeGuide}
+        title={`${getProductFit(product)} t-shirt fit`}
+      />
       <SiteFooter />
     </div>
   );
