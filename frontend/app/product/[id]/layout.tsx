@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Product } from "@/lib/catalog";
+import { cache } from "react";
 
 const BACKEND_API_URL = (
   process.env.API_URL ||
@@ -31,21 +32,25 @@ function getMetadataImage(product: Product) {
     : "";
 }
 
+const getProduct = cache(async (id: string) => {
+  const response = await fetch(`${BACKEND_API_URL}/products/${encodeURIComponent(id)}`, {
+    next: { revalidate: 300 },
+  });
+
+  if (!response.ok) {
+    throw new Error("Product request failed");
+  }
+
+  return (await response.json()) as Product;
+});
+
 export async function generateMetadata({
   params,
 }: Omit<ProductLayoutProps, "children">): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    const response = await fetch(`${BACKEND_API_URL}/products/${encodeURIComponent(id)}`, {
-      next: { revalidate: 300 },
-    });
-
-    if (!response.ok) {
-      throw new Error("Product metadata request failed");
-    }
-
-    const product = (await response.json()) as Product;
+    const product = await getProduct(id);
     const description = buildDescription(product);
     const canonicalPath = `/product/${product.slug || id}`;
     const image = getMetadataImage(product);
@@ -78,6 +83,56 @@ export async function generateMetadata({
   }
 }
 
-export default function ProductLayout({ children }: ProductLayoutProps) {
-  return children;
+export default async function ProductLayout({ children, params }: ProductLayoutProps) {
+  const { id } = await params;
+  let structuredData = "";
+
+  try {
+    const product = await getProduct(id);
+    const image = getMetadataImage(product);
+    const inStock =
+      !product.trackInventory ||
+      product.variants?.some((variant) => variant.active && variant.stock > 0);
+    const reviews = product.reviews || [];
+    structuredData = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description: buildDescription(product),
+      sku: product.id,
+      brand: { "@type": "Brand", name: "HRUSHE" },
+      ...(image ? { image: [new URL(image, "https://hrushe.in").toString()] } : {}),
+      offers: {
+        "@type": "Offer",
+        url: `https://hrushe.in/product/${product.slug || id}`,
+        priceCurrency: "INR",
+        price: product.price,
+        availability: inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+        itemCondition: "https://schema.org/NewCondition",
+      },
+      ...(reviews.length
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue:
+                reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length,
+              reviewCount: reviews.length,
+            },
+          }
+        : {}),
+    });
+  } catch {
+    structuredData = "";
+  }
+
+  return (
+    <>
+      {structuredData ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
+      ) : null}
+      {children}
+    </>
+  );
 }

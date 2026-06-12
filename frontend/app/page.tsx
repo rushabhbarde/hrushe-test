@@ -10,7 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ProductCard } from "@/components/product-card";
 import { apiRequest } from "@/lib/api";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
-import { useStorefrontData } from "@/lib/use-storefront";
+import { useHomepageBannerData, useStorefrontData } from "@/lib/use-storefront";
 
 type HomepageReviewSlide = {
   id: string;
@@ -213,6 +213,7 @@ function SmoothBannerMedia({
               src={previousSrc}
               alt={previousAlt || currentAlt}
               fill
+              sizes="100vw"
               unoptimized={shouldBypassImageOptimization(previousSrc)}
               className={`object-cover object-center ${overlayOpacityClass || ""}`}
             />
@@ -240,6 +241,9 @@ function SmoothBannerMedia({
               src={currentSrc}
               alt={currentAlt}
               fill
+              sizes="100vw"
+              loading="eager"
+              fetchPriority="high"
               unoptimized={shouldBypassImageOptimization(currentSrc)}
               className={`object-cover object-center ${overlayOpacityClass || ""}`}
             />
@@ -252,7 +256,9 @@ function SmoothBannerMedia({
 
 export default function Home() {
   const router = useRouter();
-  const { homepageBanner, products, loading } = useStorefrontData();
+  const { products, loading: productsLoading } = useStorefrontData();
+  const { homepageBanner, loading: bannerLoading } = useHomepageBannerData();
+  const loading = productsLoading || bannerLoading;
   const newInRailRef = useRef<HTMLDivElement | null>(null);
   const [heroTransitionState, dispatchHeroTransition] = useReducer(heroTransitionReducer, {
     activeIndex: 0,
@@ -1284,6 +1290,7 @@ export default function Home() {
                                   src={reviewImage}
                                   alt={`${review.reviewerName} review for ${review.productName}`}
                                   fill
+                                  sizes="(max-width: 1024px) 100vw, 47vw"
                                   unoptimized={shouldBypassImageOptimization(reviewImage)}
                                   className="object-cover object-center"
                                 />

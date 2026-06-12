@@ -83,7 +83,6 @@ const sendAuthResponse = (res, user, message, statusCode = 200) => {
 
   return res.status(statusCode).json({
     message,
-    token,
     user: serializeUser(user),
   });
 };

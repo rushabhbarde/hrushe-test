@@ -2,6 +2,7 @@
 
 import type { ProductSizeMeasurement } from "@/lib/catalog";
 import { resolveProductSizeGuide } from "@/lib/size-guide";
+import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
 export function SizeGuideTable({ rows }: { rows?: ProductSizeMeasurement[] }) {
   const resolvedRows = resolveProductSizeGuide(rows);
@@ -46,6 +47,8 @@ export function SizeGuideModal({
   rows?: ProductSizeMeasurement[];
   title?: string;
 }) {
+  const { dialogRef, initialFocusRef } = useDialogAccessibility(open, onClose);
+
   if (!open) {
     return null;
   }
@@ -58,13 +61,19 @@ export function SizeGuideModal({
         className="absolute inset-0 bg-black/35"
         onClick={onClose}
       />
-      <section className="absolute inset-x-3 bottom-3 max-h-[86vh] overflow-y-auto border border-[var(--border)] bg-[var(--background)] p-5 shadow-[0_24px_70px_rgba(17,17,17,0.18)] sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[min(680px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:p-7">
+      <section
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="size-guide-title"
+        className="absolute inset-x-3 bottom-3 max-h-[86vh] overflow-y-auto border border-[var(--border)] bg-[var(--background)] p-5 shadow-[0_24px_70px_rgba(17,17,17,0.18)] sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[min(680px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:p-7"
+      >
         <div className="flex items-start justify-between gap-5">
           <div>
             <p className="text-[0.68rem] uppercase tracking-[0.18em] text-[var(--accent)]">
               Size guide
             </p>
-            <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[-0.05em]">
+            <h2 id="size-guide-title" className="mt-2 text-2xl font-semibold uppercase tracking-[-0.05em]">
               {title}
             </h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
@@ -73,6 +82,7 @@ export function SizeGuideModal({
           </div>
           <button
             type="button"
+            ref={initialFocusRef}
             onClick={onClose}
             className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--border)] text-xl"
             aria-label="Close size guide"

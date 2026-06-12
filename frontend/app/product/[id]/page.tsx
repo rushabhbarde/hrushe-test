@@ -444,16 +444,28 @@ function ProductInfoPanel({
           <div className="mt-3 flex flex-wrap gap-2">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
+              const available =
+                !product.trackInventory ||
+                product.variants?.some(
+                  (variant) =>
+                    variant.active &&
+                    variant.stock > 0 &&
+                    variant.size.toLowerCase() === size.toLowerCase() &&
+                    (!selectedColor || variant.color.toLowerCase() === selectedColor.toLowerCase())
+                );
 
               return (
                 <button
                   key={size}
                   type="button"
-                  onClick={() => onSizeSelect(size)}
+                  onClick={() => available && onSizeSelect(size)}
+                  disabled={!available}
                   className={`inline-flex min-h-9 min-w-9 items-center justify-center border px-3 text-[0.72rem] uppercase transition ${
                     active
                       ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
-                      : "border-[rgba(17,17,17,0.16)] bg-[var(--surface)] text-[var(--foreground)]"
+                      : available
+                        ? "border-[rgba(17,17,17,0.16)] bg-[var(--surface)] text-[var(--foreground)]"
+                        : "cursor-not-allowed border-[rgba(17,17,17,0.08)] bg-[var(--surface)] text-[var(--muted)] line-through opacity-45"
                   }`}
                 >
                   {size}
@@ -674,7 +686,17 @@ export default function ProductDetailPage() {
   const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0] || null;
   const requiresSize = product.sizes.length > 0;
   const effectiveColor = selectedColor || product.colors[0] || "";
-  const canAddToCart = !requiresSize || Boolean(selectedSize);
+  const selectedVariantAvailable =
+    !product.trackInventory ||
+    product.variants?.some(
+      (variant) =>
+        variant.active &&
+        variant.stock > 0 &&
+        variant.size.toLowerCase() === selectedSize.toLowerCase() &&
+        (!effectiveColor || variant.color.toLowerCase() === effectiveColor.toLowerCase())
+    );
+  const canAddToCart =
+    (!requiresSize || Boolean(selectedSize)) && Boolean(selectedVariantAvailable);
   const relatedProducts = products
     .filter(
       (item) =>
@@ -890,6 +912,7 @@ export default function ProductDetailPage() {
                 canAddToCart={canAddToCart}
                 onColorSelect={(color) => {
                   setSelectedColor(color);
+                  setSelectedSize("");
                   setAddError("");
                 }}
                 onSizeSelect={(size) => {
@@ -958,6 +981,7 @@ export default function ProductDetailPage() {
                 canAddToCart={canAddToCart}
                 onColorSelect={(color) => {
                   setSelectedColor(color);
+                  setSelectedSize("");
                   setAddError("");
                 }}
                 onSizeSelect={(size) => {
@@ -1224,11 +1248,11 @@ export default function ProductDetailPage() {
                     {reviewSubmitting
                       ? "Submitting..."
                       : reviewSaved
-                        ? "Review added"
+                        ? "Review submitted"
                         : "Submit review"}
                   </button>
                   <p className="text-sm text-[var(--muted)]">
-                    Your review may also appear in the homepage trust section.
+                    Reviews appear after a quick moderation check.
                   </p>
                 </div>
               </form>

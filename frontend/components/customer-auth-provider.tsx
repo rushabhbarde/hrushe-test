@@ -107,9 +107,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          if (response.token) {
-            setCustomerToken(response.token);
-          }
+          setCustomerToken();
           setUser(response.user);
         }
       } catch {
@@ -168,9 +166,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
           }
 
           clearAdminToken();
-          if (response.token) {
-            setCustomerToken(response.token);
-          }
+          setCustomerToken();
           setUser(response.user);
           return true;
         } catch {
@@ -193,9 +189,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
           }
 
           clearAdminToken();
-          if (response.token) {
-            setCustomerToken(response.token);
-          }
+          setCustomerToken();
           setUser(response.user);
           return true;
         } catch (error) {

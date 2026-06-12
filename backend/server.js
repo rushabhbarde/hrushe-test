@@ -15,9 +15,14 @@ const supportRoutes = require("./src/routes/supportRoutes");
 const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const mediaRoutes = require("./src/routes/mediaRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
+const { createRateLimiter } = require("./src/middleware/rateLimitMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
+const {
+  cleanupExpiredInventoryReservations,
+} = require("./src/services/checkoutInventory");
 
 const app = express();
+app.set("trust proxy", 1);
 const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/order/checkout/webhook/razorpay");
 
@@ -63,9 +68,24 @@ app.use(
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "DENY");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (env.NODE_ENV === "production") {
+    res.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  res.set(
+    "Content-Security-Policy",
+    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+  );
+  next();
+});
+app.use(createRateLimiter({ name: "api", max: 600, windowMs: 15 * 60 * 1000 }));
 app.use(
   express.json({
-    limit: "50mb",
+    limit: "5mb",
     verify(req, res, buffer) {
       if (shouldCaptureRawBody(req)) {
         req.rawBody = Buffer.from(buffer);
@@ -73,7 +93,7 @@ app.use(
     },
   })
 );
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 app.get("/", (req, res) => {
   res.json({
@@ -82,7 +102,11 @@ app.get("/", (req, res) => {
   });
 });
 
-app.use("/auth", authRoutes);
+app.use(
+  "/auth",
+  createRateLimiter({ name: "auth", max: 80, windowMs: 15 * 60 * 1000 }),
+  authRoutes
+);
 app.use("/products", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
@@ -99,6 +123,12 @@ app.use(errorHandler);
 connectDB()
   .then(async () => {
     await ensureAdminUser();
+    const cleanupInventory = () =>
+      cleanupExpiredInventoryReservations().catch((error) => {
+        console.error("Inventory reservation cleanup failed", error);
+      });
+    await cleanupInventory();
+    setInterval(cleanupInventory, 5 * 60 * 1000).unref();
     app.listen(env.PORT, () => {
       console.log(`Server running on port ${env.PORT}`);
     });

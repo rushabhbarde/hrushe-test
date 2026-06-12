@@ -8,6 +8,7 @@ import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
+import { useState } from "react";
 
 function CartIcon({ className = "" }: { className?: string }) {
   return (
@@ -63,6 +64,7 @@ const swatchColors: Record<string, string> = {
 export function ProductCard({ product }: { product: Product }) {
   const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
+  const [showQuickSizes, setShowQuickSizes] = useState(false);
   const hasImage = Boolean(product.images[0]);
   const hoverImage = product.images[1] || product.galleryImages?.[0] || "";
   const hasHoverImage = Boolean(hoverImage && hoverImage !== product.images[0]);
@@ -72,26 +74,49 @@ export function ProductCard({ product }: { product: Product }) {
   const discountPercent = hasDiscount
     ? getDiscountPercent(product.price, compareAtPrice)
     : 0;
-  const quickAddToCart = () => {
+  const availableSizes = product.sizes.filter(
+    (size) =>
+      !product.trackInventory ||
+      product.variants?.some(
+        (variant) =>
+          variant.active && variant.stock > 0 && variant.size.toLowerCase() === size.toLowerCase()
+      )
+  );
+  const addSelectedSize = (size: string) => {
+    const availableVariant = product.variants?.find(
+      (variant) =>
+        variant.active &&
+        variant.stock > 0 &&
+        variant.size.toLowerCase() === size.toLowerCase()
+    );
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
-      size: product.sizes[0] || "S",
-      color: product.colors[0] || "Default",
-      fit: product.category,
+      size,
+      color: availableVariant?.color || product.colors[0] || "Default",
+      fit: product.fitType === "Oversized" ? "Oversize" : product.fitType || "",
       quantity: 1,
       accent: product.accent,
       image: product.images[0],
     });
     pushToast(`${product.name} added to bag.`);
+    setShowQuickSizes(false);
     openCart();
+  };
+  const quickAddToCart = () => {
+    if (availableSizes.length === 1) {
+      addSelectedSize(availableSizes[0]);
+      return;
+    }
+
+    setShowQuickSizes((current) => !current);
   };
   const labels = [
     product.newIn || product.newArrival ? "New" : "",
     product.featured ? "Featured" : "",
   ].filter(Boolean).slice(0, 2);
-  const visibleSizes = product.sizes.slice(0, 4);
+  const visibleSizes = availableSizes.slice(0, 4);
 
   return (
     <article data-product-card className="group/product reveal-up-soft block min-w-0">
@@ -144,6 +169,33 @@ export function ProductCard({ product }: { product: Product }) {
             className="pointer-events-none object-cover object-center opacity-0 transition duration-700 md:group-hover/product:scale-[1.02] md:group-hover/product:opacity-100"
           />
         ) : null}
+        {showQuickSizes ? (
+          <div className="absolute inset-x-2 bottom-2 z-30 border border-[var(--border)] bg-white/95 p-3 shadow-[0_10px_30px_rgba(17,17,17,0.12)] backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em]">Choose size</p>
+              <button
+                type="button"
+                onClick={() => setShowQuickSizes(false)}
+                className="h-8 w-8 text-lg"
+                aria-label="Close size selection"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-2 grid grid-cols-4 gap-1.5">
+              {availableSizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => addSelectedSize(size)}
+                  className="min-h-10 border border-[var(--border)] text-xs font-semibold uppercase transition hover:border-black hover:bg-black hover:text-white"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="shop-card-copy block px-0 pb-1 pt-1">
@@ -169,15 +221,16 @@ export function ProductCard({ product }: { product: Product }) {
             <WishlistButton
               productId={product.id}
               label={`Save ${product.name}`}
-              className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+              className="flex h-10 w-10 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
               iconClassName="h-[17px] w-[17px]"
             />
             <button
               type="button"
               onClick={quickAddToCart}
-              title="Add to cart"
-              className="flex h-8 w-8 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)]"
-              aria-label={`Add ${product.name} to cart`}
+              disabled={availableSizes.length === 0}
+              title={availableSizes.length ? "Choose size" : "Sold out"}
+              className="flex h-10 w-10 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:bg-[var(--surface-strong)] disabled:text-[var(--muted)]"
+              aria-label={availableSizes.length ? `Choose a size for ${product.name}` : `${product.name} is sold out`}
             >
               <CartIcon className="h-[17px] w-[17px]" />
             </button>

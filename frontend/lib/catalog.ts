@@ -5,6 +5,18 @@ export type ProductReview = {
   rating: number;
   photo?: string;
   createdAt?: string;
+  status?: "pending" | "approved" | "rejected" | "hidden";
+  verifiedPurchase?: boolean;
+};
+
+export type ProductVariant = {
+  sku?: string;
+  size: string;
+  color: string;
+  fit?: string;
+  stock: number;
+  reserved?: number;
+  active: boolean;
 };
 
 export type ProductVideo = {
@@ -60,6 +72,8 @@ export type Product = {
   gender?: ProductGender;
   collectionLabels?: ProductCollectionLabel[];
   status?: ProductStatus;
+  trackInventory?: boolean;
+  variants?: ProductVariant[];
   createdAt?: string;
   updatedAt?: string;
 };

@@ -10,7 +10,7 @@ import { useAuthModal } from "@/components/auth-modal-provider";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
-import { useStorefrontData } from "@/lib/use-storefront";
+import { useHomepageBannerData } from "@/lib/use-storefront";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -68,7 +68,7 @@ export function SiteHeader() {
   const { isAuthenticated: isAdminAuthenticated, logout: adminLogout } = useAdminAuth();
   const { suppressNextAdminPrompt } = useAdminAuthModal();
   const { openLogin } = useAuthModal();
-  const { announcementText } = useStorefrontData().homepageBanner;
+  const { announcementText } = useHomepageBannerData().homepageBanner;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -167,6 +167,7 @@ export function SiteHeader() {
               alt="Hrushe logo"
               width={220}
               height={72}
+              loading="eager"
               className="h-10 w-auto object-contain sm:h-12 lg:h-14"
             />
           </Link>

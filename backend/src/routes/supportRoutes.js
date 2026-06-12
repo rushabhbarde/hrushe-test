@@ -11,10 +11,16 @@ const {
   adminOnly,
   requireAdminPermission,
 } = require("../middleware/authMiddleware");
+const { createRateLimiter } = require("../middleware/rateLimitMiddleware");
 
 const router = express.Router();
 
-router.post("/tickets", attachUserIfAuthenticated, createSupportTicket);
+router.post(
+  "/tickets",
+  createRateLimiter({ name: "support-tickets", max: 10, windowMs: 60 * 60 * 1000 }),
+  attachUserIfAuthenticated,
+  createSupportTicket
+);
 
 router.use(protect, adminOnly);
 

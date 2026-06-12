@@ -43,6 +43,15 @@ const orderProductSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    sku: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    inventoryTracked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: false }
 );
@@ -134,7 +143,7 @@ const orderSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
     },
     products: {
       type: [orderProductSchema],
@@ -227,6 +236,15 @@ const orderSchema = new mongoose.Schema(
     checkoutLogs: {
       type: [checkoutLogSchema],
       default: [],
+    },
+    inventoryReservationStatus: {
+      type: String,
+      enum: ["none", "reserved", "committed", "released"],
+      default: "none",
+    },
+    inventoryReservationExpiresAt: {
+      type: Date,
+      default: null,
     },
   },
   {

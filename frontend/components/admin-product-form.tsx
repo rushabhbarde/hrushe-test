@@ -20,9 +20,10 @@ import {
   type ProductSizeMeasurement,
   type ProductVideo,
   type ProductStatus,
+  type ProductVariant,
 } from "@/lib/catalog";
 import { uploadAdminMedia, ADMIN_MEDIA_UPLOAD_LIMIT_BYTES } from "@/lib/admin-media-upload";
-import { compressSingleImage } from "@/lib/image-upload";
+import { compressImageFile } from "@/lib/image-upload";
 import { type ProductAdminMeta } from "@/lib/admin-workspace";
 
 const sizeOptions = ["S", "M", "L", "XL", "XXL"] as const;
@@ -44,6 +45,8 @@ type FormState = {
   gender: ProductGender;
   status: ProductStatus;
   collectionLabels: ProductCollectionLabel[];
+  trackInventory: boolean;
+  variants: ProductVariant[];
   images: string[];
   galleryImages: string[];
   fabric: string;
@@ -118,6 +121,8 @@ function buildInitialState(
     gender: meta?.gender || product?.gender || "Unisex",
     status: meta?.status || product?.status || "Draft",
     collectionLabels: meta?.collectionLabels || product?.collectionLabels || [],
+    trackInventory: product?.trackInventory || false,
+    variants: product?.variants || [],
     images: product?.images || [],
     galleryImages: meta?.galleryImages || product?.galleryImages || [],
     fabric: product?.fabric || "",
@@ -174,6 +179,34 @@ export function AdminProductForm({
       ),
     [form.sizeGuide, form.sizes]
   );
+  const inventoryRows = useMemo(() => {
+    const colors = parsedColors.length > 0 ? parsedColors : [""];
+    const baseSlug = slugify(form.slug || form.name || "hrushe").toUpperCase();
+
+    return form.sizes.flatMap((size) =>
+      colors.map((color) => {
+        const existing = form.variants.find(
+          (variant) =>
+            variant.size.toLowerCase() === size.toLowerCase() &&
+            variant.color.toLowerCase() === color.toLowerCase()
+        );
+        const generatedSku = [baseSlug, color, size]
+          .filter(Boolean)
+          .join("-")
+          .replace(/[^A-Z0-9-]+/g, "-");
+
+        return {
+          sku: existing?.sku || generatedSku,
+          size,
+          color,
+          fit: form.fitType,
+          stock: existing?.stock || 0,
+          reserved: existing?.reserved || 0,
+          active: existing?.active !== false,
+        } satisfies ProductVariant;
+      })
+    );
+  }, [form.fitType, form.name, form.sizes, form.slug, form.variants, parsedColors]);
 
   const sellingPrice = Number(form.price);
   const comparePrice = Number(form.compareAtPrice);
@@ -211,6 +244,20 @@ export function AdminProductForm({
     });
   }
 
+  function updateVariant(
+    size: string,
+    color: string,
+    key: "sku" | "stock" | "active",
+    value: string | number | boolean
+  ) {
+    const currentRows = inventoryRows.map((variant) =>
+      variant.size === size && variant.color === color
+        ? { ...variant, [key]: value }
+        : variant
+    );
+    updateForm("variants", currentRows);
+  }
+
   async function uploadImages(
     files: FileList | null,
     key: "images" | "galleryImages",
@@ -222,7 +269,11 @@ export function AdminProductForm({
 
     try {
       const uploaded = await Promise.all(
-        Array.from(files).map((file) => compressSingleImage(file, maxDimension))
+        Array.from(files).map(async (file) => {
+          const optimizedFile = await compressImageFile(file, maxDimension);
+          const uploadedMedia = await uploadAdminMedia(optimizedFile);
+          return uploadedMedia.url;
+        })
       );
       updateForm(key, [...form[key], ...uploaded]);
       pushToast(`${key === "images" ? "Product" : "Gallery"} images added.`);
@@ -298,6 +349,39 @@ export function AdminProductForm({
         throw new Error("Add a category in Admin > Categories before saving a product.");
       }
 
+
+      if (form.status === "Active") {
+        const requiredFields = [
+          [form.name, "product name"],
+          [form.description, "description"],
+          [Number(form.price) > 0, "price"],
+          [form.images.length > 0, "primary image"],
+          [form.sizes.length > 0, "sizes"],
+          [parsedColors.length > 0, "colors"],
+          [form.fabric, "fabric"],
+          [form.gsm, "GSM"],
+          [form.washCare, "wash care"],
+        ] as const;
+        const missing: string[] = requiredFields
+          .filter(([value]) => !value)
+          .map(([, label]) => label);
+        const incompleteSizeGuide = selectedSizeGuideRows.some(
+          (row) => !row.chest || !row.length || !row.shoulder || !row.sleeve
+        );
+
+        if (incompleteSizeGuide) {
+          missing.push("complete size guide");
+        }
+
+        if (form.trackInventory && inventoryRows.some((variant) => !variant.sku)) {
+          missing.push("variant SKUs");
+        }
+
+        if (missing.length > 0) {
+          throw new Error(`Complete launch details before publishing: ${missing.join(", ")}.`);
+        }
+      }
+
       if (form.videos.some((video) => /^data:video\//i.test(video.url))) {
         throw new Error("Remove and re-upload old video drafts before saving. Videos now save through MongoDB media storage.");
       }
@@ -332,13 +416,14 @@ export function AdminProductForm({
         gender: form.gender,
         collectionLabels,
         status: form.status,
+        trackInventory: form.trackInventory,
+        variants: inventoryRows,
         featured: collectionLabels.includes("Featured"),
         newIn: collectionLabels.includes("New In"),
         bestSeller: initialProduct?.bestSeller || false,
         newArrival: initialProduct?.newArrival || collectionLabels.includes("Collection"),
         imageLabel: initialProduct?.imageLabel || "HRUSHE admin upload",
         accent: inferAccent(colors),
-        reviews: initialProduct?.reviews || [],
       };
 
       const meta: ProductAdminMeta = {
@@ -444,6 +529,71 @@ export function AdminProductForm({
                 />
               </AdminField>
             </div>
+          </AdminPanel>
+
+          <AdminPanel>
+            <AdminSectionLabel>Inventory</AdminSectionLabel>
+            <div className="mt-5">
+              <AdminSwitch
+                checked={form.trackInventory}
+                onChange={(checked) => updateForm("trackInventory", checked)}
+                label="Track variant stock"
+                description="Reserve stock during payment and prevent checkout when a size and color sells out."
+              />
+            </div>
+            {form.trackInventory ? (
+              inventoryRows.length > 0 ? (
+                <div className="mt-5 space-y-3">
+                  {inventoryRows.map((variant) => (
+                    <div
+                      key={`${variant.size}-${variant.color}`}
+                      className="grid gap-3 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] p-4 md:grid-cols-[0.7fr_1.5fr_0.7fr_auto] md:items-end"
+                    >
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">Option</p>
+                        <p className="mt-2 text-sm font-semibold">{variant.color || "Default"} / {variant.size}</p>
+                      </div>
+                      <AdminField label="SKU">
+                        <AdminFilterInput
+                          value={variant.sku || ""}
+                          onChange={(event) =>
+                            updateVariant(variant.size, variant.color, "sku", event.target.value.toUpperCase())
+                          }
+                        />
+                      </AdminField>
+                      <AdminField label="Available stock">
+                        <AdminFilterInput
+                          value={String(variant.stock)}
+                          inputMode="numeric"
+                          onChange={(event) =>
+                            updateVariant(
+                              variant.size,
+                              variant.color,
+                              "stock",
+                              Math.max(0, Number.parseInt(event.target.value, 10) || 0)
+                            )
+                          }
+                        />
+                      </AdminField>
+                      <label className="flex min-h-12 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={variant.active}
+                          onChange={(event) =>
+                            updateVariant(variant.size, variant.color, "active", event.target.checked)
+                          }
+                        />
+                        Sellable
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-5 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] px-4 py-3 text-sm text-[var(--muted)]">
+                  Select at least one size and add a color to create inventory variants.
+                </p>
+              )
+            ) : null}
           </AdminPanel>
 
           <AdminPanel>
@@ -796,6 +946,10 @@ export function AdminProductForm({
               <SummaryRow label="Discount" value={discountPercentage > 0 ? `${discountPercentage}% off` : "No compare-at price"} />
               <SummaryRow label="Fabric notes" value={form.fabric || form.cottonType || "Fallback copy"} />
               <SummaryRow label="Visibility" value={form.status} />
+              <SummaryRow
+                label="Inventory"
+                value={form.trackInventory ? `${inventoryRows.reduce((sum, variant) => sum + variant.stock, 0)} units tracked` : "Not tracked"}
+              />
             </div>
             <div className="mt-5">
               <AdminSwitch
@@ -819,7 +973,7 @@ export function AdminProductForm({
               {submitting ? "Saving..." : submitLabel}
             </button>
             <span className="text-sm text-[var(--muted)]">
-              Products save with auto-generated database IDs. Inventory is intentionally excluded.
+              Products save with auto-generated database IDs and server-validated variant stock.
             </span>
           </div>
         </div>

@@ -9,6 +9,14 @@ const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
 const { hasAdminPermission } = require("../config/adminRoles");
+const {
+  RESERVATION_WINDOW_MS,
+  resolveCheckoutItems,
+  reserveInventory,
+  releaseInventoryItems,
+  commitOrderInventory,
+  releaseOrderInventory,
+} = require("../services/checkoutInventory");
 
 const allowedStatuses = [
   "Pending",
@@ -88,20 +96,6 @@ const buildPublicTrackingResponse = (order) => ({
   updatedAt: order.updatedAt,
   timeline: buildTrackingTimeline(order),
 });
-
-const sanitizeCartItems = (items = []) =>
-  items
-    .filter((item) => item && item.productId && item.name && Number(item.quantity) > 0)
-    .map((item) => ({
-      productId: item.productId,
-      quantity: Number(item.quantity),
-      size: item.size || "",
-      color: item.color || "",
-      fit: item.fit || "",
-      price: Number(item.price),
-      name: item.name,
-      image: item.image || "",
-    }));
 
 const normalizeShippingAddress = (shippingInfo = {}) => {
   if (typeof shippingInfo.address === "string") {
@@ -459,16 +453,14 @@ const createCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Full name, email, phone, and address are required", 400);
   }
 
-  const normalizedItems = sanitizeCartItems(items);
-
-  if (normalizedItems.length === 0) {
-    throw new AppError("Cart is empty", 400);
-  }
+  const normalizedItems = await resolveCheckoutItems(items);
 
   const totalAmount = normalizedItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const hasInventoryReservation = await reserveInventory(normalizedItems);
 
   const razorpay = getRazorpayClient();
   let razorpayOrder;
@@ -485,6 +477,9 @@ const createCheckout = asyncHandler(async (req, res) => {
       },
     });
   } catch (error) {
+    if (hasInventoryReservation) {
+      await releaseInventoryItems(normalizedItems);
+    }
     console.error("Razorpay order creation failed", {
       message:
         error?.error?.description ||
@@ -508,33 +503,45 @@ const createCheckout = asyncHandler(async (req, res) => {
     );
   }
 
-  const order = await Order.create({
-    userId: req.user._id,
-    products: normalizedItems,
-    totalAmount,
-    shippingAddress,
-    shippingAddressDetails,
-    customerName: fullName,
-    customerEmail: email,
-    customerPhone: phone,
-    paymentMethod,
-    paymentStatus: "initiated",
-    checkoutProvider: "razorpay",
-    checkoutSessionId: razorpayOrder.id,
-    checkoutUrl: "",
-    checkoutLogs: [
-      {
-        event: "checkout_created",
-        source: "backend",
-        payload: {
-          shippingInfo: { ...shippingInfo, shippingAddress, shippingAddressDetails },
-          items: normalizedItems,
-          razorpayOrderId: razorpayOrder.id,
+  let order;
+
+  try {
+    order = await Order.create({
+      userId: req.user?._id || null,
+      products: normalizedItems,
+      totalAmount,
+      shippingAddress,
+      shippingAddressDetails,
+      customerName: fullName,
+      customerEmail: email,
+      customerPhone: phone,
+      paymentMethod,
+      paymentStatus: "initiated",
+      checkoutProvider: "razorpay",
+      checkoutSessionId: razorpayOrder.id,
+      checkoutUrl: "",
+      inventoryReservationStatus: hasInventoryReservation ? "reserved" : "none",
+      inventoryReservationExpiresAt: hasInventoryReservation
+        ? new Date(Date.now() + RESERVATION_WINDOW_MS)
+        : null,
+      checkoutLogs: [
+        {
+          event: "checkout_created",
+          source: "backend",
+          payload: {
+            shippingInfo: { ...shippingInfo, shippingAddress, shippingAddressDetails },
+            items: normalizedItems,
+            razorpayOrderId: razorpayOrder.id,
+          },
         },
-      },
-    ],
-  });
-  await order.save();
+      ],
+    });
+  } catch (error) {
+    if (hasInventoryReservation) {
+      await releaseInventoryItems(normalizedItems);
+    }
+    throw error;
+  }
 
   return res.status(201).json({
     appOrderId: order.id,
@@ -585,6 +592,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Invalid Razorpay payment signature", 400);
   }
 
+  await commitOrderInventory(order);
   order.paymentStatus = "paid";
   order.orderStatus = "Confirmed";
   order.checkoutUrl = "";
@@ -593,7 +601,9 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     razorpayPaymentId,
   });
   await order.save();
-  await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+  if (order.userId) {
+    await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+  }
   await safelySendOrderEmail(
     order,
     "Your HRUSHE order is confirmed",
@@ -610,7 +620,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
 });
 
 const failCheckout = asyncHandler(async (req, res) => {
-  const { orderId } = req.query;
+  const orderId = req.body?.appOrderId || req.query.orderId;
 
   if (!orderId) {
     throw new AppError("Order id is required", 400);
@@ -622,9 +632,16 @@ const failCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Order not found", 404);
   }
 
-  order.paymentStatus = "failed";
+  if (order.paymentStatus !== "paid") {
+    await releaseOrderInventory(order);
+    order.paymentStatus = req.method === "POST" ? "cancelled" : "failed";
+  }
   recordCheckoutLog(order, "checkout_failure_return", "redirect", req.query);
   await order.save();
+
+  if (req.method === "POST") {
+    return res.json({ success: true });
+  }
 
   return res.redirect(
     buildRedirectUrl("/checkout/failure", String(order.orderNumber || order._id.toString()))
@@ -644,8 +661,11 @@ const cancelCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Order not found", 404);
   }
 
-  order.paymentStatus = "cancelled";
-  order.orderStatus = "Cancelled";
+  if (order.paymentStatus !== "paid") {
+    await releaseOrderInventory(order);
+    order.paymentStatus = "cancelled";
+    order.orderStatus = "Cancelled";
+  }
   recordCheckoutLog(order, "checkout_cancel_return", "redirect", req.query);
   await order.save();
 
@@ -691,10 +711,14 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
   }
 
   if (event === "payment.captured") {
+    await commitOrderInventory(order);
     order.paymentStatus = "paid";
     order.orderStatus = "Confirmed";
-    await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+    if (order.userId) {
+      await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+    }
   } else if (event === "payment.failed") {
+    await releaseOrderInventory(order);
     order.paymentStatus = "failed";
   }
 

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { TrustBadges } from "@/components/trust-badges";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
+import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
 export function CartDrawer() {
   const {
@@ -20,6 +21,7 @@ export function CartDrawer() {
     updateQuantity,
   } = useCart();
   const pathname = usePathname();
+  const { dialogRef, initialFocusRef } = useDialogAccessibility(isCartOpen, closeCart);
 
   useEffect(() => {
     closeCart();
@@ -37,15 +39,23 @@ export function CartDrawer() {
         className="absolute inset-0 bg-black/35"
         onClick={closeCart}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 shadow-2xl sm:p-6">
+      <aside
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-drawer-title"
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 shadow-2xl sm:p-6"
+      >
         <div className="flex items-center justify-between">
           <div>
             <p className="eyebrow text-[var(--muted)]">Cart</p>
-            <h2 className="mt-2 text-2xl font-semibold">Your bag</h2>
+            <h2 id="cart-drawer-title" className="mt-2 text-2xl font-semibold">Your bag</h2>
           </div>
           <button
             type="button"
+            ref={initialFocusRef}
             onClick={closeCart}
+            aria-label="Close cart"
             className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
           >
             ×

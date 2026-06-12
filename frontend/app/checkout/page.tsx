@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AccountGuard } from "@/components/account-guard";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
 import { useCart, type CartLine } from "@/components/cart-provider";
@@ -365,7 +364,11 @@ export default function CheckoutPage() {
           color: "#111111",
         },
         modal: {
-          ondismiss: () => {
+          ondismiss: async () => {
+            await apiRequest("/order/checkout/failure", {
+              method: "POST",
+              body: JSON.stringify({ appOrderId: response.appOrderId }),
+            }).catch(() => undefined);
             window.location.href = `/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`;
           },
         },
@@ -412,8 +415,7 @@ export default function CheckoutPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <AccountGuard>
-        <main className="lux-page py-8 sm:py-10 lg:py-14">
+      <main className="lux-page py-8 sm:py-10 lg:py-14">
           <div className="lux-container">
             {!isReady ? (
               <LoadingState
@@ -680,8 +682,7 @@ export default function CheckoutPage() {
               </div>
             )}
           </div>
-        </main>
-      </AccountGuard>
+      </main>
       <SiteFooter />
     </div>
   );

@@ -10,6 +10,7 @@ import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useWishlist } from "@/components/wishlist-provider";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
+import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
 export function WishlistDrawer() {
   const {
@@ -24,6 +25,7 @@ export function WishlistDrawer() {
   const { products } = useStorefrontData();
   const pathname = usePathname();
   const [removingIds, setRemovingIds] = useState<string[]>([]);
+  const { dialogRef, initialFocusRef } = useDialogAccessibility(isWishlistOpen, closeWishlist);
 
   useEffect(() => {
     closeWishlist();
@@ -51,15 +53,23 @@ export function WishlistDrawer() {
         className="absolute inset-0 bg-black/35"
         onClick={closeWishlist}
       />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-5 shadow-2xl sm:p-6">
+      <aside
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wishlist-drawer-title"
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-5 shadow-2xl sm:p-6"
+      >
         <div className="flex items-center justify-between">
           <div>
             <p className="eyebrow text-[var(--muted)]">Favourites</p>
-            <h2 className="mt-2 text-2xl font-semibold">Favourites</h2>
+            <h2 id="wishlist-drawer-title" className="mt-2 text-2xl font-semibold">Favourites</h2>
           </div>
           <button
             type="button"
+            ref={initialFocusRef}
             onClick={closeWishlist}
+            aria-label="Close wishlist"
             className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
           >
             ×
@@ -159,25 +169,34 @@ export function WishlistDrawer() {
                   </div>
 
                   <div className="mt-4 grid gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        addItem({
-                          productId: product.id,
-                          name: product.name,
-                          price: product.price,
-                          size: product.sizes[0] || "M",
-                          color: product.colors[0] || "Default",
-                          accent: product.accent,
-                          image: product.images[0],
-                        });
-                        removeWishlistItem(product.id);
-                        pushToast("Moved to cart");
-                      }}
-                      className="lux-action w-full"
-                    >
-                      Move to cart
-                    </button>
+                    {product.sizes.length === 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addItem({
+                            productId: product.id,
+                            name: product.name,
+                            price: product.price,
+                            size: product.sizes[0],
+                            color: product.colors[0] || "Default",
+                            accent: product.accent,
+                            image: product.images[0],
+                          });
+                          removeWishlistItem(product.id);
+                          pushToast("Moved to cart");
+                        }}
+                        className="lux-action w-full"
+                      >
+                        Move to cart
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/product/${product.slug || product.id}`}
+                        className="lux-action w-full"
+                      >
+                        Choose size
+                      </Link>
+                    )}
                     <Link
                       href={`/product/${product.slug || product.id}`}
                       className="lux-action-muted w-full"

@@ -9,6 +9,11 @@ const slugify = (value = "") =>
 
 const reviewSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     reviewerName: {
       type: String,
       required: true,
@@ -29,10 +34,60 @@ const reviewSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "hidden"],
+      default: undefined,
+    },
+    verifiedPurchase: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
+);
+
+const productVariantSchema = new mongoose.Schema(
+  {
+    sku: {
+      type: String,
+      required: true,
+      trim: true,
+      uppercase: true,
+    },
+    size: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    color: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    fit: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    stock: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    reserved: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  { _id: false }
 );
 
 const productVideoSchema = new mongoose.Schema(
@@ -149,6 +204,33 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    status: {
+      type: String,
+      enum: ["Active", "Draft", "Hidden", "Sold Out"],
+      default: undefined,
+    },
+    fitType: {
+      type: String,
+      enum: ["Oversized", "Regular", ""],
+      default: "",
+    },
+    gender: {
+      type: String,
+      enum: ["Men", "Women", "Unisex", ""],
+      default: "Unisex",
+    },
+    collectionLabels: {
+      type: [String],
+      default: [],
+    },
+    trackInventory: {
+      type: Boolean,
+      default: false,
+    },
+    variants: {
+      type: [productVariantSchema],
+      default: [],
+    },
     fabric: {
       type: String,
       default: "",
@@ -249,6 +331,13 @@ productSchema.pre("validate", function productPreValidate() {
     this.slug = slugify(this.slug || this.name);
   } else if (this.slug) {
     this.slug = slugify(this.slug);
+  }
+
+  if (this.trackInventory) {
+    const skus = this.variants.map((variant) => variant.sku).filter(Boolean);
+    if (new Set(skus).size !== skus.length) {
+      this.invalidate("variants", "Variant SKUs must be unique within a product");
+    }
   }
 });
 

@@ -83,13 +83,26 @@ export default function RootLayout({
       document.documentElement.style.colorScheme = theme;
     } catch (error) {}
   `;
-  const organizationStructuredData = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "HRUSHE",
-    url: "https://hrushe.in",
-    logo: "https://hrushe.in/brand/hrushe-sylogo-512.png",
-  });
+  const organizationStructuredData = JSON.stringify([
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "HRUSHE",
+      url: "https://hrushe.in",
+      logo: "https://hrushe.in/brand/hrushe-sylogo-512.png",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "HRUSHE",
+      url: "https://hrushe.in",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: "https://hrushe.in/search?q={search_term_string}",
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ]);
 
   return (
     <html lang="en" suppressHydrationWarning>

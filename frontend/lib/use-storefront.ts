@@ -11,83 +11,94 @@ import { getAdminAuthHeaders } from "@/lib/admin-auth";
 
 type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
-type StorefrontCache = {
+type ProductCache = {
   products: Product[];
+  timestamp: number;
+};
+type BannerCache = {
   homepageBanner: HomepageBanner;
   timestamp: number;
 };
 
 const STOREFRONT_CACHE_TTL = 60_000;
-let storefrontCache: StorefrontCache | null = null;
-let storefrontRequest: Promise<StorefrontCache> | null = null;
+let productCache: ProductCache | null = null;
+let productRequest: Promise<ProductCache> | null = null;
+let bannerCache: BannerCache | null = null;
+let bannerRequest: Promise<BannerCache> | null = null;
 
 function mergeProductsWithDefaults(products: Product[]) {
   return products;
 }
 
-function isStorefrontCacheFresh() {
-  return (
-    storefrontCache &&
-    Date.now() - storefrontCache.timestamp < STOREFRONT_CACHE_TTL
-  );
+function isCacheFresh(cache: { timestamp: number } | null) {
+  return Boolean(cache && Date.now() - cache.timestamp < STOREFRONT_CACHE_TTL);
 }
 
-async function fetchStorefrontData() {
-  if (isStorefrontCacheFresh()) {
-    return storefrontCache as StorefrontCache;
+async function fetchProducts() {
+  if (isCacheFresh(productCache)) {
+    return productCache as ProductCache;
   }
 
-  if (!storefrontRequest) {
-    storefrontRequest = Promise.all([
-      apiRequest<Product[]>("/products"),
-      apiRequest<HomepageBanner>("/content/homepage"),
-    ])
-      .then(([productsData, bannerData]) => {
-        storefrontCache = {
+  if (!productRequest) {
+    productRequest = apiRequest<Product[]>("/products")
+      .then((productsData) => {
+        productCache = {
           products: mergeProductsWithDefaults(productsData),
-          homepageBanner: bannerData,
           timestamp: Date.now(),
         };
-
-        return storefrontCache;
+        return productCache;
       })
       .finally(() => {
-        storefrontRequest = null;
+        productRequest = null;
       });
   }
 
-  return storefrontRequest;
+  return productRequest;
+}
+
+async function fetchHomepageBanner() {
+  if (isCacheFresh(bannerCache)) {
+    return bannerCache as BannerCache;
+  }
+
+  if (!bannerRequest) {
+    bannerRequest = apiRequest<HomepageBanner>("/content/homepage")
+      .then((homepageBanner) => {
+        bannerCache = { homepageBanner, timestamp: Date.now() };
+        return bannerCache;
+      })
+      .finally(() => {
+        bannerRequest = null;
+      });
+  }
+
+  return bannerRequest;
 }
 
 export function useStorefrontData() {
   const [products, setProducts] = useState<Product[]>(
-    storefrontCache?.products || []
+    productCache?.products || []
   );
-  const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
-    storefrontCache?.homepageBanner || defaultHomepageBanner
-  );
-  const [loading, setLoading] = useState(!storefrontCache);
+  const [loading, setLoading] = useState(!productCache);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       try {
-        const data = await fetchStorefrontData();
+        const data = await fetchProducts();
 
         if (!active) {
           return;
         }
 
         setProducts(data.products);
-        setHomepageBannerState(data.homepageBanner);
       } catch {
         if (!active) {
           return;
         }
 
         setProducts([]);
-        setHomepageBannerState(defaultHomepageBanner);
       } finally {
         if (active) {
           setLoading(false);
@@ -116,9 +127,8 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = [created, ...current];
-      storefrontCache = {
+      productCache = {
         products: next,
-        homepageBanner,
         timestamp: Date.now(),
       };
       return next;
@@ -135,9 +145,8 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = current.map((item) => (item.id === productId ? updated : item));
-      storefrontCache = {
+      productCache = {
         products: next,
-        homepageBanner,
         timestamp: Date.now(),
       };
       return next;
@@ -154,9 +163,8 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = current.filter((product) => product.id !== productId);
-      storefrontCache = {
+      productCache = {
         products: next,
-        homepageBanner,
         timestamp: Date.now(),
       };
       return next;
@@ -167,65 +175,60 @@ export function useStorefrontData() {
     productId: string,
     review: ProductReviewPayload
   ) => {
-    try {
-      const updated = await apiRequest<Product>(`/products/${productId}/reviews`, {
-        method: "POST",
-        body: JSON.stringify(review),
-      });
+    const updated = await apiRequest<Product>(`/products/${productId}/reviews`, {
+      method: "POST",
+      body: JSON.stringify(review),
+    });
 
-      setProducts((current) => {
-        const next = current.map((item) => (item.id === productId ? updated : item));
-        storefrontCache = {
-          products: next,
-          homepageBanner,
-          timestamp: Date.now(),
-        };
-        return next;
-      });
-
-      return updated;
-    } catch (error) {
-      const fallbackUpdatedReview: ProductReview = {
-        ...review,
-        id:
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      };
-
-      let fallbackProduct: Product | null = null;
-
-      setProducts((current) => {
-        const next = current.map((item) => {
-          if (item.id !== productId) {
-            return item;
-          }
-
-          fallbackProduct = {
-            ...item,
-            reviews: [fallbackUpdatedReview, ...(item.reviews || [])],
-          };
-
-          return fallbackProduct;
-        });
-
-        storefrontCache = {
-          products: next,
-          homepageBanner,
-          timestamp: Date.now(),
-        };
-
-        return next;
-      });
-
-      if (fallbackProduct) {
-        return fallbackProduct;
-      }
-
-      throw error;
-    }
+    setProducts((current) => {
+      const next = current.map((item) => (item.id === productId ? updated : item));
+      productCache = { products: next, timestamp: Date.now() };
+      return next;
+    });
+    return updated;
   };
+
+  return {
+    products,
+    featuredProducts,
+    loading,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    addProductReview,
+  };
+}
+
+export function useHomepageBannerData() {
+  const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
+    bannerCache?.homepageBanner || defaultHomepageBanner
+  );
+  const [loading, setLoading] = useState(!bannerCache);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchHomepageBanner()
+      .then((data) => {
+        if (active) {
+          setHomepageBannerState(data.homepageBanner);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setHomepageBannerState(defaultHomepageBanner);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const saveHomepageBanner = async (payload: HomepageBannerPayload) => {
     const updated = await apiRequest<HomepageBanner>("/content/homepage", {
@@ -235,23 +238,13 @@ export function useStorefrontData() {
     });
 
     setHomepageBannerState(updated);
-    storefrontCache = {
-      products,
-      homepageBanner: updated,
-      timestamp: Date.now(),
-    };
+    bannerCache = { homepageBanner: updated, timestamp: Date.now() };
     return updated;
   };
 
   return {
-    products,
-    featuredProducts,
     homepageBanner,
     loading,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addProductReview,
     saveHomepageBanner,
     setHomepageBannerState,
   };
