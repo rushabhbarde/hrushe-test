@@ -64,7 +64,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           const isAdmin = response.user.role === "admin";
           if (isAdmin) {
-            setAdminToken();
+            setAdminToken(response.token);
           }
           setUser(isAdmin ? response.user : null);
           setIsAuthenticated(isAdmin);
@@ -139,7 +139,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             }
 
             clearCustomerToken();
-            setAdminToken();
+            setAdminToken(response.token);
             setUser(response.user);
             setIsAuthenticated(true);
             return { ok: true };
