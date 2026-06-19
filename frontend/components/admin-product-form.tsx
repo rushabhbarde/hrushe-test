@@ -277,8 +277,11 @@ export function AdminProductForm({
       );
       updateForm(key, [...form[key], ...uploaded]);
       pushToast(`${key === "images" ? "Product" : "Gallery"} images added.`);
-    } catch {
-      pushToast("Could not process those images.", "error");
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : "Could not process those images.",
+        "error"
+      );
     }
   }
 
