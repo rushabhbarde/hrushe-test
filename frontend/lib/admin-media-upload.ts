@@ -15,6 +15,14 @@ export type UploadedAdminMedia = UploadedAdminMediaResponse & {
   url: string;
 };
 
+function resolveUploadedMediaUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return apiUrl(path);
+}
+
 export async function uploadAdminMedia(file: File): Promise<UploadedAdminMedia> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 60000);
@@ -43,7 +51,7 @@ export async function uploadAdminMedia(file: File): Promise<UploadedAdminMedia> 
 
     return {
       ...uploaded,
-      url: apiUrl(uploaded.path),
+      url: resolveUploadedMediaUrl(uploaded.path),
     };
   } catch (error) {
     if (controller.signal.aborted) {

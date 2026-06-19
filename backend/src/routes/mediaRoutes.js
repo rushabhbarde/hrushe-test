@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { protect, requireAdminPermission } = require("../middleware/authMiddleware");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
+const { uploadR2Object } = require("../utils/r2Storage");
 
 const router = express.Router();
 const MAX_MEDIA_SIZE_BYTES = 25 * 1024 * 1024;
@@ -58,6 +59,28 @@ function sanitizeFilename(value = "media") {
     .replace(/[^a-z0-9-_]+/gi, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64) || "media";
+}
+
+function sanitizeObjectPrefix(value = "uploads") {
+  return String(value || "uploads")
+    .split("/")
+    .map((segment) =>
+      segment
+        .replace(/[^a-z0-9-_]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 64)
+    )
+    .filter(Boolean)
+    .join("/") || "uploads";
+}
+
+function buildR2ObjectKey({ folder, fileId, displayName, extension }) {
+  const now = new Date();
+  const year = String(now.getUTCFullYear());
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const prefix = sanitizeObjectPrefix(folder);
+
+  return `${prefix}/${year}/${month}/${fileId.toString()}-${displayName}.${extension}`;
 }
 
 function streamFile(bucket, id, range, file, res, next) {
@@ -121,8 +144,33 @@ router.post(
     const fileId = new mongoose.Types.ObjectId();
     const extension = SUPPORTED_MEDIA_TYPES.get(contentType);
     const originalName = String(req.headers["x-file-name"] || "media");
+    const folder = String(req.headers["x-media-folder"] || "uploads");
     const displayName = sanitizeFilename(originalName);
     const filename = `${Date.now()}-${fileId.toString()}-${displayName}.${extension}`;
+    const r2Upload = await uploadR2Object({
+      key: buildR2ObjectKey({ folder, fileId, displayName, extension }),
+      body: req.body,
+      contentType,
+      metadata: {
+        originalName,
+        size: req.body.length,
+        uploadedBy: req.user?._id,
+      },
+    });
+
+    if (r2Upload) {
+      return res.status(201).json({
+        id: fileId.toString(),
+        filename,
+        key: r2Upload.key,
+        path: r2Upload.url,
+        url: r2Upload.url,
+        contentType,
+        size: req.body.length,
+        storage: "r2",
+      });
+    }
+
     const bucket = getMediaBucket();
     const uploadStream = bucket.openUploadStreamWithId(fileId, filename, {
       contentType,
@@ -144,6 +192,7 @@ router.post(
       id: fileId.toString(),
       filename,
       path: `/media/files/${fileId.toString()}`,
+      storage: "gridfs",
       contentType,
       size: req.body.length,
     });

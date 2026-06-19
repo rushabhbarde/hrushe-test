@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const connectDB = require("../src/config/db");
 const Product = require("../src/models/Product");
 const SiteContent = require("../src/models/SiteContent");
+const { uploadR2Object } = require("../src/utils/r2Storage");
 
 const APPLY = process.argv.includes("--apply");
 const MEDIA_BUCKET_NAME = "media";
@@ -24,6 +25,9 @@ const parseDataUrl = (value) => {
     buffer: Buffer.from(match[2], "base64"),
   };
 };
+
+const getMediaKind = (contentType) =>
+  contentType.startsWith("video/") ? "videos" : "images";
 
 const uploadDataUrl = async (value) => {
   const parsed = parseDataUrl(value);
@@ -45,6 +49,23 @@ const uploadDataUrl = async (value) => {
   }
 
   const extension = parsed.contentType.split("/")[1].replace("jpeg", "jpg");
+  const r2Upload = await uploadR2Object({
+    key: `migrated/base64/${getMediaKind(parsed.contentType)}/${hash}.${extension}`,
+    body: parsed.buffer,
+    contentType: parsed.contentType,
+    metadata: {
+      migratedFrom: "base64",
+      hash,
+      size: parsed.buffer.length,
+    },
+  });
+
+  if (r2Upload) {
+    migratedByHash.set(hash, r2Upload.url);
+    migrated += 1;
+    return r2Upload.url;
+  }
+
   const fileId = new mongoose.Types.ObjectId();
   const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
     bucketName: MEDIA_BUCKET_NAME,

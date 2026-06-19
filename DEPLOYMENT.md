@@ -30,6 +30,12 @@ RAZORPAY_KEY_ID=<your-razorpay-key-id>
 RAZORPAY_KEY_SECRET=<your-razorpay-key-secret>
 RAZORPAY_CURRENCY=INR
 RAZORPAY_WEBHOOK_SECRET=<your-razorpay-webhook-secret>
+R2_ACCOUNT_ID=<your-cloudflare-account-id>
+R2_ACCESS_KEY_ID=<your-r2-access-key-id>
+R2_SECRET_ACCESS_KEY=<your-r2-secret-access-key>
+R2_BUCKET_NAME=hrushe-media
+R2_PUBLIC_URL=https://media.hrushe.in
+R2_ENDPOINT=https://<your-cloudflare-account-id>.r2.cloudflarestorage.com
 ```
 
 Notes:
@@ -40,6 +46,7 @@ Notes:
 - `ADMIN_PASSWORD` is required in production and must not be the default local password.
 - `ADMIN_ROLE=super-admin` keeps the bootstrap admin able to manage staff and role assignments.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
+- R2 variables are optional for local development. In production, set them so admin media uploads and base64 media migrations store files in Cloudflare R2 instead of MongoDB GridFS.
 
 ## Frontend Production Environment
 
