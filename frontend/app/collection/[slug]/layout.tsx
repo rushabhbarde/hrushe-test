@@ -11,15 +11,15 @@ export async function generateMetadata({
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-  const canonical = `/collection/${slug}`;
+  const canonical = `https://hrushe.in/collection/${slug}`;
 
   return {
-    title: title || "Collection",
-    description: `Explore the HRUSHE ${title || "streetwear"} collection, defined through quiet silhouettes and premium everyday comfort.`,
+    title: title ? `${title} Collection` : "Collection",
+    description: `Explore the HRUSHE ${title || "streetwear"} collection: premium minimal pieces, quiet silhouettes, and everyday comfort.`,
     alternates: { canonical },
     openGraph: {
       title: `${title || "Collection"} | HRUSHE`,
-      description: `Shop the HRUSHE ${title || "streetwear"} collection.`,
+      description: `Shop the HRUSHE ${title || "streetwear"} collection of premium minimal essentials.`,
       url: canonical,
       type: "website",
     },

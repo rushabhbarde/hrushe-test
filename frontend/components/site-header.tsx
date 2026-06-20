@@ -15,7 +15,7 @@ import { useHomepageBannerData } from "@/lib/use-storefront";
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Collections" },
-  { href: "/new-in", label: "New" },
+  { href: "/new-in", label: "New In" },
   { href: "/story", label: "Story" },
 ];
 
@@ -262,24 +262,73 @@ export function SiteHeader() {
       {isMobileMenuOpen ? (
         <div className="border-t border-[var(--border)] lg:hidden">
           <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
-            <div className="border border-[var(--border)] bg-[var(--surface)] p-3">
-              <nav className="flex flex-col divide-y divide-[var(--border)] text-sm">
+            <div className="border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_18px_44px_rgba(17,17,17,0.08)]">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <p className="eyebrow text-[var(--muted)]">Menu</p>
+                <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                  HRUSHE
+                </p>
+              </div>
+              <nav className="mt-2 flex flex-col divide-y divide-[var(--border)] text-sm">
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`px-3 py-3 ${pathname === item.href ? "text-[var(--accent)]" : ""}`}
+                    className={`flex items-center justify-between px-1 py-4 text-[0.78rem] font-medium uppercase tracking-[0.16em] ${
+                      pathname === item.href ? "text-[var(--accent)]" : "text-[var(--foreground)]"
+                    }`}
                   >
-                    {item.label}
+                    <span>{item.label}</span>
+                    <span aria-hidden="true">↗</span>
                   </Link>
                 ))}
                 {isAuthenticated ? (
-                  <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-3 text-[var(--muted)]">
+                  <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="px-1 py-4 text-[0.78rem] uppercase tracking-[0.16em] text-[var(--muted)]">
                     Signed in as {user?.name}
                   </Link>
                 ) : null}
               </nav>
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (isAuthenticated) {
+                      router.push("/account");
+                    } else {
+                      openLogin(pathname);
+                    }
+                  }}
+                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                >
+                  Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (isAuthenticated) {
+                      openWishlist();
+                    } else {
+                      openLogin(pathname);
+                    }
+                  }}
+                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                >
+                  Wishlist{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openCart();
+                  }}
+                  className="min-h-11 border border-[var(--foreground)] bg-[var(--foreground)] text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--background)]"
+                >
+                  Cart{itemCount > 0 ? ` ${itemCount}` : ""}
+                </button>
+              </div>
             </div>
           </div>
         </div>

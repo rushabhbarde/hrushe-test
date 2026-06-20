@@ -10,6 +10,7 @@
   --border: rgba(17, 17, 17, 0.1);
   --accent: #585858;
   --accent-dark: #111111;
+  --success: #127a49;
   --danger: #c43a35;
   --shadow: 0 18px 48px rgba(17, 17, 17, 0.08);
   --soft-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
@@ -30,6 +31,7 @@
   --border: rgba(255, 255, 255, 0.1);
   --accent: #d2d2d2;
   --accent-dark: #ffffff;
+  --success: #75d69f;
   --danger: #ef6b65;
   --shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
   --soft-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
@@ -74,6 +76,10 @@ a {
   text-decoration: none;
 }
 
+:where([class*="tracking-[-"]) {
+  letter-spacing: 0 !important;
+}
+
 img,
 picture,
 video,
@@ -87,6 +93,11 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--foreground) 64%, transparent);
+  outline-offset: 3px;
 }
 
 button,
@@ -123,6 +134,20 @@ div {
 
 .shop-card-image {
   border: none;
+}
+
+.shop-card-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(17, 17, 17, 0.02), transparent 42%, rgba(17, 17, 17, 0.04));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.group\/product:hover .shop-card-image::after {
+  opacity: 1;
 }
 
 .brand-marquee {

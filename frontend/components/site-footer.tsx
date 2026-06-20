@@ -13,7 +13,7 @@ const footerGroups = [
   {
     title: "Support",
     links: [
-      { href: "/track-order", label: "Track Order" },
+      { href: "/track-order", label: "Track order" },
       { href: "/policies?tab=shipping", label: "Shipping" },
       { href: "/policies?tab=returns", label: "Returns" },
       { href: "/policies?tab=privacy", label: "Privacy" },
@@ -55,10 +55,10 @@ export function SiteFooter() {
           <p className="eyebrow text-[var(--muted)]">Contact</p>
           <div className="mt-4 space-y-3 text-sm text-[var(--foreground)]">
             <a href="mailto:team@hrushe.in" className="block hover:text-[var(--accent)]">
-              team@hrushe.in
+              Email: team@hrushe.in
             </a>
             <a href="tel:+919112854988" className="block hover:text-[var(--accent)]">
-              +91 9112854988
+              Phone: +91 91128 54988
             </a>
             <a
               href="https://instagram.com/hrushe.in"
@@ -66,21 +66,20 @@ export function SiteFooter() {
               rel="noreferrer"
               className="block hover:text-[var(--accent)]"
             >
-              @hrushe.in
+              Instagram: @hrushe.in
             </a>
           </div>
           <div className="mt-6 border border-[var(--border)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-            Mon-Sat
-            <br />
-            10 AM to 7 PM
+            <span className="block text-[0.68rem] uppercase tracking-[0.16em]">Support hours</span>
+            <span className="mt-1 block text-[var(--foreground)]">Mon-Sat, 10 AM to 7 PM</span>
           </div>
         </div>
       </div>
 
       <div className="border-t border-[var(--border)]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-5 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <span>&copy; 2026 HRUSHE. All rights reserved.</span>
-          <span>Designed for everyday dressing</span>
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-5 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 sm:pb-5 md:flex-row md:items-center md:justify-between lg:px-8">
+          <p>&copy; 2026 HRUSHE. All rights reserved.</p>
+          <p>Designed for everyday dressing</p>
         </div>
       </div>
     </footer>

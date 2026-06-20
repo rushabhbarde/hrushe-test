@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Product } from "@/lib/catalog";
+import { getNewInProducts, sortProductsByStorefrontPriority } from "@/lib/catalog";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ProductCard } from "@/components/product-card";
@@ -51,11 +52,17 @@ function getSeasonLabel() {
 }
 
 const quickLinks = [
-  { label: "New In", href: "/new-in" },
-  { label: "Oversized", href: "/shop" },
-  { label: "Best Sellers", href: "/shop" },
-  { label: "Story", href: "/story" },
+  { label: "Explore all products", href: "/shop" },
+  { label: "Essentials", href: "/collection/essential" },
+  { label: "Oversized", href: "/collection/oversized" },
 ];
+
+const featuredCollectionLinks = [
+  { label: "Essentials", href: "/collection/essential" },
+  { label: "Oversized", href: "/collection/oversized" },
+];
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatReviewDate(createdAt?: string) {
   if (!createdAt) {
@@ -287,8 +294,7 @@ export default function Home() {
   const heroCtaHref = homepageBanner.primaryCtaHref || "/shop";
 
   const newInProducts = useMemo(() => {
-    const fresh = products.filter((product) => product.newArrival || product.newIn);
-    return fresh.slice(0, 8);
+    return getNewInProducts(products, { limit: 8 });
   }, [products]);
   const newInDisplayItems: Array<Product | null> = loading
     ? [null, null, null, null]
@@ -296,7 +302,9 @@ export default function Home() {
 
   const collectionProducts = useMemo(() => {
     const featured = products.filter((product) => product.featured);
-    return featured.slice(0, 6);
+    const selectedProducts = featured.length > 0 ? featured : sortProductsByStorefrontPriority(products);
+
+    return selectedProducts.slice(0, 6);
   }, [products]);
   const collectionDisplayItems: Array<Product | null> = loading
     ? [null, null, null, null]
@@ -360,18 +368,6 @@ export default function Home() {
     homepageBanner.primaryCtaLabel,
     homepageBanner.title,
   ]);
-
-  const collectionLabels = useMemo(() => {
-    const dynamic = Array.from(
-      new Set(
-        collectionProducts.flatMap((product) =>
-          product.categories && product.categories.length > 0 ? product.categories : [product.category]
-        )
-      )
-    ).filter(Boolean);
-
-    return dynamic.length > 0 ? dynamic.slice(0, 2) : ["Essentials", "Oversized"];
-  }, [collectionProducts]);
 
   const homepageReviews = useMemo<HomepageReviewSlide[]>(() => {
     return products
@@ -665,6 +661,11 @@ export default function Home() {
       return;
     }
 
+    if (!emailPattern.test(email)) {
+      setNewsletterFeedback({ type: "error", message: "Enter a valid email address." });
+      return;
+    }
+
     setNewsletterSubmitting(true);
     setNewsletterFeedback(null);
 
@@ -756,12 +757,12 @@ export default function Home() {
                   <>
                     <p className="eyebrow text-[var(--accent)]">{heroEyebrow}</p>
                     <h1
-                      className={`mt-4 max-w-[11ch] font-semibold uppercase leading-[0.88] tracking-[-0.09em] text-[var(--foreground)] sm:mt-5 ${heroTitleSizeClasses}`}
+                      className={`mt-4 max-w-[11ch] font-semibold uppercase leading-[0.88] tracking-[0] text-[var(--foreground)] sm:mt-5 ${heroTitleSizeClasses}`}
                     >
                       {activeHeroTitle}
                     </h1>
-                    <p className="mt-3 text-[1rem] font-medium tracking-[-0.03em] text-[var(--foreground)] sm:mt-4 sm:text-[1.35rem]">
-                      Defined quietly.
+                    <p className="mt-3 max-w-[19rem] text-[1rem] font-medium tracking-[0] text-[var(--foreground)] sm:mt-4 sm:text-[1.35rem]">
+                      Premium streetwear, pared back for repeat wear.
                     </p>
                     <p className="mt-3 text-[0.8rem] uppercase tracking-[0.18em] text-[var(--muted)] sm:mt-4 sm:text-[0.85rem]">
                       {seasonLabel}
@@ -775,7 +776,7 @@ export default function Home() {
                     <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center">
                       <Link
                         href={activeHeroCtaHref}
-                        className="inline-flex min-h-11 w-full items-center justify-between gap-10 border border-[var(--border)] bg-[var(--surface-strong)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] sm:w-auto"
+                        className="button-primary inline-flex min-h-12 w-full items-center justify-between gap-10 px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] transition sm:w-auto"
                       >
                         <span>{activeHeroCtaLabel}</span>
                         <span aria-hidden="true">→</span>
@@ -784,21 +785,21 @@ export default function Home() {
                   </>
                 )}
                 <div className="mt-5 pb-1">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     {quickLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="group flex min-h-11 items-center justify-between border border-[var(--border)] px-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
-                  >
-                    <span>{link.label}</span>
-                    <span
-                      aria-hidden="true"
-                      className="text-[0.95rem] text-[var(--muted)] transition group-hover:text-[var(--background)]"
-                    >
-                      ↗
-                    </span>
-                  </Link>
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        className="group flex min-h-11 items-center justify-between border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                      >
+                        <span>{link.label}</span>
+                        <span
+                          aria-hidden="true"
+                          className="text-[0.95rem] text-[var(--muted)] transition group-hover:text-[var(--background)]"
+                        >
+                          ↗
+                        </span>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -846,8 +847,8 @@ export default function Home() {
                           <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/72">
                             {seasonLabel} {seasonYear}
                           </p>
-                          <p className="mt-1 text-[0.92rem] font-medium tracking-[-0.03em] text-white">
-                            Defined quietly.
+                          <p className="mt-1 text-[0.92rem] font-medium tracking-[0] text-white">
+                            Premium essentials.
                           </p>
                         </div>
                         {publishedHeroBanners.length > 1 ? (
@@ -1021,7 +1022,7 @@ export default function Home() {
               </div>
               <Link
                 href="/new-in"
-                className="text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:text-[var(--accent)]"
+                className="button-secondary inline-flex min-h-11 items-center px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] transition"
               >
                 Explore all products
               </Link>
@@ -1078,13 +1079,13 @@ export default function Home() {
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  {collectionLabels.map((label) => (
+                  {featuredCollectionLinks.map((link) => (
                     <Link
-                      key={label}
-                      href="/shop"
-                      className="inline-flex min-h-11 items-center border border-[var(--border)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                      key={link.href}
+                      href={link.href}
+                      className="inline-flex min-h-11 items-center border border-[var(--border)] bg-[var(--surface-elevated)] px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
                     >
-                      {label}
+                      {link.label}
                     </Link>
                   ))}
                 </div>
@@ -1376,10 +1377,14 @@ export default function Home() {
                 placeholder="Enter your email"
                 className="min-h-14 border border-[var(--border)] bg-[var(--background)] px-5 text-base text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
                 autoComplete="email"
+                required
+                aria-invalid={newsletterFeedback?.type === "error"}
+                aria-describedby={newsletterFeedback ? "newsletter-feedback" : undefined}
               />
               <button
                 type="submit"
                 disabled={newsletterSubmitting}
+                aria-busy={newsletterSubmitting}
                 className="inline-flex min-h-14 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] px-8 text-[0.8rem] font-medium uppercase tracking-[0.16em] text-[var(--background)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {newsletterSubmitting ? "Joining..." : "Join now"}
@@ -1388,8 +1393,10 @@ export default function Home() {
 
             {newsletterFeedback ? (
               <p
+                id="newsletter-feedback"
+                role="status"
                 className={`mx-auto mt-5 max-w-[42rem] text-sm ${
-                  newsletterFeedback.type === "success" ? "text-[var(--accent)]" : "text-[var(--foreground)]"
+                  newsletterFeedback.type === "success" ? "text-[var(--success)]" : "text-[var(--danger)]"
                 }`}
               >
                 {newsletterFeedback.message}

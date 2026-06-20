@@ -28,11 +28,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://hrushe.in"),
   applicationName: "HRUSHE",
   title: {
-    default: "HRUSHE | Modern Minimal Premium Streetwear",
+    default: "HRUSHE | Premium Minimal Streetwear Essentials",
     template: "%s | HRUSHE",
   },
   description:
-    "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
+    "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
   alternates: {
     canonical: "https://hrushe.in",
   },
@@ -46,9 +46,9 @@ export const metadata: Metadata = {
     apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
   },
   openGraph: {
-    title: "HRUSHE | Modern Minimal Premium Streetwear",
+    title: "HRUSHE | Premium Minimal Streetwear Essentials",
     description:
-      "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
+      "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
     url: "https://hrushe.in",
     siteName: "HRUSHE",
     type: "website",
@@ -63,9 +63,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HRUSHE | Modern Minimal Premium Streetwear",
+    title: "HRUSHE | Premium Minimal Streetwear Essentials",
     description:
-      "Modern, minimal, premium streetwear by HRUSHE. Defined quietly through clean silhouettes, everyday comfort, and subtle confidence.",
+      "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
     images: ["/opengraph-image"],
   },
 };
