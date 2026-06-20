@@ -30,7 +30,7 @@ function HeaderIcon({
   href?: string;
 }) {
   const className =
-    "flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--hover-fill)]";
+    "flex h-11 w-11 items-center justify-center transition hover:bg-[var(--hover-fill)]";
 
   if (href) {
     return (
@@ -111,21 +111,21 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)] backdrop-blur-xl">
-      <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 lg:px-8">
+      <div className="border-b border-[var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
-          <span>{announcementText || "Free shipping on selected styles"}</span>
-          <span className="hidden sm:block">India wide delivery</span>
+          <span>{announcementText || "Complimentary India-wide delivery"}</span>
+          <span className="hidden sm:block">Defined quietly</span>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 py-2 sm:px-6 lg:px-8">
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-2 lg:gap-7">
             <button
               ref={mobileMenuToggleRef}
               type="button"
               onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] lg:hidden"
+              className="flex h-11 w-11 items-center justify-center lg:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >
               <span className="relative flex h-4 w-5 items-center justify-center">
@@ -147,7 +147,7 @@ export function SiteHeader() {
               </span>
             </button>
 
-            <nav className="hidden items-center gap-6 text-[0.94rem] text-[var(--muted)] lg:flex">
+            <nav className="hidden items-center gap-8 text-[0.78rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -167,7 +167,7 @@ export function SiteHeader() {
               width={220}
               height={72}
               loading="eager"
-              className="h-10 w-auto object-contain sm:h-12 lg:h-14"
+              className="h-9 w-auto object-contain sm:h-10 lg:h-12"
             />
           </Link>
 
@@ -262,8 +262,8 @@ export function SiteHeader() {
 
       {isMobileMenuOpen ? (
         <div className="border-t border-[var(--border)] lg:hidden">
-          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
-            <div className="border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_18px_44px_rgba(17,17,17,0.08)]">
+          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+            <div className="bg-[var(--background)]">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
                 <p className="eyebrow text-[var(--muted)]">Menu</p>
                 <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">

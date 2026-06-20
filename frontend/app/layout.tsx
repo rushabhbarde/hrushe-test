@@ -9,19 +9,13 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { WishlistDrawer } from "@/components/wishlist-drawer";
 import { WishlistProvider } from "@/components/wishlist-provider";
 import { SupportChatbot } from "@/components/support-chatbot";
-import { Manrope, Playfair_Display } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { CartProvider } from "@/components/cart-provider";
 import "./globals.css";
 
 const bodyFont = Manrope({
   variable: "--font-body",
   subsets: ["latin"],
-});
-
-const displayFont = Playfair_Display({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -78,7 +72,8 @@ export default function RootLayout({
   const themeBootScript = `
     try {
       var storedTheme = localStorage.getItem("hrushe-theme");
-      var theme = storedTheme === "dark" ? "dark" : "light";
+      var isAdmin = location.pathname.indexOf("/admin") === 0;
+      var theme = isAdmin && storedTheme === "dark" ? "dark" : "light";
       document.documentElement.dataset.theme = theme;
       document.documentElement.style.colorScheme = theme;
     } catch (error) {}
@@ -105,7 +100,7 @@ export default function RootLayout({
   ]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={bodyFont.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script
@@ -113,7 +108,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: organizationStructuredData }}
         />
       </head>
-      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+      <body>
         <ThemeProvider>
           <CustomerAuthProvider>
             <AdminAuthProvider>

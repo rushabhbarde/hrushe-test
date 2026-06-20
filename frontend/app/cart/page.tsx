@@ -9,7 +9,6 @@ import { ProductCard } from "@/components/product-card";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { TrustBadges } from "@/components/trust-badges";
 import { useWishlist } from "@/components/wishlist-provider";
 import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -18,7 +17,7 @@ import { useStorefrontData } from "@/lib/use-storefront";
 const shipping = 0;
 
 function formatPrice(value: number) {
-  return `Rs. ${value.toLocaleString("en-IN")}`;
+  return `₹${value.toLocaleString("en-IN")}`;
 }
 
 function lineKey(item: Pick<CartLine, "productId" | "size" | "color" | "fit">) {
@@ -294,7 +293,7 @@ export default function CartPage() {
                                     >
                                       Save for later
                                     </button>
-                                    <span>Ships in 3-5 days</span>
+                                    <span>Delivery in 5–10 business days</span>
                                   </div>
                                 </div>
                               </div>
@@ -408,7 +407,7 @@ export default function CartPage() {
                     <div className="mt-6 border border-[var(--border)] bg-white/48 p-4">
                       <p className="text-sm font-semibold uppercase tracking-[0.12em]">Estimated delivery</p>
                       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        India-wide delivery in 3-5 business days. Tracking appears after dispatch.
+                        India-wide delivery in 5–10 business days. Tracking appears after dispatch.
                       </p>
                       <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                         Complimentary India-wide shipping is active on this bag.
@@ -447,9 +446,6 @@ export default function CartPage() {
                     <Link href="/shop" className="lux-action-muted mt-3 w-full">
                       Continue shopping
                     </Link>
-                    <div className="mt-5">
-                      <TrustBadges compact />
-                    </div>
                     <p className="mt-5 text-center text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                       {itemCount} item{itemCount === 1 ? "" : "s"} in bag
                     </p>

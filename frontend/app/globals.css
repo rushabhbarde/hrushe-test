@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --surface: #ffffff;
-  --surface-strong: #f7f7f7;
-  --surface-elevated: rgba(255, 255, 255, 0.84);
-  --foreground: #111111;
-  --muted: #5f5f5f;
-  --border: rgba(17, 17, 17, 0.1);
-  --accent: #585858;
-  --accent-dark: #111111;
+  --background: #f6f4ef;
+  --surface: #fcfbf8;
+  --surface-strong: #eeece6;
+  --surface-elevated: #fcfbf8;
+  --foreground: #11110f;
+  --muted: #686762;
+  --border: rgba(17, 17, 15, 0.14);
+  --accent: #711e2a;
+  --accent-dark: #4f111b;
   --success: #127a49;
   --danger: #c43a35;
-  --shadow: 0 18px 48px rgba(17, 17, 17, 0.08);
-  --soft-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
+  --shadow: none;
+  --soft-shadow: none;
   --hero-glow: rgba(17, 17, 17, 0.035);
-  --footer-background: #2f2d2b;
-  --footer-foreground: #ffffff;
-  --header-background: rgba(255, 255, 255, 0.92);
+  --footer-background: #11110f;
+  --footer-foreground: #f6f4ef;
+  --header-background: rgba(246, 244, 239, 0.96);
   --hover-fill: rgba(17, 17, 17, 0.05);
 }
 
@@ -45,7 +45,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
+  --font-sans: "Manrope", "Manrope Fallback", ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -64,7 +64,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
+  background-image: none;
   transition:
     background-color 240ms ease,
     color 240ms ease,
@@ -108,21 +108,24 @@ textarea {
     box-shadow 180ms ease;
 }
 
+body :where([class*="shadow-"]) {
+  box-shadow: none !important;
+}
+
 .page-shell {
   min-height: 100vh;
 }
 
 .display-font {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-body), sans-serif;
+  font-weight: 500;
 }
 
 .grain-card {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--surface-strong) 96%, transparent)),
-    linear-gradient(135deg, color-mix(in srgb, var(--foreground) 3%, transparent), transparent);
+  background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(24px) saturate(125%);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .shop-card-image {
@@ -317,34 +320,33 @@ textarea {
 }
 
 .eyebrow {
-  letter-spacing: 0.28em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
 }
 
 .button-primary {
   background: var(--foreground);
   color: var(--background);
-  box-shadow: var(--soft-shadow);
-  min-height: 44px;
-  letter-spacing: 0.06em;
+  box-shadow: none;
+  min-height: 48px;
+  letter-spacing: 0.1em;
   border-radius: 0 !important;
 }
 
 .button-secondary {
-  background: var(--surface-elevated);
+  background: transparent;
   border: 1px solid var(--border);
-  box-shadow: var(--soft-shadow);
-  backdrop-filter: blur(16px) saturate(120%);
-  min-height: 44px;
+  box-shadow: none;
+  backdrop-filter: none;
+  min-height: 48px;
   border-radius: 0 !important;
 }
 
 .lux-page {
   min-height: calc(100vh - 6rem);
-  background:
-    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--foreground) 4%, transparent), transparent 24rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
+  background: var(--background);
 }
 
 .lux-container {
@@ -355,11 +357,9 @@ textarea {
 
 .lux-panel {
   border: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface-strong) 82%, transparent)),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--foreground) 3%, transparent), transparent 18rem);
-  box-shadow: 0 18px 44px rgba(17, 17, 17, 0.05);
-  backdrop-filter: blur(18px) saturate(112%);
+  background: var(--surface);
+  box-shadow: none;
+  backdrop-filter: none;
   border-radius: 0 !important;
 }
 
@@ -367,7 +367,7 @@ textarea {
   width: 100%;
   min-height: 3.25rem;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  background: var(--surface);
   padding: 0.9rem 1rem;
   color: var(--foreground);
   outline: none;
@@ -378,8 +378,8 @@ textarea {
 }
 
 .lux-input:focus {
-  border-color: color-mix(in srgb, var(--foreground) 38%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: var(--foreground);
+  box-shadow: none;
 }
 
 .lux-action {
@@ -467,11 +467,9 @@ textarea {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, transparent), color-mix(in srgb, var(--surface-strong) 88%, transparent)),
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 4%, transparent), transparent);
-  box-shadow: var(--soft-shadow);
-  backdrop-filter: blur(20px) saturate(120%);
+  background: var(--surface);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .editorial-card::after {
@@ -483,11 +481,18 @@ textarea {
 }
 
 .empty-shell {
-  border: 1px dashed var(--border);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-strong) 90%, transparent)),
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 3%, transparent), transparent);
-  backdrop-filter: blur(18px) saturate(120%);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: none;
+}
+
+@media (min-width: 1024px) {
+  .button-primary,
+  .button-secondary,
+  .lux-action,
+  .lux-action-muted {
+    min-height: 52px;
+  }
 }
 
 .toast-shell {

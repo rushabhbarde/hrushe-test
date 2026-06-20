@@ -49,12 +49,12 @@ export default function TrackOrderPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
-        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="grain-card rounded-[2rem] p-6 sm:p-8">
-            <p className="eyebrow text-[var(--accent)]">Track order</p>
-            <h1 className="display-font mt-3 text-5xl">Follow every delivery step.</h1>
-            <p className="mt-3 text-sm text-[var(--muted)]">
+      <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
+        <section className="grid gap-px bg-[var(--border)] lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12">
+            <p className="eyebrow text-[var(--muted)]">Track order</p>
+            <h1 className="mt-5 max-w-[9ch] text-[2.75rem] font-medium uppercase leading-[0.94] tracking-[-0.04em] sm:text-[3.5rem]">Follow every delivery step.</h1>
+            <p className="mt-6 max-w-md text-sm leading-7 text-[var(--muted)]">
               Search using your order ID with either the email or phone number used at checkout.
             </p>
 
@@ -62,7 +62,7 @@ export default function TrackOrderPage() {
               <button
                 type="button"
                 onClick={() => setSearchMode("email")}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
+                className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "email"
                     ? "border-black bg-black text-white"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
@@ -73,7 +73,7 @@ export default function TrackOrderPage() {
               <button
                 type="button"
                 onClick={() => setSearchMode("phone")}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
+                className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "phone"
                     ? "border-black bg-black text-white"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
@@ -87,14 +87,14 @@ export default function TrackOrderPage() {
               <input
                 value={orderId}
                 onChange={(event) => setOrderId(event.target.value)}
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
+                className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
                 placeholder="Order ID"
                 required
               />
               <input
                 value={contactValue}
                 onChange={(event) => setContactValue(event.target.value)}
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3"
+                className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
                 placeholder={searchMode === "email" ? "Email address" : "Phone number"}
                 type={searchMode === "email" ? "email" : "tel"}
                 required
@@ -103,20 +103,20 @@ export default function TrackOrderPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="button-primary rounded-full px-5 py-3 transition disabled:opacity-60"
+                className="button-primary px-5 py-3 text-xs font-semibold uppercase transition disabled:opacity-60"
               >
                 {loading ? "Checking..." : "Track order"}
               </button>
             </form>
           </div>
 
-          <div className="grain-card rounded-[2rem] p-6 sm:p-8">
+          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12">
             {!order ? (
               <div className="flex min-h-[420px] flex-col justify-center">
-                <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
+                <p className="eyebrow text-[var(--muted)]">
                   Delivery status updates
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold">
+                <h2 className="mt-5 max-w-[18ch] text-3xl font-medium tracking-[-0.025em]">
                   Your timeline, courier, and tracking details will appear here.
                 </h2>
                 <p className="mt-4 max-w-xl text-[var(--muted)]">
@@ -222,9 +222,9 @@ export default function TrackOrderPage() {
                     {order.products.map((product, index) => (
                       <div
                         key={`${product.productId}-${index}`}
-                        className="flex gap-4 rounded-[1.5rem] border border-[var(--border)] p-4"
+                        className="flex gap-4 border border-[var(--border)] p-4"
                       >
-                        <div className="relative h-24 w-20 overflow-hidden rounded-[1rem] bg-[#f5f3ef]">
+                        <div className="relative h-24 w-20 overflow-hidden bg-[var(--surface-strong)]">
                           {product.image ? (
                             <Image
                               src={product.image}
@@ -241,7 +241,7 @@ export default function TrackOrderPage() {
                             Qty {product.quantity} · Size {product.size || "Default"} · Color{" "}
                             {product.color || "Default"}
                           </p>
-                          <p className="mt-2 text-sm font-semibold">Rs. {product.price}</p>
+                          <p className="mt-2 text-sm font-semibold">₹{product.price}</p>
                         </div>
                       </div>
                     ))}

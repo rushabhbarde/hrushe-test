@@ -22,10 +22,10 @@ export function SectionHeading({
           {eyebrow}
         </p>
       </div>
-      <HeadingTag className="mt-3 max-w-[16ch] text-[2rem] font-semibold uppercase leading-[0.95] tracking-[0] text-[var(--foreground)] sm:text-[2.85rem] lg:text-[3.5rem]">
+      <HeadingTag className="mt-5 max-w-[16ch] text-[2rem] font-medium uppercase leading-[0.95] tracking-[-0.035em] text-[var(--foreground)] sm:text-[2.75rem] lg:text-[3.5rem]">
         {title}
       </HeadingTag>
-      <p className="mt-3 max-w-2xl text-[0.92rem] leading-7 text-[var(--muted)] sm:text-[0.98rem]">
+      <p className="mt-6 max-w-2xl text-[0.92rem] leading-7 text-[var(--muted)] sm:text-base">
         {description}
       </p>
     </div>

@@ -49,7 +49,7 @@ const policyTabs = [
       {
         title: "8. Limitation of Liability",
         body:
-          "We are not responsible for courier delays, wrong address issues, or damage caused during transit.",
+          "Courier delays and incorrect address issues are handled case by case. If an item arrives damaged, contact us within 48 hours so the order can be assessed under our Return & Refund Policy.",
       },
       {
         title: "9. Contact",
@@ -111,12 +111,12 @@ const policyTabs = [
       {
         title: "2. Delivery Time",
         body:
-          "Products will be delivered within 5–10 business days. Remote areas may take longer.",
+          "Orders are usually delivered within 5–10 business days after confirmation. Remote areas may take longer, and tracking is shared after dispatch.",
       },
       {
         title: "3. Shipping Charges",
         body:
-          "Shipping charges are shown at checkout. Free shipping may apply to selected products or order values.",
+          "Standard shipping is complimentary across India. Any exceptional delivery charge will be shown clearly before payment.",
       },
       {
         title: "4. Incorrect Address",
@@ -142,7 +142,7 @@ const policyTabs = [
       {
         title: "1. Return Eligibility",
         body:
-          "Returns are accepted only if the product is damaged, defective, or if the wrong item is delivered. You must request a return within 48 hours of delivery. We have a 7 day return policy after request.",
+          "Returns are accepted when a product arrives damaged, defective, or incorrect. Contact HRUSHE within 48 hours of delivery. Once approved, the item must be returned within 7 days.",
       },
       {
         title: "2. Conditions for Return",
@@ -157,7 +157,7 @@ const policyTabs = [
       {
         title: "4. Exchange",
         body:
-          "We do not offer exchanges or replacements at the moment.",
+          "Size or colour exchanges are not currently available. Please review the garment measurements before ordering. Damaged, defective, or incorrect items remain eligible under the return conditions above.",
       },
       {
         title: "5. Cancellation",
@@ -194,16 +194,16 @@ function PoliciesPageContent() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1320px] px-5 py-12 sm:px-8 lg:py-14">
+      <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
         <div className="max-w-4xl">
-          <p className="eyebrow text-[var(--accent)]">Policies</p>
-          <h1 className="display-font mt-4 text-4xl leading-tight sm:text-5xl lg:text-6xl">
-            Legal, privacy, shipping, and return information in one place.
+          <p className="eyebrow text-[var(--muted)]">Policies</p>
+          <h1 className="mt-5 max-w-[13ch] text-[2.5rem] font-medium uppercase leading-[0.95] tracking-[-0.04em] sm:text-[3.5rem] lg:text-[4.5rem]">
+            Clear information, before you order.
           </h1>
-          <p className="mt-5 text-lg leading-8 text-[var(--muted)]">
-            Browse one policy at a time so the information stays clear and easy to read before
-            you place an order.
+          <p className="mt-6 max-w-2xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
+            Shipping, returns, privacy, and purchase terms—kept in one place and written to be understood.
           </p>
+          <p className="mt-4 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">Last updated: 21 June 2026</p>
         </div>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[300px_1fr]">
@@ -216,7 +216,7 @@ function PoliciesPageContent() {
                   key={policy.key}
                   type="button"
                   onClick={() => switchPolicy(policy.key)}
-                  className={`block w-full rounded-[1.25rem] border px-5 py-4 text-left transition ${
+                  className={`block w-full border px-5 py-4 text-left transition ${
                     isActive
                       ? "border-black bg-black text-white"
                       : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-black/5"
@@ -229,22 +229,22 @@ function PoliciesPageContent() {
 
             <Link
               href="/contact"
-              className="button-secondary mt-4 inline-flex rounded-full px-5 py-3 transition"
+              className="button-secondary mt-4 inline-flex px-5 py-3 transition"
             >
               Need support?
             </Link>
           </aside>
 
-          <section className="grain-card rounded-[2rem] p-6 sm:p-8 lg:p-10">
-            <p className="eyebrow text-[var(--accent)]">{currentPolicy.label}</p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.02em]">
+          <section className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
+            <p className="eyebrow text-[var(--muted)]">{currentPolicy.label}</p>
+            <h2 className="mt-5 text-3xl font-medium tracking-[-0.025em]">
               {currentPolicy.label}
             </h2>
             <div className="mt-8 space-y-8">
               {currentPolicy.sections.map((section) => (
                 <div key={section.title}>
-                  <h3 className="text-xl font-semibold">{section.title}</h3>
-                  <div className="mt-3 space-y-3 text-base leading-8 text-[var(--muted)]">
+                  <h3 className="text-lg font-medium">{section.title}</h3>
+                  <div className="mt-3 max-w-3xl space-y-3 text-[0.94rem] leading-7 text-[var(--muted)]">
                     {section.body.split("\n").map((paragraph) => (
                       <p key={`${section.title}-${paragraph}`}>{paragraph}</p>
                     ))}

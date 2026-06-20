@@ -6,8 +6,10 @@ import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
-import { getCompareAtPrice } from "@/lib/pricing";
-import { WishlistButton } from "@/components/wishlist-button";
+import {
+  getProductDisplayName,
+  getProductFabricLine,
+} from "@/lib/product-presentation";
 import { useState } from "react";
 
 const swatchColors: Record<string, string> = {
@@ -45,10 +47,6 @@ function formatPrice(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
 }
 
-function formatProductName(value: string) {
-  return value.replace(/\bBegie\b/gi, "Beige");
-}
-
 export function ProductCard({ product }: { product: Product }) {
   const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
@@ -56,12 +54,10 @@ export function ProductCard({ product }: { product: Product }) {
   const hasImage = Boolean(product.images[0]);
   const hoverImage = product.images[1] || product.galleryImages?.[0] || "";
   const hasHoverImage = Boolean(hoverImage && hoverImage !== product.images[0]);
-  const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const colorHint = product.colors.length > 0 ? product.colors.join(", ") : "HRUSHE";
-  const productName = formatProductName(product.name);
-  const productMeta = "Oversized Tee";
-  const hasDiscount = compareAtPrice > product.price;
+  const productName = getProductDisplayName(product);
+  const productMeta = getProductFabricLine(product);
   const availableSizes = product.sizes.filter(
     (size) =>
       !product.trackInventory ||
@@ -100,27 +96,13 @@ export function ProductCard({ product }: { product: Product }) {
 
     setShowQuickSizes((current) => !current);
   };
-  const labels = [product.newIn || product.newArrival ? "New" : ""].filter(Boolean);
-
   return (
-    <article data-product-card className="group/product reveal-up-soft block min-w-0">
+    <article data-product-card className="group/product reveal-up-soft flex min-w-0 flex-col">
       <div
         className="shop-card-image relative aspect-[18/25] overflow-hidden bg-[#f6f6f3]"
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
         <Link href={productHref} className="absolute inset-0 z-10" aria-label={productName} />
-        {labels.length ? (
-          <div className="pointer-events-none absolute left-2 top-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap gap-1.5 md:left-2.5 md:top-2.5">
-            {labels.map((label) => (
-              <span
-                key={label}
-                className="border border-[rgba(17,17,17,0.16)] bg-white/92 px-2 py-[5px] text-[0.54rem] font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
         {hasImage ? (
           <Image
             src={product.images[0]}
@@ -151,7 +133,7 @@ export function ProductCard({ product }: { product: Product }) {
           />
         ) : null}
         {showQuickSizes ? (
-          <div className="absolute inset-x-2 bottom-2 z-30 border border-[var(--border)] bg-white/95 p-3 shadow-[0_10px_30px_rgba(17,17,17,0.12)] backdrop-blur-sm">
+          <div className="absolute inset-x-3 bottom-3 z-30 border border-[var(--border)] bg-[var(--surface)] p-3">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em]">Choose size</p>
               <button
@@ -169,7 +151,7 @@ export function ProductCard({ product }: { product: Product }) {
                   key={size}
                   type="button"
                   onClick={() => addSelectedSize(size)}
-                  className="min-h-11 border border-[var(--border)] text-xs font-semibold uppercase transition hover:border-black hover:bg-black hover:text-white"
+                  className="min-h-11 border border-[var(--border)] text-xs font-semibold uppercase transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
                 >
                   {size}
                 </button>
@@ -177,45 +159,37 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           </div>
         ) : null}
+        {!showQuickSizes ? (
+          <button
+            type="button"
+            onClick={quickAddToCart}
+            disabled={availableSizes.length === 0}
+            className="absolute inset-x-3 bottom-3 z-20 min-h-11 translate-y-2 bg-[rgba(252,251,248,0.96)] px-4 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[var(--foreground)] opacity-0 transition duration-200 hover:bg-[var(--foreground)] hover:text-[var(--background)] disabled:cursor-not-allowed md:group-hover/product:translate-y-0 md:group-hover/product:opacity-100"
+            aria-label={availableSizes.length ? `Choose a size for ${productName}` : `${productName} is sold out`}
+          >
+            {availableSizes.length ? "Choose size" : "Sold out"}
+          </button>
+        ) : null}
       </div>
 
-      <div className="shop-card-copy block px-0 pb-1 pt-1">
+      <div className="shop-card-copy flex flex-1 flex-col px-0 pb-1 pt-3">
         <Link href={productHref} className="block">
-          <p className="line-clamp-2 text-[0.95rem] font-semibold uppercase leading-[1.08] tracking-[0] text-[var(--foreground)] sm:text-[1rem]">
+          <p className="line-clamp-2 text-[0.78rem] font-medium leading-[1.35] text-[var(--foreground)] sm:text-[0.88rem]">
             {productName}
           </p>
         </Link>
-        <p className="mt-1 truncate text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+        <p className="mt-1.5 truncate text-[0.62rem] uppercase tracking-[0.12em] text-[var(--muted)] sm:text-[0.66rem]">
           {productMeta}
         </p>
-        <div className="mt-1 flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <p className="text-[0.99rem] font-semibold leading-none text-[var(--foreground)] sm:text-[1rem]">
-                {formatPrice(product.price)}
-              </p>
-              {hasDiscount ? (
-                <p className="text-[0.74rem] leading-none text-[var(--danger)] line-through decoration-[1.5px] sm:text-[0.78rem]">
-                  {formatPrice(compareAtPrice)}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <WishlistButton
-              productId={product.id}
-              label={`Save ${productName}`}
-              className="flex h-10 w-10 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
-              iconClassName="h-[17px] w-[17px]"
-            />
-          </div>
-        </div>
-        <div className="mt-1.5 flex min-h-5 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-[0.82rem] font-semibold leading-none text-[var(--foreground)] sm:text-[0.9rem]">
+            {formatPrice(product.price)}
+          </p>
           <div className="flex items-center gap-1">
             {product.colors.slice(0, 4).map((color) => (
               <span
                 key={color}
-                className="h-2.5 w-2.5 rounded-none border border-[var(--border)]"
+                className="h-2 w-2 border border-[var(--border)]"
                 style={{
                   backgroundColor:
                     swatchColors[color.toLowerCase().trim()] ||
@@ -224,20 +198,17 @@ export function ProductCard({ product }: { product: Product }) {
                 }}
               />
             ))}
-            {product.colors.length > 4 ? (
-              <span className="ml-0.5 text-[0.72rem] text-[var(--muted)]">
-                +{product.colors.length - 4}
-              </span>
-            ) : null}
           </div>
+        </div>
+        <div className="mt-auto pt-3 md:hidden">
           <button
             type="button"
             onClick={quickAddToCart}
             disabled={availableSizes.length === 0}
-            className="min-h-11 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[var(--foreground)] underline decoration-1 underline-offset-4 disabled:text-[var(--muted)] disabled:no-underline"
+            className="min-h-11 w-full border border-[var(--border)] text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[var(--foreground)] disabled:text-[var(--muted)]"
             aria-label={availableSizes.length ? `Quick add ${productName}` : `${productName} is sold out`}
           >
-            {availableSizes.length ? "Quick add" : "Sold out"}
+            {availableSizes.length ? "Choose size" : "Sold out"}
           </button>
         </div>
       </div>

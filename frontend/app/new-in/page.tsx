@@ -20,16 +20,16 @@ export default function NewInPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div className="flex flex-col gap-7 border-b border-[var(--border)] pb-8 sm:pb-10 lg:flex-row lg:items-end lg:justify-between">
+      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
+        <div className="flex flex-col gap-8 border-b border-[var(--border)] pb-10 sm:pb-14 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="New In"
             eyebrowClassName="text-[var(--accent)]"
-            title="Fresh pieces from the latest drop."
+            title="The latest edit."
             description={
               isFallbackEdit
-                ? "A live edit of the newest available HRUSHE pieces while the next marked drop is prepared."
-                : "The newest styles added to the collection, gathered into one clean edit."
+                ? "The newest available HRUSHE pieces, gathered into one considered edit."
+                : "New silhouettes and colours, presented without noise."
             }
           />
           <div className="flex flex-wrap gap-3">
@@ -37,13 +37,13 @@ export default function NewInPage() {
               href="/shop"
               className="button-secondary inline-flex min-h-11 items-center px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em]"
             >
-              Explore all products
+              View collection
             </Link>
             <Link
               href="/collection/oversized"
               className="button-primary inline-flex min-h-11 items-center px-5 text-[0.72rem] font-medium uppercase tracking-[0.16em]"
             >
-              Oversized
+              Discover the fit
             </Link>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function NewInPage() {
             <>
               <div className="mb-5 flex flex-col gap-2 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
                 <span>{newInProducts.length} pieces available</span>
-                <span>{isFallbackEdit ? "Newest active edit" : "Drop-ready styles"}</span>
+                <span>{isFallbackEdit ? "Current edit" : "Summer 2026"}</span>
               </div>
               <ProductListingGrid products={newInProducts} />
             </>

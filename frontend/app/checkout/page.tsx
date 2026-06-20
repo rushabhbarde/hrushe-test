@@ -62,7 +62,7 @@ const checkoutSteps: { key: CheckoutStep; label: string }[] = [
 const shipping = 0;
 
 function formatPrice(value: number) {
-  return `Rs. ${value.toLocaleString("en-IN")}`;
+  return `₹${value.toLocaleString("en-IN")}`;
 }
 
 function buildFormFromAddress(
@@ -187,6 +187,9 @@ function OrderSummary({
           <span>Total</span>
           <span>{formatPrice(total)}</span>
         </div>
+        <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+          Complimentary India-wide delivery · Estimated in 5–10 business days
+        </p>
       </div>
     </div>
   );
@@ -442,7 +445,7 @@ export default function CheckoutPage() {
                     Back
                   </Link>
 
-                  <h1 className="text-3xl font-black uppercase tracking-[-0.05em] sm:text-4xl">
+                  <h1 className="text-3xl font-medium uppercase tracking-[-0.035em] sm:text-4xl">
                     Checkout
                   </h1>
 

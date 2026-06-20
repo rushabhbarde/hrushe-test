@@ -17,27 +17,32 @@ import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
+import {
+  getProductDisplayName,
+  getProductFabricLine,
+  getProductFitLine,
+} from "@/lib/product-presentation";
 
 const productInfoSections = [
   {
     key: "description",
-    title: "Description & fit",
+    title: "Product",
   },
   {
     key: "fabric",
-    title: "Fabric & feel",
+    title: "Fabric & construction",
   },
   {
     key: "wash",
-    title: "Wash care",
+    title: "Care",
   },
   {
     key: "size",
-    title: "Size guide",
+    title: "Fit & measurements",
   },
   {
     key: "delivery",
-    title: "Delivery, Payment and Returns",
+    title: "Delivery & returns",
   },
 ] as const;
 
@@ -146,17 +151,12 @@ function getProductFit(product: Product) {
 
 function getProductDetailRows(product: Product) {
   return [
-    { label: "Fabric", value: product.fabric || product.cottonType || "Premium cotton jersey" },
-    { label: "GSM", value: product.gsm || "Mid-weight everyday GSM" },
+    { label: "Fabric", value: product.fabric || product.cottonType || "Cotton jersey" },
+    { label: "GSM", value: product.gsm },
     { label: "Fit", value: getProductFit(product) },
-    { label: "Feel", value: product.feel || "Soft, breathable, and clean against skin" },
-    { label: "Weight", value: product.weight || "Balanced daily-wear weight" },
-    {
-      label: "Quality note",
-      value:
-        product.qualityNote ||
-        "Made for repeat wear with a quiet structure and minimal finish.",
-    },
+    { label: "Feel", value: product.feel },
+    { label: "Weight", value: product.weight },
+    { label: "Construction", value: product.qualityNote },
   ].filter((item) => item.value);
 }
 
@@ -328,7 +328,7 @@ function ProductInfoPanel({
   actionRef,
   mobile = false,
 }: ProductInfoPanelProps) {
-  const displayName = product.name.replace(/\bBegie\b/gi, "Beige");
+  const displayName = getProductDisplayName(product);
   const colorProducts = [product, ...siblingProducts].filter(
     (item, index, items) =>
       Boolean(item.colors[0]) &&
@@ -338,17 +338,15 @@ function ProductInfoPanel({
       ) === index
   );
   const shellClassName = mobile
-    ? "border-b border-[var(--border)] bg-[var(--background)] px-4 pb-8 pt-7 sm:px-6"
-    : "flex min-h-[680px] flex-col border border-[var(--border)] bg-[var(--surface)] px-8 py-9 xl:px-12 xl:py-12";
+    ? "border-b border-[var(--border)] bg-[var(--background)] px-4 pb-10 pt-8 sm:px-6"
+    : "flex flex-col bg-[var(--background)] px-8 py-4 xl:px-12";
 
   return (
     <div className={shellClassName}>
-      <p className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-        HRUSHE / DEFINED QUIETLY
-      </p>
+      <p className="eyebrow text-[var(--muted)]">Summer 2026</p>
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="max-w-[20ch] text-[1.35rem] font-semibold uppercase leading-[1.12] tracking-[-0.01em] text-[var(--foreground)] lg:text-[1.65rem]">
+          <h2 className="max-w-[20ch] text-[1.5rem] font-medium leading-[1.12] tracking-[-0.025em] text-[var(--foreground)] lg:text-[2rem]">
             {displayName}
           </h2>
           <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -372,27 +370,42 @@ function ProductInfoPanel({
       <p className="mt-4 text-[0.74rem] tracking-[0.04em] text-[var(--muted)]">
         MRP incl. of all taxes
       </p>
-      <p className="mt-7 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--foreground)]">
+      <p className="mt-8 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--muted)]">
         {description}
       </p>
+      <div className="mt-8 grid grid-cols-2 border-y border-[var(--border)] py-5 text-[0.7rem] uppercase tracking-[0.1em] text-[var(--muted)]">
+        <p>{getProductFabricLine(product)}</p>
+        <p className="text-right">{getProductFitLine(product)}</p>
+      </div>
 
       {colorProducts.length > 0 ? (
         <div className="mt-8">
-          <p className="text-[0.82rem] font-medium text-[var(--muted)]">
+          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
             Colour: {selectedColor || product.colors[0]}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2.5">
             {colorProducts.map((colorProduct) => {
               const color = colorProduct.colors[0];
               const active = colorProduct.id === product.id;
-              const swatchClassName = `inline-flex h-11 w-11 items-center justify-center border transition ${
+              const swatchClassName = `relative inline-flex h-[68px] w-[52px] overflow-hidden border transition ${
                 active
-                  ? "border-[var(--foreground)] ring-1 ring-[var(--foreground)]"
+                  ? "border-[var(--foreground)]"
                   : "border-[var(--border)] hover:border-[var(--foreground)]"
               }`;
-              const swatchStyle = {
-                backgroundColor: resolveSwatchColor(color, colorProduct.accent),
-              };
+              const colourImage = colorProduct.images[0];
+              const swatchStyle = colourImage
+                ? undefined
+                : { backgroundColor: resolveSwatchColor(color, colorProduct.accent) };
+              const swatchContent = colourImage ? (
+                <Image
+                  src={colourImage}
+                  alt=""
+                  fill
+                  unoptimized={shouldBypassImageOptimization(colourImage)}
+                  sizes="52px"
+                  className="object-cover"
+                />
+              ) : null;
 
               if (active) {
                 return (
@@ -404,7 +417,9 @@ function ProductInfoPanel({
                     aria-pressed="true"
                     className={swatchClassName}
                     style={swatchStyle}
-                  />
+                  >
+                    {swatchContent}
+                  </button>
                 );
               }
 
@@ -415,7 +430,9 @@ function ProductInfoPanel({
                   aria-label={`View ${color}`}
                   className={swatchClassName}
                   style={swatchStyle}
-                />
+                >
+                  {swatchContent}
+                </Link>
               );
             })}
           </div>
@@ -425,7 +442,7 @@ function ProductInfoPanel({
       {requiresSize ? (
         <div className="mt-6">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-[0.82rem] font-medium text-[var(--muted)]">Size</p>
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Size</p>
             <button
               type="button"
               onClick={onOpenSizeGuide}
@@ -466,6 +483,9 @@ function ProductInfoPanel({
               );
             })}
           </div>
+          <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+            Campaign fit shown in size M. Compare the garment measurements before ordering.
+          </p>
         </div>
       ) : null}
 
@@ -512,6 +532,7 @@ export default function ProductDetailPage() {
   const [reviewError, setReviewError] = useState("");
   const [reviewSaved, setReviewSaved] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const mainAddToCartRef = useRef<HTMLDivElement>(null);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
@@ -666,7 +687,13 @@ export default function ProductDetailPage() {
   const siblingProducts = products.filter(
     (item) => item.id !== product.id && item.category === product.category
   );
-  const reviews = product.reviews || [];
+  const reviews = (product.reviews || []).filter(
+    (review) =>
+      review.status !== "pending" &&
+      review.status !== "rejected" &&
+      review.status !== "hidden" &&
+      !/hrushabh|kshitij/i.test(review.reviewerName)
+  );
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const hasDiscount = compareAtPrice > product.price;
   const priceText = `₹${product.price.toLocaleString("en-IN")}`;
@@ -797,7 +824,7 @@ export default function ProductDetailPage() {
 
     addItem({
       productId: product.id,
-      name: product.name,
+      name: getProductDisplayName(product),
       price: product.price,
       size: selectedSize,
       color: effectiveColor,
@@ -806,7 +833,7 @@ export default function ProductDetailPage() {
       image: product.images[0],
     });
     setAddError("");
-    pushToast(`${product.name} added to cart`);
+    pushToast(`${getProductDisplayName(product)} added to bag`);
     openCart();
   };
 
@@ -886,46 +913,29 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:min-h-[680px] lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.38fr)_minmax(360px,1fr)] lg:items-stretch lg:gap-6 xl:gap-8">
+          <div className="hidden lg:mx-auto lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.5fr)_minmax(380px,1fr)] lg:items-start lg:gap-12 xl:gap-16">
             <section
               aria-label="Product media gallery"
-              className="relative min-h-[680px] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]"
-              onPointerDown={handleSwipeStart}
-              onPointerUp={handleSwipeEnd}
-              onPointerCancel={() => {
-                swipeStartRef.current = null;
-              }}
-              style={{ touchAction: "pan-y" }}
+              className="grid grid-cols-2 gap-3"
             >
-              <div className="relative h-full w-full overflow-hidden">
-                <ProductMediaFrame
-                  item={activeMedia}
-                  product={product}
-                  imageClassName="object-cover object-center"
-                  onVideoEnded={showNextMedia}
-                />
-              </div>
-
-              {hasMultipleMedia ? (
-                <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
-                  {mediaItems.map((item, index) => (
-                    <button
-                      key={`${item.id}-desktop-dot-${index}`}
-                      type="button"
-                      onClick={() => setActiveMediaIndex(index)}
-                      aria-label={`Show ${item.type} ${index + 1}`}
-                      className={`h-1.5 transition ${
-                        activeMediaIndex === index
-                          ? "w-8 bg-[var(--foreground)]"
-                          : "w-3 bg-[rgba(17,17,17,0.22)]"
-                      }`}
-                    />
-                  ))}
+              {mediaItems.length > 0 ? mediaItems.map((item, index) => (
+                <div
+                  key={`${item.id}-desktop-${index}`}
+                  className={`relative overflow-hidden bg-[var(--surface-strong)] ${item.type === "video" ? "col-span-2 aspect-video" : "aspect-[4/5]"}`}
+                >
+                  <ProductMediaFrame
+                    item={item}
+                    product={product}
+                    imageClassName="object-cover object-center"
+                    onVideoEnded={() => undefined}
+                  />
                 </div>
-              ) : null}
+              )) : (
+                <div className="col-span-2 aspect-[4/5] bg-[var(--surface-strong)]" />
+              )}
             </section>
 
-            <section aria-label="Product details and purchase options" className="min-h-[680px]">
+            <section aria-label="Product details and purchase options" className="sticky top-32">
               <ProductInfoPanel
                 product={product}
                 siblingProducts={siblingProducts}
@@ -1027,10 +1037,10 @@ export default function ProductDetailPage() {
                         ) : null}
                         {section.key === "delivery" ? (
                           <div className="space-y-3">
-                            <p>Delivery time: 2-7 days</p>
+                            <p>Delivery time: 5–10 business days.</p>
                             <p>Complimentary shipping across India.</p>
                             <p>
-                              Returns, payment confirmation, and dispatch updates appear on your order page after checkout.
+                              Damaged, defective, or incorrect items can be reported within 48 hours of delivery. See the return policy for full conditions.
                             </p>
                             <TrustBadges />
                           </div>
@@ -1091,8 +1101,15 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
+              <button
+                type="button"
+                onClick={() => setReviewFormOpen((current) => !current)}
+                className="button-secondary mt-8 inline-flex items-center justify-center px-6 text-[0.68rem] font-semibold uppercase tracking-[0.1em]"
+              >
+                {reviewFormOpen ? "Close review form" : "Write a review"}
+              </button>
               <form
-                className="mt-8 grid gap-5 border-t border-[rgba(17,17,17,0.08)] pt-6"
+                className={`${reviewFormOpen ? "grid" : "hidden"} mt-8 gap-5 border-t border-[var(--border)] pt-6`}
                 onSubmit={(event) => void onReviewSubmit(event)}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -1235,7 +1252,7 @@ export default function ProductDetailPage() {
       </main>
 
       {showStickyAddToCart ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.96)] px-4 py-3 backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[rgba(246,244,239,0.97)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
           <div className="mx-auto flex max-w-xl items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[0.92rem] font-semibold text-[var(--foreground)]">

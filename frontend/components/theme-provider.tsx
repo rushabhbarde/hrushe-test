@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
 
@@ -25,6 +26,8 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname.startsWith("/admin");
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === "undefined") {
       return "light";
@@ -34,8 +37,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    applyTheme(isAdminRoute ? theme : "light");
+  }, [isAdminRoute, theme]);
 
   const setTheme = (nextTheme: Theme) => {
     setThemeState(nextTheme);
@@ -48,11 +51,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
-      isDark: theme === "dark",
+      isDark: isAdminRoute && theme === "dark",
       setTheme,
       toggleTheme: () => setTheme(theme === "dark" ? "light" : "dark"),
     }),
-    [theme]
+    [isAdminRoute, theme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

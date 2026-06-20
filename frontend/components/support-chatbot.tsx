@@ -332,14 +332,13 @@ export function SupportChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group flex h-11 w-11 items-center justify-center border border-black bg-[#111111] text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-[0_14px_34px_rgba(0,0,0,0.16)] sm:min-h-14 sm:w-auto sm:gap-3 sm:px-4"
+        className="group flex h-12 w-12 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-sm font-semibold text-[var(--background)]"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
       >
-        <span className="flex h-6 w-6 items-center justify-center bg-white text-black sm:h-8 sm:w-8">
+        <span className="flex h-6 w-6 items-center justify-center border border-white/35">
           ?
         </span>
-        <span className="hidden sm:inline">Support</span>
       </button>
     </div>
   );

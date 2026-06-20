@@ -1,56 +1,58 @@
+import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 const contactDetails = [
   {
-    title: "Email",
+    title: "Customer care",
     value: "team@hrushe.in",
-    note: "For product questions, order help, returns, and collaborations.",
+    href: "mailto:team@hrushe.in",
+    note: "Product, delivery, return, and order support.",
   },
   {
     title: "Phone",
-    value: "+91 9112854988",
-    note: "Available for customer support and order-related assistance.",
+    value: "+91 91128 54988",
+    href: "tel:+919112854988",
+    note: "Available Monday–Saturday, 10 AM–7 PM.",
   },
   {
     title: "Instagram",
     value: "@hrushe.in",
-    note: "Follow the brand for launches, styling edits, and drop updates.",
+    href: "https://instagram.com/hrushe.in",
+    note: "Collections, styling, and release updates.",
   },
 ];
 
 export default function ContactPage() {
   return (
-    <div className="page-shell">
+    <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
-        <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
+        <section className="grid gap-10 border-b border-[var(--border)] pb-12 lg:grid-cols-[1fr_0.72fr] lg:items-end lg:pb-16">
           <div>
-            <p className="eyebrow text-[var(--accent)]">Contact</p>
-            <h1 className="display-font mt-4 text-5xl leading-tight sm:text-6xl">
-              We would love to hear from you.
+            <p className="eyebrow text-[var(--muted)]">Contact</p>
+            <h1 className="mt-5 max-w-[9ch] text-[3rem] font-medium uppercase leading-[0.92] tracking-[-0.045em] sm:text-[4.5rem] lg:text-[5.5rem]">
+              We’re here to help.
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--muted)]">
-              Reach out through our main email or phone number for product questions,
-              customer support, order updates, or collaboration-related conversations.
-            </p>
           </div>
-          <div className="grain-card rounded-[2rem] p-6 sm:p-8">
-            <p className="eyebrow text-[var(--accent)]">Studio note</p>
-            <p className="mt-4 text-base leading-8 text-[var(--muted)]">
-              Response time is usually within 24 hours on business days. For order-related help,
-              include your order number and the email used at checkout.
+          <div>
+            <p className="max-w-xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
+              For order support, include your order number and the email or phone number used at checkout. We usually reply within one business day.
             </p>
+            <Link href="/track-order" className="button-primary mt-8 inline-flex items-center justify-center px-7 text-[0.68rem] font-semibold uppercase">
+              Track an order
+            </Link>
           </div>
         </section>
 
-        <section className="mt-12 grid gap-5 md:grid-cols-3">
+        <section className="mt-12 grid gap-px bg-[var(--border)] md:grid-cols-3 lg:mt-16">
           {contactDetails.map((item) => (
-            <div key={item.title} className="grain-card rounded-[2rem] p-6">
-              <p className="eyebrow text-[var(--accent)]">{item.title}</p>
-              <p className="mt-4 text-2xl font-semibold">{item.value}</p>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{item.note}</p>
-            </div>
+            <a key={item.title} href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} className="group bg-[var(--surface)] p-6 transition hover:bg-[var(--foreground)] hover:text-[var(--background)] sm:p-8 lg:min-h-64">
+              <p className="eyebrow text-[var(--muted)] transition group-hover:text-white/55">{item.title}</p>
+              <p className="mt-8 text-xl font-medium sm:text-2xl">{item.value}</p>
+              <p className="mt-5 max-w-xs text-sm leading-7 text-[var(--muted)] transition group-hover:text-white/60">{item.note}</p>
+              <span className="mt-10 block text-lg" aria-hidden="true">↗</span>
+            </a>
           ))}
         </section>
       </main>

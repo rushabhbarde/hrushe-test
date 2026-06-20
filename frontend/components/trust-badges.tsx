@@ -4,10 +4,10 @@ type TrustBadge = {
 };
 
 const defaultBadges: TrustBadge[] = [
-  { label: "Secure payment", detail: "Protected checkout" },
-  { label: "Easy exchange", detail: "Fit-first support" },
-  { label: "Tracked dispatch", detail: "Order tracking available" },
-  { label: "India-wide delivery", detail: "Delivered across India" },
+  { label: "Secure payment", detail: "Razorpay protected" },
+  { label: "Tracked dispatch", detail: "Updates shared by email" },
+  { label: "India-wide delivery", detail: "5–10 business days" },
+  { label: "Customer support", detail: "Mon–Sat, 10 AM–7 PM" },
 ];
 
 function TrustMark() {
@@ -37,7 +37,7 @@ export function TrustBadges({
       {items.map((item) => (
         <div
           key={item.label}
-          className="flex min-h-12 items-center gap-2 border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.55)] px-3 py-2 text-[var(--foreground)]"
+          className="flex min-h-12 items-center gap-2 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--foreground)]"
         >
           <TrustMark />
           <span className="min-w-0">

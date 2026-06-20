@@ -34,22 +34,20 @@ export default function CollectionPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
         {matchedCategory ? (
           <>
             <SectionHeading
               eyebrow="Collection"
               eyebrowClassName="text-[var(--accent)]"
-              title={`${displayCategory} collection`}
+              title={displayCategory}
               description={collectionDescription}
             />
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/shop" className="button-secondary px-5 py-3 transition">
                 Back to shop
               </Link>
-              <Link href="/search" className="button-secondary px-5 py-3 transition">
-                Search products
-              </Link>
+              <Link href="/story" className="button-secondary px-5 py-3 transition">Discover the fit</Link>
             </div>
             <div className="mt-10">
               {loading ? (

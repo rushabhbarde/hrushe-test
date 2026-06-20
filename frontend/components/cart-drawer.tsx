@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
-import { TrustBadges } from "@/components/trust-badges";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
@@ -169,9 +168,9 @@ export function CartDrawer() {
             <span>{itemCount} items</span>
             <span>Subtotal ₹{subtotal.toLocaleString("en-IN")}</span>
           </div>
-          <div className="mt-4">
-            <TrustBadges compact />
-          </div>
+          <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+            Complimentary India-wide delivery · Estimated in 5–10 business days
+          </p>
           <div className="mt-4 grid gap-3">
             <Link
               href="/checkout"

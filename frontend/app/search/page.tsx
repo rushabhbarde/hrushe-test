@@ -112,12 +112,12 @@ function SearchPageContent() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
         <div className="max-w-3xl">
-          <p className="eyebrow text-[var(--accent)]">Search page</p>
-          <h1 className="display-font mt-3 text-5xl">Find the right piece faster.</h1>
-          <p className="mt-4 text-[var(--muted)]">
-            Search by product name, category, fabric mood, or color.
+          <p className="eyebrow text-[var(--muted)]">Search</p>
+          <h1 className="mt-5 text-[2.75rem] font-medium uppercase leading-[0.94] tracking-[-0.04em] sm:text-[3.5rem]">Find a piece.</h1>
+          <p className="mt-6 text-[0.94rem] leading-7 text-[var(--muted)]">
+            Search by product, fabric, fit, or colour.
           </p>
         </div>
 
@@ -131,12 +131,12 @@ function SearchPageContent() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="min-w-0 flex-1 rounded-full border border-[var(--border)] bg-white px-5 py-3"
-            placeholder="Search for oversized tee, black, shirt..."
+            className="min-h-12 min-w-0 flex-1 border border-[var(--border)] bg-[var(--surface)] px-5"
+            placeholder="Oversized tee, forest, cotton..."
           />
           <button
             type="submit"
-            className="button-primary rounded-full px-6 py-3 text-sm tracking-[0.08em] transition"
+            className="button-primary px-7 text-xs font-semibold uppercase tracking-[0.1em] transition"
           >
             Search
           </button>
@@ -155,7 +155,7 @@ function SearchPageContent() {
                   setQuery(item);
                   submitSearch(item);
                 }}
-                className="border border-[var(--border)] bg-white/70 px-3 py-2 text-xs uppercase tracking-[0.12em] text-[var(--foreground)]"
+                className="border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs uppercase tracking-[0.12em] text-[var(--foreground)]"
               >
                 {item}
               </button>
