@@ -4,10 +4,10 @@ type TrustBadge = {
 };
 
 const defaultBadges: TrustBadge[] = [
-  { label: "Secure payments", detail: "Protected checkout" },
+  { label: "Secure payment", detail: "Protected checkout" },
   { label: "Easy exchange", detail: "Fit-first support" },
-  { label: "Fast shipping", detail: "Tracked dispatch" },
-  { label: "Premium cotton", detail: "Soft everyday feel" },
+  { label: "Tracked dispatch", detail: "Order tracking available" },
+  { label: "India-wide delivery", detail: "Delivered across India" },
 ];
 
 function TrustMark() {

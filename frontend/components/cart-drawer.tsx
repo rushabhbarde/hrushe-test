@@ -115,7 +115,7 @@ export function CartDrawer() {
                       {item.size || "Default"} · {item.color || "Default"}
                       {item.fit ? ` · ${item.fit}` : ""}
                     </p>
-                    <p className="mt-2 text-sm font-semibold">Rs. {item.price}</p>
+                    <p className="mt-2 text-sm font-semibold">₹{item.price.toLocaleString("en-IN")}</p>
                     <div className="mt-3 flex items-center gap-3">
                       <button
                         type="button"
@@ -167,7 +167,7 @@ export function CartDrawer() {
           <div className="border-t border-[var(--border)] pt-5">
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
             <span>{itemCount} items</span>
-            <span>Subtotal Rs. {subtotal.toLocaleString("en-IN")}</span>
+            <span>Subtotal ₹{subtotal.toLocaleString("en-IN")}</span>
           </div>
           <div className="mt-4">
             <TrustBadges compact />
@@ -177,14 +177,17 @@ export function CartDrawer() {
               href="/checkout"
               className="button-primary inline-flex justify-center px-5 py-3 transition"
             >
-              Checkout
+              Checkout — ₹{subtotal.toLocaleString("en-IN")}
             </Link>
             <Link
-              href="/cart"
-              className="button-secondary inline-flex justify-center px-5 py-3 transition"
+              href="/shop"
+              className="inline-flex min-h-11 items-center justify-center text-xs font-semibold uppercase tracking-[0.1em] underline decoration-1 underline-offset-8"
             >
-              View cart
+              Continue shopping
             </Link>
+            <p className="text-center text-[0.64rem] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+              HRUSHE — Defined Quietly
+            </p>
           </div>
           </div>
         ) : null}

@@ -101,6 +101,10 @@ function getAverageRating(product: Product) {
 }
 
 function formatCategoryLabel(value: string) {
+  if (/oversize|solid/i.test(value)) {
+    return "OVERSIZED TEE";
+  }
+
   return value.toUpperCase();
 }
 
@@ -375,7 +379,7 @@ export default function ShopPage() {
   }
 
   return (
-    <div className="page-shell bg-[var(--background)] paper-texture">
+    <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main>
         <section className="mx-auto max-w-[1600px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-20">
@@ -493,9 +497,9 @@ export default function ShopPage() {
                   >
                     <div className="space-y-2">
                       {[
-                        { label: "Under Rs.1,000", value: "under-1000" as const },
-                        { label: "Rs.1,000 - 1,999", value: "1000-1999" as const },
-                        { label: "Rs.2,000+", value: "2000-plus" as const },
+                        { label: "Under ₹1,000", value: "under-1000" as const },
+                        { label: "₹1,000 - ₹1,999", value: "1000-1999" as const },
+                        { label: "₹2,000+", value: "2000-plus" as const },
                       ].map((option) => (
                         <FilterPill
                           key={option.value}
@@ -598,10 +602,10 @@ export default function ShopPage() {
                 <Link href="/" className="hover:text-[var(--foreground)]">
                   Home
                 </Link>{" "}
-                / <span className="font-medium text-[var(--foreground)]">Products</span>
+                / <span className="font-medium text-[var(--foreground)]">The Quiet Edit</span>
               </p>
               <h1 className="mt-2 text-[2.1rem] font-semibold uppercase leading-none tracking-[-0.08em] text-[var(--foreground)] sm:text-[3rem]">
-                Products
+                The Quiet Edit
               </h1>
 
               <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,23rem)_minmax(0,1fr)] xl:items-start">
@@ -614,7 +618,7 @@ export default function ShopPage() {
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="Search"
-                    className="w-full bg-transparent text-[0.96rem] tracking-[0.22em] text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
+                    className="w-full bg-transparent text-[0.96rem] text-[var(--foreground)] outline-none placeholder:text-[var(--muted)]"
                   />
                 </label>
 
@@ -778,9 +782,9 @@ export default function ShopPage() {
                           >
                             <div className="space-y-2">
                               {[
-                                { label: "Under Rs.1,000", value: "under-1000" as const },
-                                { label: "Rs.1,000 - 1,999", value: "1000-1999" as const },
-                                { label: "Rs.2,000+", value: "2000-plus" as const },
+                                { label: "Under ₹1,000", value: "under-1000" as const },
+                                { label: "₹1,000 - ₹1,999", value: "1000-1999" as const },
+                                { label: "₹2,000+", value: "2000-plus" as const },
                               ].map((option) => (
                                 <FilterPill
                                   key={option.value}

@@ -6,29 +6,9 @@ import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
-import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
+import { getCompareAtPrice } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
 import { useState } from "react";
-
-function CartIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6.5 8.5h11l-.7 10h-9.6l-.7-10Z" />
-      <path d="M9.5 8.5a2.5 2.5 0 0 1 5 0" />
-      <path d="M9.5 11.5v.01" />
-      <path d="M14.5 11.5v.01" />
-    </svg>
-  );
-}
 
 const swatchColors: Record<string, string> = {
   black: "#111111",
@@ -62,7 +42,11 @@ const swatchColors: Record<string, string> = {
 };
 
 function formatPrice(value: number) {
-  return `Rs. ${value.toLocaleString("en-IN")}`;
+  return `₹${value.toLocaleString("en-IN")}`;
+}
+
+function formatProductName(value: string) {
+  return value.replace(/\bBegie\b/gi, "Beige");
 }
 
 export function ProductCard({ product }: { product: Product }) {
@@ -75,11 +59,9 @@ export function ProductCard({ product }: { product: Product }) {
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const productHref = `/product/${product.slug || product.id}`;
   const colorHint = product.colors.length > 0 ? product.colors.join(", ") : "HRUSHE";
-  const productMeta = product.fitType || product.category || "Everyday essential";
+  const productName = formatProductName(product.name);
+  const productMeta = "Oversized Tee";
   const hasDiscount = compareAtPrice > product.price;
-  const discountPercent = hasDiscount
-    ? getDiscountPercent(product.price, compareAtPrice)
-    : 0;
   const availableSizes = product.sizes.filter(
     (size) =>
       !product.trackInventory ||
@@ -97,7 +79,7 @@ export function ProductCard({ product }: { product: Product }) {
     );
     addItem({
       productId: product.id,
-      name: product.name,
+      name: productName,
       price: product.price,
       size,
       color: availableVariant?.color || product.colors[0] || "Default",
@@ -106,7 +88,7 @@ export function ProductCard({ product }: { product: Product }) {
       accent: product.accent,
       image: product.images[0],
     });
-    pushToast(`${product.name} added to bag.`);
+    pushToast(`${productName} added to bag.`);
     setShowQuickSizes(false);
     openCart();
   };
@@ -118,11 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
 
     setShowQuickSizes((current) => !current);
   };
-  const labels = [
-    product.newIn || product.newArrival ? "New" : "",
-    product.featured ? "Featured" : "",
-  ].filter(Boolean).slice(0, 2);
-  const visibleSizes = availableSizes.slice(0, 4);
+  const labels = [product.newIn || product.newArrival ? "New" : ""].filter(Boolean);
 
   return (
     <article data-product-card className="group/product reveal-up-soft block min-w-0">
@@ -130,8 +108,8 @@ export function ProductCard({ product }: { product: Product }) {
         className="shop-card-image relative aspect-[18/25] overflow-hidden bg-[#f6f6f3]"
         style={{ backgroundColor: "var(--surface-strong)" }}
       >
-        <Link href={productHref} className="absolute inset-0 z-10" aria-label={product.name} />
-        {labels.length || hasDiscount ? (
+        <Link href={productHref} className="absolute inset-0 z-10" aria-label={productName} />
+        {labels.length ? (
           <div className="pointer-events-none absolute left-2 top-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap gap-1.5 md:left-2.5 md:top-2.5">
             {labels.map((label) => (
               <span
@@ -141,17 +119,12 @@ export function ProductCard({ product }: { product: Product }) {
                 {label}
               </span>
             ))}
-            {hasDiscount ? (
-              <span className="border border-[var(--danger)] bg-white/92 px-2 py-[5px] text-[0.54rem] font-semibold uppercase tracking-[0.14em] text-[var(--danger)]">
-                -{discountPercent}%
-              </span>
-            ) : null}
           </div>
         ) : null}
         {hasImage ? (
           <Image
             src={product.images[0]}
-            alt={`${product.name} in ${colorHint}`}
+            alt={`${productName} in ${colorHint}`}
             fill
             loading="lazy"
             unoptimized={shouldBypassImageOptimization(product.images[0])}
@@ -169,27 +142,13 @@ export function ProductCard({ product }: { product: Product }) {
         {hasHoverImage ? (
           <Image
             src={hoverImage}
-            alt={`${product.name} alternate product view`}
+            alt={`${productName} alternate product view`}
             fill
             loading="lazy"
             unoptimized={shouldBypassImageOptimization(hoverImage)}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="pointer-events-none object-cover object-center opacity-0 transition duration-700 md:group-hover/product:scale-[1.02] md:group-hover/product:opacity-100"
           />
-        ) : null}
-        {!showQuickSizes ? (
-          <button
-            type="button"
-            onClick={quickAddToCart}
-            disabled={availableSizes.length === 0}
-            className="absolute inset-x-2 bottom-2 z-20 flex min-h-11 translate-y-1 items-center justify-between border border-white/45 bg-white/92 px-3 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[var(--foreground)] opacity-100 shadow-[0_12px_30px_rgba(17,17,17,0.1)] backdrop-blur-md transition hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] disabled:cursor-not-allowed disabled:border-white/35 disabled:bg-white/72 disabled:text-[var(--muted)] md:opacity-0 md:group-hover/product:translate-y-0 md:group-hover/product:opacity-100"
-            aria-label={
-              availableSizes.length ? `Quick add ${product.name}` : `${product.name} is sold out`
-            }
-          >
-            <span>{availableSizes.length ? "Quick add" : "Sold out"}</span>
-            <span aria-hidden="true">{availableSizes.length > 1 ? "Size" : "+"}</span>
-          </button>
         ) : null}
         {showQuickSizes ? (
           <div className="absolute inset-x-2 bottom-2 z-30 border border-[var(--border)] bg-white/95 p-3 shadow-[0_10px_30px_rgba(17,17,17,0.12)] backdrop-blur-sm">
@@ -198,7 +157,7 @@ export function ProductCard({ product }: { product: Product }) {
               <button
                 type="button"
                 onClick={() => setShowQuickSizes(false)}
-                className="h-8 w-8 text-lg"
+                className="h-11 w-11 text-lg"
                 aria-label="Close size selection"
               >
                 ×
@@ -210,7 +169,7 @@ export function ProductCard({ product }: { product: Product }) {
                   key={size}
                   type="button"
                   onClick={() => addSelectedSize(size)}
-                  className="min-h-10 border border-[var(--border)] text-xs font-semibold uppercase transition hover:border-black hover:bg-black hover:text-white"
+                  className="min-h-11 border border-[var(--border)] text-xs font-semibold uppercase transition hover:border-black hover:bg-black hover:text-white"
                 >
                   {size}
                 </button>
@@ -223,7 +182,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="shop-card-copy block px-0 pb-1 pt-1">
         <Link href={productHref} className="block">
           <p className="line-clamp-2 text-[0.95rem] font-semibold uppercase leading-[1.08] tracking-[0] text-[var(--foreground)] sm:text-[1rem]">
-            {product.name}
+            {productName}
           </p>
         </Link>
         <p className="mt-1 truncate text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">
@@ -245,20 +204,10 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="flex shrink-0 items-center gap-1.5">
             <WishlistButton
               productId={product.id}
-              label={`Save ${product.name}`}
+              label={`Save ${productName}`}
               className="flex h-10 w-10 items-center justify-center border border-[var(--border)] bg-white/88 text-[var(--foreground)] transition hover:bg-[var(--foreground)] hover:text-[var(--background)]"
               iconClassName="h-[17px] w-[17px]"
             />
-            <button
-              type="button"
-              onClick={quickAddToCart}
-              disabled={availableSizes.length === 0}
-              title={availableSizes.length ? "Choose size" : "Sold out"}
-              className="flex h-10 w-10 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] transition hover:bg-transparent hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:border-[var(--border)] disabled:bg-[var(--surface-strong)] disabled:text-[var(--muted)]"
-              aria-label={availableSizes.length ? `Choose a size for ${product.name}` : `${product.name} is sold out`}
-            >
-              <CartIcon className="h-[17px] w-[17px]" />
-            </button>
           </div>
         </div>
         <div className="mt-1.5 flex min-h-5 flex-wrap items-center justify-between gap-x-2 gap-y-1">
@@ -281,9 +230,15 @@ export function ProductCard({ product }: { product: Product }) {
               </span>
             ) : null}
           </div>
-          <p className="truncate text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-            {visibleSizes.length ? visibleSizes.join(" ") : "Sold out"}
-          </p>
+          <button
+            type="button"
+            onClick={quickAddToCart}
+            disabled={availableSizes.length === 0}
+            className="min-h-11 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-[var(--foreground)] underline decoration-1 underline-offset-4 disabled:text-[var(--muted)] disabled:no-underline"
+            aria-label={availableSizes.length ? `Quick add ${productName}` : `${productName} is sold out`}
+          >
+            {availableSizes.length ? "Quick add" : "Sold out"}
+          </button>
         </div>
       </div>
     </article>

@@ -13,9 +13,8 @@ import { useWishlist } from "@/components/wishlist-provider";
 import { useHomepageBannerData } from "@/lib/use-storefront";
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/shop", label: "Collections" },
   { href: "/new-in", label: "New In" },
+  { href: "/shop", label: "Shop" },
   { href: "/story", label: "Story" },
 ];
 
@@ -112,14 +111,14 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)] backdrop-blur-xl">
-      <div className="border-b border-[var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 lg:px-8">
+      <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
           <span>{announcementText || "Free shipping on selected styles"}</span>
           <span className="hidden sm:block">India wide delivery</span>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-2 lg:gap-7">
             <button
@@ -173,7 +172,7 @@ export function SiteHeader() {
           </Link>
 
           <div className="flex items-center justify-end gap-0.5 sm:gap-1">
-            <div ref={accountMenuRef} className="relative">
+            <div ref={accountMenuRef} className="relative hidden lg:block">
               {isAuthenticated ? (
                 <HeaderIcon label="Account" onClick={() => setIsAccountMenuOpen((current) => !current)}>
                   <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--accent)]/8 text-sm font-semibold text-[var(--accent)]">
@@ -209,18 +208,20 @@ export function SiteHeader() {
               ) : null}
             </div>
 
-            <HeaderIcon label="Wishlist" onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}>
-              <span className="relative inline-flex">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-                  <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
-                </svg>
-                {wishlistCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
-                    {wishlistCount}
-                  </span>
-                ) : null}
-              </span>
-            </HeaderIcon>
+            <div className="hidden lg:block">
+              <HeaderIcon label="Wishlist" onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}>
+                <span className="relative inline-flex">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
+                    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                  </svg>
+                  {wishlistCount > 0 ? (
+                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
+                      {wishlistCount}
+                    </span>
+                  ) : null}
+                </span>
+              </HeaderIcon>
+            </div>
 
             <HeaderIcon label="Cart" onClick={openCart}>
               <span className="relative inline-flex">

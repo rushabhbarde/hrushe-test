@@ -76,10 +76,6 @@ a {
   text-decoration: none;
 }
 
-:where([class*="tracking-[-"]) {
-  letter-spacing: 0 !important;
-}
-
 img,
 picture,
 video,
@@ -104,10 +100,7 @@ button,
 a,
 input,
 select,
-textarea,
-article,
-section,
-div {
+textarea {
   transition:
     background-color 180ms ease,
     border-color 180ms ease,

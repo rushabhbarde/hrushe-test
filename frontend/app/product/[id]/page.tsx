@@ -15,7 +15,7 @@ import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
-import { getCompareAtPrice, getDiscountPercent } from "@/lib/pricing";
+import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const productInfoSections = [
@@ -64,7 +64,7 @@ const swatchColors: Record<string, string> = {
 function normalizeProduct(product: Product): Product {
   return {
     ...product,
-    name: product.name || "Untitled product",
+    name: (product.name || "Untitled product").replace(/\bBegie\b/gi, "Beige"),
     slug: product.slug || product.id,
     description: product.description || "",
     price: Number(product.price) || 0,
@@ -291,9 +291,9 @@ function ProductMediaFrame({
 
 type ProductInfoPanelProps = {
   product: Product;
+  siblingProducts: Product[];
   priceText: string;
   compareAtPriceText: string;
-  discountLabel: string;
   hasDiscount: boolean;
   description: string;
   selectedColor: string;
@@ -311,9 +311,9 @@ type ProductInfoPanelProps = {
 
 function ProductInfoPanel({
   product,
+  siblingProducts,
   priceText,
   compareAtPriceText,
-  discountLabel,
   hasDiscount,
   description,
   selectedColor,
@@ -328,109 +328,93 @@ function ProductInfoPanel({
   actionRef,
   mobile = false,
 }: ProductInfoPanelProps) {
+  const displayName = product.name.replace(/\bBegie\b/gi, "Beige");
+  const colorProducts = [product, ...siblingProducts].filter(
+    (item, index, items) =>
+      Boolean(item.colors[0]) &&
+      items.findIndex(
+        (candidate) =>
+          candidate.colors[0]?.toLowerCase() === item.colors[0]?.toLowerCase()
+      ) === index
+  );
   const shellClassName = mobile
-    ? "border-b border-[rgba(17,17,17,0.08)] bg-[var(--background)] px-5 pb-8 pt-5"
-    : "flex min-h-[620px] flex-col border border-[rgba(17,17,17,0.1)] bg-[rgba(255,255,255,0.58)] px-10 py-10 xl:px-12 xl:py-12";
+    ? "border-b border-[var(--border)] bg-[var(--background)] px-4 pb-8 pt-7 sm:px-6"
+    : "flex min-h-[680px] flex-col border border-[var(--border)] bg-[var(--surface)] px-8 py-9 xl:px-12 xl:py-12";
 
   return (
     <div className={shellClassName}>
-      {mobile ? (
-        <>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="max-w-[18ch] text-[0.98rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
-                {product.name}
-              </h2>
-              <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <p className="text-[1rem] font-semibold leading-none text-[var(--foreground)]">
-                  {priceText}
-                </p>
-                {hasDiscount ? (
-                  <>
-                    <p className="text-[0.82rem] leading-none text-[var(--danger)] line-through decoration-[1.5px]">
-                      {compareAtPriceText}
-                    </p>
-                    <p className="text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-[var(--danger)]">
-                      {discountLabel}
-                    </p>
-                  </>
-                ) : null}
-              </div>
-              <p className="mt-4 text-[0.78rem] tracking-[0.06em] text-[var(--muted)]">
-                MRP incl. of all taxes
+      <p className="text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+        HRUSHE / DEFINED QUIETLY
+      </p>
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="max-w-[20ch] text-[1.35rem] font-semibold uppercase leading-[1.12] tracking-[-0.01em] text-[var(--foreground)] lg:text-[1.65rem]">
+            {displayName}
+          </h2>
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-[1.05rem] font-semibold leading-none text-[var(--foreground)]">
+              {priceText}
+            </p>
+            {hasDiscount ? (
+              <p className="text-[0.82rem] leading-none text-[var(--muted)] line-through decoration-[1.5px]">
+                {compareAtPriceText}
               </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <WishlistButton
-                productId={product.id}
-                label={`Add ${product.name} to wishlist`}
-                className="inline-flex h-9 w-9 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.7)] text-[var(--foreground)]"
-                iconClassName="h-4 w-4"
-              />
-            </div>
+            ) : null}
           </div>
-          <p className="mt-6 max-w-[21rem] text-[0.78rem] font-medium leading-5 text-[var(--foreground)]">
-            {description}
-          </p>
-        </>
-      ) : (
-        <>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="max-w-[19ch] text-[1rem] font-semibold uppercase leading-snug text-[var(--foreground)]">
-                {product.name}
-              </h2>
-              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <p className="text-[0.95rem] font-semibold leading-none text-[var(--foreground)]">
-                  {priceText}
-                </p>
-                {hasDiscount ? (
-                  <>
-                    <p className="text-[0.84rem] leading-none text-[var(--danger)] line-through decoration-[1.5px]">
-                      {compareAtPriceText}
-                    </p>
-                    <p className="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-[var(--danger)]">
-                      {discountLabel}
-                    </p>
-                  </>
-                ) : null}
-              </div>
-            </div>
-            <WishlistButton
-              productId={product.id}
-              label={`Add ${product.name} to wishlist`}
-              className="inline-flex h-9 w-9 items-center justify-center border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] text-[var(--foreground)]"
-              iconClassName="h-4 w-4"
-            />
-          </div>
-          <p className="mt-5 text-[0.82rem] tracking-[0.06em] text-[var(--muted)]">
-            MRP incl. of all taxes
-          </p>
-          <p className="mt-9 max-w-[15.5rem] text-[0.84rem] font-medium leading-5 text-[var(--foreground)]">
-            {description}
-          </p>
-        </>
-      )}
+        </div>
+        <WishlistButton
+          productId={product.id}
+          label={`Add ${displayName} to wishlist`}
+          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
+          iconClassName="h-4 w-4"
+        />
+      </div>
+      <p className="mt-4 text-[0.74rem] tracking-[0.04em] text-[var(--muted)]">
+        MRP incl. of all taxes
+      </p>
+      <p className="mt-7 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--foreground)]">
+        {description}
+      </p>
 
-      {product.colors.length > 0 ? (
-        <div className={mobile ? "mt-6" : "mt-16"}>
-          <p className="text-[0.86rem] tracking-[0.08em] text-[var(--muted)]">Color</p>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {product.colors.map((color) => {
-              const active = selectedColor === color;
+      {colorProducts.length > 0 ? (
+        <div className="mt-8">
+          <p className="text-[0.82rem] font-medium text-[var(--muted)]">
+            Colour: {selectedColor || product.colors[0]}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {colorProducts.map((colorProduct) => {
+              const color = colorProduct.colors[0];
+              const active = colorProduct.id === product.id;
+              const swatchClassName = `inline-flex h-11 w-11 items-center justify-center border transition ${
+                active
+                  ? "border-[var(--foreground)] ring-1 ring-[var(--foreground)]"
+                  : "border-[var(--border)] hover:border-[var(--foreground)]"
+              }`;
+              const swatchStyle = {
+                backgroundColor: resolveSwatchColor(color, colorProduct.accent),
+              };
+
+              if (active) {
+                return (
+                  <button
+                    key={colorProduct.id}
+                    type="button"
+                    onClick={() => onColorSelect(color)}
+                    aria-label={`${color} selected`}
+                    aria-pressed="true"
+                    className={swatchClassName}
+                    style={swatchStyle}
+                  />
+                );
+              }
 
               return (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => onColorSelect(color)}
-                  aria-label={`Select ${color}`}
-                  className={`h-9 w-9 border transition ${
-                    active
-                      ? "border-[var(--foreground)] ring-1 ring-[var(--foreground)]"
-                      : "border-[rgba(17,17,17,0.08)]"
-                  }`}
-                  style={{ backgroundColor: resolveSwatchColor(color, product.accent) }}
+                <Link
+                  key={colorProduct.id}
+                  href={`/product/${colorProduct.slug || colorProduct.id}`}
+                  aria-label={`View ${color}`}
+                  className={swatchClassName}
+                  style={swatchStyle}
                 />
               );
             })}
@@ -439,8 +423,17 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-5">
-          <p className="text-[0.86rem] tracking-[0.08em] text-[var(--muted)]">Size</p>
+        <div className="mt-6">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[0.82rem] font-medium text-[var(--muted)]">Size</p>
+            <button
+              type="button"
+              onClick={onOpenSizeGuide}
+              className="min-h-11 text-[0.68rem] font-medium uppercase tracking-[0.1em] underline underline-offset-4"
+            >
+              Size guide
+            </button>
+          </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
@@ -460,7 +453,7 @@ function ProductInfoPanel({
                   type="button"
                   onClick={() => available && onSizeSelect(size)}
                   disabled={!available}
-                  className={`inline-flex min-h-9 min-w-9 items-center justify-center border px-3 text-[0.72rem] uppercase transition ${
+                  className={`inline-flex min-h-12 min-w-12 items-center justify-center border px-3 text-[0.72rem] font-semibold uppercase transition ${
                     active
                       ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
                       : available
@@ -473,15 +466,6 @@ function ProductInfoPanel({
               );
             })}
           </div>
-          <p className="mt-4 text-[0.62rem] uppercase text-[var(--muted)]">
-            <button type="button" onClick={onOpenSizeGuide} className="underline underline-offset-4">
-              Find your size
-            </button>
-            <span className="mx-2">|</span>
-            <button type="button" onClick={onOpenSizeGuide} className="underline underline-offset-4">
-              Measurement guide
-            </button>
-          </p>
         </div>
       ) : null}
 
@@ -489,23 +473,13 @@ function ProductInfoPanel({
         <button
           type="button"
           onClick={onAddToCart}
-          disabled={!canAddToCart}
-          className={`inline-flex min-h-12 w-full items-center justify-center px-6 text-[0.8rem] font-semibold uppercase transition disabled:cursor-not-allowed disabled:opacity-55 ${
-            mobile
-              ? "bg-[var(--foreground)] text-[var(--background)]"
-              : "bg-[rgba(17,17,17,0.1)] text-[var(--foreground)] hover:bg-[rgba(17,17,17,0.15)]"
-          }`}
+          disabled={!requiresSize && !canAddToCart}
+          className="inline-flex min-h-12 w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.76rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
-          Add
+          {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
         {addError ? <p className="text-sm text-[var(--accent)]">{addError}</p> : null}
-        {mobile ? (
-          <div className="border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.54)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
-            Secure payment, easy exchange, and tracked dispatch on every order.
-          </div>
-        ) : (
-          <TrustBadges compact />
-        )}
+        <TrustBadges compact />
       </div>
     </div>
   );
@@ -613,21 +587,6 @@ export default function ProductDetailPage() {
   }, [reviewSaved]);
 
   useEffect(() => {
-    const mediaItems = product ? buildProductMediaItems(product) : [];
-    const activeMediaType = mediaItems[activeMediaIndex]?.type;
-
-    if (mediaItems.length <= 1 || activeMediaType === "video") {
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
-    }, 4000);
-
-    return () => window.clearTimeout(timerId);
-  }, [activeMediaIndex, product]);
-
-  useEffect(() => {
     const actionElement = mainAddToCartRef.current;
 
     if (!actionElement) {
@@ -649,7 +608,7 @@ export default function ProductDetailPage() {
 
   if (loading || productLoading) {
     return (
-      <div className="page-shell bg-[var(--background)] paper-texture">
+      <div className="page-shell bg-[var(--background)]">
         <SiteHeader />
         <main className="mx-auto w-full px-4 pb-24 pt-6 sm:px-6 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16">
           <ProductDetailSkeleton />
@@ -660,7 +619,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="page-shell bg-[var(--background)] paper-texture">
+      <div className="page-shell bg-[var(--background)]">
         <SiteHeader />
         <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pt-8">
           <div className="mt-8 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-6 py-8 sm:px-8">
@@ -704,15 +663,14 @@ export default function ProductDetailPage() {
         (item.category === product.category || item.featured)
     )
     .slice(0, 4);
+  const siblingProducts = products.filter(
+    (item) => item.id !== product.id && item.category === product.category
+  );
   const reviews = product.reviews || [];
   const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
   const hasDiscount = compareAtPrice > product.price;
-  const discountPercent = hasDiscount
-    ? getDiscountPercent(product.price, compareAtPrice)
-    : 0;
-  const priceText = `Rs.${product.price.toLocaleString("en-IN")}`;
-  const compareAtPriceText = `Rs.${compareAtPrice.toLocaleString("en-IN")}`;
-  const discountLabel = `-${discountPercent}%`;
+  const priceText = `₹${product.price.toLocaleString("en-IN")}`;
+  const compareAtPriceText = `₹${compareAtPrice.toLocaleString("en-IN")}`;
   const productSummary = getProductSummary(product.description);
   const detailRows = getProductDetailRows(product);
   const washCare = getWashCare(product);
@@ -853,9 +811,9 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="page-shell bg-[var(--background)] paper-texture">
+    <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto w-full pb-28 lg:max-w-[1180px] lg:px-8 lg:pb-20 lg:pt-16 xl:pt-20">
+      <main className="mx-auto w-full pb-28 lg:max-w-[1440px] lg:px-8 lg:pb-24 lg:pt-12 xl:pt-16">
         <h1 className="sr-only">{product.name}</h1>
         <div>
           <div className="lg:hidden">
@@ -869,11 +827,11 @@ export default function ProductDetailPage() {
                 }}
                 style={{ touchAction: "pan-y" }}
               >
-                <div className="relative aspect-[4/5.2]">
+                <div className="relative aspect-[4/5]">
                   <ProductMediaFrame
                     item={activeMedia}
                     product={product}
-                    imageClassName="object-contain p-1"
+                    imageClassName="object-cover object-center"
                     onVideoEnded={showNextMedia}
                   />
                 </div>
@@ -901,9 +859,9 @@ export default function ProductDetailPage() {
             <section aria-label="Product details and purchase options">
               <ProductInfoPanel
                 product={product}
+                siblingProducts={siblingProducts}
                 priceText={priceText}
                 compareAtPriceText={compareAtPriceText}
-                discountLabel={discountLabel}
                 hasDiscount={hasDiscount}
                 description={productSummary}
                 selectedColor={selectedColor}
@@ -928,10 +886,10 @@ export default function ProductDetailPage() {
             </section>
           </div>
 
-          <div className="hidden lg:mx-auto lg:grid lg:min-h-[620px] lg:max-w-[1180px] lg:grid-cols-2 lg:items-stretch lg:gap-10 xl:gap-12">
+          <div className="hidden lg:mx-auto lg:grid lg:min-h-[680px] lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.38fr)_minmax(360px,1fr)] lg:items-stretch lg:gap-6 xl:gap-8">
             <section
               aria-label="Product media gallery"
-              className="relative min-h-[620px] overflow-hidden border border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)] p-8"
+              className="relative min-h-[680px] overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)]"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -943,7 +901,7 @@ export default function ProductDetailPage() {
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
-                  imageClassName="object-contain"
+                  imageClassName="object-cover object-center"
                   onVideoEnded={showNextMedia}
                 />
               </div>
@@ -967,12 +925,12 @@ export default function ProductDetailPage() {
               ) : null}
             </section>
 
-            <section aria-label="Product details and purchase options" className="min-h-[620px]">
+            <section aria-label="Product details and purchase options" className="min-h-[680px]">
               <ProductInfoPanel
                 product={product}
+                siblingProducts={siblingProducts}
                 priceText={priceText}
                 compareAtPriceText={compareAtPriceText}
-                discountLabel={discountLabel}
                 hasDiscount={hasDiscount}
                 description={productSummary}
                 selectedColor={selectedColor}
@@ -1294,10 +1252,10 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={!canAddToCart}
-              className="inline-flex min-h-11 min-w-[132px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={!requiresSize && !canAddToCart}
+              className="inline-flex min-h-12 min-w-[176px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
             >
-              Add
+              {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
             </button>
           </div>
         </div>

@@ -27,10 +27,8 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.3fr_0.8fr_0.8fr_1fr] lg:px-8 lg:py-20">
         <div className="max-w-xl">
           <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
-          <p className="mt-4 max-w-[12ch] text-[2.2rem] font-semibold uppercase leading-[0.96] tracking-[-0.07em] text-[var(--foreground)] sm:text-[3rem]">
-            Quiet pieces.
-            <br />
-            Everyday ease.
+          <p className="mt-4 max-w-[12ch] text-[2.2rem] font-medium uppercase leading-[0.96] tracking-[-0.04em] text-[var(--foreground)] sm:text-[3rem]">
+            Defined Quietly.
           </p>
           <p className="mt-4 max-w-md text-sm leading-7 text-[var(--muted)] sm:text-[0.95rem]">
             A cleaner clothing brand focused on simple silhouettes, calmer colour stories, and
@@ -79,7 +77,7 @@ export function SiteFooter() {
       <div className="border-t border-[var(--border)]">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-5 text-[11px] uppercase tracking-[0.16em] text-[var(--muted)] sm:px-6 sm:pb-5 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>&copy; 2026 HRUSHE. All rights reserved.</p>
-          <p>Designed for everyday dressing</p>
+          <p>Defined Quietly.</p>
         </div>
       </div>
     </footer>
