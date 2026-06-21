@@ -1,7 +1,9 @@
 const Cart = require("../models/Cart");
-const Product = require("../models/Product");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
+const { resolveCheckoutItems } = require("../services/checkoutInventory");
+
+const MAX_CART_LINES = 25;
 
 const getOrCreateCart = async (userId) => {
   let cart = await Cart.findOne({ userId }).populate("items.productId");
@@ -16,7 +18,7 @@ const getOrCreateCart = async (userId) => {
 
 const mapCart = (cart) => ({
   id: cart._id.toString(),
-  items: cart.items.map((item) => ({
+  items: cart.items.filter((item) => item.productId).map((item) => ({
     productId: item.productId._id.toString(),
     quantity: item.quantity,
     size: item.size || "",
@@ -49,26 +51,29 @@ const addToCart = asyncHandler(async (req, res) => {
     throw new AppError("Product is required", 400);
   }
 
-  const product = await Product.findById(productId);
-  if (!product) {
-    throw new AppError("Product not found", 404);
-  }
-
+  const [resolvedItem] = await resolveCheckoutItems([
+    { productId, quantity, size, color, fit },
+  ]);
   const cart = await getOrCreateCart(req.user._id);
   const normalizedVariant = {
-    productId,
-    size: String(size || "").trim(),
-    color: String(color || "").trim(),
-    fit: ["Oversize", "Regular"].includes(fit) ? fit : "",
+    productId: resolvedItem.productId.toString(),
+    size: resolvedItem.size,
+    color: resolvedItem.color,
+    fit: resolvedItem.fit,
   };
   const existingItem = findExistingCartItem(cart, normalizedVariant);
 
   if (existingItem) {
-    existingItem.quantity += Number(quantity);
+    const nextQuantity = existingItem.quantity + resolvedItem.quantity;
+    await resolveCheckoutItems([{ ...normalizedVariant, quantity: nextQuantity }]);
+    existingItem.quantity = nextQuantity;
   } else {
+    if (cart.items.length >= MAX_CART_LINES) {
+      throw new AppError("Your cart has too many separate items", 400);
+    }
     cart.items.push({
-      productId,
-      quantity: Number(quantity),
+      productId: resolvedItem.productId,
+      quantity: resolvedItem.quantity,
       size: normalizedVariant.size,
       color: normalizedVariant.color,
       fit: normalizedVariant.fit,
@@ -133,7 +138,10 @@ const updateCartItem = asyncHandler(async (req, res) => {
         )
     );
   } else {
-    existingItem.quantity = Number(quantity);
+    const [resolvedItem] = await resolveCheckoutItems([
+      { productId, quantity, size, color, fit },
+    ]);
+    existingItem.quantity = resolvedItem.quantity;
   }
 
   await cart.save();
@@ -145,38 +153,28 @@ const updateCartItem = asyncHandler(async (req, res) => {
 const syncCart = asyncHandler(async (req, res) => {
   const items = Array.isArray(req.body.items) ? req.body.items : [];
   const cart = await getOrCreateCart(req.user._id);
-
-  for (const item of items) {
-    if (!item?.productId || Number(item.quantity) <= 0) {
-      continue;
-    }
-
-    const product = await Product.findById(item.productId);
-
-    if (!product) {
-      continue;
-    }
-
-    const normalizedVariant = {
-      productId: item.productId,
-      size: String(item.size || "").trim(),
-      color: String(item.color || "").trim(),
-      fit: ["Oversize", "Regular"].includes(item.fit) ? item.fit : "",
-    };
-    const existingItem = findExistingCartItem(cart, normalizedVariant);
-
-    if (existingItem) {
-      existingItem.quantity += Number(item.quantity);
-    } else {
-      cart.items.push({
-        productId: product._id,
-        quantity: Number(item.quantity),
-        size: normalizedVariant.size,
-        color: normalizedVariant.color,
-        fit: normalizedVariant.fit,
-      });
-    }
+  const currentItems = cart.items
+    .filter((item) => item.productId)
+    .map((item) => ({
+      productId: getCartItemProductId(item),
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+      fit: item.fit,
+    }));
+  const incomingItems = items.filter((item) => item?.productId && Number(item.quantity) > 0);
+  if (currentItems.length === 0 && incomingItems.length === 0) {
+    return res.json(mapCart(cart));
   }
+  const resolvedItems = await resolveCheckoutItems([...currentItems, ...incomingItems]);
+
+  cart.items = resolvedItems.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    size: item.size,
+    color: item.color,
+    fit: item.fit,
+  }));
 
   await cart.save();
   await cart.populate("items.productId");

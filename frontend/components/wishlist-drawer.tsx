@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
-import { getCompareAtPrice } from "@/lib/pricing";
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useWishlist } from "@/components/wishlist-provider";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -159,13 +158,11 @@ export function WishlistDrawer() {
                     <p className="text-[1.02rem] font-semibold leading-none">
                       Rs.{product.price.toLocaleString("en-IN")}.00
                     </p>
-                    <p className="text-[0.88rem] text-[var(--muted)] line-through">
-                      Rs.
-                      {(
-                        product.compareAtPrice || getCompareAtPrice(product.price)
-                      ).toLocaleString("en-IN")}
-                      .00
-                    </p>
+                    {Number(product.compareAtPrice) > product.price ? (
+                      <p className="text-[0.88rem] text-[var(--muted)] line-through">
+                        Rs.{Number(product.compareAtPrice).toLocaleString("en-IN")}.00
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="mt-4 grid gap-2">

@@ -5,6 +5,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const { hasAdminPermission } = require("../config/adminRoles");
+const { recordAuditLog } = require("../utils/auditLog");
 const productListCache = new Map();
 const PRODUCT_LIST_CACHE_TTL = 60 * 1000;
 
@@ -82,6 +83,34 @@ const normalizeProductVideos = (value) => {
     .filter(Boolean);
 };
 
+const isEmbeddedMedia = (value) => /^data:/i.test(String(value || "").trim());
+const isUsableMediaUrl = (value) => {
+  const url = String(value || "").trim();
+  return Boolean(
+    url &&
+    !isEmbeddedMedia(url) &&
+    ((url.startsWith("/") && !url.startsWith("//")) || /^https:\/\//i.test(url))
+  );
+};
+const correctLegacyText = (value) => String(value || "").replace(/\bbegie\b/gi, "Beige");
+const correctLegacySlug = (value) => String(value || "").replace(/begie/gi, "beige");
+
+const assertNoEmbeddedMedia = (payload = {}) => {
+  const values = [
+    ...(Array.isArray(payload.images) ? payload.images : []),
+    ...(Array.isArray(payload.galleryImages) ? payload.galleryImages : []),
+    ...(Array.isArray(payload.videos)
+      ? payload.videos.flatMap((video) => [video?.url, video?.posterUrl])
+      : []),
+    ...(Array.isArray(payload.reviews) ? payload.reviews.map((review) => review?.photo) : []),
+    payload.photo,
+  ];
+
+  if (values.some((value) => value && !isUsableMediaUrl(value))) {
+    throw new AppError("Media must use an uploaded HTTPS or site-relative URL.", 400);
+  }
+};
+
 const PRODUCT_DETAIL_FIELDS = [
   "fabric",
   "gsm",
@@ -90,6 +119,9 @@ const PRODUCT_DETAIL_FIELDS = [
   "weight",
   "washCare",
   "qualityNote",
+  "fitNote",
+  "modelHeight",
+  "modelWornSize",
 ];
 const PRODUCT_STATUSES = ["Active", "Draft", "Hidden", "Sold Out"];
 const PRODUCT_FIT_TYPES = ["Oversized", "Regular", ""];
@@ -138,10 +170,12 @@ const normalizeProductVariants = (value) => {
 };
 
 const isApprovedReview = (review) =>
-  !review?.status || review.status === "approved";
+  review?.status === "approved" && review?.verifiedPurchase === true;
 
 const canViewUnpublishedProducts = (req) =>
-  req.user?.role === "admin" && hasAdminPermission(req.user, "products.view");
+  req.query?.admin === "true" &&
+  req.user?.role === "admin" &&
+  hasAdminPermission(req.user, "products.view");
 
 const publicProductConditions = [
   { $or: [{ status: "Active" }, { status: { $exists: false } }] },
@@ -271,71 +305,85 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.reviews = Array.isArray(payload.reviews) ? payload.reviews : [];
   }
 
+  if (!partial || payload.returnEligible !== undefined) {
+    normalized.returnEligible = payload.returnEligible === true;
+  }
+
   return normalized;
 };
 
-const mapProductListItem = (product, { includePrivate = false } = {}) => ({
+const getAvailability = (product) => {
+  if (product.status === "Sold Out") {
+    return "sold-out";
+  }
+
+  if (!product.trackInventory) {
+    return "available";
+  }
+
+  return product.variants?.some((variant) => variant.active !== false && variant.stock > 0)
+    ? "available"
+    : "sold-out";
+};
+
+const getValidCompareAtPrice = (product) =>
+  Number(product.compareAtPrice) > Number(product.price) ? Number(product.compareAtPrice) : undefined;
+
+const mapPublicProductListItem = (product) => ({
   id: product._id.toString(),
-  name: product.name,
-  slug: product.slug,
-  description: product.description,
-  price: product.price,
-  compareAtPrice: product.compareAtPrice,
-  category: product.category,
-  categories:
-    Array.isArray(product.categories) && product.categories.length > 0
-      ? product.categories
-      : product.category
-        ? [product.category]
-        : [],
-  sizes: Array.isArray(product.sizes) ? product.sizes : [],
-  colors: Array.isArray(product.colors) ? product.colors : [],
-  images: Array.isArray(product.images) ? product.images.slice(0, 2) : [],
-  galleryImages: Array.isArray(product.galleryImages)
-    ? product.galleryImages.slice(0, 1)
-    : [],
-  status: product.status || "Active",
-  fitType: product.fitType || "",
-  gender: product.gender || "Unisex",
-  collectionLabels: Array.isArray(product.collectionLabels)
-    ? product.collectionLabels
-    : [],
-  trackInventory: Boolean(product.trackInventory),
-  variants: Array.isArray(product.variants)
-    ? product.variants.map((variant) =>
-        includePrivate
-          ? variant
-          : {
-              size: variant.size,
-              color: variant.color,
-              fit: variant.fit,
-              stock: variant.stock > 0 ? 1 : 0,
-              active: variant.active !== false,
-            }
-      )
-    : [],
-  fabric: product.fabric || "",
-  gsm: product.gsm || "",
-  cottonType: product.cottonType || "",
-  feel: product.feel || "",
-  weight: product.weight || "",
-  washCare: product.washCare || "",
-  qualityNote: product.qualityNote || "",
-  videos: Array.isArray(product.videos) ? product.videos : [],
+  slug: correctLegacySlug(product.slug),
+  displayName: correctLegacyText(product.name),
+  colour: correctLegacyText(product.colors?.[0] || ""),
+  price: Number(product.price) || 0,
+  ...(getValidCompareAtPrice(product) ? { compareAtPrice: getValidCompareAtPrice(product) } : {}),
+  thumbnailUrl: (product.images || []).find(isUsableMediaUrl) || "",
+  availability: getAvailability(product),
   featured: Boolean(product.featured),
   bestSeller: Boolean(product.bestSeller),
   newIn: Boolean(product.newIn),
   newArrival: Boolean(product.newArrival),
-  reviews: Array.isArray(product.reviews)
-    ? product.reviews
-        .filter((review) => includePrivate || isApprovedReview(review))
-        .slice(0, 2)
-    : [],
-  accent: product.accent,
-  imageLabel: product.imageLabel,
-  createdAt: product.createdAt,
-  updatedAt: product.updatedAt,
 });
+
+const mapAdminProductListItem = (product) => ({
+  ...product,
+  id: product._id.toString(),
+  _id: undefined,
+  name: correctLegacyText(product.name),
+  slug: correctLegacySlug(product.slug),
+  images: (product.images || []).filter(isUsableMediaUrl).slice(0, 2),
+  galleryImages: (product.galleryImages || []).filter(isUsableMediaUrl).slice(0, 1),
+  videos: (product.videos || []).filter((video) => isUsableMediaUrl(video?.url)),
+  reviews: [],
+});
+
+const assertActiveProductIsComplete = (product) => {
+  if (product.status !== "Active") {
+    return;
+  }
+
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const missing = [];
+  if (!String(product.name || "").trim()) missing.push("name");
+  if (!String(product.slug || "").trim()) missing.push("slug");
+  if (!String(product.description || "").trim()) missing.push("factual description");
+  if (!(Number(product.price) > 0)) missing.push("price");
+  if (!String(product.category || "").trim()) missing.push("category");
+  if (!Array.isArray(product.colors) || product.colors.length === 0) missing.push("colour");
+  if (!Array.isArray(product.sizes) || product.sizes.length === 0) missing.push("size options");
+  if (!product.trackInventory) missing.push("inventory enabled");
+  if (!variants.some((variant) => variant.active !== false && variant.stock > 0 && variant.sku)) {
+    missing.push("available stock with SKU");
+  }
+  if (!(product.images || []).some(isUsableMediaUrl)) missing.push("uploaded image URL");
+  if (!String(product.fabric || product.cottonType || "").trim()) missing.push("fabric/composition");
+  if (!String(product.gsm || product.weight || "").trim()) missing.push("GSM or weight note");
+  if (!String(product.washCare || "").trim()) missing.push("care instructions");
+  if (product.returnEligible !== true) missing.push("return eligibility");
+
+  if (missing.length > 0) {
+    throw new AppError(`Active products require: ${missing.join(", ")}.`, 400);
+  }
+};
 
 const clearProductListCache = () => {
   productListCache.clear();
@@ -347,8 +395,47 @@ const getProductDetailResponse = async (product, { includePrivate = false } = {}
     ? productData.reviews.filter((review) => includePrivate || isApprovedReview(review))
     : [];
 
-  if (Array.isArray(productData.galleryImages) && productData.galleryImages.length > 0) {
-    return { ...productData, reviews };
+  const sanitizedProduct = {
+    ...productData,
+    name: correctLegacyText(productData.name),
+    slug: correctLegacySlug(productData.slug),
+    compareAtPrice: getValidCompareAtPrice(productData),
+    images: (productData.images || []).filter(isUsableMediaUrl),
+    galleryImages: (productData.galleryImages || []).filter(isUsableMediaUrl),
+    videos: (productData.videos || [])
+      .filter((video) => isUsableMediaUrl(video?.url))
+      .map((video) => ({
+        ...video,
+        posterUrl: isUsableMediaUrl(video.posterUrl) ? video.posterUrl : "",
+      })),
+    reviews: reviews.map((review) => ({
+      ...review,
+      photo: isUsableMediaUrl(review.photo) ? review.photo : "",
+    })),
+  };
+
+  if (!includePrivate) {
+    sanitizedProduct.variants = (productData.variants || []).map((variant) => ({
+      size: variant.size,
+      color: variant.color,
+      fit: variant.fit || "",
+      stock: variant.active !== false && Number(variant.stock) > 0 ? 1 : 0,
+      active: variant.active !== false,
+    }));
+    sanitizedProduct.reviews = sanitizedProduct.reviews.map((review) => ({
+      id: review.id || review._id?.toString(),
+      reviewerName: review.reviewerName,
+      quote: review.quote,
+      rating: review.rating,
+      photo: review.photo,
+      status: review.status,
+      verifiedPurchase: true,
+      createdAt: review.createdAt,
+    }));
+  }
+
+  if (sanitizedProduct.galleryImages.length > 0) {
+    return sanitizedProduct;
   }
 
   const content = await SiteContent.findOne({ key: "main" }).lean();
@@ -356,13 +443,10 @@ const getProductDetailResponse = async (product, { includePrivate = false } = {}
     content?.adminWorkspace?.productMeta?.[productData.id]?.galleryImages;
 
   return {
-    ...productData,
-    reviews,
+    ...sanitizedProduct,
     galleryImages: Array.isArray(galleryImages)
-      ? galleryImages.filter(Boolean)
-      : Array.isArray(productData.galleryImages)
-        ? productData.galleryImages
-        : [],
+      ? galleryImages.filter(isUsableMediaUrl)
+      : [],
   };
 };
 
@@ -381,7 +465,10 @@ const getProducts = asyncHandler(async (req, res) => {
   const cached = productListCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < PRODUCT_LIST_CACHE_TTL) {
-    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.set(
+      "Cache-Control",
+      includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
+    );
     return res.json(cached.data);
   }
 
@@ -423,7 +510,7 @@ const getProducts = asyncHandler(async (req, res) => {
   }
 
   if (q) {
-    const searchRegex = new RegExp(q.trim(), "i");
+    const searchRegex = new RegExp(escapeRegex(String(q).trim().slice(0, 100)), "i");
     andConditions.push({
       $or: [
         { name: searchRegex },
@@ -452,14 +539,19 @@ const getProducts = asyncHandler(async (req, res) => {
   const products = await Product.find(query)
     .sort({ createdAt: -1, name: 1 })
     .lean();
-  const data = products.map((product) => mapProductListItem(product, { includePrivate }));
+  const data = products.map((product) =>
+    includePrivate ? mapAdminProductListItem(product) : mapPublicProductListItem(product)
+  );
 
   productListCache.set(cacheKey, {
     timestamp: Date.now(),
     data,
   });
 
-  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+  res.set(
+    "Cache-Control",
+    includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
+  );
   return res.json(data);
 });
 
@@ -471,7 +563,7 @@ const getProductSitemapEntries = asyncHandler(async (req, res) => {
 
   const entries = products.map((product) => ({
     id: product._id.toString(),
-    slug: product.slug || "",
+    slug: correctLegacySlug(product.slug || ""),
     category: product.category || "",
     categories:
       Array.isArray(product.categories) && product.categories.length > 0
@@ -488,33 +580,48 @@ const getProductSitemapEntries = asyncHandler(async (req, res) => {
 
 const getProductById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const normalizedId = String(id || "").toLowerCase();
+  const legacyId = normalizedId.replace(/beige/g, "begie");
+  const correctedId = normalizedId.replace(/begie/g, "beige");
+  const slugCandidates = Array.from(new Set([normalizedId, legacyId, correctedId]));
   const includePrivate = canViewUnpublishedProducts(req);
   const visibilityQuery = includePrivate ? {} : { $and: publicProductConditions };
   const product = mongoose.Types.ObjectId.isValid(id)
     ? await Product.findOne({
         $and: [
-          { $or: [{ _id: id }, { slug: id.toLowerCase() }] },
+          { $or: [{ _id: id }, { slug: { $in: slugCandidates } }] },
           visibilityQuery,
         ],
       })
-    : await Product.findOne({ $and: [{ slug: id.toLowerCase() }, visibilityQuery] });
+    : await Product.findOne({ $and: [{ slug: { $in: slugCandidates } }, visibilityQuery] });
 
   if (!product) {
     throw new AppError("Product not found", 404);
   }
 
-  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+  res.set(
+    "Cache-Control",
+    includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
+  );
   return res.json(await getProductDetailResponse(product, { includePrivate }));
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(normalizeProductPayload(req.body));
+  assertNoEmbeddedMedia(req.body);
+  const product = new Product(normalizeProductPayload(req.body));
+  assertActiveProductIsComplete(product);
+  await product.save();
   clearProductListCache();
+  await recordAuditLog(req, product.status === "Active" ? "product.publish" : "product.create", {
+    type: "product",
+    id: product._id,
+  }, { price: product.price, status: product.status });
   return res.status(201).json(product);
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  assertNoEmbeddedMedia(req.body);
   const update = normalizeProductPayload(req.body, { partial: true });
   const query = mongoose.Types.ObjectId.isValid(id)
     ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
@@ -525,9 +632,24 @@ const updateProduct = asyncHandler(async (req, res) => {
     throw new AppError("Product not found", 404);
   }
 
+  const previousPrice = product.price;
+  const previousStatus = product.status;
   Object.assign(product, update);
+  assertActiveProductIsComplete(product);
   await product.save();
   clearProductListCache();
+
+  if (previousPrice !== product.price) {
+    await recordAuditLog(req, "product.price-change", { type: "product", id: product._id }, {
+      before: previousPrice,
+      after: product.price,
+    });
+  }
+  if (previousStatus !== "Active" && product.status === "Active") {
+    await recordAuditLog(req, "product.publish", { type: "product", id: product._id }, {
+      previousStatus,
+    });
+  }
 
   return res.json(product);
 });
@@ -544,6 +666,7 @@ const addProductReview = asyncHandler(async (req, res) => {
   }
 
   const { reviewerName, quote, rating, photo } = req.body;
+  assertNoEmbeddedMedia({ photo });
 
   if (!reviewerName || !quote) {
     throw new AppError("Name and review are required", 400);
@@ -563,12 +686,16 @@ const addProductReview = asyncHandler(async (req, res) => {
       )
     : false;
 
+  if (!verifiedPurchase) {
+    throw new AppError("Reviews can only be submitted for a paid purchase of this product", 403);
+  }
+
   product.reviews.unshift({
     userId: req.user?._id || null,
     reviewerName: String(reviewerName).trim(),
     quote: String(quote).trim(),
     rating: Number(rating) >= 1 && Number(rating) <= 5 ? Number(rating) : 5,
-    photo: typeof photo === "string" ? photo : "",
+    photo: isUsableMediaUrl(photo) ? String(photo).trim() : "",
     status: "pending",
     verifiedPurchase,
   });
@@ -618,6 +745,10 @@ const updateProductReviewStatus = asyncHandler(async (req, res) => {
 
   if (!product || !review) {
     throw new AppError("Review not found", 404);
+  }
+
+  if (status === "approved" && review.verifiedPurchase !== true) {
+    throw new AppError("Only verified-purchase reviews can be approved", 400);
   }
 
   review.status = status;

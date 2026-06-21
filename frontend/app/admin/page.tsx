@@ -33,10 +33,14 @@ const analyticsTabs = [
 ] as const;
 
 export default function AdminDashboardPage() {
-  const { products } = useStorefrontData();
+  const { products } = useStorefrontData({ admin: true });
   const { orders, customers, loading } = useAdminData();
   const { workspace } = useAdminWorkspace();
   const [analyticsMode, setAnalyticsMode] = useState<(typeof analyticsTabs)[number]["key"]>("daily");
+  const paidOrders = useMemo(
+    () => orders.filter((order) => order.paymentStatus === "paid"),
+    [orders]
+  );
 
   const metrics = useMemo(() => {
     const pendingOrders = orders.filter((order) => order.orderStatus === "Pending").length;
@@ -44,7 +48,7 @@ export default function AdminDashboardPage() {
       ["Shipped", "Out for delivery"].includes(order.orderStatus)
     ).length;
     const deliveredOrders = orders.filter((order) => order.orderStatus === "Delivered").length;
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
     return {
       totalRevenue,
@@ -55,13 +59,16 @@ export default function AdminDashboardPage() {
         (product) => resolveProductAdminMeta(workspace, product).status === "Active"
       ).length,
     };
-  }, [orders, products, workspace]);
+  }, [orders, paidOrders, products, workspace]);
 
   const salesSeries = useMemo(
-    () => buildSalesSeries(orders, analyticsMode),
-    [analyticsMode, orders]
+    () => buildSalesSeries(paidOrders, analyticsMode),
+    [analyticsMode, paidOrders]
   );
-  const topProducts = useMemo(() => buildTopSellingProducts(orders, products), [orders, products]);
+  const topProducts = useMemo(
+    () => buildTopSellingProducts(paidOrders, products),
+    [paidOrders, products]
+  );
   const recentActivity = useMemo(
     () => buildRecentCustomerActivity(orders, customers),
     [orders, customers]
@@ -74,8 +81,8 @@ export default function AdminDashboardPage() {
       <div className="space-y-6">
         <AdminPageHeader
           eyebrow="Overview"
-          title="Run HRUSHE from one premium control room."
-          description="Track commerce health, keep campaigns moving, and manage the full luxury storefront operation from a single responsive dashboard."
+          title="Run HRUSHE from one operations dashboard."
+          description="Track paid revenue, manage the catalog and homepage, and move live customer orders through fulfillment."
           actions={
             <>
               <Link href="/admin/homepage" className="button-secondary px-5 py-3 text-sm font-medium">
@@ -97,7 +104,7 @@ export default function AdminDashboardPage() {
           <AdminMetricCard
             label="Total revenue"
             value={formatAdminCurrency(metrics.totalRevenue)}
-            detail="Gross order value captured from all orders."
+            detail="Gross value from verified paid orders."
             tone="accent"
           />
           <AdminMetricCard

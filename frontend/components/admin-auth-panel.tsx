@@ -57,7 +57,9 @@ export function AdminAuthPanel({
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-          placeholder="Username"
+          placeholder="Admin email"
+          type="email"
+          autoComplete="username"
           required
         />
         <input
@@ -66,12 +68,12 @@ export function AdminAuthPanel({
           className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
           placeholder="Password"
           type="password"
+          autoComplete="current-password"
           required
         />
         {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
         <p className="text-xs leading-5 text-[var(--muted)]">
-          Use the configured admin email, or the admin alias if it is enabled for this
-          environment.
+          Use the configured admin email. Access is restricted by the assigned admin role.
         </p>
         <button
           type="submit"

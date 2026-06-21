@@ -11,7 +11,7 @@ import { resolveCatalogCategories } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
 export default function AddProductPage() {
-  const { addProduct } = useStorefrontData();
+  const { addProduct } = useStorefrontData({ admin: true });
   const { workspace, saveWorkspace } = useAdminWorkspace();
   const router = useRouter();
   const categoryOptions = resolveCatalogCategories(workspace);

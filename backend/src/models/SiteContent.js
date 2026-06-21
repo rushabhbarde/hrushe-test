@@ -4,22 +4,22 @@ const homepageBannerSchema = new mongoose.Schema(
   {
     announcementText: {
       type: String,
-      default: "FREE SHIPPING ON SELECTED STYLES",
+      default: "DISPATCHES IN 1–3 BUSINESS DAYS · 7-DAY RETURNS",
     },
-    eyebrow: { type: String, default: "New season, everyday essentials" },
-    title: { type: String, default: "Elevated basics for everyday dressing." },
+    eyebrow: { type: String, default: "Elevated Everyday", maxlength: 80 },
+    title: { type: String, default: "Defined Quietly" },
     description: {
       type: String,
       default:
-        "Discover modern silhouettes, premium fabrics, and versatile staples designed to feel effortless every day.",
+        "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     },
-    primaryCtaLabel: { type: String, default: "Shop the drop" },
+    primaryCtaLabel: { type: String, default: "Shop Collection" },
     primaryCtaHref: { type: String, default: "/shop" },
-    secondaryCtaLabel: { type: String, default: "View collection" },
-    secondaryCtaHref: { type: String, default: "/shop" },
-    imageUrl: { type: String, default: "/uploads/banners/banner1.png" },
+    secondaryCtaLabel: { type: String, default: "Read the Story" },
+    secondaryCtaHref: { type: String, default: "/story" },
+    imageUrl: { type: String, default: "" },
     mediaType: { type: String, enum: ["image", "video"], default: "image" },
-    mediaUrl: { type: String, default: "/uploads/banners/banner1.png" },
+    mediaUrl: { type: String, default: "" },
     posterImage: { type: String, default: "" },
   },
   { _id: false }

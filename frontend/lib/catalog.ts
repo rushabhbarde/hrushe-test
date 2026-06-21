@@ -42,6 +42,10 @@ export type ProductCollectionLabel = "New In" | "Featured" | "Collection";
 export type Product = {
   id: string;
   name: string;
+  displayName?: string;
+  colour?: string;
+  thumbnailUrl?: string;
+  availability?: "available" | "sold-out";
   slug?: string;
   description: string;
   price: number;
@@ -67,6 +71,10 @@ export type Product = {
   weight?: string;
   washCare?: string;
   qualityNote?: string;
+  fitNote?: string;
+  modelHeight?: string;
+  modelWornSize?: string;
+  returnEligible?: boolean;
   sizeGuide?: ProductSizeMeasurement[];
   fitType?: ProductFitType;
   gender?: ProductGender;
@@ -91,9 +99,9 @@ export const categories = [
 ];
 
 export const brandHighlights = [
-  "Fast-launch fashion MVP",
-  "Premium essentials and statement silhouettes",
-  "Admin-ready catalog and order flow",
+  "Clear proportions",
+  "Honest materials",
+  "Repeat-wear construction",
 ];
 
 export function toCollectionSlug(value: string) {

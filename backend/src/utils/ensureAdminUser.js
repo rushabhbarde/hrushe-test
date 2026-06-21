@@ -67,6 +67,7 @@ async function ensureAdminUser() {
     const isPasswordMatch = await bcrypt.compare(ADMIN_PASSWORD, adminUser.password);
     if (!isPasswordMatch) {
       adminUser.password = await bcrypt.hash(ADMIN_PASSWORD, 10);
+      adminUser.tokenVersion = Number(adminUser.tokenVersion || 0) + 1;
       shouldSave = true;
     }
 

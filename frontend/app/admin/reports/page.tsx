@@ -10,7 +10,6 @@ import {
 import { buildSalesSeries, buildTopSellingProducts } from "@/lib/admin-analytics";
 import { formatAdminCurrency } from "@/lib/admin";
 import { useAdminData } from "@/lib/use-admin-data";
-import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 function downloadCsv(filename: string, rows: string[][]) {
@@ -28,19 +27,19 @@ function downloadCsv(filename: string, rows: string[][]) {
 
 export default function AdminReportsPage() {
   const { orders, customers } = useAdminData();
-  const { products } = useStorefrontData();
-  const { workspace } = useAdminWorkspace();
+  const { products } = useStorefrontData({ admin: true });
+  const paidOrders = orders.filter((order) => order.paymentStatus === "paid");
 
-  const monthlySales = buildSalesSeries(orders, "monthly");
-  const topProducts = buildTopSellingProducts(orders, products);
+  const monthlySales = buildSalesSeries(paidOrders, "monthly");
+  const topProducts = buildTopSellingProducts(paidOrders, products);
 
   return (
     <AdminShell>
       <div className="space-y-6">
         <AdminPageHeader
           eyebrow="Reports"
-          title="Export the commercial story behind HRUSHE."
-          description="Review sales, revenue, customers, orders, products, and coupon performance, then hand clean exports to finance, marketing, or operations."
+          title="Export HRUSHE commerce reports."
+          description="Review paid revenue, customers, orders, and product performance, then export clean CSV files for finance and operations."
         />
 
         <div className="grid gap-5 xl:grid-cols-2">
@@ -75,7 +74,7 @@ export default function AdminReportsPage() {
           </AdminPanel>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="grid gap-5 xl:grid-cols-2">
           <ExportCard
             title="Sales report"
             description="Orders, revenue, payment state, and dates."
@@ -110,24 +109,6 @@ export default function AdminReportsPage() {
               ])
             }
           />
-          <ExportCard
-            title="Coupon performance"
-            description="Coupon type, usage, expiry, and targeting."
-            onExport={() =>
-              downloadCsv("hrushe-coupon-report.csv", [
-                ["Code", "Title", "Type", "Usage", "Limit", "Expiry", "Customer"],
-                ...workspace.coupons.map((coupon) => [
-                  coupon.code,
-                  coupon.title,
-                  coupon.type,
-                  String(coupon.usedCount),
-                  String(coupon.usageLimit),
-                  coupon.expiresAt || "",
-                  coupon.customerEmail,
-                ]),
-              ])
-            }
-          />
         </div>
 
         <AdminPanel>
@@ -139,7 +120,6 @@ export default function AdminReportsPage() {
               "Revenue report",
               "Customer report",
               "Order report",
-              "Coupon performance",
               "Export CSV",
               "Export Excel-ready CSV",
             ].map((item) => (
@@ -176,4 +156,3 @@ function ExportCard({
     </AdminPanel>
   );
 }
-

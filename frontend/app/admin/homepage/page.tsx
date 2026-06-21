@@ -17,7 +17,7 @@ import {
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
 import { uploadAdminMedia, ADMIN_MEDIA_UPLOAD_LIMIT_BYTES } from "@/lib/admin-media-upload";
-import { compressSingleImage } from "@/lib/image-upload";
+import { compressImageFile } from "@/lib/image-upload";
 import { type AdminBanner } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
@@ -46,15 +46,15 @@ function createBanner(): AdminBanner {
 
   return {
     id,
-    label: "Campaign banner",
-    title: "New campaign headline",
-    subtitle: "Add luxury-led copy for the homepage hero and campaign handoff.",
-    ctaText: "Shop now",
+    label: "Elevated Everyday",
+    title: "Defined Quietly",
+    subtitle: "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
+    ctaText: "Shop Collection",
     ctaLink: "/shop",
     mediaType: "image",
-    mediaUrl: "/uploads/banners/banner1.png",
+    mediaUrl: "",
     posterImage: "",
-    enabled: true,
+    enabled: false,
     scheduleStart: null,
     scheduleEnd: null,
   };
@@ -116,13 +116,14 @@ export default function AdminHomepagePage() {
         return;
       }
 
-      const compressed = await compressSingleImage(file, 1440);
+      const optimizedFile = await compressImageFile(file, 1600);
+      const uploadedMedia = await uploadAdminMedia(optimizedFile);
       updateSelectedBanner({
         mediaType: "image",
-        mediaUrl: compressed,
+        mediaUrl: uploadedMedia.url,
         posterImage: "",
-        desktopImage: compressed,
-        mobileImage: compressed,
+        desktopImage: uploadedMedia.url,
+        mobileImage: uploadedMedia.url,
       });
       pushToast("Responsive banner image uploaded.");
     } catch (error) {
@@ -143,8 +144,9 @@ export default function AdminHomepagePage() {
     }
 
     try {
-      const compressed = await compressSingleImage(file, 960);
-      updateSelectedBanner({ posterImage: compressed });
+      const optimizedFile = await compressImageFile(file, 1200);
+      const uploadedMedia = await uploadAdminMedia(optimizedFile);
+      updateSelectedBanner({ posterImage: uploadedMedia.url });
       pushToast("Video poster uploaded.");
     } catch {
       pushToast("Could not process that poster image.", "error");
@@ -154,24 +156,41 @@ export default function AdminHomepagePage() {
   }
 
   async function publishChanges() {
-    if (banners.some((banner) => /^data:video\//i.test(getBannerMediaUrl(banner)))) {
+    if (banners.some((banner) => banner.enabled && !getBannerMediaUrl(banner))) {
+      pushToast("Every enabled banner needs uploaded media before publishing.", "error");
+      setPublishOpen(false);
+      return;
+    }
+
+    if (
+      banners.some((banner) =>
+        [getBannerMediaUrl(banner), banner.posterImage, banner.desktopImage, banner.mobileImage].some(
+          (url) => /^data:/i.test(String(url || ""))
+        )
+      )
+    ) {
       pushToast(
-        "Remove and re-upload old video banner drafts before publishing. Videos now save through MongoDB media storage.",
+        "Remove and re-upload embedded banner media before publishing. Homepage media now stores URLs only.",
         "error"
       );
       setPublishOpen(false);
       return;
     }
 
-    await saveWorkspace({
-      homeManagement: {
-        banners,
-        lastPublishedAt: new Date().toISOString(),
-      },
-    });
-    setDraftBanners(null);
-    pushToast("Homepage banners published.");
-    setPublishOpen(false);
+    try {
+      await saveWorkspace({
+        homeManagement: {
+          banners,
+          lastPublishedAt: new Date().toISOString(),
+        },
+      });
+      setDraftBanners(null);
+      pushToast("Homepage banners published.");
+      setPublishOpen(false);
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not publish the homepage.", "error");
+      setPublishOpen(false);
+    }
   }
 
   function moveBanner(targetId: string) {
@@ -211,8 +230,8 @@ export default function AdminHomepagePage() {
       <div className="space-y-6">
         <AdminPageHeader
           eyebrow="Home management"
-          title="Compose luxury homepage campaigns before you publish."
-          description="Upload one responsive image or video, reorder banners with drag-and-drop, schedule launches, and preview how the same media adapts across desktop and mobile."
+          title="Manage the live homepage hero."
+          description="Upload one responsive image or video, set factual campaign copy, schedule publication, and preview desktop and mobile before publishing."
           actions={
             <>
               <button
@@ -270,7 +289,7 @@ export default function AdminHomepagePage() {
                         className="h-full w-full object-cover"
                       />
                     ) : getBannerMediaUrl(banner) ? (
-                      <Image src={getBannerMediaUrl(banner)} alt={banner.title} fill unoptimized className="object-cover" />
+                      <Image src={getBannerMediaUrl(banner)} alt={banner.title} fill sizes="72px" className="object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -487,7 +506,7 @@ export default function AdminHomepagePage() {
                           src={getBannerMediaUrl(selectedBanner)}
                           alt={selectedBanner.title}
                           fill
-                          unoptimized
+                          sizes={previewMode === "desktop" ? "720px" : "390px"}
                           className="object-cover"
                         />
                       ) : null}

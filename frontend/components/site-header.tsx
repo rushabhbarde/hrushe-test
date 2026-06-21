@@ -4,13 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAdminAuth } from "@/components/admin-auth-provider";
-import { useAdminAuthModal } from "@/components/admin-auth-modal-provider";
 import { useAuthModal } from "@/components/auth-modal-provider";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
-import { useHomepageBannerData } from "@/lib/use-storefront";
 
 const navItems = [
   { href: "/new-in", label: "New In" },
@@ -64,17 +61,13 @@ export function SiteHeader() {
   const { itemCount, openCart } = useCart();
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
-  const { isAuthenticated: isAdminAuthenticated, logout: adminLogout } = useAdminAuth();
-  const { suppressNextAdminPrompt } = useAdminAuthModal();
   const { openLogin } = useAuthModal();
-  const { announcementText } = useHomepageBannerData().homepageBanner;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
-  const isAdminRoute = pathname.startsWith("/admin");
 
   useEffect(() => {
     if (!isAccountMenuOpen && !isMobileMenuOpen) {
@@ -110,11 +103,11 @@ export function SiteHeader() {
   }, [isAccountMenuOpen, isMobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)]">
       <div className="border-b border-[var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
-          <span>{announcementText || "Complimentary India-wide delivery"}</span>
-          <span className="hidden sm:block">Defined quietly</span>
+          <span>Dispatches in 1–3 business days · 7-day returns</span>
+          <span className="hidden sm:block">One free size exchange</span>
         </div>
       </div>
 
@@ -242,20 +235,6 @@ export function SiteHeader() {
               </span>
             </HeaderIcon>
 
-            {isAdminAuthenticated && isAdminRoute ? (
-              <HeaderIcon
-                label="Logout"
-                onClick={() => {
-                  void (async () => {
-                    suppressNextAdminPrompt();
-                    await adminLogout();
-                    router.push("/");
-                  })();
-                }}
-              >
-                <LogoutIcon />
-              </HeaderIcon>
-            ) : null}
           </div>
         </div>
       </div>

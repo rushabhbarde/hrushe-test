@@ -17,7 +17,7 @@ import { useStorefrontData } from "@/lib/use-storefront";
 export default function EditProductPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { products, updateProduct, loading } = useStorefrontData();
+  const { products, updateProduct, loading } = useStorefrontData({ admin: true });
   const { workspace, saveWorkspace } = useAdminWorkspace();
   const listProduct = useMemo(
     () => products.find((item) => item.id === params.id || item.slug === params.id),
@@ -46,7 +46,7 @@ export default function EditProductPage() {
 
     const loadProductDetails = async () => {
       try {
-        const fullProduct = await apiRequest<Product>(`/products/${params.id}`);
+        const fullProduct = await apiRequest<Product>(`/products/${params.id}?admin=true`);
 
         if (active) {
           setProduct(fullProduct);

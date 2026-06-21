@@ -28,11 +28,17 @@ export async function uploadAdminMedia(file: File): Promise<UploadedAdminMedia> 
   const timeout = window.setTimeout(() => controller.abort(), 60000);
 
   try {
+    const csrfCookie = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("hrushe-csrf="));
+    const csrfToken = csrfCookie ? decodeURIComponent(csrfCookie.slice("hrushe-csrf=".length)) : "";
     const response = await fetch(apiUrl("/media/uploads"), {
       method: "POST",
       credentials: "include",
       headers: {
         ...getAdminAuthHeaders(),
+        ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
         "Content-Type": file.type || "application/octet-stream",
         "X-File-Name": encodeURIComponent(file.name || "media"),
       },

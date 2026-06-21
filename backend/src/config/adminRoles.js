@@ -77,15 +77,12 @@ function isAdminRoleId(roleId) {
 
 function normalizeAdminRoleId(roleId) {
   const normalized = String(roleId || "").trim();
-  return isAdminRoleId(normalized) ? normalized : DEFAULT_ADMIN_ROLE_ID;
+  return isAdminRoleId(normalized) ? normalized : "";
 }
 
 function getAdminRoleDefinition(roleId) {
   const normalized = normalizeAdminRoleId(roleId);
-  return (
-    ADMIN_ROLE_DEFINITIONS.find((role) => role.id === normalized) ||
-    ADMIN_ROLE_DEFINITIONS[0]
-  );
+  return ADMIN_ROLE_DEFINITIONS.find((role) => role.id === normalized) || null;
 }
 
 function getAdminRoleForUser(user) {
@@ -93,7 +90,7 @@ function getAdminRoleForUser(user) {
     return null;
   }
 
-  return getAdminRoleDefinition(user.adminRole || DEFAULT_ADMIN_ROLE_ID);
+  return getAdminRoleDefinition(user.adminRole);
 }
 
 function getAdminPermissionsForUser(user) {

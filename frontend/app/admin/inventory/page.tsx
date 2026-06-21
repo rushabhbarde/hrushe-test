@@ -11,7 +11,7 @@ import {
 import { useStorefrontData } from "@/lib/use-storefront";
 
 export default function AdminInventoryPage() {
-  const { products, loading } = useStorefrontData();
+  const { products, loading } = useStorefrontData({ admin: true });
   const trackedProducts = products.filter((product) => product.trackInventory);
   const variants = trackedProducts.flatMap((product) =>
     (product.variants || []).map((variant) => ({ product, variant }))

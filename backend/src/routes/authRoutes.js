@@ -2,6 +2,7 @@ const express = require("express");
 const {
   signup,
   login,
+  adminLogin,
   me,
   updateMe,
   changePassword,
@@ -11,6 +12,7 @@ const {
   resetPasswordWithOtp,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
+const { requireCsrf } = require("../middleware/csrfMiddleware");
 const { createRateLimiter } = require("../middleware/rateLimitMiddleware");
 
 const router = express.Router();
@@ -24,6 +26,11 @@ router.post(
   "/login",
   createRateLimiter({ name: "login", max: 15, windowMs: 15 * 60 * 1000 }),
   login
+);
+router.post(
+  "/admin-login",
+  createRateLimiter({ name: "admin-login", max: 8, windowMs: 15 * 60 * 1000 }),
+  adminLogin
 );
 router.post(
   "/signup/request-otp",
@@ -41,8 +48,8 @@ router.post(
   resetPasswordWithOtp
 );
 router.get("/me", protect, me);
-router.put("/me", protect, updateMe);
-router.put("/change-password", protect, changePassword);
-router.post("/logout", logout);
+router.put("/me", protect, requireCsrf, updateMe);
+router.put("/change-password", protect, requireCsrf, changePassword);
+router.post("/logout", requireCsrf, logout);
 
 module.exports = router;

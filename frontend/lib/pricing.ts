@@ -1,8 +1,10 @@
-export function getCompareAtPrice(price: number) {
-  const uplifted = Math.ceil((price * 1.22) / 10) * 10;
-  return uplifted > price ? uplifted : price + 200;
+export function getCompareAtPrice(price: number, compareAtPrice?: number) {
+  return Number(compareAtPrice) > Number(price) ? Number(compareAtPrice) : undefined;
 }
 
-export function getDiscountPercent(price: number, compareAtPrice = getCompareAtPrice(price)) {
-  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+export function getDiscountPercent(price: number, compareAtPrice?: number) {
+  const validCompareAtPrice = getCompareAtPrice(price, compareAtPrice);
+  return validCompareAtPrice
+    ? Math.round(((validCompareAtPrice - price) / validCompareAtPrice) * 100)
+    : 0;
 }

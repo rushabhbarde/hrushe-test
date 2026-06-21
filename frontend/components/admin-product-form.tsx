@@ -56,6 +56,10 @@ type FormState = {
   weight: string;
   washCare: string;
   qualityNote: string;
+  fitNote: string;
+  modelHeight: string;
+  modelWornSize: string;
+  returnEligible: boolean;
   sizeGuide: ProductSizeMeasurement[];
   videos: ProductVideo[];
   videoUrlDraft: string;
@@ -132,6 +136,10 @@ function buildInitialState(
     weight: product?.weight || "",
     washCare: product?.washCare || "",
     qualityNote: product?.qualityNote || "",
+    fitNote: product?.fitNote || "",
+    modelHeight: product?.modelHeight || "",
+    modelWornSize: product?.modelWornSize || "",
+    returnEligible: product?.returnEligible === true,
     sizeGuide: product?.sizeGuide || [],
     videos: product?.videos || [],
     videoUrlDraft: "",
@@ -362,8 +370,11 @@ export function AdminProductForm({
           [form.sizes.length > 0, "sizes"],
           [parsedColors.length > 0, "colors"],
           [form.fabric, "fabric"],
-          [form.gsm, "GSM"],
+          [form.gsm || form.weight, "GSM or weight"],
           [form.washCare, "wash care"],
+          [form.trackInventory, "inventory tracking"],
+          [inventoryRows.some((variant) => variant.active && variant.stock > 0 && variant.sku), "available stock"],
+          [form.returnEligible, "return eligibility"],
         ] as const;
         const missing: string[] = requiredFields
           .filter(([value]) => !value)
@@ -385,8 +396,12 @@ export function AdminProductForm({
         }
       }
 
-      if (form.videos.some((video) => /^data:video\//i.test(video.url))) {
-        throw new Error("Remove and re-upload old video drafts before saving. Videos now save through MongoDB media storage.");
+      if (
+        [...form.images, ...form.galleryImages, ...form.videos.flatMap((video) => [video.url, video.posterUrl || ""])].some(
+          (url) => /^data:/i.test(url)
+        )
+      ) {
+        throw new Error("Remove and re-upload embedded media before saving. Products now store media URLs only.");
       }
 
       const colors = parsedColors;
@@ -397,7 +412,10 @@ export function AdminProductForm({
         slug: form.slug || slugify(form.name),
         description: form.description,
         price: Number(form.price),
-        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : undefined,
+        compareAtPrice:
+          Number(form.compareAtPrice) > Number(form.price)
+            ? Number(form.compareAtPrice)
+            : undefined,
         category: form.category,
         categories: parsedCategories,
         colors,
@@ -412,6 +430,10 @@ export function AdminProductForm({
         weight: form.weight.trim(),
         washCare: form.washCare.trim(),
         qualityNote: form.qualityNote.trim(),
+        fitNote: form.fitNote.trim(),
+        modelHeight: form.modelHeight.trim(),
+        modelWornSize: form.modelWornSize.trim(),
+        returnEligible: form.returnEligible,
         sizeGuide: selectedSizeGuideRows.filter(
           (row) => row.chest || row.length || row.shoulder || row.sleeve
         ),
@@ -722,7 +744,7 @@ export function AdminProductForm({
           <AdminPanel>
             <AdminSectionLabel>Fabric & care</AdminSectionLabel>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <AdminField label="Fabric" hint="Example: Premium cotton jersey.">
+              <AdminField label="Fabric / composition" hint="Enter the exact composition supplied for this product.">
                 <AdminFilterInput
                   value={form.fabric}
                   onChange={(event) => updateForm("fabric", event.target.value)}
@@ -756,6 +778,24 @@ export function AdminProductForm({
                 <AdminFilterInput
                   value={form.qualityNote}
                   onChange={(event) => updateForm("qualityNote", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Fit note" hint="Optional factual cut or proportion note.">
+                <AdminFilterInput
+                  value={form.fitNote}
+                  onChange={(event) => updateForm("fitNote", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Model height" hint="Optional. Show only when verified.">
+                <AdminFilterInput
+                  value={form.modelHeight}
+                  onChange={(event) => updateForm("modelHeight", event.target.value)}
+                />
+              </AdminField>
+              <AdminField label="Model worn size" hint="Optional. Show only when verified.">
+                <AdminFilterInput
+                  value={form.modelWornSize}
+                  onChange={(event) => updateForm("modelWornSize", event.target.value)}
                 />
               </AdminField>
             </div>
@@ -947,11 +987,19 @@ export function AdminProductForm({
               <SummaryRow label="Category structure" value={parsedCategories.join(", ") || "Not set"} />
               <SummaryRow label="Color palette" value={parsedColors.join(", ") || "Not set"} />
               <SummaryRow label="Discount" value={discountPercentage > 0 ? `${discountPercentage}% off` : "No compare-at price"} />
-              <SummaryRow label="Fabric notes" value={form.fabric || form.cottonType || "Fallback copy"} />
+              <SummaryRow label="Fabric notes" value={form.fabric || form.cottonType || "Not specified"} />
               <SummaryRow label="Visibility" value={form.status} />
               <SummaryRow
                 label="Inventory"
                 value={form.trackInventory ? `${inventoryRows.reduce((sum, variant) => sum + variant.stock, 0)} units tracked` : "Not tracked"}
+              />
+            </div>
+            <div className="mt-5">
+              <AdminSwitch
+                checked={form.returnEligible}
+                onChange={(checked) => updateForm("returnEligible", checked)}
+                label="Eligible for 7-day returns and one free size exchange"
+                description="Required before a product can be published as Active."
               />
             </div>
             <div className="mt-5">

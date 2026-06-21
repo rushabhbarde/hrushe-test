@@ -8,14 +8,13 @@ import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SizeGuideModal, SizeGuideTable } from "@/components/size-guide";
-import { TrustBadges } from "@/components/trust-badges";
+import { ServicePromise } from "@/components/service-promise";
 import { WishlistButton } from "@/components/wishlist-button";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
-import { shouldBypassImageOptimization } from "@/lib/image-source";
-import { getCompareAtPrice } from "@/lib/pricing";
+import { isPersistedMediaSource, shouldBypassImageOptimization } from "@/lib/image-source";
 import { useStorefrontData } from "@/lib/use-storefront";
 import {
   getProductDisplayName,
@@ -70,7 +69,7 @@ function normalizeProduct(product: Product): Product {
   return {
     ...product,
     name: (product.name || "Untitled product").replace(/\bBegie\b/gi, "Beige"),
-    slug: product.slug || product.id,
+    slug: (product.slug || product.id).replace(/begie/gi, "beige"),
     description: product.description || "",
     price: Number(product.price) || 0,
     category: product.category || "Uncategorized",
@@ -81,12 +80,12 @@ function normalizeProduct(product: Product): Product {
         : [],
     colors: Array.isArray(product.colors) ? product.colors.filter(Boolean) : [],
     sizes: Array.isArray(product.sizes) ? product.sizes.filter(Boolean) : [],
-    images: Array.isArray(product.images) ? product.images.filter(Boolean) : [],
+    images: Array.isArray(product.images) ? product.images.filter(isPersistedMediaSource) : [],
     galleryImages: Array.isArray(product.galleryImages)
-      ? product.galleryImages.filter(Boolean)
+      ? product.galleryImages.filter(isPersistedMediaSource)
       : [],
     videos: Array.isArray(product.videos)
-      ? product.videos.filter((video) => video?.url)
+      ? product.videos.filter((video) => isPersistedMediaSource(video?.url))
       : [],
     reviews: Array.isArray(product.reviews)
       ? product.reviews
@@ -96,7 +95,7 @@ function normalizeProduct(product: Product): Product {
             reviewerName: review.reviewerName || "Customer",
             quote: review.quote || "",
             rating: Number(review.rating) || 5,
-            photo: review.photo || "",
+            photo: isPersistedMediaSource(review.photo) ? review.photo : "",
           }))
       : [],
     accent: product.accent || "#f1eee8",
@@ -112,7 +111,7 @@ function getProductSummary(description: string) {
   const normalized = description.replace(/\s+/g, " ").trim();
 
   if (!normalized) {
-    return "Designed for everyday wear with a clean silhouette and an easy premium feel.";
+    return "";
   }
 
   const sentences =
@@ -132,26 +131,12 @@ function getProductSummary(description: string) {
 }
 
 function getProductFit(product: Product) {
-  const searchable = [
-    product.fitType,
-    product.name,
-    product.category,
-    product.categories?.join(" ") || "",
-    product.description,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  if (searchable.includes("oversize")) {
-    return "Oversized";
-  }
-
-  return product.fitType || "Regular";
+  return product.fitNote || product.fitType || "";
 }
 
 function getProductDetailRows(product: Product) {
   return [
-    { label: "Fabric", value: product.fabric || product.cottonType || "Cotton jersey" },
+    { label: "Composition", value: product.fabric || product.cottonType },
     { label: "GSM", value: product.gsm },
     { label: "Fit", value: getProductFit(product) },
     { label: "Feel", value: product.feel },
@@ -161,10 +146,7 @@ function getProductDetailRows(product: Product) {
 }
 
 function getWashCare(product: Product) {
-  return (
-    product.washCare ||
-    "Machine wash cold with similar colors. Do not bleach. Dry in shade. Iron inside out on low heat."
-  );
+  return product.washCare || "";
 }
 
 function ProductDetailSkeleton() {
@@ -343,7 +325,7 @@ function ProductInfoPanel({
 
   return (
     <div className={shellClassName}>
-      <p className="eyebrow text-[var(--muted)]">Summer 2026</p>
+      <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="max-w-[20ch] text-[1.5rem] font-medium leading-[1.12] tracking-[-0.025em] text-[var(--foreground)] lg:text-[2rem]">
@@ -370,13 +352,17 @@ function ProductInfoPanel({
       <p className="mt-4 text-[0.74rem] tracking-[0.04em] text-[var(--muted)]">
         MRP incl. of all taxes
       </p>
-      <p className="mt-8 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--muted)]">
-        {description}
-      </p>
-      <div className="mt-8 grid grid-cols-2 border-y border-[var(--border)] py-5 text-[0.7rem] uppercase tracking-[0.1em] text-[var(--muted)]">
-        <p>{getProductFabricLine(product)}</p>
-        <p className="text-right">{getProductFitLine(product)}</p>
-      </div>
+      {description ? (
+        <p className="mt-8 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--muted)]">
+          {description}
+        </p>
+      ) : null}
+      {getProductFabricLine(product) || getProductFitLine(product) ? (
+        <div className="mt-8 grid grid-cols-2 border-y border-[var(--border)] py-5 text-[0.7rem] uppercase tracking-[0.1em] text-[var(--muted)]">
+          <p>{getProductFabricLine(product)}</p>
+          <p className="text-right">{getProductFitLine(product)}</p>
+        </div>
+      ) : null}
 
       {colorProducts.length > 0 ? (
         <div className="mt-8">
@@ -443,13 +429,15 @@ function ProductInfoPanel({
         <div className="mt-6">
           <div className="flex items-center justify-between gap-4">
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Size</p>
-            <button
-              type="button"
-              onClick={onOpenSizeGuide}
-              className="min-h-11 text-[0.68rem] font-medium uppercase tracking-[0.1em] underline underline-offset-4"
-            >
-              Size guide
-            </button>
+            {product.sizeGuide?.length ? (
+              <button
+                type="button"
+                onClick={onOpenSizeGuide}
+                className="min-h-11 text-[0.68rem] font-medium uppercase tracking-[0.1em] underline underline-offset-4"
+              >
+                Size guide
+              </button>
+            ) : null}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.sizes.map((size) => {
@@ -483,9 +471,13 @@ function ProductInfoPanel({
               );
             })}
           </div>
-          <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
-            Campaign fit shown in size M. Compare the garment measurements before ordering.
-          </p>
+          {product.modelHeight || product.modelWornSize ? (
+            <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+              {[product.modelHeight ? `Model height ${product.modelHeight}` : "", product.modelWornSize ? `Wears size ${product.modelWornSize}` : ""].filter(Boolean).join(" · ")}
+            </p>
+          ) : product.sizeGuide?.length ? (
+            <p className="mt-4 text-xs leading-6 text-[var(--muted)]">Compare the garment measurements before ordering.</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -499,7 +491,7 @@ function ProductInfoPanel({
           {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
         {addError ? <p className="text-sm text-[var(--accent)]">{addError}</p> : null}
-        <TrustBadges compact />
+        <ServicePromise compact />
       </div>
     </div>
   );
@@ -518,7 +510,7 @@ export default function ProductDetailPage() {
     [matchedProduct]
   );
   const [product, setProduct] = useState<Product | null>(normalizedMatchedProduct);
-  const [productLoading, setProductLoading] = useState(!normalizedMatchedProduct);
+  const [productLoading, setProductLoading] = useState(true);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(
     matchedProduct?.colors[0] || ""
@@ -528,7 +520,6 @@ export default function ProductDetailPage() {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewQuote, setReviewQuote] = useState("");
   const [reviewRating, setReviewRating] = useState("5");
-  const [reviewPhoto, setReviewPhoto] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [reviewSaved, setReviewSaved] = useState(false);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -545,7 +536,6 @@ export default function ProductDetailPage() {
 
     if (normalizedMatchedProduct) {
       setProduct(normalizedMatchedProduct);
-      setProductLoading(false);
     }
 
     if (loading) {
@@ -689,15 +679,16 @@ export default function ProductDetailPage() {
   );
   const reviews = (product.reviews || []).filter(
     (review) =>
+      review.verifiedPurchase === true &&
       review.status !== "pending" &&
       review.status !== "rejected" &&
       review.status !== "hidden" &&
       !/hrushabh|kshitij/i.test(review.reviewerName)
   );
-  const compareAtPrice = product.compareAtPrice || getCompareAtPrice(product.price);
+  const compareAtPrice = Number(product.compareAtPrice) > product.price ? Number(product.compareAtPrice) : 0;
   const hasDiscount = compareAtPrice > product.price;
   const priceText = `₹${product.price.toLocaleString("en-IN")}`;
-  const compareAtPriceText = `₹${compareAtPrice.toLocaleString("en-IN")}`;
+  const compareAtPriceText = compareAtPrice ? `₹${compareAtPrice.toLocaleString("en-IN")}` : "";
   const productSummary = getProductSummary(product.description);
   const detailRows = getProductDetailRows(product);
   const washCare = getWashCare(product);
@@ -754,40 +745,6 @@ export default function ProductDetailPage() {
     showPreviousMedia();
   };
 
-  const readPhoto = async (file: File) => {
-    const result = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error("Could not read review photo."));
-      reader.readAsDataURL(file);
-    });
-
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new window.Image();
-      element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error("Could not process review photo."));
-      element.src = result;
-    });
-
-    const maxDimension = 640;
-    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-    const width = Math.max(1, Math.round(image.width * scale));
-    const height = Math.max(1, Math.round(image.height * scale));
-    const canvas = document.createElement("canvas");
-
-    canvas.width = width;
-    canvas.height = height;
-
-    const context = canvas.getContext("2d");
-
-    if (!context) {
-      throw new Error("Could not process review photo.");
-    }
-
-    context.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", 0.68);
-  };
-
   const onReviewSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setReviewSubmitting(true);
@@ -798,12 +755,11 @@ export default function ProductDetailPage() {
         reviewerName,
         quote: reviewQuote,
         rating: Number(reviewRating),
-        photo: reviewPhoto,
+        photo: "",
       });
       setReviewerName("");
       setReviewQuote("");
       setReviewRating("5");
-      setReviewPhoto("");
       setReviewSaved(true);
     } catch (error) {
       setReviewError(
@@ -842,126 +798,79 @@ export default function ProductDetailPage() {
       <SiteHeader />
       <main className="mx-auto w-full pb-28 lg:max-w-[1440px] lg:px-8 lg:pb-24 lg:pt-12 xl:pt-16">
         <h1 className="sr-only">{product.name}</h1>
-        <div>
-          <div className="lg:hidden">
-            <section aria-label="Product media gallery">
-              <div
-                className="relative overflow-hidden border-b border-[rgba(17,17,17,0.08)] bg-[var(--surface-strong)]"
-                onPointerDown={handleSwipeStart}
-                onPointerUp={handleSwipeEnd}
-                onPointerCancel={() => {
-                  swipeStartRef.current = null;
-                }}
-                style={{ touchAction: "pan-y" }}
-              >
-                <div className="relative aspect-[4/5]">
-                  <ProductMediaFrame
-                    item={activeMedia}
-                    product={product}
-                    imageClassName="object-cover object-center"
-                    onVideoEnded={showNextMedia}
-                  />
-                </div>
-
-                {hasMultipleMedia ? (
-                  <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
-                    {mediaItems.map((item, index) => (
-                      <button
-                        key={`${item.id}-mobile-dot-${index}`}
-                        type="button"
-                        onClick={() => setActiveMediaIndex(index)}
-                        aria-label={`Show ${item.type} ${index + 1}`}
-                        className={`h-1.5 transition ${
-                          activeMediaIndex === index
-                            ? "w-7 bg-[var(--foreground)]"
-                            : "w-3 bg-[rgba(17,17,17,0.22)]"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </section>
-
-            <section aria-label="Product details and purchase options">
-              <ProductInfoPanel
-                product={product}
-                siblingProducts={siblingProducts}
-                priceText={priceText}
-                compareAtPriceText={compareAtPriceText}
-                hasDiscount={hasDiscount}
-                description={productSummary}
-                selectedColor={selectedColor}
-                selectedSize={selectedSize}
-                addError={addError}
-                requiresSize={requiresSize}
-                canAddToCart={canAddToCart}
-                onColorSelect={(color) => {
-                  setSelectedColor(color);
-                  setSelectedSize("");
-                  setAddError("");
-                }}
-                onSizeSelect={(size) => {
-                  setSelectedSize(size);
-                  setAddError("");
-                }}
-                onAddToCart={handleAddToCart}
-                onOpenSizeGuide={() => setSizeGuideOpen(true)}
-                actionRef={mainAddToCartRef}
-                mobile
-              />
-            </section>
-          </div>
-
-          <div className="hidden lg:mx-auto lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.5fr)_minmax(380px,1fr)] lg:items-start lg:gap-12 xl:gap-16">
-            <section
-              aria-label="Product media gallery"
-              className="grid grid-cols-2 gap-3"
+        <div className="lg:mx-auto lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.45fr)_minmax(380px,0.85fr)] lg:items-start lg:gap-12 xl:gap-16">
+          <section aria-label="Product media gallery">
+            <div
+              className="relative overflow-hidden border-b border-[var(--border)] bg-[var(--surface-strong)] lg:border"
+              onPointerDown={handleSwipeStart}
+              onPointerUp={handleSwipeEnd}
+              onPointerCancel={() => {
+                swipeStartRef.current = null;
+              }}
+              style={{ touchAction: "pan-y" }}
             >
-              {mediaItems.length > 0 ? mediaItems.map((item, index) => (
-                <div
-                  key={`${item.id}-desktop-${index}`}
-                  className={`relative overflow-hidden bg-[var(--surface-strong)] ${item.type === "video" ? "col-span-2 aspect-video" : "aspect-[4/5]"}`}
-                >
-                  <ProductMediaFrame
-                    item={item}
-                    product={product}
-                    imageClassName="object-cover object-center"
-                    onVideoEnded={() => undefined}
-                  />
+              <div className="relative aspect-[4/5]">
+                <ProductMediaFrame
+                  item={activeMedia}
+                  product={product}
+                  imageClassName="object-cover object-center"
+                  onVideoEnded={showNextMedia}
+                />
+              </div>
+              {hasMultipleMedia ? (
+                <div className="absolute inset-x-4 bottom-4 flex items-center justify-between">
+                  <button type="button" onClick={showPreviousMedia} className="flex h-12 w-12 items-center justify-center border border-white/60 bg-white text-lg text-black" aria-label="Previous product media">←</button>
+                  <p className="bg-white px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-black">{activeMediaIndex + 1} / {mediaItems.length}</p>
+                  <button type="button" onClick={showNextMedia} className="flex h-12 w-12 items-center justify-center border border-white/60 bg-white text-lg text-black" aria-label="Next product media">→</button>
                 </div>
-              )) : (
-                <div className="col-span-2 aspect-[4/5] bg-[var(--surface-strong)]" />
-              )}
-            </section>
+              ) : null}
+            </div>
+            {hasMultipleMedia ? (
+              <div className="grid grid-cols-5 gap-2 px-4 pt-3 sm:px-0">
+                {mediaItems.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveMediaIndex(index)}
+                    aria-label={`Show ${item.type} ${index + 1}`}
+                    aria-pressed={activeMediaIndex === index}
+                    className={`relative aspect-[4/5] overflow-hidden border ${activeMediaIndex === index ? "border-[var(--foreground)]" : "border-[var(--border)]"}`}
+                  >
+                    {item.type === "image" ? <Image src={item.src} alt="" fill sizes="120px" className="object-cover" /> : <span className="flex h-full items-center justify-center bg-black text-[0.6rem] uppercase tracking-[0.12em] text-white">Video</span>}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
-            <section aria-label="Product details and purchase options" className="sticky top-32">
-              <ProductInfoPanel
-                product={product}
-                siblingProducts={siblingProducts}
-                priceText={priceText}
-                compareAtPriceText={compareAtPriceText}
-                hasDiscount={hasDiscount}
-                description={productSummary}
-                selectedColor={selectedColor}
-                selectedSize={selectedSize}
-                addError={addError}
-                requiresSize={requiresSize}
-                canAddToCart={canAddToCart}
-                onColorSelect={(color) => {
-                  setSelectedColor(color);
-                  setSelectedSize("");
-                  setAddError("");
-                }}
-                onSizeSelect={(size) => {
-                  setSelectedSize(size);
-                  setAddError("");
-                }}
-                onAddToCart={handleAddToCart}
-                onOpenSizeGuide={() => setSizeGuideOpen(true)}
-              />
-            </section>
-          </div>
+          <section aria-label="Product details and purchase options" className="lg:sticky lg:top-28">
+            <ProductInfoPanel
+              product={product}
+              siblingProducts={siblingProducts}
+              priceText={priceText}
+              compareAtPriceText={compareAtPriceText}
+              hasDiscount={hasDiscount}
+              description={productSummary}
+              selectedColor={selectedColor}
+              selectedSize={selectedSize}
+              addError={addError}
+              requiresSize={requiresSize}
+              canAddToCart={canAddToCart}
+              onColorSelect={(color) => {
+                setSelectedColor(color);
+                setSelectedSize("");
+                setAddError("");
+              }}
+              onSizeSelect={(size) => {
+                setSelectedSize(size);
+                setAddError("");
+              }}
+              onAddToCart={handleAddToCart}
+              onOpenSizeGuide={() => setSizeGuideOpen(true)}
+              actionRef={mainAddToCartRef}
+              mobile
+            />
+          </section>
         </div>
 
         <section className="mt-12 border-t border-[rgba(17,17,17,0.08)] px-5 pt-8 sm:mt-14 sm:px-6 lg:px-0 lg:pt-10">
@@ -977,6 +886,9 @@ export default function ProductDetailPage() {
                   >
                     <button
                       type="button"
+                      id={`product-section-${section.key}-trigger`}
+                      aria-expanded={isOpen}
+                      aria-controls={`product-section-${section.key}-panel`}
                       onClick={() =>
                         setOpenSection((current) =>
                           current === section.key ? current : section.key
@@ -992,13 +904,15 @@ export default function ProductDetailPage() {
                       </span>
                     </button>
                     {isOpen ? (
-                      <div className="pb-5 text-sm leading-7 text-[var(--muted)]">
+                      <div
+                        id={`product-section-${section.key}-panel`}
+                        role="region"
+                        aria-labelledby={`product-section-${section.key}-trigger`}
+                        className="pb-5 text-sm leading-7 text-[var(--muted)]"
+                      >
                         {section.key === "description" ? (
                           <div className="space-y-3">
                             <p>{product.description}</p>
-                            <p>
-                              Relaxed, everyday fit with a clean silhouette designed for repeat wear.
-                            </p>
                             <p>Art. No.: {product.id}</p>
                           </div>
                         ) : null}
@@ -1020,29 +934,42 @@ export default function ProductDetailPage() {
                           </div>
                         ) : null}
                         {section.key === "wash" ? (
-                          <div className="space-y-3">
-                            <p>{washCare}</p>
-                            <p>
-                              Wash inside out and avoid harsh drying cycles to keep the fabric surface clean.
-                            </p>
-                          </div>
+                          <p>{washCare || "Care instructions have not been added yet."}</p>
                         ) : null}
                         {section.key === "size" ? (
                           <div className="space-y-4">
-                            <p>
-                              {getProductFit(product)} t-shirt measurements are garment measurements in inches.
-                            </p>
-                            <SizeGuideTable rows={product.sizeGuide} />
+                            {getProductFit(product) ? <p>{getProductFit(product)}</p> : null}
+                            {product.modelHeight || product.modelWornSize ? (
+                              <p>
+                                {[
+                                  product.modelHeight ? `Model height ${product.modelHeight}` : "",
+                                  product.modelWornSize ? `Wears size ${product.modelWornSize}` : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            ) : null}
+                            {product.sizeGuide?.length ? (
+                              <>
+                                <p>Garment measurements in inches.</p>
+                                <SizeGuideTable rows={product.sizeGuide} />
+                              </>
+                            ) : (
+                              <p>Garment measurements have not been added yet.</p>
+                            )}
                           </div>
                         ) : null}
                         {section.key === "delivery" ? (
-                          <div className="space-y-3">
-                            <p>Delivery time: 5–10 business days.</p>
-                            <p>Complimentary shipping across India.</p>
+                          <div className="space-y-4">
                             <p>
-                              Damaged, defective, or incorrect items can be reported within 48 hours of delivery. See the return policy for full conditions.
+                              Orders are dispatched within 1–3 business days. Delivery time depends on the destination and courier service.
                             </p>
-                            <TrustBadges />
+                            <p>
+                              {product.returnEligible
+                                ? "This item is eligible for return within 7 days of delivery and one size exchange at no charge."
+                                : "Return eligibility has not been specified for this item. Contact support before ordering if you need confirmation."}
+                            </p>
+                            <ServicePromise />
                           </div>
                         ) : null}
                       </div>
@@ -1057,7 +984,7 @@ export default function ProductDetailPage() {
                 Product reviews
               </p>
               <h2 className="mt-3 text-[1.7rem] font-medium uppercase leading-[1.08] tracking-[-0.05em] text-[var(--foreground)]">
-                Customer feedback and styling proof.
+                Verified customer reviews.
               </h2>
               <div className="mt-6 space-y-4">
                 {reviews.length > 0 ? (
@@ -1073,7 +1000,7 @@ export default function ProductDetailPage() {
                               src={review.photo}
                               alt={review.reviewerName}
                               fill
-                              unoptimized
+                              unoptimized={shouldBypassImageOptimization(review.photo)}
                               className="object-cover"
                             />
                           ) : (
@@ -1096,7 +1023,7 @@ export default function ProductDetailPage() {
                   ))
                 ) : (
                   <div className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] p-5 text-sm text-[var(--muted)]">
-                    No reviews yet. Be the first customer to add one.
+                    No verified reviews yet.
                   </div>
                 )}
               </div>
@@ -1113,13 +1040,16 @@ export default function ProductDetailPage() {
                 onSubmit={(event) => void onReviewSubmit(event)}
               >
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <input
-                    value={reviewerName}
-                    onChange={(event) => setReviewerName(event.target.value)}
-                    className="min-h-12 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3"
-                    placeholder="Your name"
-                    required
-                  />
+                  <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+                    Your name
+                    <input
+                      value={reviewerName}
+                      onChange={(event) => setReviewerName(event.target.value)}
+                      className="min-h-12 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3 text-base font-normal normal-case tracking-normal text-[var(--foreground)]"
+                      autoComplete="name"
+                      required
+                    />
+                  </label>
                   <div className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                       Rating
@@ -1149,67 +1079,16 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                <textarea
-                  value={reviewQuote}
-                  onChange={(event) => setReviewQuote(event.target.value)}
-                  className="min-h-36 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3"
-                  placeholder="How did the fit, fabric, and overall feel work for you?"
-                  required
-                />
-
-                <div className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] p-4 sm:p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Review photo</p>
-                      <p className="mt-1 text-xs leading-6 text-[var(--muted)]">
-                        Optional. A product photo helps the review feel more trustworthy and visual.
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--background)] sm:w-auto"
-                      onChange={async (event) => {
-                        const file = event.target.files?.[0];
-
-                        if (!file) {
-                          setReviewPhoto("");
-                          return;
-                        }
-
-                        try {
-                          setReviewError("");
-                          setReviewPhoto(await readPhoto(file));
-                        } catch (error) {
-                          setReviewError(
-                            error instanceof Error
-                              ? error.message
-                              : "Could not process review photo."
-                          );
-                        }
-                      }}
-                    />
-                  </div>
-                  {reviewPhoto ? (
-                    <div className="mt-5 flex items-center gap-4 border border-[rgba(17,17,17,0.08)] bg-[var(--background)] p-3">
-                      <div className="relative aspect-square w-20 overflow-hidden border border-[rgba(17,17,17,0.08)]">
-                        <Image
-                          src={reviewPhoto}
-                          alt="Review preview"
-                          fill
-                          unoptimized
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Photo ready</p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">
-                          This image will be submitted with your review.
-                        </p>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
+                <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+                  Your review
+                  <textarea
+                    value={reviewQuote}
+                    onChange={(event) => setReviewQuote(event.target.value)}
+                    className="min-h-36 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3 text-base font-normal normal-case tracking-normal text-[var(--foreground)]"
+                    placeholder="Tell us about the fit, fabric, and overall feel."
+                    required
+                  />
+                </label>
 
                 {reviewError ? (
                   <p className="text-sm text-[var(--accent)]">{reviewError}</p>
@@ -1228,7 +1107,7 @@ export default function ProductDetailPage() {
                         : "Submit review"}
                   </button>
                   <p className="text-sm text-[var(--muted)]">
-                    Reviews appear after a quick moderation check.
+                    Only verified purchases are published after moderation.
                   </p>
                 </div>
               </form>
@@ -1244,15 +1123,17 @@ export default function ProductDetailPage() {
             More from the current edit.
           </h2>
           <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            {relatedProducts.map((item) => (
-              <ProductCard key={item.id} product={item} />
+            {relatedProducts.map((item, index) => (
+              <div key={item.id} className={index >= 2 ? "hidden md:block" : ""}>
+                <ProductCard product={item} />
+              </div>
             ))}
           </div>
         </section>
       </main>
 
       {showStickyAddToCart ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[rgba(246,244,239,0.97)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
           <div className="mx-auto flex max-w-xl items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[0.92rem] font-semibold text-[var(--foreground)]">
@@ -1282,7 +1163,7 @@ export default function ProductDetailPage() {
         open={sizeGuideOpen}
         onClose={() => setSizeGuideOpen(false)}
         rows={product.sizeGuide}
-        title={`${getProductFit(product)} t-shirt fit`}
+        title="Garment measurements"
       />
       <SiteFooter />
     </div>

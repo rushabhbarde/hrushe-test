@@ -5,10 +5,9 @@ const mongoose = require("mongoose");
 const connectDB = require("../src/config/db");
 const Product = require("../src/models/Product");
 const SiteContent = require("../src/models/SiteContent");
-const { uploadR2Object } = require("../src/utils/r2Storage");
+const { hasR2Config, uploadR2Object } = require("../src/utils/r2Storage");
 
 const APPLY = process.argv.includes("--apply");
-const MEDIA_BUCKET_NAME = "media";
 const migratedByHash = new Map();
 let discovered = 0;
 let migrated = 0;
@@ -66,34 +65,7 @@ const uploadDataUrl = async (value) => {
     return r2Upload.url;
   }
 
-  const fileId = new mongoose.Types.ObjectId();
-  const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-    bucketName: MEDIA_BUCKET_NAME,
-  });
-  const uploadStream = bucket.openUploadStreamWithId(
-    fileId,
-    `${Date.now()}-${fileId.toString()}-migrated.${extension}`,
-    {
-      contentType: parsed.contentType,
-      metadata: {
-        contentType: parsed.contentType,
-        migratedFrom: "base64",
-        hash,
-        size: parsed.buffer.length,
-      },
-    }
-  );
-
-  await new Promise((resolve, reject) => {
-    uploadStream.once("finish", resolve);
-    uploadStream.once("error", reject);
-    uploadStream.end(parsed.buffer);
-  });
-
-  const path = `/api/backend/media/files/${fileId.toString()}`;
-  migratedByHash.set(hash, path);
-  migrated += 1;
-  return path;
+  throw new Error("R2 upload did not return a public URL; migration stopped without changing this media value.");
 };
 
 const migrateValue = async (value) => {
@@ -117,6 +89,10 @@ const migrateValue = async (value) => {
 
 const run = async () => {
   await connectDB();
+
+  if (APPLY && !hasR2Config()) {
+    throw new Error("R2 configuration is required before applying the base64 media migration.");
+  }
 
   const products = await Product.find();
   for (const product of products) {
@@ -145,7 +121,7 @@ const run = async () => {
   }
 
   console.log(
-    `${APPLY ? "Migrated" : "Found"} ${discovered} embedded media reference(s), ${migrated} unique upload(s), ${(bytes / 1024 / 1024).toFixed(2)} MB scanned.`
+    `${APPLY ? "Migrated" : "Found"} ${discovered} embedded media reference(s), ${migratedByHash.size} unique media object(s), ${migrated} uploaded, ${(bytes / 1024 / 1024).toFixed(2)} MB scanned.`
   );
   if (!APPLY) {
     console.log("Dry run only. Re-run with --apply after confirming the database backup.");

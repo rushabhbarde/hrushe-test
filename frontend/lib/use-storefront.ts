@@ -8,6 +8,7 @@ import {
 } from "@/lib/storefront-data";
 import { apiRequest } from "@/lib/api";
 import { getAdminAuthHeaders } from "@/lib/admin-auth";
+import { isPersistedMediaSource } from "@/lib/image-source";
 
 type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
@@ -23,37 +24,77 @@ type BannerCache = {
 const STOREFRONT_CACHE_TTL = 60_000;
 let productCache: ProductCache | null = null;
 let productRequest: Promise<ProductCache> | null = null;
+let adminProductCache: ProductCache | null = null;
+let adminProductRequest: Promise<ProductCache> | null = null;
 let bannerCache: BannerCache | null = null;
 let bannerRequest: Promise<BannerCache> | null = null;
 
 function mergeProductsWithDefaults(products: Product[]) {
-  return products;
+  return products.map((product) => ({
+    ...product,
+    name: product.displayName || product.name || "",
+    slug: (product.slug || product.id).replace(/begie/gi, "beige"),
+    description: product.description || "",
+    category: product.category || "",
+    categories: Array.isArray(product.categories) ? product.categories : [],
+    colors: Array.isArray(product.colors)
+      ? product.colors
+      : product.colour
+        ? [product.colour]
+        : [],
+    sizes: Array.isArray(product.sizes) ? product.sizes : [],
+    images: Array.isArray(product.images)
+      ? product.images.filter(isPersistedMediaSource)
+      : product.thumbnailUrl
+        ? [product.thumbnailUrl].filter(isPersistedMediaSource)
+        : [],
+    galleryImages: Array.isArray(product.galleryImages)
+      ? product.galleryImages.filter(isPersistedMediaSource)
+      : [],
+    videos: Array.isArray(product.videos)
+      ? product.videos.filter((video) => isPersistedMediaSource(video.url))
+      : [],
+    reviews: Array.isArray(product.reviews) ? product.reviews : [],
+    imageLabel: product.imageLabel || product.displayName || product.name || "Product",
+    accent: product.accent || "#eeece6",
+    status: product.status || (product.availability === "sold-out" ? "Sold Out" : "Active"),
+    trackInventory: Boolean(product.trackInventory),
+    variants: Array.isArray(product.variants) ? product.variants : [],
+  }));
 }
 
 function isCacheFresh(cache: { timestamp: number } | null) {
   return Boolean(cache && Date.now() - cache.timestamp < STOREFRONT_CACHE_TTL);
 }
 
-async function fetchProducts() {
-  if (isCacheFresh(productCache)) {
-    return productCache as ProductCache;
+async function fetchProducts(admin = false) {
+  const cache = admin ? adminProductCache : productCache;
+  const pendingRequest = admin ? adminProductRequest : productRequest;
+
+  if (isCacheFresh(cache)) {
+    return cache as ProductCache;
   }
 
-  if (!productRequest) {
-    productRequest = apiRequest<Product[]>("/products")
+  if (!pendingRequest) {
+    const request = apiRequest<Product[]>(admin ? "/products?admin=true" : "/products")
       .then((productsData) => {
-        productCache = {
+        const nextCache = {
           products: mergeProductsWithDefaults(productsData),
           timestamp: Date.now(),
         };
-        return productCache;
+        if (admin) adminProductCache = nextCache;
+        else productCache = nextCache;
+        return nextCache;
       })
       .finally(() => {
-        productRequest = null;
+        if (admin) adminProductRequest = null;
+        else productRequest = null;
       });
+    if (admin) adminProductRequest = request;
+    else productRequest = request;
   }
 
-  return productRequest;
+  return (admin ? adminProductRequest : productRequest) as Promise<ProductCache>;
 }
 
 async function fetchHomepageBanner() {
@@ -75,18 +116,19 @@ async function fetchHomepageBanner() {
   return bannerRequest;
 }
 
-export function useStorefrontData() {
+export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
+  const initialCache = admin ? adminProductCache : productCache;
   const [products, setProducts] = useState<Product[]>(
-    productCache?.products || []
+    initialCache?.products || []
   );
-  const [loading, setLoading] = useState(!productCache);
+  const [loading, setLoading] = useState(!initialCache);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       try {
-        const data = await fetchProducts();
+        const data = await fetchProducts(admin);
 
         if (!active) {
           return;
@@ -111,7 +153,7 @@ export function useStorefrontData() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [admin]);
 
   const featuredProducts = useMemo(
     () => products.filter((product) => product.featured),
@@ -127,10 +169,12 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = [created, ...current];
-      productCache = {
+      const nextCache = {
         products: next,
         timestamp: Date.now(),
       };
+      if (admin) adminProductCache = nextCache;
+      else productCache = nextCache;
       return next;
     });
     return created;
@@ -145,10 +189,12 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = current.map((item) => (item.id === productId ? updated : item));
-      productCache = {
+      const nextCache = {
         products: next,
         timestamp: Date.now(),
       };
+      if (admin) adminProductCache = nextCache;
+      else productCache = nextCache;
       return next;
     });
 
@@ -163,10 +209,12 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = current.filter((product) => product.id !== productId);
-      productCache = {
+      const nextCache = {
         products: next,
         timestamp: Date.now(),
       };
+      if (admin) adminProductCache = nextCache;
+      else productCache = nextCache;
       return next;
     });
   };
@@ -182,7 +230,9 @@ export function useStorefrontData() {
 
     setProducts((current) => {
       const next = current.map((item) => (item.id === productId ? updated : item));
-      productCache = { products: next, timestamp: Date.now() };
+      const nextCache = { products: next, timestamp: Date.now() };
+      if (admin) adminProductCache = nextCache;
+      else productCache = nextCache;
       return next;
     });
     return updated;

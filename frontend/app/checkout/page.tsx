@@ -10,6 +10,7 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ServicePromise } from "@/components/service-promise";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -28,6 +29,7 @@ type CheckoutResponse = {
   };
   paymentStatus: string;
   mode: "provider";
+  checkoutState: string;
 };
 
 type CheckoutForm = {
@@ -188,7 +190,7 @@ function OrderSummary({
           <span>{formatPrice(total)}</span>
         </div>
         <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
-          Complimentary India-wide delivery · Estimated in 5–10 business days
+          Dispatch within 1–3 business days. Delivery time depends on the destination and courier.
         </p>
       </div>
     </div>
@@ -241,7 +243,7 @@ export default function CheckoutPage() {
   };
 
   const validateContact = () => {
-    if (!form.email || !form.phone) {
+    if (!/^\S+@\S+\.\S+$/.test(form.email) || !/^\+?[0-9\s-]{10,15}$/.test(form.phone)) {
       setError("Please add your contact information.");
       pushToast("Please add your contact information.", "error");
       return false;
@@ -258,7 +260,7 @@ export default function CheckoutPage() {
       !form.area ||
       !form.city ||
       !form.state ||
-      !form.pincode
+      !/^\d{6}$/.test(form.pincode)
     ) {
       setError("Please complete all shipping details.");
       pushToast("Please complete all shipping details.", "error");
@@ -370,7 +372,10 @@ export default function CheckoutPage() {
           ondismiss: async () => {
             await apiRequest("/order/checkout/failure", {
               method: "POST",
-              body: JSON.stringify({ appOrderId: response.appOrderId }),
+              body: JSON.stringify({
+                appOrderId: response.appOrderId,
+                checkoutState: response.checkoutState,
+              }),
             }).catch(() => undefined);
             window.location.href = `/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`;
           },
@@ -657,6 +662,8 @@ export default function CheckoutPage() {
                         {error}
                       </div>
                     ) : null}
+
+                    <ServicePromise compact />
 
                     {activeStep === "payment" ? (
                       <button

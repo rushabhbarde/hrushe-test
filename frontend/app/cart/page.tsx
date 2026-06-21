@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/product-card";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ServicePromise } from "@/components/service-promise";
 import { useWishlist } from "@/components/wishlist-provider";
 import type { Product } from "@/lib/catalog";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -96,7 +97,7 @@ function CartPageSkeleton() {
 }
 
 export default function CartPage() {
-  const { items, subtotal, itemCount, isReady, addItem, removeItem, updateQuantity } = useCart();
+  const { items, subtotal, itemCount, isReady, removeItem, updateQuantity } = useCart();
   const { wishlistIds, isWishlisted, toggleWishlist, removeWishlistItem } = useWishlist();
   const { products } = useStorefrontData();
   const { pushToast } = useToast();
@@ -146,23 +147,6 @@ export default function CartPage() {
     window.setTimeout(() => setBumpedKey(""), 220);
     updateQuantity(item.productId, item.size, item.color, nextQuantity, item.fit);
     pushToast(nextQuantity <= 0 ? "Item removed" : "Cart updated", nextQuantity <= 0 ? "error" : "success");
-  };
-
-  const moveFavouriteToBag = (product: Product) => {
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      size: product.sizes[0] || "S",
-      color: product.colors[0] || "Default",
-      fit: product.category,
-      quantity: 1,
-      accent: product.accent,
-      image: product.images[0],
-    });
-    removeWishlistItem(product.id);
-    setActiveCartTab("bag");
-    pushToast("Moved favourite to bag.");
   };
 
   if (!isReady) {
@@ -272,7 +256,7 @@ export default function CartPage() {
                                   <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4">
                                     <div className="min-w-0">
                                       <p className="text-sm leading-none text-[var(--muted)]">
-                                        {item.fit || "Cotton T Shirt"}
+                                        {item.fit || "Selected product"}
                                       </p>
                                       <Link
                                         href={`/product/${item.productId}`}
@@ -293,7 +277,7 @@ export default function CartPage() {
                                     >
                                       Save for later
                                     </button>
-                                    <span>Delivery in 5–10 business days</span>
+                                    <span>Dispatch within 1–3 business days</span>
                                   </div>
                                 </div>
                               </div>
@@ -358,13 +342,12 @@ export default function CartPage() {
                         <article key={product.id} className="min-w-0">
                           <ProductCard product={product} />
                           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                            <button
-                              type="button"
-                              onClick={() => moveFavouriteToBag(product)}
+                            <Link
+                              href={`/product/${product.slug || product.id}`}
                               className="lux-action w-full"
                             >
-                              Move to bag
-                            </button>
+                              Choose size
+                            </Link>
                             <button
                               type="button"
                               onClick={() => {
@@ -404,14 +387,8 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    <div className="mt-6 border border-[var(--border)] bg-white/48 p-4">
-                      <p className="text-sm font-semibold uppercase tracking-[0.12em]">Estimated delivery</p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        India-wide delivery in 5–10 business days. Tracking appears after dispatch.
-                      </p>
-                      <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-                        Complimentary India-wide shipping is active on this bag.
-                      </p>
+                    <div className="mt-6">
+                      <ServicePromise compact />
                     </div>
 
                     <label className="mt-6 flex items-start gap-3 text-sm text-[var(--muted)]">

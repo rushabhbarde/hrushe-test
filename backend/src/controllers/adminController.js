@@ -11,6 +11,7 @@ const {
   isAdminRoleId,
   normalizeAdminRoleId,
 } = require("../config/adminRoles");
+const { recordAuditLog } = require("../utils/auditLog");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,12 +19,12 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function validateStaffPassword(password) {
   const value = String(password || "");
 
-  if (value.length < 8) {
-    throw new AppError("Staff password must be at least 8 characters long", 400);
+  if (value.length < 12) {
+    throw new AppError("Staff password must be at least 12 characters long", 400);
   }
 
-  if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) {
-    throw new AppError("Staff password must include at least one letter and one number", 400);
+  if (!/[a-z]/.test(value) || !/[A-Z]/.test(value) || !/\d/.test(value) || !/[^A-Za-z0-9]/.test(value)) {
+    throw new AppError("Staff password must include upper and lowercase letters, a number, and a symbol", 400);
   }
 }
 
@@ -72,12 +73,13 @@ function serializeWishlistItem(item) {
 }
 
 function serializeCustomer(user, orders = []) {
-  const totalSpend = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-  const averageOrderValue = orders.length > 0 ? totalSpend / orders.length : 0;
-  const lastOrderDate = orders[0]?.createdAt || null;
+  const paidOrders = orders.filter((order) => order.paymentStatus === "paid");
+  const totalSpend = paidOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  const averageOrderValue = paidOrders.length > 0 ? totalSpend / paidOrders.length : 0;
+  const lastOrderDate = paidOrders[0]?.createdAt || null;
   const status = buildCustomerStatus({
     createdAt: user.createdAt,
-    orderCount: orders.length,
+    orderCount: paidOrders.length,
     totalSpend,
     lastOrderDate,
   });
@@ -98,7 +100,7 @@ function serializeCustomer(user, orders = []) {
     wishlist: (user.wishlist || []).map(serializeWishlistItem).filter(Boolean),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
-    orderCount: orders.length,
+    orderCount: paidOrders.length,
     totalSpend,
     averageOrderValue,
     lastOrderDate,
@@ -257,7 +259,12 @@ const updateStaffUserRole = asyncHandler(async (req, res) => {
   }
 
   staffUser.adminRole = nextRole;
+  staffUser.tokenVersion = Number(staffUser.tokenVersion || 0) + 1;
   await staffUser.save();
+
+  await recordAuditLog(req, "staff.role-change", { type: "user", id: staffUser._id }, {
+    adminRole: nextRole,
+  });
 
   res.json(serializeStaffUser(staffUser));
 });

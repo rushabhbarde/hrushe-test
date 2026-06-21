@@ -142,22 +142,22 @@ const policyTabs = [
       {
         title: "1. Return Eligibility",
         body:
-          "Returns are accepted when a product arrives damaged, defective, or incorrect. Contact HRUSHE within 48 hours of delivery. Once approved, the item must be returned within 7 days.",
+          "Eligible unworn products may be returned within 7 days of delivery. Items must retain their original tags and packaging. Final-sale or hygiene-sensitive exclusions, if any, will be stated clearly on the product page before purchase.",
       },
       {
         title: "2. Conditions for Return",
         body:
-          "Product must be unused and in original packaging. An unboxing video or photo is required for damaged or wrong item claims.",
+          "Products must be unused, unwashed, and returned with original tags and packaging. For damaged, defective, or incorrect items, contact HRUSHE promptly with clear photos so support can resolve the issue.",
       },
       {
         title: "3. Refund Process",
         body:
-          "After approval, refunds are credited within 5–7 business days to the original payment method. Shipping fees are non-refundable.",
+          "After the returned item is received and checked, an approved refund is initiated to the original payment method. Bank processing time is typically 5–7 business days after initiation.",
       },
       {
         title: "4. Exchange",
         body:
-          "Size or colour exchanges are not currently available. Please review the garment measurements before ordering. Damaged, defective, or incorrect items remain eligible under the return conditions above.",
+          "One size exchange is available at no additional pickup or reshipping charge, subject to stock availability and the same unused, unwashed, tagged condition. Additional exchanges may incur logistics charges. Colour changes are processed as a return and new order.",
       },
       {
         title: "5. Cancellation",

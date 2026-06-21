@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "HRUSHE",
     short_name: "HRUSHE",
     description:
-      "Bold in presence, subtle in expression. Discover premium oversized streetwear by HRUSHE — Defined Quietly.",
+      "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

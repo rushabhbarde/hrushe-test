@@ -11,17 +11,12 @@ import {
   AdminPanel,
   AdminSubhead,
 } from "@/components/admin-ui";
-import { useToast } from "@/components/toast-provider";
 import { customerStatusTone, formatAdminCurrency, formatAdminDate, type AdminCustomerDetail } from "@/lib/admin";
 import { apiRequest } from "@/lib/api";
-import { resolveCustomerAdminMeta } from "@/lib/admin-workspace";
 import { formatOrderDate } from "@/lib/orders";
-import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
 export default function AdminCustomerDetailPage() {
   const params = useParams<{ id: string }>();
-  const { workspace, saveWorkspace } = useAdminWorkspace();
-  const { pushToast } = useToast();
   const [customer, setCustomer] = useState<AdminCustomerDetail | null>(null);
 
   useEffect(() => {
@@ -54,8 +49,6 @@ export default function AdminCustomerDetailPage() {
     );
   }
 
-  const customerMeta = resolveCustomerAdminMeta(workspace, customer);
-
   return (
     <AdminShell>
       <div className="space-y-6">
@@ -64,30 +57,9 @@ export default function AdminCustomerDetailPage() {
           title={customer.name}
           description="One profile for support, retention, and operational context across orders, addresses, preferences, and saved products."
           actions={
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  void saveWorkspace({
-                    customerMeta: {
-                      ...workspace.customerMeta,
-                      [customer.id]: {
-                        ...customerMeta,
-                        blocked: !customerMeta.blocked,
-                      },
-                    },
-                  }).then(() => {
-                    pushToast(customerMeta.blocked ? "Customer unblocked." : "Customer blocked.");
-                  });
-                }}
-                className="button-secondary rounded-full px-5 py-3 text-sm font-medium"
-              >
-                {customerMeta.blocked ? "Unblock customer" : "Block customer"}
-              </button>
-              <Link href="/admin/customers" className="button-secondary rounded-full px-5 py-3 text-sm font-medium">
-                Back to customers
-              </Link>
-            </>
+            <Link href="/admin/customers" className="button-secondary rounded-full px-5 py-3 text-sm font-medium">
+              Back to customers
+            </Link>
           }
         />
 
@@ -101,10 +73,7 @@ export default function AdminCustomerDetailPage() {
               <AdminKeyValue
                 label="Status"
                 value={
-                  <div className="flex flex-wrap gap-2">
-                    <AdminBadge tone={customerStatusTone(customer.status)}>{customer.status}</AdminBadge>
-                    {customerMeta.blocked ? <AdminBadge tone="warning">Blocked</AdminBadge> : null}
-                  </div>
+                  <AdminBadge tone={customerStatusTone(customer.status)}>{customer.status}</AdminBadge>
                 }
               />
               <AdminKeyValue label="Gender" value={customer.gender || "—"} />

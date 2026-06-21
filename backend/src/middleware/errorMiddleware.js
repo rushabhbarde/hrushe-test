@@ -31,8 +31,13 @@ const errorHandler = (error, req, res, next) => {
     console.error(normalizedError);
   }
 
+  const publicMessage =
+    statusCode >= 500 && process.env.NODE_ENV === "production"
+      ? "Internal server error"
+      : normalizedError.message || "Internal server error";
+
   res.status(statusCode).json({
-    message: normalizedError.message || "Internal server error",
+    message: publicMessage,
     status: normalizedError.status || "error",
   });
 };

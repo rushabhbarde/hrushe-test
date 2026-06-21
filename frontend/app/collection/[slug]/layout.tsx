@@ -15,11 +15,11 @@ export async function generateMetadata({
 
   return {
     title: title ? `${title} Collection` : "Collection",
-    description: `Explore the HRUSHE ${title || "streetwear"} collection: premium minimal pieces, quiet silhouettes, and everyday comfort.`,
+    description: `Explore the HRUSHE ${title || "clothing"} collection, including available fits, colours, and materials.`,
     alternates: { canonical },
     openGraph: {
       title: `${title || "Collection"} | HRUSHE`,
-      description: `Shop the HRUSHE ${title || "streetwear"} collection of premium minimal essentials.`,
+      description: `Shop the HRUSHE ${title || "clothing"} collection and review each product's fit and material details.`,
       url: canonical,
       type: "website",
     },

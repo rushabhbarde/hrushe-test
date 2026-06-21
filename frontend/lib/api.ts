@@ -33,6 +33,19 @@ function buildHeaders(init?: RequestInit) {
     }
   });
 
+  const method = String(init?.method || "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && typeof document !== "undefined") {
+    const csrfCookie = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("hrushe-csrf="));
+    const csrfToken = csrfCookie ? decodeURIComponent(csrfCookie.slice("hrushe-csrf=".length)) : "";
+
+    if (csrfToken && !headers.has("X-CSRF-Token")) {
+      headers.set("X-CSRF-Token", csrfToken);
+    }
+  }
+
   return headers;
 }
 

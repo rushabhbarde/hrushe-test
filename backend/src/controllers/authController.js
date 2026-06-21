@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
 const VerificationCode = require("../models/VerificationCode");
@@ -10,6 +11,12 @@ const { sendMsg91Otp } = require("../utils/sendMsg91Otp");
 const { sendEmail } = require("../utils/mailer");
 const { serializeUser } = require("../utils/serializeUser");
 const {
+  clearCsrfCookie,
+  ensureCsrfCookie,
+  setCsrfCookie,
+} = require("../middleware/csrfMiddleware");
+const { recordAuditLog } = require("../utils/auditLog");
+const {
   buildOtpEmail,
   buildPasswordChangedEmail,
   buildWelcomeEmail,
@@ -20,7 +27,7 @@ const PASSWORD_HASH_ROUNDS = 12;
 const OTP_REQUEST_COOLDOWN_MS = 60 * 1000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+const generateOtp = () => String(crypto.randomInt(100000, 1000000));
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 
@@ -76,14 +83,19 @@ const cookieOptions = {
   ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
 };
 
-const sendAuthResponse = (res, user, message, statusCode = 200) => {
-  const token = generateToken(user._id);
+const sendAuthResponse = (req, res, user, message, statusCode = 200, recordLogin = true) => {
+  const token = generateToken(user);
 
   res.cookie("token", token, cookieOptions);
+  setCsrfCookie(res);
+
+  if (recordLogin && user.role === "admin") {
+    req.user = user;
+    void recordAuditLog(req, "admin.login", { type: "user", id: user._id });
+  }
 
   return res.status(statusCode).json({
     message,
-    token,
     user: serializeUser(user),
   });
 };
@@ -105,6 +117,10 @@ const signup = asyncHandler(async (req, res) => {
 
   validateEmail(normalizedEmail);
   validateIndianPhone(normalizedPhone);
+
+  if (normalizedEmail !== req.user.email) {
+    throw new AppError("Email changes require verification. Contact support to update your email.", 400);
+  }
   validatePasswordStrength(password);
 
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -172,7 +188,7 @@ const signup = asyncHandler(async (req, res) => {
     logEmailFailure("Welcome", error);
   }
 
-  return sendAuthResponse(res, user, "User created successfully", 201);
+  return sendAuthResponse(req, res, user, "User created successfully", 201);
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -183,15 +199,13 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError("Email or phone and password are required", 400);
   }
 
-  const isAdminAlias = loginIdentifier.toLowerCase() === "admin" && env.ADMIN_EMAIL;
-  const resolvedIdentifier = isAdminAlias ? env.ADMIN_EMAIL : loginIdentifier;
-  const isEmailLogin = resolvedIdentifier.includes("@");
+  const isEmailLogin = loginIdentifier.includes("@");
   const user = await User.findOne(
     isEmailLogin
-      ? { email: resolvedIdentifier.toLowerCase() }
-      : { phone: resolvedIdentifier }
+      ? { email: loginIdentifier.toLowerCase() }
+      : { phone: normalizePhone(loginIdentifier) }
   );
-  if (!user) {
+  if (!user || user.role === "admin") {
     throw new AppError("Invalid credentials", 401);
   }
 
@@ -211,10 +225,32 @@ const login = asyncHandler(async (req, res) => {
   user.lastLoginAt = new Date();
   await user.save();
 
-  return sendAuthResponse(res, user, "Login successful");
+  return sendAuthResponse(req, res, user, "Login successful");
+});
+
+const adminLogin = asyncHandler(async (req, res) => {
+  const email = normalizeEmail(req.body.email || req.body.identifier);
+  const password = String(req.body.password || "");
+
+  if (!email || !password) {
+    throw new AppError("Admin email and password are required", 400);
+  }
+
+  validateEmail(email);
+  const user = await User.findOne({ email, role: "admin" });
+  const isMatch = user ? await bcrypt.compare(password, user.password) : false;
+
+  if (!user || !isMatch || user.isVerified === false) {
+    throw new AppError("Invalid admin credentials", 401);
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+  return sendAuthResponse(req, res, user, "Admin login successful");
 });
 
 const me = asyncHandler(async (req, res) => {
+  ensureCsrfCookie(req, res);
   return res.json({ user: serializeUser(req.user) });
 });
 
@@ -292,6 +328,7 @@ const changePassword = asyncHandler(async (req, res) => {
   }
 
   user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS);
+  user.tokenVersion = Number(user.tokenVersion || 0) + 1;
   await user.save();
 
   try {
@@ -318,11 +355,12 @@ const changePassword = asyncHandler(async (req, res) => {
     logEmailFailure("Password change", error);
   }
 
-  return res.json({ message: "Password changed successfully" });
+  return sendAuthResponse(req, res, user, "Password changed successfully", 200, false);
 });
 
 const logout = asyncHandler(async (req, res) => {
   res.clearCookie("token", cookieOptions);
+  clearCsrfCookie(res);
   return res.json({ message: "Logged out" });
 });
 
@@ -530,6 +568,7 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
   }
 
   user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS);
+  user.tokenVersion = Number(user.tokenVersion || 0) + 1;
   user.passwordResetOtp = "";
   user.passwordResetOtpExpiresAt = null;
   user.passwordResetOtpRequestedAt = null;
@@ -541,6 +580,7 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 module.exports = {
   signup,
   login,
+  adminLogin,
   me,
   updateMe,
   changePassword,

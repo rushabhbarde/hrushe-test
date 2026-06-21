@@ -5,12 +5,6 @@ const AppError = require("../utils/AppError");
 const { hasAdminPermission } = require("../config/adminRoles");
 
 const getTokenFromRequest = (req) => {
-  const authHeader = req.headers.authorization;
-
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.split(" ")[1];
-  }
-
   const cookieHeader = req.headers.cookie || "";
   const tokenCookie = cookieHeader
     .split(";")
@@ -36,6 +30,10 @@ const protect = async (req, res, next) => {
       return next(new AppError("User not found", 401));
     }
 
+    if (Number(decoded.tokenVersion || 0) !== Number(user.tokenVersion || 0)) {
+      return next(new AppError("Session expired. Please sign in again.", 401));
+    }
+
     if (user.role !== "admin" && user.isVerified === false) {
       return next(new AppError("Please verify your email before accessing your account", 403));
     }
@@ -58,7 +56,11 @@ const attachUserIfAuthenticated = async (req, res, next) => {
     const decoded = jwt.verify(token, env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select("-password");
 
-    if (user && (user.role === "admin" || user.isVerified !== false)) {
+    if (
+      user &&
+      Number(decoded.tokenVersion || 0) === Number(user.tokenVersion || 0) &&
+      (user.role === "admin" || user.isVerified !== false)
+    ) {
       req.user = user;
     }
   } catch {

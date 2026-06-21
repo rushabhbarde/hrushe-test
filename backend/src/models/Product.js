@@ -266,6 +266,25 @@ const productSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    fitNote: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    modelHeight: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    modelWornSize: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    returnEligible: {
+      type: Boolean,
+      default: false,
+    },
     sizeGuide: {
       type: [productSizeMeasurementSchema],
       default: [],
@@ -339,6 +358,14 @@ productSchema.pre("validate", function productPreValidate() {
       this.invalidate("variants", "Variant SKUs must be unique within a product");
     }
   }
+
+  if (this.compareAtPrice !== undefined && this.compareAtPrice !== null && this.compareAtPrice <= this.price) {
+    this.compareAtPrice = undefined;
+  }
 });
+
+productSchema.index({ status: 1, createdAt: -1 });
+productSchema.index({ category: 1, status: 1, createdAt: -1 });
+productSchema.index({ featured: 1, status: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Product", productSchema);

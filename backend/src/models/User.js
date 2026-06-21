@@ -187,6 +187,11 @@ const userSchema = new mongoose.Schema(
       ],
       default: "",
     },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     passwordResetOtp: {
       type: String,
       default: "",

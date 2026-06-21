@@ -30,7 +30,7 @@ services:
       - key: ADMIN_ROLE
         value: super-admin
       - key: COOKIE_SAME_SITE
-        value: none
+        value: lax
       - key: COOKIE_SECURE
         value: "true"
       - key: COOKIE_DOMAIN
@@ -43,6 +43,20 @@ services:
         value: INR
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_ENDPOINT
+        sync: false
+      - key: ENABLE_COD
+        value: "false"
       - key: OTP_DEV_MODE
         value: "false"
       - key: MAIL_FROM

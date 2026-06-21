@@ -8,8 +8,6 @@ import {
   AdminPageHeader,
   AdminPanel,
   AdminSubhead,
-  AdminSwitch,
-  AdminTextArea,
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
 import { type WebsiteSettings } from "@/lib/admin-workspace";
@@ -22,9 +20,13 @@ export default function AdminSettingsPage() {
   const activeDraft = draft || workspace.websiteSettings;
 
   async function saveSettings() {
-    await saveWorkspace({ websiteSettings: activeDraft });
-    setDraft(null);
-    pushToast("Website settings saved.");
+    try {
+      await saveWorkspace({ websiteSettings: activeDraft });
+      setDraft(null);
+      pushToast("Website settings saved.");
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not save website settings.", "error");
+    }
   }
 
   return (
@@ -32,8 +34,8 @@ export default function AdminSettingsPage() {
       <div className="space-y-6">
         <AdminPageHeader
           eyebrow="Website settings"
-          title="Manage brand identity, SEO, analytics, and storefront safeguards."
-          description="Update the public-facing brand layer and operational website integrations from one responsive settings surface."
+          title="Manage public contact and support details."
+          description="These values publish to the storefront footer and customer support links. Deployment secrets remain outside the dashboard."
         />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
@@ -42,12 +44,6 @@ export default function AdminSettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <AdminField label="Brand name">
                 <AdminFilterInput value={activeDraft.brandName} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), brandName: event.target.value }))} />
-              </AdminField>
-              <AdminField label="Logo URL">
-                <AdminFilterInput value={activeDraft.logoUrl} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), logoUrl: event.target.value }))} />
-              </AdminField>
-              <AdminField label="Favicon URL">
-                <AdminFilterInput value={activeDraft.faviconUrl} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), faviconUrl: event.target.value }))} />
               </AdminField>
               <AdminField label="Contact email">
                 <AdminFilterInput value={activeDraft.contactEmail} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), contactEmail: event.target.value }))} />
@@ -74,26 +70,8 @@ export default function AdminSettingsPage() {
           </AdminPanel>
 
           <AdminPanel>
-            <AdminSubhead title="SEO and integrations" />
+            <AdminSubhead title="Publish" description="Changes appear in the storefront footer after cache revalidation." />
             <div className="grid gap-4">
-              <AdminField label="SEO title">
-                <AdminFilterInput value={activeDraft.seoTitle} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), seoTitle: event.target.value }))} />
-              </AdminField>
-              <AdminField label="SEO description">
-                <AdminTextArea value={activeDraft.seoDescription} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), seoDescription: event.target.value }))} />
-              </AdminField>
-              <AdminField label="Google Analytics ID">
-                <AdminFilterInput value={activeDraft.analyticsId} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), analyticsId: event.target.value }))} />
-              </AdminField>
-              <AdminField label="Meta Pixel ID">
-                <AdminFilterInput value={activeDraft.metaPixelId} onChange={(event) => setDraft((current) => ({ ...(current || activeDraft), metaPixelId: event.target.value }))} />
-              </AdminField>
-              <AdminSwitch
-                checked={activeDraft.maintenanceMode}
-                onChange={(checked) => setDraft((current) => ({ ...(current || activeDraft), maintenanceMode: checked }))}
-                label="Maintenance mode"
-                description="Hide the storefront behind maintenance messaging while the admin remains accessible."
-              />
               <button type="button" onClick={() => void saveSettings()} className="button-primary px-5 py-3 text-sm font-medium">
                 Save settings
               </button>

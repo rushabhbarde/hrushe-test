@@ -7,10 +7,14 @@ import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 export function SizeGuideTable({ rows }: { rows?: ProductSizeMeasurement[] }) {
   const resolvedRows = resolveProductSizeGuide(rows);
 
+  if (resolvedRows.length === 0) {
+    return null;
+  }
+
   return (
     <div className="overflow-x-auto border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.58)]">
       <table className="w-full min-w-[520px] border-collapse text-left text-sm">
-        <caption className="sr-only">Oversized t-shirt size guide in inches</caption>
+        <caption className="sr-only">Garment size guide in inches</caption>
         <thead>
           <tr className="border-b border-[rgba(17,17,17,0.08)] text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">
             <th className="px-4 py-3 font-medium">Size</th>

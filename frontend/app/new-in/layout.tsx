@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "New In | Latest Premium Streetwear",
+  title: "New In | HRUSHE",
   description:
-    "Shop the latest HRUSHE drop: quiet premium streetwear essentials, oversized fits, and refined basics for everyday wear.",
+    "Shop the latest HRUSHE everyday uniforms, available fits, colours, and materials.",
   alternates: {
     canonical: "https://hrushe.in/new-in",
   },
   openGraph: {
     title: "New In | HRUSHE",
     description:
-      "Fresh HRUSHE essentials and oversized silhouettes from the latest premium streetwear edit.",
+      "Explore the latest HRUSHE everyday uniforms and available silhouettes.",
     url: "https://hrushe.in/new-in",
     type: "website",
   },

@@ -47,13 +47,6 @@ function buildTimeline(order: OrderRecord, meta: OrderAdminMeta) {
       detail: `${item.detail} · ${new Date(item.timestamp).toLocaleString("en-IN")}`,
     }));
 
-  if (meta.refundState !== "none") {
-    updates.unshift({
-      label: "Refund state",
-      detail: meta.refundState === "processed" ? "Refund completed" : "Refund requested",
-    });
-  }
-
   return [...defaultTimeline, ...updates];
 }
 
@@ -67,7 +60,6 @@ export default function AdminOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [refundOpen, setRefundOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -162,7 +154,7 @@ export default function AdminOrderDetailPage() {
         <AdminPageHeader
           eyebrow="Order detail"
           title={`Order #${order.orderNumber || order.id.slice(-6)}`}
-          description="Manage fulfillment, track shipping, coordinate customer support, and issue refunds without leaving the order workspace."
+          description="Manage fulfillment, track shipping, and coordinate customer support from the live order record."
           actions={
             <>
               <button
@@ -386,13 +378,10 @@ export default function AdminOrderDetailPage() {
             </AdminPanel>
 
             <AdminPanel>
-              <AdminSubhead title="Cancellations and refunds" description="Use confirmations before destructive changes." />
+              <AdminSubhead title="Cancellation" description="Cancellation updates the live order status. Payment refunds must be completed in Razorpay." />
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setCancelOpen(true)} className="button-secondary px-5 py-3 text-sm font-medium">
                   Cancel order
-                </button>
-                <button type="button" onClick={() => setRefundOpen(true)} className="px-5 py-3 text-sm font-medium text-[var(--danger)]">
-                  Refund order
                 </button>
               </div>
             </AdminPanel>
@@ -412,25 +401,6 @@ export default function AdminOrderDetailPage() {
           onCancel={() => setCancelOpen(false)}
         />
 
-        <AdminConfirmDialog
-          open={refundOpen}
-          title="Mark this order as refunded?"
-          description="This records the refund in admin workspace notes so the team can track financial resolution separately from delivery status."
-          confirmLabel="Record refund"
-          destructive
-          onConfirm={() => {
-            setRefundOpen(false);
-            const nextMeta = { ...orderMeta, refundState: "processed" as const };
-            setOrderMeta(nextMeta);
-            void saveWorkspace({
-              orderMeta: {
-                ...workspace.orderMeta,
-                [order.id]: nextMeta,
-              },
-            }).then(() => pushToast("Refund marked as processed."));
-          }}
-          onCancel={() => setRefundOpen(false)}
-        />
       </div>
     </AdminShell>
   );

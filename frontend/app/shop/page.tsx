@@ -12,8 +12,6 @@ import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 type AvailabilityFilter = "all" | "available" | "new";
 type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
-const sizeOrder = ["XS", "S", "M", "L", "XL", "2X", "3X"];
-
 const swatchColors: Record<string, string> = {
   black: "#11110f",
   white: "#f8f7f2",
@@ -29,13 +27,16 @@ const swatchColors: Record<string, string> = {
 };
 
 function productIsAvailable(product: ReturnType<typeof useStorefrontData>["products"][number]) {
+  if (product.availability) {
+    return product.availability === "available";
+  }
+
   return !product.trackInventory || product.variants?.some((variant) => variant.active && variant.stock > 0);
 }
 
 export default function ShopPage() {
   const { products, loading } = useStorefrontData();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedSize, setSelectedSize] = useState("all");
   const [selectedColour, setSelectedColour] = useState("all");
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
   const [sort, setSort] = useState<SortOption>("edit");
@@ -43,27 +44,15 @@ export default function ShopPage() {
   const { dialogRef, initialFocusRef } = useDialogAccessibility(filtersOpen, closeFilters);
 
   const visibleProducts = useMemo(() => products.filter(isVisibleStorefrontProduct), [products]);
-  const sizes = useMemo(
-    () =>
-      Array.from(new Set(visibleProducts.flatMap((product) => product.sizes)))
-        .filter(Boolean)
-        .sort((left, right) => {
-          const leftIndex = sizeOrder.indexOf(left.toUpperCase());
-          const rightIndex = sizeOrder.indexOf(right.toUpperCase());
-          return (leftIndex < 0 ? 99 : leftIndex) - (rightIndex < 0 ? 99 : rightIndex);
-        }),
-    [visibleProducts]
-  );
   const colours = useMemo(
     () => Array.from(new Set(visibleProducts.flatMap((product) => product.colors))).filter(Boolean),
     [visibleProducts]
   );
   const activeFilterCount =
-    Number(selectedSize !== "all") + Number(selectedColour !== "all") + Number(availability !== "all");
+    Number(selectedColour !== "all") + Number(availability !== "all");
 
   const filteredProducts = useMemo(() => {
     const filtered = visibleProducts.filter((product) => {
-      const matchesSize = selectedSize === "all" || product.sizes.includes(selectedSize);
       const matchesColour =
         selectedColour === "all" ||
         product.colors.some((colour) => colour.toLowerCase() === selectedColour.toLowerCase());
@@ -71,7 +60,7 @@ export default function ShopPage() {
         availability === "all" ||
         (availability === "available" && productIsAvailable(product)) ||
         (availability === "new" && Boolean(product.newArrival || product.newIn));
-      return matchesSize && matchesColour && matchesAvailability;
+      return matchesColour && matchesAvailability;
     });
 
     if (sort === "price-low") return [...filtered].sort((a, b) => a.price - b.price);
@@ -82,10 +71,9 @@ export default function ShopPage() {
       );
     }
     return sortProductsByStorefrontPriority(filtered);
-  }, [availability, selectedColour, selectedSize, sort, visibleProducts]);
+  }, [availability, selectedColour, sort, visibleProducts]);
 
   const clearFilters = () => {
-    setSelectedSize("all");
     setSelectedColour("all");
     setAvailability("all");
   };
@@ -96,13 +84,13 @@ export default function ShopPage() {
       <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pb-32 lg:pt-24">
         <header className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-14">
           <div>
-            <p className="eyebrow text-[var(--muted)]">Summer 2026</p>
+            <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
             <h1 className="mt-5 text-[2.75rem] font-medium uppercase leading-[0.92] tracking-[-0.045em] sm:text-[4rem] lg:text-[5.5rem]">
               The collection.
             </h1>
           </div>
           <p className="max-w-xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
-            One relaxed silhouette in a considered palette. Cotton essentials made to move easily through everyday wear.
+            A quiet collection of essentials, built with intention and designed to be worn your way.
           </p>
         </header>
 
@@ -172,17 +160,6 @@ export default function ShopPage() {
             </div>
 
             <div className="flex-1 space-y-10 overflow-y-auto py-8">
-              <fieldset>
-                <legend className="eyebrow text-[var(--muted)]">Size</legend>
-                <div className="mt-4 grid grid-cols-5 gap-2">
-                  {sizes.map((size) => (
-                    <button key={size} type="button" onClick={() => setSelectedSize((current) => current === size ? "all" : size)} className={`min-h-12 border text-xs font-semibold uppercase ${selectedSize === size ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)]"}`}>
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
               <fieldset>
                 <legend className="eyebrow text-[var(--muted)]">Colour</legend>
                 <div className="mt-4 grid grid-cols-2 gap-2">

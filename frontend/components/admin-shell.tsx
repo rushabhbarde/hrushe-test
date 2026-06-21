@@ -148,7 +148,7 @@ export function AdminShell({
                 <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--muted)]">
                   HRUSHE Admin
                 </p>
-                <p className="mt-1 text-lg font-semibold tracking-[-0.03em]">Luxury commerce control</p>
+                <p className="mt-1 text-lg font-semibold tracking-[-0.03em]">Commerce operations</p>
               </div>
             </Link>
 

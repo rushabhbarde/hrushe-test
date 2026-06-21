@@ -16,6 +16,7 @@ const {
   requireAdminPermission,
 } = require("../middleware/authMiddleware");
 const { createRateLimiter } = require("../middleware/rateLimitMiddleware");
+const { requireCsrf } = require("../middleware/csrfMiddleware");
 
 const router = express.Router();
 
@@ -37,11 +38,12 @@ router.get("/:id", attachUserIfAuthenticated, getProductById);
 router.post(
   "/:id/reviews",
   createRateLimiter({ name: "product-reviews", max: 8, windowMs: 60 * 60 * 1000 }),
-  attachUserIfAuthenticated,
+  protect,
+  requireCsrf,
   addProductReview
 );
-router.post("/", protect, requireAdminPermission("products.edit"), createProduct);
-router.put("/:id", protect, requireAdminPermission("products.edit"), updateProduct);
-router.delete("/:id", protect, requireAdminPermission("products.edit"), deleteProduct);
+router.post("/", protect, requireCsrf, requireAdminPermission("products.edit"), createProduct);
+router.put("/:id", protect, requireCsrf, requireAdminPermission("products.edit"), updateProduct);
+router.delete("/:id", protect, requireCsrf, requireAdminPermission("products.edit"), deleteProduct);
 
 module.exports = router;

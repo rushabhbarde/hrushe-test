@@ -44,7 +44,6 @@ type AdminSessionUser = {
 };
 
 type AuthResponse = {
-  token?: string;
   user: AdminSessionUser;
 };
 
@@ -64,7 +63,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           const isAdmin = response.user.role === "admin";
           if (isAdmin) {
-            setAdminToken(response.token);
+            setAdminToken();
           }
           setUser(isAdmin ? response.user : null);
           setIsAuthenticated(isAdmin);
@@ -121,10 +120,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           !permission || permissions.includes(permission),
         login: async (username: string, password: string) => {
           try {
-            const response = await apiRequest<AuthResponse>("/auth/login", {
+            const response = await apiRequest<AuthResponse>("/auth/admin-login", {
               method: "POST",
               body: JSON.stringify({
-                username,
                 identifier: username,
                 email: username,
                 password,
@@ -139,7 +137,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             }
 
             clearCustomerToken();
-            setAdminToken(response.token);
+            setAdminToken();
             setUser(response.user);
             setIsAuthenticated(true);
             return { ok: true };

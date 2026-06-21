@@ -198,6 +198,7 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+      index: true,
     },
     checkoutUrl: {
       type: String,
@@ -281,5 +282,12 @@ orderSchema.pre("save", async function assignOrderNumber() {
 
   this.orderNumber = counter.value;
 });
+
+orderSchema.index({ userId: 1, createdAt: -1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ orderStatus: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ customerEmail: 1, createdAt: -1 });
+orderSchema.index({ inventoryReservationStatus: 1, inventoryReservationExpiresAt: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

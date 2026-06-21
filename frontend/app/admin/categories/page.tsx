@@ -19,7 +19,7 @@ import { useStorefrontData } from "@/lib/use-storefront";
 
 export default function AdminCategoriesPage() {
   const { workspace, saveWorkspace } = useAdminWorkspace();
-  const { products } = useStorefrontData();
+  const { products } = useStorefrontData({ admin: true });
   const { pushToast } = useToast();
   const [newCategory, setNewCategory] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);

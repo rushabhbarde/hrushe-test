@@ -1,32 +1,16 @@
 import type { Metadata } from "next";
-import { AdminAuthProvider } from "@/components/admin-auth-provider";
-import { AdminAuthModalProvider } from "@/components/admin-auth-modal-provider";
-import { AuthModalProvider } from "@/components/auth-modal-provider";
-import { CartDrawer } from "@/components/cart-drawer";
-import { CustomerAuthProvider } from "@/components/customer-auth-provider";
-import { ToastProvider } from "@/components/toast-provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { WishlistDrawer } from "@/components/wishlist-drawer";
-import { WishlistProvider } from "@/components/wishlist-provider";
-import { SupportChatbot } from "@/components/support-chatbot";
-import { Manrope } from "next/font/google";
-import { CartProvider } from "@/components/cart-provider";
+import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
-
-const bodyFont = Manrope({
-  variable: "--font-body",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://hrushe.in"),
   applicationName: "HRUSHE",
   title: {
-    default: "HRUSHE | Premium Minimal Streetwear Essentials",
+    default: "HRUSHE | Defined Quietly",
     template: "%s | HRUSHE",
   },
   description:
-    "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
+    "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
   alternates: {
     canonical: "https://hrushe.in",
   },
@@ -40,9 +24,9 @@ export const metadata: Metadata = {
     apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
   },
   openGraph: {
-    title: "HRUSHE | Premium Minimal Streetwear Essentials",
+    title: "HRUSHE | Defined Quietly",
     description:
-      "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
+      "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     url: "https://hrushe.in",
     siteName: "HRUSHE",
     type: "website",
@@ -57,9 +41,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "HRUSHE | Premium Minimal Streetwear Essentials",
+    title: "HRUSHE | Defined Quietly",
     description:
-      "Premium minimal streetwear by HRUSHE. Shop quiet everyday essentials, oversized silhouettes, and refined basics built for repeat wear.",
+      "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     images: ["/opengraph-image"],
   },
 };
@@ -100,7 +84,7 @@ export default function RootLayout({
   ]);
 
   return (
-    <html lang="en" className={bodyFont.variable} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script
@@ -109,26 +93,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ThemeProvider>
-          <CustomerAuthProvider>
-            <AdminAuthProvider>
-              <ToastProvider>
-                <AdminAuthModalProvider>
-                  <AuthModalProvider>
-                    <WishlistProvider>
-                      <CartProvider>
-                        {children}
-                        <CartDrawer />
-                        <WishlistDrawer />
-                        <SupportChatbot />
-                      </CartProvider>
-                    </WishlistProvider>
-                  </AuthModalProvider>
-                </AdminAuthModalProvider>
-              </ToastProvider>
-            </AdminAuthProvider>
-          </CustomerAuthProvider>
-        </ThemeProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

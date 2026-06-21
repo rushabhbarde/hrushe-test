@@ -54,7 +54,7 @@ type BulkUploadPayload = Array<{
 }>;
 
 export default function AdminProductsPage() {
-  const { products, addProduct, deleteProduct } = useStorefrontData();
+  const { products, addProduct, updateProduct, deleteProduct } = useStorefrontData({ admin: true });
   const { workspace, saveWorkspace } = useAdminWorkspace();
   const { pushToast } = useToast();
   const [query, setQuery] = useState("");
@@ -116,6 +116,7 @@ export default function AdminProductsPage() {
       id: "",
       slug: product.slug ? `${product.slug}-copy-${Date.now().toString(36)}` : undefined,
       name: `${product.name} Copy`,
+      status: "Draft",
     });
 
     await saveWorkspace({
@@ -136,22 +137,25 @@ export default function AdminProductsPage() {
       return;
     }
 
-    const nextMeta = { ...workspace.productMeta };
-    selectedIds.forEach((productId) => {
-      const product = products.find((item) => item.id === productId);
-      if (!product) {
-        return;
+    try {
+      const nextMeta = { ...workspace.productMeta };
+      for (const productId of selectedIds) {
+        const product = products.find((item) => item.id === productId);
+        if (!product) continue;
+        await updateProduct(productId, { ...product, status: bulkStatus });
+        nextMeta[productId] = {
+          ...resolveProductAdminMeta(workspace, product),
+          productId,
+          status: bulkStatus,
+        };
       }
-      nextMeta[productId] = {
-        ...resolveProductAdminMeta(workspace, product),
-        productId,
-        status: bulkStatus,
-      };
-    });
 
-    await saveWorkspace({ productMeta: nextMeta });
-    pushToast(`Updated ${selectedIds.length} product${selectedIds.length > 1 ? "s" : ""}.`);
-    setSelectedIds([]);
+      await saveWorkspace({ productMeta: nextMeta });
+      pushToast(`Updated ${selectedIds.length} product${selectedIds.length > 1 ? "s" : ""}.`);
+      setSelectedIds([]);
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not update product status.", "error");
+    }
   }
 
   async function handleBulkUpload() {
@@ -301,7 +305,7 @@ export default function AdminProductsPage() {
                 className="mt-4"
                 value={bulkUploadText}
                 onChange={(event) => setBulkUploadText(event.target.value)}
-                placeholder='[{"name":"Studio Tee","description":"Premium cotton tee","price":1499,"status":"Active"}]'
+                placeholder='[{"name":"Product name","description":"Factual product description","price":1499,"status":"Draft"}]'
               />
               <div className="mt-4 flex flex-wrap gap-3">
                 <button type="button" onClick={() => void handleBulkUpload()} className="button-primary px-4 py-2.5 text-sm font-medium">

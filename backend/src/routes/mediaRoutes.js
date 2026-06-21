@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const { protect, requireAdminPermission } = require("../middleware/authMiddleware");
+const { requireCsrf } = require("../middleware/csrfMiddleware");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { uploadR2Object } = require("../utils/r2Storage");
@@ -43,6 +44,28 @@ function getMediaFilesCollection() {
 
 function normalizeContentType(contentType = "") {
   return String(contentType).split(";")[0].trim().toLowerCase();
+}
+
+function hasExpectedFileSignature(buffer, contentType) {
+  const hex = buffer.subarray(0, 16).toString("hex");
+  const ascii = buffer.subarray(0, 16).toString("ascii");
+
+  switch (contentType) {
+    case "image/jpeg":
+      return hex.startsWith("ffd8ff");
+    case "image/png":
+      return hex.startsWith("89504e470d0a1a0a");
+    case "image/webp":
+      return ascii.startsWith("RIFF") && ascii.slice(8, 12) === "WEBP";
+    case "video/mp4":
+      return ascii.slice(4, 8) === "ftyp";
+    case "video/webm":
+      return hex.startsWith("1a45dfa3");
+    case "video/ogg":
+      return ascii.startsWith("OggS");
+    default:
+      return false;
+  }
 }
 
 function sanitizeFilename(value = "media") {
@@ -124,6 +147,7 @@ function streamFile(bucket, id, range, file, res, next) {
 router.post(
   "/uploads",
   protect,
+  requireCsrf,
   requireAdminPermission("media.manage"),
   rawMediaBody,
   asyncHandler(async (req, res) => {
@@ -141,6 +165,10 @@ router.post(
       throw new AppError("Media file must be under 25 MB.", 413);
     }
 
+    if (!hasExpectedFileSignature(req.body, contentType)) {
+      throw new AppError("File contents do not match the selected media type.", 415);
+    }
+
     const fileId = new mongoose.Types.ObjectId();
     const extension = SUPPORTED_MEDIA_TYPES.get(contentType);
     const originalName = String(req.headers["x-file-name"] || "media");
@@ -152,7 +180,7 @@ router.post(
       body: req.body,
       contentType,
       metadata: {
-        originalName,
+        originalName: displayName,
         size: req.body.length,
         uploadedBy: req.user?._id,
       },
@@ -176,7 +204,7 @@ router.post(
       contentType,
       metadata: {
         contentType,
-        originalName,
+        originalName: displayName,
         size: req.body.length,
         uploadedBy: req.user?._id,
       },

@@ -39,7 +39,7 @@ const env = {
   ADMIN_ROLE: process.env.ADMIN_ROLE || "super-admin",
   COOKIE_SAME_SITE:
     process.env.COOKIE_SAME_SITE ||
-    (process.env.NODE_ENV === "production" ? "none" : "lax"),
+    "lax",
   COOKIE_SECURE:
     process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "",
@@ -57,6 +57,7 @@ const env = {
     (process.env.R2_ACCOUNT_ID
       ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
       : ""),
+  ENABLE_COD: process.env.ENABLE_COD === "true",
   OTP_DEV_MODE:
     process.env.OTP_DEV_MODE === undefined
       ? process.env.NODE_ENV !== "production"
@@ -112,5 +113,93 @@ const env = {
     process.env.GMAIL_PASS ||
     "",
 };
+
+function assertProductionEnv() {
+  if (env.NODE_ENV !== "production") {
+    return;
+  }
+
+  const required = {
+    CLIENT_URL: process.env.CLIENT_URL,
+    MONGODB_URI: process.env.MONGODB_URI,
+    JWT_SECRET: process.env.JWT_SECRET,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+    RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
+  };
+  const missing = Object.entries(required)
+    .filter(([, value]) => !String(value || "").trim())
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required production configuration: ${missing.join(", ")}`);
+  }
+
+  if (env.JWT_SECRET === "development-secret" || env.JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must be a unique production secret of at least 32 characters.");
+  }
+
+  if (!env.COOKIE_SECURE || !["lax", "strict"].includes(String(env.COOKIE_SAME_SITE).toLowerCase())) {
+    throw new Error("Production cookies must be Secure with SameSite=Lax or SameSite=Strict.");
+  }
+
+  if (env.ADMIN_PASSWORD === "admin" || env.ADMIN_PASSWORD.length < 12) {
+    throw new Error("ADMIN_PASSWORD must be at least 12 characters and must not use the default.");
+  }
+
+  if (
+    !/[a-z]/.test(env.ADMIN_PASSWORD) ||
+    !/[A-Z]/.test(env.ADMIN_PASSWORD) ||
+    !/\d/.test(env.ADMIN_PASSWORD) ||
+    !/[^A-Za-z0-9]/.test(env.ADMIN_PASSWORD)
+  ) {
+    throw new Error("ADMIN_PASSWORD must include upper and lowercase letters, a number, and a symbol.");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(env.ADMIN_EMAIL)) {
+    throw new Error("ADMIN_EMAIL must be a valid email address.");
+  }
+
+  const validAdminRoles = [
+    "super-admin",
+    "brand-growth-manager",
+    "operations-manager",
+    "catalog-manager",
+  ];
+  if (!validAdminRoles.includes(env.ADMIN_ROLE)) {
+    throw new Error(`ADMIN_ROLE must be one of: ${validAdminRoles.join(", ")}.`);
+  }
+
+  const hasEmailProvider = Boolean(
+    env.ZEPTOMAIL_API_KEY || (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS)
+  );
+  if (!hasEmailProvider) {
+    throw new Error("A ZeptoMail API key or complete SMTP configuration is required for production OTP email.");
+  }
+
+  if (env.OTP_DEV_MODE) {
+    throw new Error("OTP_DEV_MODE must be disabled in production.");
+  }
+
+  let clientUrl;
+  try {
+    clientUrl = new URL(env.CLIENT_URL);
+  } catch {
+    throw new Error("CLIENT_URL must be a valid HTTPS URL in production.");
+  }
+
+  if (clientUrl.protocol !== "https:") {
+    throw new Error("CLIENT_URL must use HTTPS in production.");
+  }
+}
+
+env.assertProductionEnv = assertProductionEnv;
 
 module.exports = env;
