@@ -3,7 +3,7 @@ services:
     name: hrushetest-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm ci --omit=dev
     startCommand: npm start
     healthCheckPath: /
     envVars:

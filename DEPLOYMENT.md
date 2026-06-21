@@ -23,7 +23,7 @@ ADMIN_EMAIL=team@hrushe.in
 ADMIN_PASSWORD=<strong-admin-password-at-least-12-characters>
 ADMIN_NAME=Admin
 ADMIN_ROLE=super-admin
-COOKIE_SAME_SITE=none
+COOKIE_SAME_SITE=lax
 COOKIE_SECURE=true
 COOKIE_DOMAIN=
 RAZORPAY_KEY_ID=<your-razorpay-key-id>
@@ -42,7 +42,8 @@ Notes:
 
 - `ALLOWED_ORIGINS` accepts a comma-separated list.
 - Include both `https://www.hrushe.in` and `https://hrushe.in`, plus any Vercel preview or fallback domain that should be able to call the API.
-- `COOKIE_SAME_SITE=none` and `COOKIE_SECURE=true` are required for cross-site auth cookies between Vercel and Render.
+- Keep `COOKIE_SAME_SITE=lax`, `COOKIE_SECURE=true`, and `COOKIE_DOMAIN` empty. Browser API calls use the frontend's same-origin `/api/backend` proxy, which forwards the secure cookies to Render without requiring `SameSite=None`.
+- If this service existed before the same-origin proxy, replace the legacy Render Dashboard value `COOKIE_SAME_SITE=none` with `lax`; Blueprint updates do not necessarily overwrite an existing service's Dashboard value.
 - `ADMIN_PASSWORD` is required in production and must not be the default local password.
 - `ADMIN_ROLE=super-admin` keeps the bootstrap admin able to manage staff and role assignments.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
@@ -69,9 +70,9 @@ NEXT_PUBLIC_API_URL=https://your-backend-domain.onrender.com
 1. Create a new Web Service from this repository.
 2. Set `Root Directory` to `backend`.
 3. Use:
-   - Build Command: `npm install`
+   - Build Command: `npm ci --omit=dev`
    - Start Command: `npm start`
-4. Add all backend environment variables listed above.
+4. Add all backend environment variables listed above. For an existing service, verify the values in Render's **Environment** tab; `sync: false` Blueprint entries are only prompted during initial creation.
 5. Deploy and confirm `GET /` returns:
 
 ```json

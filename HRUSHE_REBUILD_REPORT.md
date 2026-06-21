@@ -54,7 +54,7 @@ This codebase is ready for controlled staging. It is not ready for paid public t
 - Rebuilt homepage response against the current live API: about 51 KB and contains zero embedded data images; the previous multi-megabyte response was caught during browser QA and fixed.
 - Local final build homepage: 200 response, about 30 KB with the exact approved hero copy and no embedded data media.
 
-Dependency vulnerability scanning could not be completed because the npm registry was unavailable from the audit environment. Run `npm audit` in CI or a network-enabled release environment before launch.
+Dependency vulnerability scanning was completed after the deployment log exposed six advisories. Axios and its transitive packages, Express router dependencies, `qs`, and Nodemailer were upgraded; both the full audit and `npm audit --omit=dev` now report zero vulnerabilities.
 
 ## Launch gates — required
 

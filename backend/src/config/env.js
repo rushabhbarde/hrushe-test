@@ -11,6 +11,22 @@ const PRODUCTION_SITE_ORIGINS = [
 
 const uniqueOrigins = (origins) => Array.from(new Set(origins));
 
+const normalizeCookieSameSite = (value) => {
+  const normalized = String(value || "lax").trim().toLowerCase();
+
+  // Older deployments used cross-site browser calls and were configured with
+  // SameSite=None. The storefront now proxies API requests through its own
+  // origin, so migrate that known legacy value to the safer Lax policy.
+  if (process.env.NODE_ENV === "production" && normalized === "none") {
+    console.warn(
+      "[config] COOKIE_SAME_SITE=none is legacy configuration; using lax for same-origin API proxy cookies. Update the Render environment value to lax."
+    );
+    return "lax";
+  }
+
+  return normalized;
+};
+
 const buildAllowedOrigins = () =>
   uniqueOrigins([
     ...parseOrigins(process.env.ALLOWED_ORIGINS),
@@ -37,9 +53,7 @@ const env = {
     (process.env.NODE_ENV === "production" ? "" : "admin"),
   ADMIN_NAME: process.env.ADMIN_NAME || "Admin",
   ADMIN_ROLE: process.env.ADMIN_ROLE || "super-admin",
-  COOKIE_SAME_SITE:
-    process.env.COOKIE_SAME_SITE ||
-    "lax",
+  COOKIE_SAME_SITE: normalizeCookieSameSite(process.env.COOKIE_SAME_SITE),
   COOKIE_SECURE:
     process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "",
@@ -146,8 +160,12 @@ function assertProductionEnv() {
     throw new Error("JWT_SECRET must be a unique production secret of at least 32 characters.");
   }
 
-  if (!env.COOKIE_SECURE || !["lax", "strict"].includes(String(env.COOKIE_SAME_SITE).toLowerCase())) {
-    throw new Error("Production cookies must be Secure with SameSite=Lax or SameSite=Strict.");
+  if (!env.COOKIE_SECURE || !["lax", "strict"].includes(env.COOKIE_SAME_SITE)) {
+    throw new Error(
+      `Production cookies must be Secure with COOKIE_SAME_SITE=lax or strict (received ${JSON.stringify(
+        process.env.COOKIE_SAME_SITE || ""
+      )}).`
+    );
   }
 
   if (env.ADMIN_PASSWORD === "admin" || env.ADMIN_PASSWORD.length < 12) {
