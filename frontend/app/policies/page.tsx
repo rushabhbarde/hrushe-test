@@ -80,7 +80,7 @@ const policyTabs = [
       {
         title: "4. Cookies",
         body:
-          "Cookies help us improve user experience. You can disable cookies through your browser settings.",
+          "HRUSHE uses essential cookies and similar local-storage technologies for secure login, fraud prevention, cart, checkout, theme, and privacy preferences. These are required for the website to function. Optional analytics and marketing technologies are disabled unless you choose to enable them through the cookie banner. You can review or change that choice at any time using Cookie preferences in the footer.",
       },
       {
         title: "5. Data Security",

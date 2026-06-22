@@ -44,11 +44,37 @@ function forwardRequestHeaders(request: NextRequest) {
 }
 
 function forwardResponseHeaders(response: Response) {
-  const headers = new Headers(response.headers);
+  const headers = new Headers();
 
-  RESPONSE_HEADERS_TO_STRIP.forEach((header) => {
-    headers.delete(header);
+  response.headers.forEach((value, key) => {
+    const normalizedKey = key.toLowerCase();
+
+    if (
+      normalizedKey === "set-cookie" ||
+      RESPONSE_HEADERS_TO_STRIP.has(normalizedKey)
+    ) {
+      return;
+    }
+
+    headers.append(key, value);
   });
+
+  // Set-Cookie cannot be comma-joined. Safari is stricter than Chromium when
+  // multiple auth cookies are collapsed by a generic Headers clone, so retain
+  // the token and CSRF cookies as separate upstream header values.
+  const upstreamHeaders = response.headers as Headers & {
+    getSetCookie?: () => string[];
+  };
+  const setCookies = upstreamHeaders.getSetCookie?.() || [];
+
+  if (setCookies.length > 0) {
+    setCookies.forEach((cookie) => headers.append("set-cookie", cookie));
+  } else {
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) {
+      headers.append("set-cookie", setCookie);
+    }
+  }
 
   return headers;
 }

@@ -162,6 +162,7 @@ export function AdminProductForm({
   );
   const [slugEdited, setSlugEdited] = useState(Boolean(initialProduct?.slug));
   const [submitting, setSubmitting] = useState(false);
+  const [mediaUploadsInFlight, setMediaUploadsInFlight] = useState(0);
 
   useEffect(() => {
     setForm(buildInitialState(categoryOptions, initialProduct, initialMeta));
@@ -275,6 +276,8 @@ export function AdminProductForm({
       return;
     }
 
+    setMediaUploadsInFlight((current) => current + 1);
+
     try {
       const uploaded = await Promise.all(
         Array.from(files).map(async (file) => {
@@ -290,6 +293,8 @@ export function AdminProductForm({
         error instanceof Error ? error.message : "Could not process those images.",
         "error"
       );
+    } finally {
+      setMediaUploadsInFlight((current) => Math.max(0, current - 1));
     }
   }
 
@@ -297,6 +302,8 @@ export function AdminProductForm({
     if (!files?.length) {
       return;
     }
+
+    setMediaUploadsInFlight((current) => current + 1);
 
     try {
       const uploaded = await Promise.all(
@@ -326,6 +333,8 @@ export function AdminProductForm({
         error instanceof Error ? error.message : "Could not process that product video.",
         "error"
       );
+    } finally {
+      setMediaUploadsInFlight((current) => Math.max(0, current - 1));
     }
   }
 
@@ -356,6 +365,10 @@ export function AdminProductForm({
     setSubmitting(true);
 
     try {
+      if (mediaUploadsInFlight > 0) {
+        throw new Error("Wait for the selected media to finish uploading before saving.");
+      }
+
       if (!form.category) {
         throw new Error("Add a category in Admin > Categories before saving a product.");
       }
@@ -881,7 +894,12 @@ export function AdminProductForm({
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(event) => void uploadImages(event.target.files, "images", 960)}
+                  onChange={(event) => {
+                    const input = event.currentTarget;
+                    void uploadImages(input.files, "images", 960).finally(() => {
+                      input.value = "";
+                    });
+                  }}
                   className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                 />
               </AdminField>
@@ -890,7 +908,12 @@ export function AdminProductForm({
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(event) => void uploadImages(event.target.files, "galleryImages", 1080)}
+                  onChange={(event) => {
+                    const input = event.currentTarget;
+                    void uploadImages(input.files, "galleryImages", 1080).finally(() => {
+                      input.value = "";
+                    });
+                  }}
                   className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                 />
               </AdminField>
@@ -906,6 +929,11 @@ export function AdminProductForm({
                   className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
                 />
               </AdminField>
+              {mediaUploadsInFlight > 0 ? (
+                <p className="text-sm text-[var(--muted)]" role="status">
+                  Uploading media… Keep this page open until the previews appear.
+                </p>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
                 <AdminFilterInput
                   value={form.videoTitleDraft}
@@ -1020,8 +1048,12 @@ export function AdminProductForm({
           </AdminPanel>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={submitting} className="button-primary px-6 py-3 text-sm font-medium disabled:opacity-60">
-              {submitting ? "Saving..." : submitLabel}
+            <button
+              type="submit"
+              disabled={submitting || mediaUploadsInFlight > 0}
+              className="button-primary px-6 py-3 text-sm font-medium disabled:opacity-60"
+            >
+              {mediaUploadsInFlight > 0 ? "Uploading media..." : submitting ? "Saving..." : submitLabel}
             </button>
             <span className="text-sm text-[var(--muted)]">
               Products save with auto-generated database IDs and server-validated variant stock.

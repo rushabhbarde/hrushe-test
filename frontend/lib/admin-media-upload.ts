@@ -1,4 +1,4 @@
-import { getAdminAuthHeaders } from "@/lib/admin-auth";
+import { clearAdminToken, getAdminAuthHeaders } from "@/lib/admin-auth";
 import { apiUrl } from "@/lib/api";
 
 export const ADMIN_MEDIA_UPLOAD_LIMIT_BYTES = 25 * 1024 * 1024;
@@ -48,6 +48,11 @@ export async function uploadAdminMedia(file: File): Promise<UploadedAdminMedia> 
     const data = (await response.json().catch(() => ({}))) as Partial<UploadedAdminMediaResponse> & {
       message?: string;
     };
+
+    if (response.status === 401) {
+      clearAdminToken();
+      throw new Error("Your admin session expired. Sign in again, then retry the upload.");
+    }
 
     if (!response.ok) {
       throw new Error(data.message || "Media upload failed.");

@@ -7,6 +7,8 @@ import { AdminAuthProvider } from "@/components/admin-auth-provider";
 import { AuthModalProvider } from "@/components/auth-modal-provider";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CartProvider } from "@/components/cart-provider";
+import { ConsentControlledTracking } from "@/components/consent-controlled-tracking";
+import { CookieConsentBanner } from "@/components/cookie-consent";
 import { CustomerAuthProvider } from "@/components/customer-auth-provider";
 import { SupportChatbot } from "@/components/support-chatbot";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -40,6 +42,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
                 <CartDrawer />
                 <WishlistDrawer />
                 <SupportChatbot />
+                <ConsentControlledTracking />
+                <CookieConsentBanner />
               </CartProvider>
             </WishlistProvider>
           </AuthModalProvider>

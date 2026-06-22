@@ -136,9 +136,20 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
               return { ok: false, error: "This account does not have admin access." };
             }
 
+            // Verify that the browser retained the HttpOnly cookie before the
+            // protected admin shell is unlocked. This prevents Safari from
+            // showing an apparently authenticated page with unusable uploads.
+            const verifiedSession = await apiRequest<AuthResponse>("/auth/me", {
+              cache: "no-store",
+            });
+
+            if (verifiedSession.user.role !== "admin") {
+              throw new Error("This account does not have admin access.");
+            }
+
             clearCustomerToken();
             setAdminToken();
-            setUser(response.user);
+            setUser(verifiedSession.user);
             setIsAuthenticated(true);
             return { ok: true };
           } catch (error) {

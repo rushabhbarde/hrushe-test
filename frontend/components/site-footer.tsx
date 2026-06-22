@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
+import { openCookiePreferences } from "@/lib/cookie-consent";
 
 type PublicWebsiteSettings = {
   brandName: string;
@@ -85,6 +86,15 @@ export function SiteFooter() {
                   {link.label}
                 </Link>
               ))}
+              {group.title === "Support" ? (
+                <button
+                  type="button"
+                  onClick={openCookiePreferences}
+                  className="block text-left hover:text-white"
+                >
+                  Cookie preferences
+                </button>
+              ) : null}
             </div>
           </div>
         ))}
