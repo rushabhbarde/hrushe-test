@@ -10,7 +10,6 @@ const csrfCookieOptions = {
   secure: env.COOKIE_SECURE,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/",
-  ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
 };
 
 function readCookie(req, name) {

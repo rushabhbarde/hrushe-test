@@ -43,6 +43,27 @@ function forwardRequestHeaders(request: NextRequest) {
   return headers;
 }
 
+function normalizeSameOriginCookie(cookie: string) {
+  const parts = cookie
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const cookieValue = parts.shift();
+
+  if (!cookieValue) {
+    return "";
+  }
+
+  // Browser requests reach the backend through this same-origin proxy. Remove
+  // any Render/backend Domain attribute so Safari stores the cookie against
+  // the visible HRUSHE host, and normalize the first-party SameSite policy.
+  const attributes = parts.filter(
+    (part) => !/^domain=/i.test(part) && !/^samesite=/i.test(part)
+  );
+
+  return [cookieValue, ...attributes, "SameSite=Lax"].join("; ");
+}
+
 function forwardResponseHeaders(response: Response) {
   const headers = new Headers();
 
@@ -68,11 +89,16 @@ function forwardResponseHeaders(response: Response) {
   const setCookies = upstreamHeaders.getSetCookie?.() || [];
 
   if (setCookies.length > 0) {
-    setCookies.forEach((cookie) => headers.append("set-cookie", cookie));
+    setCookies.forEach((cookie) => {
+      const normalizedCookie = normalizeSameOriginCookie(cookie);
+      if (normalizedCookie) {
+        headers.append("set-cookie", normalizedCookie);
+      }
+    });
   } else {
     const setCookie = response.headers.get("set-cookie");
     if (setCookie) {
-      headers.append("set-cookie", setCookie);
+      headers.append("set-cookie", normalizeSameOriginCookie(setCookie));
     }
   }
 

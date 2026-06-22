@@ -139,9 +139,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
             // Verify that the browser retained the HttpOnly cookie before the
             // protected admin shell is unlocked. This prevents Safari from
             // showing an apparently authenticated page with unusable uploads.
-            const verifiedSession = await apiRequest<AuthResponse>("/auth/me", {
-              cache: "no-store",
-            });
+            let verifiedSession: AuthResponse;
+
+            try {
+              verifiedSession = await apiRequest<AuthResponse>("/auth/me", {
+                cache: "no-store",
+              });
+            } catch {
+              throw new Error(
+                "Your credentials were accepted, but Safari did not retain the secure session. Refresh the page and sign in again."
+              );
+            }
 
             if (verifiedSession.user.role !== "admin") {
               throw new Error("This account does not have admin access.");
