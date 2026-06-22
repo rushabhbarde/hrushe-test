@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HomepageNewsletter } from "@/components/homepage-newsletter";
+import { EmptyState } from "@/components/empty-state";
 import { ProductCard } from "@/components/product-card";
 import { ServicePromise } from "@/components/service-promise";
 import { SiteFooter } from "@/components/site-footer";
@@ -118,8 +119,19 @@ export default async function Home() {
             <div className="grid grid-cols-2 gap-x-3 gap-y-12 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-6 xl:gap-y-16">
               {featured.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
+            <Link href="/shop" className="button-secondary mt-10 inline-flex min-h-12 items-center justify-center px-6 text-xs font-semibold uppercase tracking-[0.12em] sm:hidden">View all pieces</Link>
           </section>
-        ) : null}
+        ) : (
+          <section className="mx-auto max-w-[1600px] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+            <EmptyState
+              eyebrow="Featured collection"
+              title="The next edit is being prepared."
+              description="The storefront is ready for the next release. Join first access for restocks and new product notes, or read more about the HRUSHE approach."
+              ctaHref="/story"
+              ctaLabel="Read the story"
+            />
+          </section>
+        )}
 
         {colours.length > 0 ? (
           <section className="border-y border-[var(--border)] bg-[var(--surface)]">

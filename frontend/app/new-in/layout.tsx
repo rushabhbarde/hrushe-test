@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "New In | HRUSHE",
+  title: "New In",
   description:
     "Shop the latest HRUSHE everyday uniforms, available fits, colours, and materials.",
   alternates: {

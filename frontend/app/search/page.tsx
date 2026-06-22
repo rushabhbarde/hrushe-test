@@ -128,11 +128,16 @@ function SearchPageContent() {
             submitSearch(query);
           }}
         >
+          <label className="sr-only" htmlFor="storefront-search">Search products</label>
           <input
+            id="storefront-search"
+            name="q"
+            type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="min-h-12 min-w-0 flex-1 border border-[var(--border)] bg-[var(--surface)] px-5"
             placeholder="Oversized tee, forest, cotton..."
+            autoComplete="off"
           />
           <button
             type="submit"

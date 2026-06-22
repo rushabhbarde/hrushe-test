@@ -476,12 +476,14 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={() => setSummaryOpen((current) => !current)}
                     className="lux-action-muted mt-7 flex w-full justify-between lg:hidden"
+                    aria-expanded={summaryOpen}
+                    aria-controls="mobile-order-summary"
                   >
                     <span>Your order ({itemCount})</span>
                     <span>{summaryOpen ? "Close" : formatPrice(subtotal)}</span>
                   </button>
                   {summaryOpen ? (
-                    <div className="mobile-drawer-enter mt-4 border border-[var(--border)] bg-white/62 p-4 lg:hidden">
+                    <div id="mobile-order-summary" className="mobile-drawer-enter mt-4 border border-[var(--border)] bg-white/62 p-4 lg:hidden">
                       <OrderSummary items={items} itemCount={itemCount} subtotal={subtotal} compact />
                     </div>
                   ) : null}
@@ -490,149 +492,111 @@ export default function CheckoutPage() {
                     className="mt-8 max-w-[560px] space-y-8"
                     onSubmit={(event) => void onSubmit(event)}
                   >
-                    <div className="auth-switch-panel">
-                      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.08em]">
-                        Contact info
-                      </p>
-                      <div className="grid gap-3">
-                        <input
-                          name="email"
-                          value={form.email}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Email"
-                          type="email"
-                          required
-                        />
-                        <input
-                          name="phone"
-                          value={form.phone}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Phone"
-                          required
-                        />
-                      </div>
-                    </div>
+                    {activeStep === "information" ? (
+                      <fieldset className="auth-switch-panel grid gap-4">
+                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Contact info</legend>
+                        <label className="field-label">
+                          Email
+                          <input
+                            name="email"
+                            value={form.email}
+                            onChange={onChange}
+                            className="lux-input"
+                            type="email"
+                            autoComplete="email"
+                            required
+                          />
+                        </label>
+                        <label className="field-label">
+                          Phone
+                          <input
+                            name="phone"
+                            value={form.phone}
+                            onChange={onChange}
+                            className="lux-input"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            maxLength={16}
+                            required
+                          />
+                        </label>
+                        <p className="text-xs leading-5 text-[var(--muted)]">Used only for delivery and order updates.</p>
+                      </fieldset>
+                    ) : null}
 
-                    {user?.addresses && user.addresses.length > 0 ? (
-                      <div className="auth-switch-panel">
-                        <div className="mb-4 flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold uppercase tracking-[0.08em]">
-                            Saved address
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedAddressId("manual");
-                              setForm(buildFormFromAddress(null, user));
-                            }}
-                            className="text-xs uppercase tracking-[0.12em] text-[var(--muted)] underline underline-offset-4"
-                          >
-                            Manual
-                          </button>
-                        </div>
-                        <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                          {user.addresses.map((address) => (
-                            <button
-                              key={address.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedAddressId(address.id);
-                                setForm(buildFormFromAddress(address, user));
-                              }}
-                              className={`min-w-[230px] border p-4 text-left text-sm transition ${
-                                selectedAddressId === address.id
-                                  ? "border-black bg-black text-white"
-                                  : "border-[var(--border)] bg-white/60 text-[var(--foreground)]"
-                              }`}
-                            >
-                              <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
-                              <p className="mt-2 font-semibold">{address.fullName}</p>
-                              <p className="mt-1 leading-6 opacity-75">{buildAddressPreview(address)}</p>
-                            </button>
-                          ))}
-                        </div>
+                    {activeStep === "shipping" ? (
+                      <div className="auth-switch-panel space-y-8">
+                        {user?.addresses && user.addresses.length > 0 ? (
+                          <section aria-labelledby="saved-address-heading">
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                              <h2 id="saved-address-heading" className="text-sm font-semibold uppercase tracking-[0.08em]">Saved address</h2>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAddressId("manual");
+                                  setForm(buildFormFromAddress(null, user));
+                                }}
+                                className="text-xs uppercase tracking-[0.12em] text-[var(--muted)] underline underline-offset-4"
+                              >
+                                Enter manually
+                              </button>
+                            </div>
+                            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                              {user.addresses.map((address) => (
+                                <button
+                                  key={address.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAddressId(address.id);
+                                    setForm(buildFormFromAddress(address, user));
+                                  }}
+                                  aria-pressed={selectedAddressId === address.id}
+                                  className={`min-w-[230px] border p-4 text-left text-sm transition ${
+                                    selectedAddressId === address.id
+                                      ? "border-black bg-black text-white"
+                                      : "border-[var(--border)] bg-white/60 text-[var(--foreground)]"
+                                  }`}
+                                >
+                                  <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
+                                  <p className="mt-2 font-semibold">{address.fullName}</p>
+                                  <p className="mt-1 leading-6 opacity-75">{buildAddressPreview(address)}</p>
+                                </button>
+                              ))}
+                            </div>
+                          </section>
+                        ) : null}
+
+                        <fieldset className="grid gap-4">
+                          <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Shipping address</legend>
+                          <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className="lux-input" autoComplete="name" required /></label>
+                          <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className="lux-input"><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
+                          <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className="lux-input" autoComplete="address-line1" required /></label>
+                          <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className="lux-input" autoComplete="address-line2" required /></label>
+                          <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className="lux-input" /></label>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className="lux-input" autoComplete="address-level2" required /></label>
+                            <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className="lux-input" autoComplete="address-level1" required /></label>
+                          </div>
+                          <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className="lux-input" autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
+                        </fieldset>
                       </div>
                     ) : null}
 
-                    <div className="auth-switch-panel">
-                      <p className="mb-4 text-sm font-semibold uppercase tracking-[0.08em]">
-                        Shipping address
-                      </p>
-                      <div className="grid gap-3">
-                        <input
-                          name="fullName"
-                          value={form.fullName}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Full name"
-                          required
-                        />
-                        <select
-                          name="label"
-                          value={form.label}
-                          onChange={onChange}
-                          className="lux-input"
-                        >
-                          <option value="Home">Address type / Home</option>
-                          <option value="Work">Work</option>
-                          <option value="Other">Other</option>
-                        </select>
-                        <input
-                          name="state"
-                          value={form.state}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="State / Region"
-                          required
-                        />
-                        <input
-                          name="house"
-                          value={form.house}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Address"
-                          required
-                        />
-                        <input
-                          name="area"
-                          value={form.area}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Area / Locality"
-                          required
-                        />
-                        <input
-                          name="landmark"
-                          value={form.landmark}
-                          onChange={onChange}
-                          className="lux-input"
-                          placeholder="Landmark (optional)"
-                        />
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <input
-                            name="city"
-                            value={form.city}
-                            onChange={onChange}
-                            className="lux-input"
-                            placeholder="City"
-                            required
-                          />
-                          <input
-                            name="pincode"
-                            value={form.pincode}
-                            onChange={onChange}
-                            className="lux-input"
-                            placeholder="Postal code"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-
                     {activeStep === "payment" ? (
-                      <div className="auth-switch-panel border border-[var(--border)] bg-white/50 p-4">
+                      <div className="auth-switch-panel border border-[var(--border)] bg-white/50 p-5">
+                        <div className="grid gap-4 border-b border-[var(--border)] pb-5 text-sm">
+                          <div className="grid grid-cols-[92px_1fr_auto] gap-3">
+                            <span className="text-[var(--muted)]">Contact</span>
+                            <span className="min-w-0 break-words">{form.email} · {form.phone}</span>
+                            <button type="button" onClick={() => setActiveStep("information")} className="underline underline-offset-4">Edit</button>
+                          </div>
+                          <div className="grid grid-cols-[92px_1fr_auto] gap-3">
+                            <span className="text-[var(--muted)]">Deliver to</span>
+                            <span className="min-w-0">{buildAddressPreview(form)}</span>
+                            <button type="button" onClick={() => setActiveStep("shipping")} className="underline underline-offset-4">Edit</button>
+                          </div>
+                        </div>
                         <p className="text-sm font-semibold uppercase tracking-[0.1em]">
                           Payment
                         </p>
@@ -652,13 +616,15 @@ export default function CheckoutPage() {
                             }}
                             className="mt-0.5 h-4 w-4 rounded-none"
                           />
-                          <span>I agree to the Terms and Conditions.</span>
+                          <span>
+                            I agree to the <Link href="/policies" className="underline underline-offset-4">Terms and Conditions</Link>.
+                          </span>
                         </label>
                       </div>
                     ) : null}
 
                     {error ? (
-                      <div className="border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
+                      <div role="alert" className="border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
                         {error}
                       </div>
                     ) : null}

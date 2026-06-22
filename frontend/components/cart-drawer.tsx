@@ -102,6 +102,7 @@ export function CartDrawer() {
                         alt={item.name}
                         fill
                         unoptimized={shouldBypassImageOptimization(item.image)}
+                        sizes="80px"
                         className="object-cover"
                       />
                     ) : (
@@ -128,6 +129,7 @@ export function CartDrawer() {
                           )
                         }
                         className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
+                        aria-label={`Decrease quantity of ${item.name}`}
                       >
                         -
                       </button>
@@ -144,6 +146,7 @@ export function CartDrawer() {
                           )
                         }
                         className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
+                        aria-label={`Increase quantity of ${item.name}`}
                       >
                         +
                       </button>

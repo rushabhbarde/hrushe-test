@@ -19,6 +19,13 @@
   --footer-foreground: #f6f4ef;
   --header-background: rgba(246, 244, 239, 0.96);
   --hover-fill: rgba(17, 17, 17, 0.05);
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-6: 3rem;
+  --space-8: 4rem;
+  --control-height: 3rem;
 }
 
 :root[data-theme="dark"] {
@@ -45,8 +52,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-body: var(--font-hrushe);
-  --font-sans: var(--font-hrushe);
+  --font-body: "Geist", "Geist Fallback", Arial, sans-serif;
+  --font-sans: "Geist", "Geist Fallback", Arial, sans-serif;
 }
 
 * {
@@ -78,6 +85,11 @@ body {
     background-image 240ms ease;
 }
 
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -98,6 +110,16 @@ select,
 textarea {
   font: inherit;
   color: inherit;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 input,
@@ -424,6 +446,24 @@ body :where([class*="shadow-"]) {
   box-shadow: none;
 }
 
+.field-label {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.field-label :where(input, select, textarea) {
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .lux-action {
   display: inline-flex;
   min-height: 3rem;
@@ -610,15 +650,8 @@ body :where([class*="shadow-"]) {
 }
 
 .loading-line {
-  border: 1px solid rgba(17, 17, 17, 0.06);
-  background:
-    linear-gradient(
-      110deg,
-      rgba(255, 255, 255, 0.85) 8%,
-      rgba(255, 255, 255, 0.92) 18%,
-      rgba(17, 17, 17, 0.08) 33%,
-      rgba(255, 255, 255, 0.88) 45%
-    );
+  border: 1px solid var(--border);
+  background: linear-gradient(110deg, var(--surface-strong) 12%, var(--surface) 30%, var(--surface-strong) 48%);
   background-size: 220% 100%;
   animation: loading-shimmer 1.8s ease-in-out infinite;
 }
@@ -689,20 +722,6 @@ body :where([class*="shadow-"]) {
   .eyebrow {
     font-size: 0.68rem;
     letter-spacing: 0.24em;
-  }
-}
-
-@media (max-width: 767px) {
-  body {
-    background-image: linear-gradient(180deg, color-mix(in srgb, var(--background) 98%, white 2%), var(--background));
-  }
-
-  .grain-card,
-  .hero-panel,
-  .editorial-card,
-  .loading-shell {
-    border-radius: 1.5rem;
-    box-shadow: 0 12px 28px rgba(17, 17, 17, 0.07);
   }
 }
 

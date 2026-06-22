@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
@@ -21,6 +22,9 @@ export default function NewInPage() {
     <div className="page-shell">
       <SiteHeader />
       <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
+        <div className="mb-7">
+          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "New In" }]} />
+        </div>
         <div className="flex flex-col gap-8 border-b border-[var(--border)] pb-10 sm:pb-14 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="New In"

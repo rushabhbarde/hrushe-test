@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
@@ -35,64 +36,45 @@ export default function CollectionPage() {
     <div className="page-shell">
       <SiteHeader />
       <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        {matchedCategory ? (
-          <>
-            <SectionHeading
-              eyebrow="Collection"
-              eyebrowClassName="text-[var(--accent)]"
-              title={displayCategory}
-              description={collectionDescription}
-            />
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/shop" className="button-secondary px-5 py-3 transition">
-                Back to shop
-              </Link>
-              <Link href="/story" className="button-secondary px-5 py-3 transition">Discover the fit</Link>
-            </div>
-            <div className="mt-10">
-              {loading ? (
-                <ProductListingSkeleton count={8} />
-              ) : visibleProducts.length === 0 ? (
-                <div className="space-y-10">
-                  <EmptyState
-                    title={`${displayCategory} is coming soon.`}
-                    description="This collection does not have live products yet. The page is ready, and products will appear here as soon as the edit is published."
-                    ctaHref="/shop"
-                    ctaLabel="Explore all products"
-                  />
-                  {relatedProducts.length > 0 ? (
-                    <section aria-labelledby="related-collection-products">
-                      <div className="mb-5 flex flex-col gap-2 border-t border-[var(--border)] pt-8 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-                        <h2 id="related-collection-products" className="font-medium text-[var(--foreground)]">
-                          You may also like
-                        </h2>
-                        <span>Newest available pieces</span>
-                      </div>
-                      <ProductListingGrid products={relatedProducts} />
-                    </section>
-                  ) : null}
-                </div>
-              ) : (
-                <>
-                  <div className="mb-5 flex flex-col gap-2 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-                    <span>{visibleProducts.length} pieces available</span>
-                    <span>Filtered by collection</span>
+        <div className="mb-7">
+          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop", href: "/shop" }, { label: displayCategory }]} />
+        </div>
+        <SectionHeading eyebrow="Collection" eyebrowClassName="text-[var(--accent)]" title={displayCategory} description={collectionDescription} />
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/shop" className="button-secondary px-5 py-3 transition">Back to shop</Link>
+          <Link href="/story" className="button-secondary px-5 py-3 transition">Discover the fit</Link>
+        </div>
+        <div className="mt-10">
+          {loading ? (
+            <ProductListingSkeleton count={8} />
+          ) : visibleProducts.length > 0 ? (
+            <>
+              <div className="mb-5 flex flex-col gap-2 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
+                <span>{visibleProducts.length} pieces available</span>
+                <span>Filtered by collection</span>
+              </div>
+              <ProductListingGrid products={visibleProducts} />
+            </>
+          ) : (
+            <div className="space-y-10">
+              <EmptyState
+                title={`${displayCategory} is ${matchedCategory ? "coming soon" : "not live yet"}.`}
+                description="The next release for this edit is being prepared. Explore the newest available HRUSHE pieces in the meantime."
+                ctaHref="/shop"
+                ctaLabel="Explore all products"
+              />
+              {relatedProducts.length > 0 ? (
+                <section aria-labelledby="related-collection-products">
+                  <div className="mb-5 flex flex-col gap-2 border-t border-[var(--border)] pt-8 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
+                    <h2 id="related-collection-products" className="font-medium text-[var(--foreground)]">You may also like</h2>
+                    <span>Newest available pieces</span>
                   </div>
-                  <ProductListingGrid products={visibleProducts} />
-                </>
-              )}
+                  <ProductListingGrid products={relatedProducts} />
+                </section>
+              ) : null}
             </div>
-          </>
-        ) : loading ? (
-          <ProductListingSkeleton count={8} />
-        ) : (
-          <EmptyState
-            title={`${displayCategory} is not live yet.`}
-            description="This edit is not available yet. Browse the full catalog while the collection page is prepared."
-            ctaHref="/shop"
-            ctaLabel="Explore all products"
-          />
-        )}
+          )}
+        </div>
       </main>
       <SiteFooter />
     </div>

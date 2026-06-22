@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SizeGuideModal, SizeGuideTable } from "@/components/size-guide";
@@ -288,7 +289,6 @@ type ProductInfoPanelProps = {
   onAddToCart: () => void;
   onOpenSizeGuide: () => void;
   actionRef?: React.Ref<HTMLDivElement>;
-  mobile?: boolean;
 };
 
 function ProductInfoPanel({
@@ -308,7 +308,6 @@ function ProductInfoPanel({
   onAddToCart,
   onOpenSizeGuide,
   actionRef,
-  mobile = false,
 }: ProductInfoPanelProps) {
   const displayName = getProductDisplayName(product);
   const colorProducts = [product, ...siblingProducts].filter(
@@ -319,12 +318,8 @@ function ProductInfoPanel({
           candidate.colors[0]?.toLowerCase() === item.colors[0]?.toLowerCase()
       ) === index
   );
-  const shellClassName = mobile
-    ? "border-b border-[var(--border)] bg-[var(--background)] px-4 pb-10 pt-8 sm:px-6"
-    : "flex flex-col bg-[var(--background)] px-8 py-4 xl:px-12";
-
   return (
-    <div className={shellClassName}>
+    <div className="flex flex-col border-b border-[var(--border)] bg-[var(--background)] px-4 pb-10 pt-8 sm:px-6 lg:min-h-[640px] lg:border-b-0 lg:px-0 lg:py-4">
       <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
@@ -481,11 +476,11 @@ function ProductInfoPanel({
         </div>
       ) : null}
 
-      <div ref={actionRef} className={mobile ? "mt-7 space-y-4" : "mt-auto space-y-4 pt-8"}>
+      <div ref={actionRef} className="mt-7 space-y-4 lg:mt-auto lg:pt-8">
         <button
           type="button"
           onClick={onAddToCart}
-          disabled={!requiresSize && !canAddToCart}
+          disabled={requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart}
           className="inline-flex min-h-12 w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.76rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
           {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
@@ -529,7 +524,7 @@ export default function ProductDetailPage() {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [showStickyAddToCart, setShowStickyAddToCart] = useState(false);
   const [openSection, setOpenSection] =
-    useState<(typeof productInfoSections)[number]["key"]>("description");
+    useState<(typeof productInfoSections)[number]["key"] | null>("description");
 
   useEffect(() => {
     let active = true;
@@ -778,6 +773,13 @@ export default function ProductDetailPage() {
       return;
     }
 
+    if (!canAddToCart) {
+      const message = "This selection is currently unavailable.";
+      setAddError(message);
+      pushToast(message, "error");
+      return;
+    }
+
     addItem({
       productId: product.id,
       name: getProductDisplayName(product),
@@ -798,6 +800,15 @@ export default function ProductDetailPage() {
       <SiteHeader />
       <main className="mx-auto w-full pb-28 lg:max-w-[1440px] lg:px-8 lg:pb-24 lg:pt-12 xl:pt-16">
         <h1 className="sr-only">{product.name}</h1>
+        <div className="px-4 py-4 sm:px-6 lg:px-0 lg:pb-8 lg:pt-0">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: product.category || "Shop", href: product.category ? `/collection/${product.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "/shop" },
+              { label: getProductDisplayName(product) },
+            ]}
+          />
+        </div>
         <div className="lg:mx-auto lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.45fr)_minmax(380px,0.85fr)] lg:items-start lg:gap-12 xl:gap-16">
           <section aria-label="Product media gallery">
             <div
@@ -826,7 +837,22 @@ export default function ProductDetailPage() {
               ) : null}
             </div>
             {hasMultipleMedia ? (
-              <div className="grid grid-cols-5 gap-2 px-4 pt-3 sm:px-0">
+              <>
+              <div className="flex items-center justify-center px-4 py-1 lg:hidden" aria-label="Choose product image">
+                {mediaItems.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveMediaIndex(index)}
+                    aria-label={`Show ${item.type} ${index + 1}`}
+                    aria-pressed={activeMediaIndex === index}
+                    className="flex h-11 w-11 items-center justify-center"
+                  >
+                    <span className={`block h-1 w-5 transition ${activeMediaIndex === index ? "bg-[var(--foreground)]" : "bg-[var(--border)]"}`} />
+                  </button>
+                ))}
+              </div>
+              <div className="hidden grid-cols-5 gap-2 pt-3 lg:grid">
                 {mediaItems.map((item, index) => (
                   <button
                     key={item.id}
@@ -840,6 +866,7 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
+              </>
             ) : null}
           </section>
 
@@ -868,7 +895,6 @@ export default function ProductDetailPage() {
               onAddToCart={handleAddToCart}
               onOpenSizeGuide={() => setSizeGuideOpen(true)}
               actionRef={mainAddToCartRef}
-              mobile
             />
           </section>
         </div>
@@ -891,7 +917,7 @@ export default function ProductDetailPage() {
                       aria-controls={`product-section-${section.key}-panel`}
                       onClick={() =>
                         setOpenSection((current) =>
-                          current === section.key ? current : section.key
+                          current === section.key ? null : section.key
                         )
                       }
                       className="flex w-full items-center justify-between py-4 text-left"
@@ -913,7 +939,9 @@ export default function ProductDetailPage() {
                         {section.key === "description" ? (
                           <div className="space-y-3">
                             <p>{product.description}</p>
-                            <p>Art. No.: {product.id}</p>
+                            {product.variants?.find((variant) => variant.sku)?.sku ? (
+                              <p>SKU: {product.variants.find((variant) => variant.sku)?.sku}</p>
+                            ) : null}
                           </div>
                         ) : null}
                         {section.key === "fabric" ? (
@@ -1122,9 +1150,9 @@ export default function ProductDetailPage() {
           <h2 className="mt-3 text-[1.7rem] font-medium uppercase leading-[1.08] tracking-[-0.05em] text-[var(--foreground)]">
             More from the current edit.
           </h2>
-          <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-            {relatedProducts.map((item, index) => (
-              <div key={item.id} className={index >= 2 ? "hidden md:block" : ""}>
+          <div className="product-row-scroll -mx-5 mt-6 flex gap-3 overflow-x-auto px-5 pb-3 sm:-mx-6 sm:mt-8 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 xl:grid-cols-4 xl:gap-6">
+            {relatedProducts.map((item) => (
+              <div key={item.id} className="min-w-[72vw] sm:min-w-[44vw] md:min-w-0">
                 <ProductCard product={item} />
               </div>
             ))}
@@ -1150,7 +1178,7 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={!requiresSize && !canAddToCart}
+              disabled={requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart}
               className="inline-flex min-h-12 min-w-[176px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
             >
               {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}

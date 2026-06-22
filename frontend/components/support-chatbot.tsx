@@ -103,7 +103,7 @@ export function SupportChatbot() {
 
   const selectedOption =
     issueOptions.find((option) => option.value === selectedValue) || null;
-  const shouldHide = pathname.startsWith("/admin");
+  const shouldHide = pathname.startsWith("/admin") || pathname.startsWith("/checkout");
   const shouldClearStickyAction =
     pathname.startsWith("/product/") || pathname === "/cart" || pathname === "/checkout";
 
@@ -194,15 +194,20 @@ export function SupportChatbot() {
       }`}
     >
       {isOpen ? (
-        <div className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_28px_80px_rgba(0,0,0,0.22)]">
+        <div
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="support-panel-title"
+          className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
+        >
           <div className="bg-[#111111] px-5 py-4 text-white">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/60">
                   HRUSHE Support
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                  Tell us what broke.
+                <h2 id="support-panel-title" className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
+                  How can we help?
                 </h2>
               </div>
               <button
@@ -268,51 +273,67 @@ export function SupportChatbot() {
                       {selectedOption.prompt}
                     </div>
 
-                    <input
-                      value={form.name}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, name: event.target.value }))
-                      }
-                      placeholder="Your name"
-                      disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full border border-black/12 px-3 text-sm outline-none focus:border-black disabled:bg-black/[0.03]"
-                    />
-                    <input
-                      value={form.email}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, email: event.target.value }))
-                      }
-                      placeholder="Email for updates"
-                      disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full border border-black/12 px-3 text-sm outline-none focus:border-black disabled:bg-black/[0.03]"
-                    />
-                    <input
-                      value={form.phone}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, phone: event.target.value }))
-                      }
-                      placeholder="Phone optional"
-                      className="min-h-11 w-full border border-black/12 px-3 text-sm outline-none focus:border-black"
-                    />
-                    {selectedOption.needsOrder ? (
+                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                      Name
                       <input
-                        value={form.orderId}
+                        value={form.name}
                         onChange={(event) =>
-                          setForm((current) => ({ ...current, orderId: event.target.value }))
+                          setForm((current) => ({ ...current, name: event.target.value }))
                         }
-                        placeholder="Order number or tracking ID"
-                        className="min-h-11 w-full border border-black/12 px-3 text-sm outline-none focus:border-black"
+                        autoComplete="name"
+                        disabled={Boolean(user) || isChecking}
+                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
                       />
+                    </label>
+                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                      Email for updates
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, email: event.target.value }))
+                        }
+                        autoComplete="email"
+                        disabled={Boolean(user) || isChecking}
+                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
+                      />
+                    </label>
+                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                      Phone <span className="normal-case tracking-normal">(optional)</span>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        value={form.phone}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, phone: event.target.value }))
+                        }
+                        autoComplete="tel"
+                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black"
+                      />
+                    </label>
+                    {selectedOption.needsOrder ? (
+                      <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                        Order number or tracking ID
+                        <input
+                          value={form.orderId}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, orderId: event.target.value }))
+                          }
+                          className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black"
+                        />
+                      </label>
                     ) : null}
-                    <textarea
-                      value={form.message}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, message: event.target.value }))
-                      }
-                      placeholder="Describe the issue in detail."
-                      rows={4}
-                      className="w-full resize-none border border-black/12 px-3 py-3 text-sm leading-6 outline-none focus:border-black"
-                    />
+                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                      Issue details
+                      <textarea
+                        value={form.message}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, message: event.target.value }))
+                        }
+                        rows={4}
+                        className="w-full resize-none border border-black/12 px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none focus:border-black"
+                      />
+                    </label>
                     <button
                       type="button"
                       onClick={() => void submitTicket()}
@@ -332,13 +353,15 @@ export function SupportChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group flex h-12 w-12 items-center justify-center border border-[var(--foreground)] bg-[var(--foreground)] text-sm font-semibold text-[var(--background)]"
+        className="group flex h-12 items-center justify-center gap-2 border border-[var(--foreground)] bg-[var(--foreground)] px-3 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[var(--background)] sm:px-4"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
       >
-        <span className="flex h-6 w-6 items-center justify-center border border-white/35">
-          ?
-        </span>
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+          <path d="M5 18.5 3.8 21l3.6-1.2A8.2 8.2 0 1 0 5 18.5Z" />
+          <path d="M8.2 11.8h.01M12 11.8h.01M15.8 11.8h.01" strokeLinecap="round" strokeWidth="2.2" />
+        </svg>
+        <span className="hidden sm:inline">Support</span>
       </button>
     </div>
   );

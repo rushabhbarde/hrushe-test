@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -82,6 +83,9 @@ export default function ShopPage() {
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pb-32 lg:pt-24">
+        <div className="mb-7">
+          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop" }]} />
+        </div>
         <header className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-14">
           <div>
             <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
@@ -137,12 +141,15 @@ export default function ShopPage() {
               {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
           ) : (
-            <EmptyState
-              title="No pieces match this edit."
-              description="Clear the filters to return to the complete collection."
-              ctaHref="/shop"
-              ctaLabel="View all pieces"
-            />
+            <div>
+              <EmptyState
+                title="No pieces match this edit."
+                description="Clear the filters to return to the complete collection."
+              />
+              <button type="button" onClick={clearFilters} className="button-primary mt-4 min-h-12 px-6 text-xs font-semibold uppercase tracking-[0.12em]">
+                Clear filters
+              </button>
+            </div>
           )}
         </section>
       </main>

@@ -101,13 +101,12 @@ export default function CartPage() {
   const { wishlistIds, isWishlisted, toggleWishlist, removeWishlistItem } = useWishlist();
   const { products } = useStorefrontData();
   const { pushToast } = useToast();
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [activeCartTab, setActiveCartTab] = useState<"bag" | "favourites">("bag");
   const [removingKeys, setRemovingKeys] = useState<string[]>([]);
   const [bumpedKey, setBumpedKey] = useState("");
   const total = subtotal + shipping;
   const hasSavedProducts = wishlistIds.length > 0;
-  const canCheckout = acceptedTerms && items.length > 0;
+  const canCheckout = items.length > 0;
   const wishlistProducts = useMemo<Product[]>(
     () =>
       wishlistIds
@@ -391,16 +390,6 @@ export default function CartPage() {
                       <ServicePromise compact />
                     </div>
 
-                    <label className="mt-6 flex items-start gap-3 text-sm text-[var(--muted)]">
-                      <input
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(event) => setAcceptedTerms(event.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded-none border-[var(--border)]"
-                      />
-                      <span>I agree to the Terms and Conditions.</span>
-                    </label>
-
                     <Link
                       href={canCheckout ? "/checkout" : "#"}
                       aria-disabled={!canCheckout}
@@ -411,20 +400,20 @@ export default function CartPage() {
                           return;
                         }
 
-                        if (!acceptedTerms) {
-                          event.preventDefault();
-                          pushToast("Please accept the terms to continue.", "error");
-                        }
                       }}
-                      className={`lux-action mt-5 w-full ${canCheckout ? "" : "pointer-events-auto opacity-45"}`}
+                      className={`lux-action mt-6 w-full ${canCheckout ? "" : "pointer-events-auto opacity-45"}`}
                     >
-                      Continue
+                      Secure checkout
                     </Link>
                     <Link href="/shop" className="lux-action-muted mt-3 w-full">
                       Continue shopping
                     </Link>
                     <p className="mt-5 text-center text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                       {itemCount} item{itemCount === 1 ? "" : "s"} in bag
+                    </p>
+                    <p className="mt-3 text-center text-xs leading-5 text-[var(--muted)]">
+                      Terms and return eligibility are reviewed once at payment. See our{" "}
+                      <Link href="/policies?tab=returns" className="underline underline-offset-4">returns policy</Link>.
                     </p>
                   </div>
                 </aside>

@@ -214,7 +214,7 @@ export function CookieConsentBanner() {
       aria-label="Cookie consent"
       className="fixed inset-x-0 bottom-0 z-[110] border-t border-white/15 bg-[#11110f] text-[#f6f4ef]"
     >
-      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-8 md:py-5">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 md:px-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:py-5">
         <div className="max-w-3xl">
           <p className="eyebrow text-white/50">Your privacy</p>
           <p className="mt-2 text-sm leading-6 text-white/75">

@@ -20,11 +20,13 @@ function HeaderIcon({
   children,
   onClick,
   href,
+  expanded,
 }: {
   label: string;
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
+  expanded?: boolean;
 }) {
   const className =
     "flex h-11 w-11 items-center justify-center transition hover:bg-[var(--hover-fill)]";
@@ -38,7 +40,13 @@ function HeaderIcon({
   }
 
   return (
-    <button type="button" aria-label={label} onClick={onClick} className={className}>
+    <button
+      type="button"
+      aria-label={label}
+      aria-expanded={expanded}
+      onClick={onClick}
+      className={className}
+    >
       {children}
     </button>
   );
@@ -120,6 +128,8 @@ export function SiteHeader() {
               onClick={() => setIsMobileMenuOpen((current) => !current)}
               className="flex h-11 w-11 items-center justify-center lg:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-site-navigation"
             >
               <span className="relative flex h-4 w-5 items-center justify-center">
                 <span
@@ -156,10 +166,10 @@ export function SiteHeader() {
           <Link href="/" className="flex items-center justify-center">
             <Image
               src="/NEW_LOGO.png"
-              alt="Hrushe logo"
+              alt="HRUSHE"
               width={220}
               height={72}
-              loading="eager"
+              priority
               className="h-9 w-auto object-contain sm:h-10 lg:h-12"
             />
           </Link>
@@ -167,7 +177,11 @@ export function SiteHeader() {
           <div className="flex items-center justify-end gap-0.5 sm:gap-1">
             <div ref={accountMenuRef} className="relative hidden lg:block">
               {isAuthenticated ? (
-                <HeaderIcon label="Account" onClick={() => setIsAccountMenuOpen((current) => !current)}>
+                <HeaderIcon
+                  label="Account"
+                  expanded={isAccountMenuOpen}
+                  onClick={() => setIsAccountMenuOpen((current) => !current)}
+                >
                   <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--accent)]/8 text-sm font-semibold text-[var(--accent)]">
                     {accountInitial}
                   </span>
@@ -216,6 +230,13 @@ export function SiteHeader() {
               </HeaderIcon>
             </div>
 
+            <HeaderIcon label="Search" href="/search">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+            </HeaderIcon>
+
             <HeaderIcon label="Cart" onClick={openCart}>
               <span className="relative inline-flex">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
@@ -240,7 +261,7 @@ export function SiteHeader() {
       </div>
 
       {isMobileMenuOpen ? (
-        <div className="border-t border-[var(--border)] lg:hidden">
+        <div id="mobile-site-navigation" className="border-t border-[var(--border)] lg:hidden">
           <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
             <div className="bg-[var(--background)]">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">

@@ -5,15 +5,17 @@ export function EmptyState({
   description,
   ctaHref,
   ctaLabel,
+  eyebrow = "HRUSHE",
 }: {
   title: string;
   description: string;
   ctaHref?: string;
   ctaLabel?: string;
+  eyebrow?: string;
 }) {
   return (
     <div className="empty-shell p-8 sm:p-10" role="status">
-      <p className="eyebrow text-[var(--muted)]">Current edit</p>
+      <p className="eyebrow text-[var(--muted)]">{eyebrow}</p>
       <p className="mt-3 max-w-[18ch] text-[2rem] font-semibold uppercase leading-[0.96] tracking-[0] text-[var(--foreground)] sm:text-[2.6rem]">
         {title}
       </p>
