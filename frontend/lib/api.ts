@@ -51,6 +51,7 @@ function buildHeaders(init?: RequestInit) {
 
 export async function apiRequest<T>(path: string, init?: RequestInit) {
   const controller = new AbortController();
+  const method = String(init?.method || "GET").toUpperCase();
   const timeout = setTimeout(
     () => controller.abort(),
     DEFAULT_REQUEST_TIMEOUT_MS
@@ -60,6 +61,8 @@ export async function apiRequest<T>(path: string, init?: RequestInit) {
     const response = await fetch(apiUrl(path), {
       ...init,
       credentials: "include",
+      cache:
+        init?.cache || (["GET", "HEAD"].includes(method) ? "no-store" : undefined),
       headers: buildHeaders(init),
       signal: controller.signal,
     });

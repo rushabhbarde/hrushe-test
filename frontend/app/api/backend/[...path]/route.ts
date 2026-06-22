@@ -102,6 +102,10 @@ function forwardResponseHeaders(response: Response) {
     }
   }
 
+  if ((response.headers.get("content-type") || "").includes("application/json")) {
+    headers.set("cache-control", "private, no-store, max-age=0, must-revalidate");
+  }
+
   return headers;
 }
 

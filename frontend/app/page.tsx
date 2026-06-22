@@ -85,9 +85,9 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            {heroMedia ? <div className="relative order-1 min-h-[54svh] overflow-hidden lg:order-2 lg:min-h-[760px]">
+            {heroMedia ? <div className="relative order-1 min-h-[420px] min-h-[54svh] overflow-hidden lg:order-2 lg:min-h-[760px]">
               {heroIsVideo ? (
-                <video src={heroMedia} poster={homepage.posterImage || undefined} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" aria-label={homepage.title || "HRUSHE campaign"} />
+                <video src={heroMedia} poster={homepage.posterImage || homepage.imageUrl || undefined} autoPlay muted loop playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" aria-label={homepage.title || "HRUSHE campaign"} />
               ) : (
                 <Image src={heroMedia} alt={homepage.title || "HRUSHE collection"} fill priority sizes="(max-width: 1024px) 100vw, 62vw" className="object-cover" />
               )}

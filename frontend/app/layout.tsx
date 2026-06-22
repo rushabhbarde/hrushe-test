@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
+
+const hrusheFont = Geist({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-hrushe",
+  fallback: ["Arial", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://hrushe.in"),
@@ -84,7 +92,7 @@ export default function RootLayout({
   ]);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={hrusheFont.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script

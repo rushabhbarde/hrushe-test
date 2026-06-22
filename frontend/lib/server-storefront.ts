@@ -15,7 +15,7 @@ const BACKEND_API_URL = (
 async function storefrontFetch<T>(path: string, fallback: T): Promise<T> {
   try {
     const response = await fetch(`${BACKEND_API_URL}${path}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
       signal: AbortSignal.timeout(8_000),
     });
 

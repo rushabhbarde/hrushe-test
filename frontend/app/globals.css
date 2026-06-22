@@ -45,8 +45,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-body: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-sans: var(--font-body);
+  --font-body: var(--font-hrushe);
+  --font-sans: var(--font-hrushe);
 }
 
 * {
@@ -56,15 +56,21 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   max-width: 100%;
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-hrushe);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background-image: none;
   transition:
     background-color 240ms ease,
@@ -82,6 +88,7 @@ picture,
 video,
 canvas,
 svg {
+  display: block;
   max-width: 100%;
 }
 
@@ -90,10 +97,24 @@ input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  border-radius: 0;
+}
+
+select,
+option {
+  background-color: var(--surface);
+  color: var(--foreground);
 }
 
 :where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--foreground) 64%, transparent);
+  outline: 2px solid var(--foreground);
+  outline-color: color-mix(in srgb, var(--foreground) 64%, transparent);
   outline-offset: 3px;
 }
 
@@ -115,10 +136,11 @@ body :where([class*="shadow-"]) {
 
 .page-shell {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .display-font {
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-hrushe);
   font-weight: 500;
 }
 
@@ -143,8 +165,25 @@ body :where([class*="shadow-"]) {
   transition: opacity 220ms ease;
 }
 
-.group\/product:hover .shop-card-image::after {
-  opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+  .group\/product:hover .shop-card-image::after {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .brand-marquee {
@@ -224,6 +263,7 @@ body :where([class*="shadow-"]) {
   text-transform: uppercase;
   color: white;
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 220ms ease, transform 220ms ease;
@@ -236,6 +276,7 @@ body :where([class*="shadow-"]) {
   border: 1px solid var(--border);
   box-shadow: var(--soft-shadow);
   backdrop-filter: blur(18px) saturate(110%);
+  -webkit-backdrop-filter: blur(18px) saturate(110%);
 }
 
 .hero-stage {

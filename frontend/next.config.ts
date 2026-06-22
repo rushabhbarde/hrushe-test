@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "hrushe.in" },
       { protocol: "https", hostname: "www.hrushe.in" },
+      { protocol: "https", hostname: "media.hrushe.in" },
       { protocol: "https", hostname: "**.r2.dev" },
       { protocol: "https", hostname: "**.onrender.com" },
       { protocol: "http", hostname: "localhost" },

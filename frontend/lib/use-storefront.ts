@@ -21,7 +21,6 @@ type BannerCache = {
   timestamp: number;
 };
 
-const STOREFRONT_CACHE_TTL = 60_000;
 let productCache: ProductCache | null = null;
 let productRequest: Promise<ProductCache> | null = null;
 let adminProductCache: ProductCache | null = null;
@@ -63,20 +62,13 @@ function mergeProductsWithDefaults(products: Product[]) {
   }));
 }
 
-function isCacheFresh(cache: { timestamp: number } | null) {
-  return Boolean(cache && Date.now() - cache.timestamp < STOREFRONT_CACHE_TTL);
-}
-
 async function fetchProducts(admin = false) {
-  const cache = admin ? adminProductCache : productCache;
   const pendingRequest = admin ? adminProductRequest : productRequest;
 
-  if (isCacheFresh(cache)) {
-    return cache as ProductCache;
-  }
-
   if (!pendingRequest) {
-    const request = apiRequest<Product[]>(admin ? "/products?admin=true" : "/products")
+    const request = apiRequest<Product[]>(admin ? "/products?admin=true" : "/products", {
+      cache: "no-store",
+    })
       .then((productsData) => {
         const nextCache = {
           products: mergeProductsWithDefaults(productsData),
@@ -98,12 +90,10 @@ async function fetchProducts(admin = false) {
 }
 
 async function fetchHomepageBanner() {
-  if (isCacheFresh(bannerCache)) {
-    return bannerCache as BannerCache;
-  }
-
   if (!bannerRequest) {
-    bannerRequest = apiRequest<HomepageBanner>("/content/homepage")
+    bannerRequest = apiRequest<HomepageBanner>("/content/homepage", {
+      cache: "no-store",
+    })
       .then((homepageBanner) => {
         bannerCache = { homepageBanner, timestamp: Date.now() };
         return bannerCache;
@@ -177,6 +167,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
+    productCache = null;
     return created;
   };
 
@@ -197,6 +188,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
+    productCache = null;
 
     return updated;
   };
@@ -217,6 +209,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
+    productCache = null;
   };
 
   const addProductReview = async (
