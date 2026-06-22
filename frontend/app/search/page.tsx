@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { LoadingState } from "@/components/loading-state";
 import { useStorefrontData } from "@/lib/use-storefront";
 
 const RECENT_SEARCHES_KEY = "hrushe_recent_searches";
@@ -197,7 +198,7 @@ function SearchPageContent() {
             </>
           ) : (
             <>
-              <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
+              <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]" aria-live="polite">
                 {results.length} results for &ldquo;{initialQuery}&rdquo;
               </p>
               <div className="mt-6">
@@ -214,7 +215,15 @@ function SearchPageContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={(
+      <div className="page-shell">
+        <SiteHeader />
+        <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-8 lg:py-24">
+          <LoadingState title="Preparing search" description="Loading the latest available collection." />
+        </main>
+        <SiteFooter />
+      </div>
+    )}>
       <SearchPageContent />
     </Suspense>
   );

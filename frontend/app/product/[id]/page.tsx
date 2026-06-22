@@ -265,6 +265,8 @@ function ProductMediaFrame({
       src={item.src}
       alt={item.alt}
       fill
+      priority={item.id.endsWith("-image-0")}
+      loading={item.id.endsWith("-image-0") ? "eager" : "lazy"}
       unoptimized={shouldBypassImageOptimization(item.src)}
       sizes="(max-width: 1024px) 100vw, 50vw"
       className={imageClassName}
@@ -281,11 +283,13 @@ type ProductInfoPanelProps = {
   description: string;
   selectedColor: string;
   selectedSize: string;
+  quantity: number;
   addError: string;
   requiresSize: boolean;
   canAddToCart: boolean;
   onColorSelect: (color: string) => void;
   onSizeSelect: (size: string) => void;
+  onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
   onOpenSizeGuide: () => void;
   actionRef?: React.Ref<HTMLDivElement>;
@@ -300,16 +304,19 @@ function ProductInfoPanel({
   description,
   selectedColor,
   selectedSize,
+  quantity,
   addError,
   requiresSize,
   canAddToCart,
   onColorSelect,
   onSizeSelect,
+  onQuantityChange,
   onAddToCart,
   onOpenSizeGuide,
   actionRef,
 }: ProductInfoPanelProps) {
   const displayName = getProductDisplayName(product);
+  const soldOut = product.status === "Sold Out" || product.availability === "sold-out";
   const colorProducts = [product, ...siblingProducts].filter(
     (item, index, items) =>
       Boolean(item.colors[0]) &&
@@ -382,6 +389,8 @@ function ProductInfoPanel({
                   src={colourImage}
                   alt=""
                   fill
+                  priority={active}
+                  loading={active ? "eager" : "lazy"}
                   unoptimized={shouldBypassImageOptimization(colourImage)}
                   sizes="52px"
                   className="object-cover"
@@ -453,6 +462,8 @@ function ProductInfoPanel({
                   type="button"
                   onClick={() => available && onSizeSelect(size)}
                   disabled={!available}
+                  aria-pressed={active}
+                  aria-label={`${size}${available ? "" : " — unavailable"}`}
                   className={`inline-flex min-h-12 min-w-12 items-center justify-center border px-3 text-[0.72rem] font-semibold uppercase transition ${
                     active
                       ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
@@ -476,16 +487,43 @@ function ProductInfoPanel({
         </div>
       ) : null}
 
+      <div className="mt-6 flex items-center justify-between border-y border-[var(--border)] py-3">
+        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Quantity</p>
+        <div className="inline-grid grid-cols-[44px_44px_44px] items-center border border-[var(--border)]" aria-label="Product quantity">
+          <button
+            type="button"
+            onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+            disabled={quantity <= 1}
+            className="flex h-11 items-center justify-center text-base"
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
+          <output className="flex h-11 items-center justify-center border-x border-[var(--border)] text-sm" aria-live="polite">
+            {quantity}
+          </output>
+          <button
+            type="button"
+            onClick={() => onQuantityChange(Math.min(10, quantity + 1))}
+            disabled={quantity >= 10}
+            className="flex h-11 items-center justify-center text-base"
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
       <div ref={actionRef} className="mt-7 space-y-4 lg:mt-auto lg:pt-8">
         <button
           type="button"
           onClick={onAddToCart}
-          disabled={requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart}
+          disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
           className="inline-flex min-h-12 w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.76rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
-          {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
+          {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
-        {addError ? <p className="text-sm text-[var(--accent)]">{addError}</p> : null}
+        {addError ? <p className="text-sm text-[var(--accent)]" role="alert">{addError}</p> : null}
         <ServicePromise compact />
       </div>
     </div>
@@ -511,6 +549,7 @@ export default function ProductDetailPage() {
     matchedProduct?.colors[0] || ""
   );
   const [selectedSize, setSelectedSize] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState("");
   const [reviewerName, setReviewerName] = useState("");
   const [reviewQuote, setReviewQuote] = useState("");
@@ -582,6 +621,7 @@ export default function ProductDetailPage() {
     setActiveMediaIndex(0);
     setSelectedColor(product.colors[0] || "");
     setSelectedSize("");
+    setQuantity(1);
     setAddError("");
   }, [product]);
 
@@ -688,6 +728,7 @@ export default function ProductDetailPage() {
   const detailRows = getProductDetailRows(product);
   const washCare = getWashCare(product);
   const hasMultipleMedia = mediaItems.length > 1;
+  const productUnavailable = product.status === "Sold Out" || product.availability === "sold-out";
 
   const showPreviousMedia = () => {
     if (!hasMultipleMedia) {
@@ -786,7 +827,7 @@ export default function ProductDetailPage() {
       price: product.price,
       size: selectedSize,
       color: effectiveColor,
-      quantity: 1,
+      quantity,
       accent: product.accent,
       image: product.images[0],
     });
@@ -862,7 +903,7 @@ export default function ProductDetailPage() {
                     aria-pressed={activeMediaIndex === index}
                     className={`relative aspect-[4/5] overflow-hidden border ${activeMediaIndex === index ? "border-[var(--foreground)]" : "border-[var(--border)]"}`}
                   >
-                    {item.type === "image" ? <Image src={item.src} alt="" fill sizes="120px" className="object-cover" /> : <span className="flex h-full items-center justify-center bg-black text-[0.6rem] uppercase tracking-[0.12em] text-white">Video</span>}
+                    {item.type === "image" ? <Image src={item.src} alt="" fill priority={index === 0} loading={index === 0 ? "eager" : "lazy"} sizes="120px" className="object-cover" /> : <span className="flex h-full items-center justify-center bg-black text-[0.6rem] uppercase tracking-[0.12em] text-white">Video</span>}
                   </button>
                 ))}
               </div>
@@ -880,6 +921,7 @@ export default function ProductDetailPage() {
               description={productSummary}
               selectedColor={selectedColor}
               selectedSize={selectedSize}
+              quantity={quantity}
               addError={addError}
               requiresSize={requiresSize}
               canAddToCart={canAddToCart}
@@ -892,6 +934,7 @@ export default function ProductDetailPage() {
                 setSelectedSize(size);
                 setAddError("");
               }}
+              onQuantityChange={setQuantity}
               onAddToCart={handleAddToCart}
               onOpenSizeGuide={() => setSizeGuideOpen(true)}
               actionRef={mainAddToCartRef}
@@ -1178,10 +1221,10 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart}
+              disabled={productUnavailable || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
               className="inline-flex min-h-12 min-w-[176px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
             >
-              {requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
+              {productUnavailable ? "Unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
             </button>
           </div>
         </div>

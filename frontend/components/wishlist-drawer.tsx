@@ -98,37 +98,39 @@ export function WishlistDrawer() {
                 }`}
               >
                 <div>
-                  <Link
-                    href={`/product/${product.slug || product.id}`}
-                    className="relative block aspect-[0.86/1] overflow-hidden bg-[#f6f6f6]"
-                  >
-                    {product.images[0] ? (
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        unoptimized={shouldBypassImageOptimization(product.images[0])}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="h-full w-full"
-                        style={{ background: product.accent }}
-                      />
-                    )}
+                  <div className="relative aspect-[0.86/1] overflow-hidden bg-[#f6f6f6]">
+                    <Link
+                      href={`/product/${product.slug || product.id}`}
+                      className="relative block h-full"
+                      aria-label={`View ${product.name}`}
+                    >
+                      {product.images[0] ? (
+                        <Image
+                          src={product.images[0]}
+                          alt={product.name}
+                          fill
+                          unoptimized={shouldBypassImageOptimization(product.images[0])}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="h-full w-full"
+                          style={{ background: product.accent }}
+                        />
+                      )}
+                    </Link>
                     <button
                       type="button"
-                      onClick={(event) => {
-                        event.preventDefault();
+                      onClick={() => {
                         setRemovingIds((current) => [...current, product.id]);
                         window.setTimeout(() => {
                           removeWishlistItem(product.id);
                           setRemovingIds((current) => current.filter((id) => id !== product.id));
-                          pushToast("Removed from wishlist");
+                          pushToast("Removed from wishlist", "error");
                         }, 220);
                       }}
                       aria-label={`Remove ${product.name} from wishlist`}
-                      className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-sm transition hover:bg-white"
+                      className="absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-white text-[var(--foreground)] transition hover:border-[var(--foreground)]"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -141,7 +143,7 @@ export function WishlistDrawer() {
                         <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
                       </svg>
                     </button>
-                  </Link>
+                  </div>
                 </div>
 
                 <div className="px-1 pb-1 pt-4">

@@ -58,10 +58,13 @@ export default function TrackOrderPage() {
               Search using your order ID with either the email or phone number used at checkout.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <fieldset className="mt-6">
+              <legend className="sr-only">Choose how to verify your order</legend>
+              <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setSearchMode("email")}
+                aria-pressed={searchMode === "email"}
                 className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "email"
                     ? "border-black bg-black text-white"
@@ -73,6 +76,7 @@ export default function TrackOrderPage() {
               <button
                 type="button"
                 onClick={() => setSearchMode("phone")}
+                aria-pressed={searchMode === "phone"}
                 className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "phone"
                     ? "border-black bg-black text-white"
@@ -81,25 +85,34 @@ export default function TrackOrderPage() {
               >
                 Order ID + Phone
               </button>
-            </div>
+              </div>
+            </fieldset>
 
-            <form className="mt-6 grid gap-4" onSubmit={(event) => void onSubmit(event)}>
-              <input
-                value={orderId}
-                onChange={(event) => setOrderId(event.target.value)}
-                className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
-                placeholder="Order ID"
-                required
-              />
-              <input
-                value={contactValue}
-                onChange={(event) => setContactValue(event.target.value)}
-                className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
-                placeholder={searchMode === "email" ? "Email address" : "Phone number"}
-                type={searchMode === "email" ? "email" : "tel"}
-                required
-              />
-              {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
+            <form className="mt-6 grid gap-4" onSubmit={(event) => void onSubmit(event)} aria-busy={loading}>
+              <label className="field-label">
+                Order ID
+                <input
+                  value={orderId}
+                  onChange={(event) => setOrderId(event.target.value)}
+                  className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
+                  placeholder="e.g. HRU-1024"
+                  autoComplete="off"
+                  required
+                />
+              </label>
+              <label className="field-label">
+                {searchMode === "email" ? "Email address" : "Phone number"}
+                <input
+                  value={contactValue}
+                  onChange={(event) => setContactValue(event.target.value)}
+                  className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
+                  placeholder={searchMode === "email" ? "you@example.com" : "+91 98765 43210"}
+                  type={searchMode === "email" ? "email" : "tel"}
+                  autoComplete={searchMode === "email" ? "email" : "tel"}
+                  required
+                />
+              </label>
+              {error ? <p className="text-sm text-[var(--accent)]" role="alert">{error}</p> : null}
               <button
                 type="submit"
                 disabled={loading}
@@ -110,7 +123,7 @@ export default function TrackOrderPage() {
             </form>
           </div>
 
-          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12">
+          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12" aria-live="polite">
             {!order ? (
               <div className="flex min-h-[420px] flex-col justify-center">
                 <p className="eyebrow text-[var(--muted)]">

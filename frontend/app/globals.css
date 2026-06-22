@@ -19,12 +19,18 @@
   --footer-foreground: #f6f4ef;
   --header-background: rgba(246, 244, 239, 0.96);
   --hover-fill: rgba(17, 17, 17, 0.05);
+  --space-0: 0.25rem;
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2rem;
+  --space-5: 2.5rem;
   --space-6: 3rem;
   --space-8: 4rem;
+  --space-10: 5rem;
+  --space-12: 6rem;
+  --page-gutter: clamp(1rem, 3vw, 2rem);
+  --page-width: 100rem;
   --control-height: 3rem;
 }
 
@@ -78,11 +84,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  line-height: 1.5;
   background-image: none;
   transition:
     background-color 240ms ease,
     color 240ms ease,
     background-image 240ms ease;
+}
+
+main {
+  isolation: isolate;
 }
 
 ::selection {
@@ -122,6 +133,10 @@ button:disabled,
   cursor: not-allowed;
 }
 
+button:disabled {
+  opacity: 0.52;
+}
+
 input,
 select,
 textarea {
@@ -159,6 +174,20 @@ body :where([class*="shadow-"]) {
 .page-shell {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+.storefront-container {
+  width: min(100%, var(--page-width));
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.storefront-section {
+  padding-block: clamp(4rem, 8vw, 8rem);
+}
+
+.storefront-section-compact {
+  padding-block: clamp(3rem, 6vw, 5rem);
 }
 
 .display-font {
@@ -397,6 +426,13 @@ body :where([class*="shadow-"]) {
   min-height: 48px;
   letter-spacing: 0.1em;
   border-radius: 0 !important;
+}
+
+.button-primary:active,
+.button-secondary:active,
+.lux-action:active,
+.lux-action-muted:active {
+  transform: translateY(1px);
 }
 
 .button-secondary {

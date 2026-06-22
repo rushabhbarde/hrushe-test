@@ -29,10 +29,9 @@ const footerGroups = [
   {
     title: "Shop",
     links: [
-      { href: "/shop", label: "Collections" },
+      { href: "/shop", label: "All pieces" },
       { href: "/new-in", label: "New In" },
-      { href: "/story", label: "Story" },
-      { href: "/contact", label: "Contact" },
+      { href: "/collection/t-shirts", label: "T-Shirts" },
     ],
   },
   {
@@ -41,7 +40,23 @@ const footerGroups = [
       { href: "/track-order", label: "Track order" },
       { href: "/policies?tab=shipping", label: "Shipping" },
       { href: "/policies?tab=returns", label: "Returns" },
+      { href: "/contact", label: "Contact" },
+    ],
+  },
+  {
+    title: "Brand",
+    links: [
+      { href: "/story", label: "Our story" },
+      { href: "/shop", label: "The collection" },
+      { href: "/new-in", label: "Latest release" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
       { href: "/policies?tab=privacy", label: "Privacy" },
+      { href: "/policies?tab=terms", label: "Terms" },
+      { href: "/policies?tab=returns", label: "Return policy" },
     ],
   },
 ];
@@ -66,7 +81,7 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-white/15 bg-[var(--foreground)] text-[var(--background)]">
-      <div className="mx-auto grid w-full max-w-[1600px] gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.5fr_0.75fr_0.75fr_1fr] lg:px-8 lg:py-24">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,minmax(0,0.62fr))] lg:px-8 lg:py-24">
         <div className="max-w-xl">
           <p className="eyebrow text-white/55">{settings.brandName}</p>
           <p className="mt-5 max-w-[12ch] text-[2.25rem] font-medium uppercase leading-[0.96] tracking-[-0.04em] text-[var(--background)] sm:text-[3.5rem]">
@@ -86,7 +101,7 @@ export function SiteFooter() {
                   {link.label}
                 </Link>
               ))}
-              {group.title === "Support" ? (
+              {group.title === "Legal" ? (
                 <button
                   type="button"
                   onClick={openCookiePreferences}
@@ -99,9 +114,13 @@ export function SiteFooter() {
           </div>
         ))}
 
-        <div>
-          <p className="eyebrow text-white/45">Contact</p>
-          <div className="mt-5 space-y-4 text-sm text-white/75">
+      </div>
+
+      <div className="border-t border-white/15">
+        <div className="mx-auto grid w-full max-w-[1600px] gap-8 px-4 py-8 sm:px-6 md:grid-cols-[1fr_auto] md:items-end lg:px-8">
+          <div>
+            <p className="eyebrow text-white/45">Client services</p>
+            <div className="mt-4 flex flex-col gap-3 text-sm text-white/75 sm:flex-row sm:flex-wrap sm:gap-x-8">
             <a href={`mailto:${settings.contactEmail}`} className="block hover:text-white">
               {settings.contactEmail}
             </a>
@@ -119,7 +138,11 @@ export function SiteFooter() {
             {settings.instagramUrl ? <a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="block hover:text-white">Instagram</a> : null}
             {settings.facebookUrl ? <a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="block hover:text-white">Facebook</a> : null}
             {settings.pinterestUrl ? <a href={settings.pinterestUrl} target="_blank" rel="noreferrer" className="block hover:text-white">Pinterest</a> : null}
+            </div>
           </div>
+          <p className="max-w-sm text-xs leading-6 text-white/45 md:text-right">
+            Support is available Monday–Saturday. Include your order number for the quickest response.
+          </p>
         </div>
       </div>
 

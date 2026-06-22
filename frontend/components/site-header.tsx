@@ -10,10 +10,20 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 
 const navItems = [
-  { href: "/new-in", label: "New In" },
   { href: "/shop", label: "Shop" },
+  { href: "/new-in", label: "New In" },
+  { href: "/collection/t-shirts", label: "T-Shirts" },
   { href: "/story", label: "Story" },
+  { href: "/contact", label: "Support" },
 ];
+
+function routeIsActive(pathname: string, href: string) {
+  if (href === "/shop") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function HeaderIcon({
   label,
@@ -110,8 +120,21 @@ export function SiteHeader() {
     };
   }, [isAccountMenuOpen, isMobileMenuOpen]);
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)]">
+    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]">
       <div className="border-b border-[var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
           <span>Dispatches in 1–3 business days · 7-day returns</span>
@@ -155,7 +178,8 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={pathname === item.href ? "nav-link-active" : "hover:text-[var(--foreground)]"}
+                  aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
+                  className={routeIsActive(pathname, item.href) ? "nav-link-active" : "hover:text-[var(--foreground)]"}
                 >
                   {item.label}
                 </Link>
@@ -182,7 +206,7 @@ export function SiteHeader() {
                   expanded={isAccountMenuOpen}
                   onClick={() => setIsAccountMenuOpen((current) => !current)}
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--accent)]/8 text-sm font-semibold text-[var(--accent)]">
+                  <span className="flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-[var(--accent)]/8 text-sm font-semibold text-[var(--accent)]">
                     {accountInitial}
                   </span>
                 </HeaderIcon>
@@ -222,7 +246,7 @@ export function SiteHeader() {
                     <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
                   </svg>
                   {wishlistCount > 0 ? (
-                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
+                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
                       {wishlistCount}
                     </span>
                   ) : null}
@@ -249,7 +273,7 @@ export function SiteHeader() {
                   />
                 </svg>
                 {itemCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
+                  <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
                     {itemCount}
                   </span>
                 ) : null}
@@ -276,8 +300,9 @@ export function SiteHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
                     className={`flex items-center justify-between px-1 py-4 text-[0.78rem] font-medium uppercase tracking-[0.16em] ${
-                      pathname === item.href ? "text-[var(--accent)]" : "text-[var(--foreground)]"
+                      routeIsActive(pathname, item.href) ? "text-[var(--accent)]" : "text-[var(--foreground)]"
                     }`}
                   >
                     <span>{item.label}</span>

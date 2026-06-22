@@ -92,7 +92,7 @@ export default function RootLayout({
   ]);
 
   return (
-    <html lang="en" className={hrusheFont.variable} suppressHydrationWarning>
+    <html lang="en" className={hrusheFont.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script

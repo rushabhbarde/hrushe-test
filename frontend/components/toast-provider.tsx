@@ -41,11 +41,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex flex-col items-center gap-3 px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 flex flex-col items-center gap-3 px-4" aria-label="Notifications">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`toast-shell min-w-[280px] max-w-md rounded-full px-5 py-3 text-sm font-medium text-white shadow-lg ${
+            role={toast.tone === "error" ? "alert" : "status"}
+            aria-live={toast.tone === "error" ? "assertive" : "polite"}
+            className={`toast-shell min-w-[280px] max-w-md border border-white/15 px-5 py-3 text-sm font-medium text-white ${
               toast.tone === "error" ? "bg-[var(--danger)]" : "bg-black"
             }`}
           >

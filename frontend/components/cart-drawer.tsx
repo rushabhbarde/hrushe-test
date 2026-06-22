@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
+import { useToast } from "@/components/toast-provider";
 
 export function CartDrawer() {
   const {
@@ -19,6 +20,7 @@ export function CartDrawer() {
     removeItem,
     updateQuantity,
   } = useCart();
+  const { pushToast } = useToast();
   const pathname = usePathname();
   const { dialogRef, initialFocusRef } = useDialogAccessibility(isCartOpen, closeCart);
 
@@ -43,7 +45,7 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 shadow-2xl sm:p-6"
+        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 sm:p-6"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -120,13 +122,17 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() =>
-                          updateQuantity(
+                          {
+                            const nextQuantity = item.quantity - 1;
+                            updateQuantity(
                             item.productId,
                             item.size,
                             item.color,
-                            item.quantity - 1,
+                            nextQuantity,
                             item.fit
-                          )
+                            );
+                            pushToast(nextQuantity <= 0 ? "Item removed from bag" : "Bag updated", nextQuantity <= 0 ? "error" : "success");
+                          }
                         }
                         className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
                         aria-label={`Decrease quantity of ${item.name}`}
@@ -137,13 +143,16 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() =>
-                          updateQuantity(
+                          {
+                            updateQuantity(
                             item.productId,
                             item.size,
                             item.color,
                             item.quantity + 1,
                             item.fit
-                          )
+                            );
+                            pushToast("Bag updated");
+                          }
                         }
                         className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
                         aria-label={`Increase quantity of ${item.name}`}
@@ -152,7 +161,10 @@ export function CartDrawer() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.productId, item.size, item.color, item.fit)}
+                        onClick={() => {
+                          removeItem(item.productId, item.size, item.color, item.fit);
+                          pushToast("Item removed from bag", "error");
+                        }}
                         className="ml-auto text-sm text-[var(--foreground)] underline underline-offset-4"
                       >
                         Remove
@@ -165,10 +177,10 @@ export function CartDrawer() {
           )}
         </div>
 
-        {isReady ? (
+        {isReady && items.length > 0 ? (
           <div className="border-t border-[var(--border)] pt-5">
           <div className="flex items-center justify-between text-sm text-[var(--muted)]">
-            <span>{itemCount} items</span>
+            <span>{itemCount} item{itemCount === 1 ? "" : "s"}</span>
             <span>Subtotal ₹{subtotal.toLocaleString("en-IN")}</span>
           </div>
           <p className="mt-4 text-xs leading-6 text-[var(--muted)]">

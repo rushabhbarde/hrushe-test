@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { LoadingState } from "@/components/loading-state";
 
 const policyTabs = [
   {
@@ -207,35 +208,41 @@ function PoliciesPageContent() {
         </div>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[300px_1fr]">
-          <aside className="space-y-3">
-            {policyTabs.map((policy) => {
-              const isActive = currentPolicy.key === policy.key;
+          <aside aria-label="Policy sections">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-3 lg:overflow-visible lg:px-0 lg:pb-0" role="tablist">
+              {policyTabs.map((policy) => {
+                const isActive = currentPolicy.key === policy.key;
 
-              return (
-                <button
-                  key={policy.key}
-                  type="button"
-                  onClick={() => switchPolicy(policy.key)}
-                  className={`block w-full border px-5 py-4 text-left transition ${
-                    isActive
-                      ? "border-black bg-black text-white"
-                      : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-black/5"
-                  }`}
-                >
-                  <span className="text-base font-semibold">{policy.label}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={policy.key}
+                    id={`policy-tab-${policy.key}`}
+                    type="button"
+                    onClick={() => switchPolicy(policy.key)}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls="active-policy-panel"
+                    className={`block min-w-max shrink-0 border px-5 py-4 text-left transition lg:w-full ${
+                      isActive
+                        ? "border-black bg-black text-white"
+                        : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-black/5"
+                    }`}
+                  >
+                    <span className="text-base font-semibold">{policy.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
             <Link
               href="/contact"
-              className="button-secondary mt-4 inline-flex px-5 py-3 transition"
+              className="button-secondary hidden px-5 py-3 transition lg:mt-4 lg:inline-flex"
             >
               Need support?
             </Link>
           </aside>
 
-          <section className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
+          <section id="active-policy-panel" role="tabpanel" aria-labelledby={`policy-tab-${currentPolicy.key}`} className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
             <p className="eyebrow text-[var(--muted)]">{currentPolicy.label}</p>
             <h2 className="mt-5 text-3xl font-medium tracking-[-0.025em]">
               {currentPolicy.label}
@@ -262,7 +269,15 @@ function PoliciesPageContent() {
 
 export default function PoliciesPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={(
+      <div className="page-shell">
+        <SiteHeader />
+        <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 lg:px-8 lg:py-24">
+          <LoadingState title="Preparing policies" description="Loading the requested policy section." />
+        </main>
+        <SiteFooter />
+      </div>
+    )}>
       <PoliciesPageContent />
     </Suspense>
   );

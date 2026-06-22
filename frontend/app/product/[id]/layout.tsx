@@ -93,35 +93,55 @@ export default async function ProductLayout({ children, params }: ProductLayoutP
     const inStock =
       !product.trackInventory ||
       product.variants?.some((variant) => variant.active && variant.stock > 0);
-    const reviews = product.reviews || [];
+    const reviews = (product.reviews || []).filter(
+      (review) => review.verifiedPurchase === true && review.status === "approved"
+    );
+    const productName = product.displayName || product.name;
+    const productUrl = `https://hrushe.in/product/${product.slug || id}`;
+    const categoryName = product.category || "Shop";
+    const categoryUrl = product.category
+      ? `https://hrushe.in/collection/${product.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+      : "https://hrushe.in/shop";
     structuredData = JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "Product",
-      name: product.name,
-      description: buildDescription(product),
-      sku: product.id,
-      brand: { "@type": "Brand", name: "HRUSHE" },
-      ...(image ? { image: [new URL(image, "https://hrushe.in").toString()] } : {}),
-      offers: {
-        "@type": "Offer",
-        url: `https://hrushe.in/product/${product.slug || id}`,
-        priceCurrency: "INR",
-        price: product.price,
-        availability: inStock
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-        itemCondition: "https://schema.org/NewCondition",
-      },
-      ...(reviews.length
-        ? {
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue:
-                reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length,
-              reviewCount: reviews.length,
-            },
-          }
-        : {}),
+      "@graph": [
+        {
+          "@type": "Product",
+          name: productName,
+          description: buildDescription(product),
+          sku: product.variants?.find((variant) => variant.sku)?.sku || product.slug || product.id,
+          brand: { "@type": "Brand", name: "HRUSHE" },
+          ...(image ? { image: [new URL(image, "https://hrushe.in").toString()] } : {}),
+          offers: {
+            "@type": "Offer",
+            url: productUrl,
+            priceCurrency: "INR",
+            price: product.price,
+            availability: inStock
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            itemCondition: "https://schema.org/NewCondition",
+          },
+          ...(reviews.length
+            ? {
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue:
+                    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length,
+                  reviewCount: reviews.length,
+                },
+              }
+            : {}),
+        },
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://hrushe.in" },
+            { "@type": "ListItem", position: 2, name: categoryName, item: categoryUrl },
+            { "@type": "ListItem", position: 3, name: productName, item: productUrl },
+          ],
+        },
+      ],
     });
   } catch {
     structuredData = "";
