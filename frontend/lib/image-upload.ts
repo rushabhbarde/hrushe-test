@@ -62,7 +62,7 @@ export async function compressImageFile(file: File, maxDimension = 1600) {
 
   context.drawImage(image, 0, 0, width, height);
 
-  const blob = await new Promise<Blob | null>((resolve) =>
+  let blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/webp", 0.82)
   );
 
@@ -70,6 +70,30 @@ export async function compressImageFile(file: File, maxDimension = 1600) {
     throw new Error("Could not compress selected image.");
   }
 
+  const supportedOutputTypes: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+  let outputType = blob.type.toLowerCase();
+
+  // Safari may fall back to PNG when a requested canvas encoder is not
+  // available. Keep the MIME type and extension aligned with the bytes it
+  // actually produced instead of force-labelling the result as WebP.
+  if (!supportedOutputTypes[outputType]) {
+    blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.82)
+    );
+    outputType = blob?.type.toLowerCase() || "";
+  }
+
+  if (!blob || !supportedOutputTypes[outputType]) {
+    throw new Error("This browser could not create a supported image format.");
+  }
+
   const baseName = file.name.replace(/\.[^.]+$/, "") || "hrushe-product";
-  return new File([blob], `${baseName}.webp`, { type: "image/webp" });
+  return new File([blob], `${baseName}.${supportedOutputTypes[outputType]}`, {
+    type: outputType,
+    lastModified: file.lastModified,
+  });
 }
