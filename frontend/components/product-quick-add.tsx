@@ -24,7 +24,13 @@ function getAvailableSizes(product: Product) {
   );
 }
 
-export function ProductQuickAdd({ product }: { product: Product }) {
+export function ProductQuickAdd({
+  product,
+  variant = "bar",
+}: {
+  product: Product;
+  variant?: "bar" | "icon";
+}) {
   const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
   const [selectingSize, setSelectingSize] = useState(false);
@@ -86,10 +92,23 @@ export function ProductQuickAdd({ product }: { product: Product }) {
     return null;
   }
 
+  const wrapperClassName =
+    variant === "icon"
+      ? "absolute bottom-14 right-3 z-20 hidden md:block"
+      : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
+  const chooserClassName =
+    variant === "icon"
+      ? "w-[min(18rem,calc(100vw-2rem))] border border-black/15 bg-[var(--surface)] p-2"
+      : "border border-black/15 bg-[var(--surface)] p-2";
+  const buttonClassName =
+    variant === "icon"
+      ? "flex h-10 w-10 items-center justify-center border border-black/10 bg-[var(--surface)] text-xl font-light leading-none text-[var(--foreground)] opacity-0 transition duration-200 hover:border-[var(--foreground)] group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+      : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
+
   return (
-    <div className="absolute inset-x-3 bottom-3 z-20 hidden md:block">
+    <div className={wrapperClassName}>
       {selectingSize && availableSizes.length > 1 ? (
-        <div className="border border-black/15 bg-[var(--surface)] p-2" role="group" aria-label="Choose a size to add">
+        <div className={chooserClassName} role="group" aria-label="Choose a size to add">
           <div className="grid grid-cols-4 gap-1.5">
             {availableSizes.map((size) => (
               <button
@@ -115,9 +134,20 @@ export function ProductQuickAdd({ product }: { product: Product }) {
           type="button"
           onClick={() => void prepareQuickAdd()}
           disabled={loading}
-          className="min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100"
+          className={buttonClassName}
+          aria-label={`Quick add ${getProductDisplayName(product)}`}
         >
-          {loading ? "Loading options…" : "Quick add"}
+          {variant === "icon" ? (
+            loading ? (
+              <span aria-hidden="true">…</span>
+            ) : (
+              <span aria-hidden="true">+</span>
+            )
+          ) : loading ? (
+            "Loading options…"
+          ) : (
+            "Quick add"
+          )}
         </button>
       )}
     </div>
