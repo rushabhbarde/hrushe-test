@@ -10,18 +10,13 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 
 const navItems = [
-  { href: "/shop", label: "Shop" },
   { href: "/new-in", label: "New In" },
-  { href: "/collection/t-shirts", label: "T-Shirts" },
+  { href: "/collection/men", label: "Men" },
+  { href: "/collection/women", label: "Women" },
   { href: "/story", label: "Story" },
-  { href: "/contact", label: "Support" },
 ];
 
 function routeIsActive(pathname: string, href: string) {
-  if (href === "/shop") {
-    return pathname === href;
-  }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

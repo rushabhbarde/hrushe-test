@@ -91,6 +91,45 @@ function buildSubject(option: IssueOption | null) {
   return option ? `${option.label} support request` : "Support request";
 }
 
+function ConciergeIcon() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d="M8.5 16.5v-1.2a7.5 7.5 0 0 1 15 0v1.2"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="square"
+      />
+      <path
+        d="M8.5 17h4v6h-1.25A2.75 2.75 0 0 1 8.5 20.25V17ZM23.5 17h-4v6h1.25a2.75 2.75 0 0 0 2.75-2.75V17Z"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinejoin="miter"
+      />
+      <path
+        d="M19.25 23.25c-.8 1.15-1.9 1.75-3.25 1.75h-2.25"
+        stroke="currentColor"
+        strokeWidth="1.55"
+        strokeLinecap="square"
+      />
+      <path
+        d="M16 8.5v3.75M14.15 10.35h3.7"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="square"
+      />
+    </svg>
+  );
+}
+
+function CloseSupportIcon() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path d="M10 10l12 12M22 10 10 22" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" />
+    </svg>
+  );
+}
+
 export function SupportChatbot() {
   const pathname = usePathname();
   const { user, isChecking } = useCustomerAuth();
@@ -353,15 +392,21 @@ export function SupportChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="group flex h-12 items-center justify-center gap-2 border border-[var(--foreground)] bg-[var(--foreground)] px-3 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[var(--background)] sm:px-4"
+        className="support-float-button group"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
       >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-          <path d="M5 18.5 3.8 21l3.6-1.2A8.2 8.2 0 1 0 5 18.5Z" />
-          <path d="M8.2 11.8h.01M12 11.8h.01M15.8 11.8h.01" strokeLinecap="round" strokeWidth="2.2" />
-        </svg>
-        <span className="hidden sm:inline">Support</span>
+        <span className="support-float-button__icon">
+          {isOpen ? <CloseSupportIcon /> : <ConciergeIcon />}
+        </span>
+        <span className="hidden text-left leading-none sm:grid">
+          <span className="text-[0.56rem] font-medium uppercase tracking-[0.18em] opacity-60">
+            HRUSHE
+          </span>
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em]">
+            {isOpen ? "Close" : "Concierge"}
+          </span>
+        </span>
       </button>
     </div>
   );

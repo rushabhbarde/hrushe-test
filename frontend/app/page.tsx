@@ -67,7 +67,7 @@ export default async function Home() {
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main>
-        <section className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
+        <section className="w-full">
           <div className={`grid min-h-[620px] bg-[var(--surface)] lg:min-h-[760px] ${heroMedia ? "lg:grid-cols-[38%_62%]" : ""}`}>
             <div className="order-2 flex flex-col justify-center px-5 py-12 sm:px-9 sm:py-16 lg:order-1 lg:px-12 xl:px-16">
               <p className="eyebrow text-[var(--muted)]">{homepage.eyebrow || "Elevated Everyday"}</p>

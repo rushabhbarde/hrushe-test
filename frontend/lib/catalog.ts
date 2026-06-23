@@ -204,6 +204,9 @@ export function slugsMatch(left: string, right: string) {
 export function getCollectionLabelFromSlug(slug: string, products: Product[]) {
   const knownCategories = Array.from(
     new Set([
+      "Men",
+      "Women",
+      "Unisex",
       ...categories,
       ...products.flatMap((product) => productCategoryList(product)),
     ])
@@ -221,11 +224,32 @@ export function formatCollectionLabel(slug: string) {
 }
 
 export function getCollectionProducts(products: Product[], collectionLabel: string) {
+  const collectionSlug = toCollectionSlug(collectionLabel);
+
   return sortProductsByStorefrontPriority(
     products
       .filter(isVisibleStorefrontProduct)
       .filter((product) =>
-        productCategoryList(product).some((category) => slugsMatch(category, collectionLabel))
+        productCategoryList(product).some((category) => slugsMatch(category, collectionLabel)) ||
+        genderMatchesCollection(product.gender, collectionSlug)
       )
   );
+}
+
+function genderMatchesCollection(gender: ProductGender | undefined, collectionSlug: string) {
+  const genderSlug = toCollectionSlug(gender || "");
+
+  if (!genderSlug) {
+    return false;
+  }
+
+  if (collectionSlug === "men") {
+    return genderSlug === "men" || genderSlug === "unisex";
+  }
+
+  if (collectionSlug === "women") {
+    return genderSlug === "women" || genderSlug === "unisex";
+  }
+
+  return slugsMatch(genderSlug, collectionSlug);
 }
