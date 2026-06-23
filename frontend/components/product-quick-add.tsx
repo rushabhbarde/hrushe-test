@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
@@ -69,32 +69,64 @@ export function ProductQuickAdd({
     openCart();
   };
 
-  const prepareQuickAdd = async () => {
+  const loadProductOptions = async ({ silent = false }: { silent?: boolean } = {}) => {
     if (productDetail) {
-      const sizes = getAvailableSizes(productDetail);
-      if (sizes.length > 1) {
-        setSelectingSize(true);
-      } else {
-        addProduct(productDetail, sizes[0] || "");
-      }
-      return;
+      return productDetail;
+    }
+
+    if (loading) {
+      return product;
     }
 
     setLoading(true);
     try {
       const detail = await apiRequest<Product>(`/products/${product.slug || product.id}`);
-      const sizes = getAvailableSizes(detail);
       setProductDetail(detail);
-      if (sizes.length > 1) {
-        setSelectingSize(true);
-      } else {
-        addProduct(detail, sizes[0] || "");
-      }
+      return detail;
     } catch {
-      pushToast("Product options could not be loaded. Please try again.", "error");
+      if (!silent) {
+        pushToast("Product options could not be loaded. Please try again.", "error");
+      }
+      return null;
     } finally {
       setLoading(false);
     }
+  };
+
+  const revealSizeSelector = async () => {
+    const immediateSizes = getAvailableSizes(activeProduct);
+
+    if (immediateSizes.length > 1) {
+      setSelectingSize(true);
+    }
+
+    if (!productDetail) {
+      const detail = await loadProductOptions({ silent: true });
+      const detailSizes = detail ? getAvailableSizes(detail) : [];
+
+      if (detailSizes.length > 1) {
+        setSelectingSize(true);
+      }
+    }
+  };
+
+  const prepareQuickAdd = async () => {
+    const detail = await loadProductOptions();
+
+    if (!detail) {
+      return;
+    }
+
+    const sizes = getAvailableSizes(detail);
+    if (sizes.length > 1) {
+      setSelectingSize(true);
+    } else {
+      addProduct(detail, sizes[0] || "");
+    }
+  };
+  const preventIconClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   if (soldOut) {
@@ -103,11 +135,11 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? "absolute bottom-12 right-4 z-20 hidden md:block"
+      ? "absolute bottom-12 right-4 z-20 hidden h-6 w-6 md:block"
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
-      ? "w-[min(18rem,calc(100vw-2rem))] border border-black/15 bg-[var(--surface)] p-2"
+      ? "absolute bottom-0 right-0 w-[min(18rem,calc(100vw-2rem))] border border-black/15 bg-[var(--surface)] p-2"
       : "border border-black/15 bg-[var(--surface)] p-2";
   const buttonClassName =
     variant === "icon"
@@ -115,7 +147,13 @@ export function ProductQuickAdd({
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
 
   return (
-    <div className={wrapperClassName}>
+    <div
+      className={wrapperClassName}
+      onMouseEnter={variant === "icon" ? () => void revealSizeSelector() : undefined}
+      onMouseOver={variant === "icon" ? () => void revealSizeSelector() : undefined}
+      onMouseLeave={variant === "icon" ? () => setSelectingSize(false) : undefined}
+      onFocus={variant === "icon" ? () => void revealSizeSelector() : undefined}
+    >
       {selectingSize && availableSizes.length > 1 ? (
         <div className={chooserClassName} role="group" aria-label="Choose a size to add">
           <div className="grid grid-cols-4 gap-1.5">
@@ -141,7 +179,8 @@ export function ProductQuickAdd({
       ) : (
         <button
           type="button"
-          onClick={() => void prepareQuickAdd()}
+          onMouseDown={variant === "icon" ? preventIconClick : undefined}
+          onClick={variant === "icon" ? preventIconClick : () => void prepareQuickAdd()}
           disabled={loading}
           className={buttonClassName}
           aria-label={`Quick add ${getProductDisplayName(product)}`}

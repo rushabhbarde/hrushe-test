@@ -1,7 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { useState } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import type { Product } from "@/lib/catalog";
+import { apiRequest } from "@/lib/api";
 import { getProductDisplayName } from "@/lib/product-presentation";
 import { WishlistButton } from "@/components/wishlist-button";
 import { ProductQuickAdd } from "@/components/product-quick-add";
@@ -74,6 +78,27 @@ function getProductColourOptions(product: Product) {
   });
 }
 
+function getProductGalleryImages(product: Product, primaryImage: string, detailImages: string[] = []) {
+  const seenImages = new Set<string>();
+  const imageCandidates = [
+    primaryImage,
+    ...(product.images || []),
+    ...(product.galleryImages || []),
+    ...detailImages,
+  ];
+
+  return imageCandidates
+    .map((item) => item?.trim())
+    .filter((item): item is string => {
+      if (!item || seenImages.has(item)) {
+        return false;
+      }
+
+      seenImages.add(item);
+      return true;
+    });
+}
+
 export function ProductCard({
   product,
   variant = "default",
@@ -83,15 +108,24 @@ export function ProductCard({
   variant?: "default" | "editorial";
   priority?: boolean;
 }) {
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryDetailImages, setGalleryDetailImages] = useState<string[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
   const productName = getProductDisplayName(product);
   const productHref = `/product/${product.slug || product.id}`;
   const image = product.thumbnailUrl || product.images?.[0] || "";
-  const hoverImage = product.images?.find((item) => item && item !== image) || "";
   const colour = product.colour || product.colors?.[0] || "";
   const colourOptions = getProductColourOptions(product);
   const visibleColourOptions = colourOptions.slice(0, 2);
   const hiddenColourCount = Math.max(0, colourOptions.length - visibleColourOptions.length);
   const isEditorial = variant === "editorial";
+  const galleryImages = getProductGalleryImages(product, image, galleryDetailImages);
+  const activeGalleryIndex = galleryImages.length > 0 ? galleryIndex % galleryImages.length : 0;
+  const activeImage = isEditorial ? galleryImages[activeGalleryIndex] || image : image;
+  const hoverImage = !isEditorial
+    ? product.images?.find((item) => item && item !== image) || ""
+    : "";
+  const hasCardGallery = isEditorial && galleryImages.length > 1;
   const imageSizes = isEditorial
     ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
     : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw";
@@ -105,12 +139,42 @@ export function ProductCard({
         )
       )
     : product.sizes;
+  const showPreviousImage = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setGalleryIndex((index) => (index - 1 + galleryImages.length) % galleryImages.length);
+  };
+  const showNextImage = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setGalleryIndex((index) => (index + 1) % galleryImages.length);
+  };
+  const loadProductGallery = async () => {
+    if (!isEditorial || galleryLoading || galleryDetailImages.length > 0 || (product.galleryImages || []).length > 0) {
+      return;
+    }
+
+    setGalleryLoading(true);
+    try {
+      const detail = await apiRequest<Product>(`/products/${product.slug || product.id}`);
+      const detailPrimaryImage = detail.thumbnailUrl || detail.images?.[0] || image;
+
+      setGalleryDetailImages(getProductGalleryImages(detail, detailPrimaryImage));
+    } catch {
+      setGalleryDetailImages([]);
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
 
   return (
     <article
       data-product-card
       data-product-card-variant={variant}
       className={`group/card relative min-w-0 ${isEditorial ? "bg-[var(--background)]" : ""}`}
+      onMouseEnter={isEditorial ? () => void loadProductGallery() : undefined}
+      onMouseOver={isEditorial ? () => void loadProductGallery() : undefined}
+      onFocus={isEditorial ? () => void loadProductGallery() : undefined}
     >
       <div
         data-product-image-frame
@@ -119,9 +183,10 @@ export function ProductCard({
         }`}
       >
         <Link href={productHref} className="group/image relative block h-full" aria-label={`View ${productName}`}>
-          {image ? (
+          {activeImage ? (
             <Image
-              src={image}
+              key={activeImage}
+              src={activeImage}
               alt={productName}
               fill
               loading={priority ? "eager" : "lazy"}
@@ -151,6 +216,40 @@ export function ProductCard({
             </span>
           ) : null}
         </Link>
+        {hasCardGallery ? (
+          <>
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-4 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+              <button
+                type="button"
+                onClick={showPreviousImage}
+                className="pointer-events-auto grid h-8 w-8 place-items-center text-2xl font-light leading-none text-[var(--foreground)]"
+                aria-label={`Previous image for ${productName}`}
+                data-product-gallery-control="previous"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={showNextImage}
+                className="pointer-events-auto grid h-8 w-8 place-items-center text-2xl font-light leading-none text-[var(--foreground)]"
+                aria-label={`Next image for ${productName}`}
+                data-product-gallery-control="next"
+              >
+                ›
+              </button>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 z-10 flex h-[2px]" aria-hidden="true">
+              {galleryImages.map((galleryImage, index) => (
+                <span
+                  key={galleryImage}
+                  className={`h-full flex-1 transition-colors duration-200 ${
+                    index === activeGalleryIndex ? "bg-[var(--foreground)]" : "bg-transparent"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
         <ProductQuickAdd product={product} variant={isEditorial ? "icon" : "bar"} />
         <WishlistButton
           productId={product.id}
