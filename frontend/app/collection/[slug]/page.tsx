@@ -137,11 +137,7 @@ function getDerivedProductCategories(product: Product) {
 }
 
 function getGenderCollectionTitle(collectionSlug: string) {
-  return collectionSlug === "women" ? "Women's edit" : "Men's edit";
-}
-
-function getGenderCollectionCrumb(collectionSlug: string) {
-  return collectionSlug === "women" ? "Women / Edit" : "Men / Edit";
+  return collectionSlug === "women" ? "Women's Sale" : "Men's Sale";
 }
 
 function FilterSortIcon() {
@@ -238,31 +234,12 @@ export default function CollectionPage() {
 
   if (isGenderCollection) {
     const genderTitle = getGenderCollectionTitle(collectionSlug);
-    const oppositeGender = collectionSlug === "women" ? "men" : "women";
-    const oppositeGenderLabel = collectionSlug === "women" ? "Men's edit" : "Women's edit";
 
     return (
       <div className="page-shell bg-[var(--background)]">
         <SiteHeader />
         <main className="collection-plp">
           <header className="collection-plp__intro">
-            <nav className="collection-plp__gender-nav" aria-label="Gender collections">
-              <Link
-                href="/collection/women"
-                aria-current={collectionSlug === "women" ? "page" : undefined}
-                className={collectionSlug === "women" ? "is-active" : ""}
-              >
-                Women
-              </Link>
-              <Link
-                href="/collection/men"
-                aria-current={collectionSlug === "men" ? "page" : undefined}
-                className={collectionSlug === "men" ? "is-active" : ""}
-              >
-                Men
-              </Link>
-            </nav>
-            <p className="collection-plp__crumb">{getGenderCollectionCrumb(collectionSlug)}</p>
             <h1>{genderTitle}</h1>
           </header>
 
@@ -304,7 +281,6 @@ export default function CollectionPage() {
                   {normaliseCategoryLabel(category)}
                 </button>
               ))}
-              <Link href={`/collection/${oppositeGender}`}>{oppositeGenderLabel}</Link>
             </nav>
 
             <div className="collection-plp__layout-controls" aria-label="Product grid density">

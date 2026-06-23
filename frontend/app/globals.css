@@ -395,42 +395,11 @@ body :where([class*="shadow-"]) {
 .collection-plp__intro {
   position: relative;
   display: grid;
-  min-height: clamp(10rem, 18vw, 15.5rem);
+  min-height: clamp(8rem, 12vw, 11rem);
   align-content: center;
-  gap: 1.35rem;
   border-bottom: 1px solid var(--border);
-  padding: clamp(1.35rem, 3vw, 2rem) var(--page-gutter);
+  padding: clamp(1.5rem, 3vw, 2.15rem) var(--page-gutter);
   text-align: center;
-}
-
-.collection-plp__gender-nav {
-  position: absolute;
-  left: var(--page-gutter);
-  top: clamp(1.25rem, 2.4vw, 1.8rem);
-  display: flex;
-  align-items: center;
-  gap: clamp(1.4rem, 3vw, 2.2rem);
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.collection-plp__gender-nav a {
-  transition: color 180ms ease;
-}
-
-.collection-plp__gender-nav a:hover,
-.collection-plp__gender-nav .is-active {
-  color: var(--foreground);
-}
-
-.collection-plp__crumb {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 .collection-plp__intro h1 {
@@ -770,14 +739,9 @@ body :where([class*="shadow-"]) {
 
 @media (max-width: 640px) {
   .collection-plp__intro {
-    min-height: 11rem;
-    padding-top: 4rem;
-    text-align: left;
-  }
-
-  .collection-plp__gender-nav {
-    right: var(--page-gutter);
-    justify-content: space-between;
+    min-height: 8rem;
+    padding-block: 2rem;
+    text-align: center;
   }
 
   .collection-plp__toolbar {
