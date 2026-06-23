@@ -499,9 +499,10 @@ body :where([class*="shadow-"]) {
 .collection-plp__layout-controls button {
   display: grid;
   min-height: 2.75rem;
-  min-width: 2rem;
+  min-width: 3.15rem;
   place-items: center;
-  color: color-mix(in srgb, var(--foreground) 58%, transparent);
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  outline: none;
 }
 
 .collection-plp__layout-controls button[aria-pressed="true"] {
@@ -509,16 +510,64 @@ body :where([class*="shadow-"]) {
   box-shadow: inset 0 -1px 0 currentColor;
 }
 
+.collection-plp__layout-controls button:focus-visible {
+  outline: none;
+}
+
 .collection-layout-icon {
   display: grid;
-  width: 1.15rem;
-  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
-  gap: 0.12rem;
+  place-content: center;
+  place-items: center;
+  gap: 0.16rem;
 }
 
 .collection-layout-icon span {
   display: block;
-  aspect-ratio: 1 / 2.2;
+  box-sizing: border-box;
+}
+
+.collection-layout-icon--rows {
+  width: 1.24rem;
+  grid-template-columns: 1fr;
+}
+
+.collection-layout-icon--rows span {
+  width: 1.24rem;
+  height: 0.34rem;
+  border: 2px solid currentColor;
+}
+
+.collection-layout-icon--columns {
+  width: 1.2rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collection-layout-icon--columns span {
+  width: 0.34rem;
+  height: 1.18rem;
+  border: 2px solid currentColor;
+}
+
+.collection-layout-icon--quad {
+  width: 1.18rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collection-layout-icon--quad span {
+  width: 0.44rem;
+  height: 0.44rem;
+  border: 2px solid currentColor;
+}
+
+.collection-layout-icon--matrix {
+  width: 1.18rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.09rem;
+}
+
+.collection-layout-icon--matrix span {
+  width: 0.22rem;
+  height: 0.22rem;
   background: currentColor;
 }
 

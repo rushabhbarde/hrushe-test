@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
@@ -24,6 +23,7 @@ import {
 import { useStorefrontData } from "@/lib/use-storefront";
 
 type CollectionLayout = "runway" | "editorial" | "classic" | "matrix";
+type LayoutIconVariant = "rows" | "columns" | "quad" | "matrix";
 type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
 const preferredCategoryOrder = [
@@ -43,11 +43,11 @@ const sortOptions: Array<{ value: SortOption; label: string }> = [
   { value: "price-high", label: "Price: high to low" },
 ];
 
-const layoutOptions: Array<{ value: CollectionLayout; label: string; columns: number }> = [
-  { value: "runway", label: "Large product view", columns: 3 },
-  { value: "editorial", label: "Four column view", columns: 4 },
-  { value: "classic", label: "Dense view", columns: 5 },
-  { value: "matrix", label: "Wardrobe grid view", columns: 6 },
+const layoutOptions: Array<{ value: CollectionLayout; label: string; icon: LayoutIconVariant; cells: number }> = [
+  { value: "runway", label: "Large product view", icon: "rows", cells: 2 },
+  { value: "editorial", label: "Four column view", icon: "columns", cells: 2 },
+  { value: "classic", label: "Dense view", icon: "quad", cells: 4 },
+  { value: "matrix", label: "Wardrobe grid view", icon: "matrix", cells: 16 },
 ];
 
 function sortCollectionProducts(products: Product[], sort: SortOption) {
@@ -149,10 +149,10 @@ function FilterSortIcon() {
   );
 }
 
-function LayoutIcon({ columns }: { columns: number }) {
+function LayoutIcon({ variant, cells }: { variant: LayoutIconVariant; cells: number }) {
   return (
-    <span className="collection-layout-icon" aria-hidden="true" style={{ "--columns": columns } as CSSProperties}>
-      {Array.from({ length: columns }, (_, index) => (
+    <span className={`collection-layout-icon collection-layout-icon--${variant}`} aria-hidden="true">
+      {Array.from({ length: cells }, (_, index) => (
         <span key={index} />
       ))}
     </span>
@@ -292,7 +292,7 @@ export default function CollectionPage() {
                   aria-label={option.label}
                   aria-pressed={layout === option.value}
                 >
-                  <LayoutIcon columns={option.columns} />
+                  <LayoutIcon variant={option.icon} cells={option.cells} />
                 </button>
               ))}
             </div>
