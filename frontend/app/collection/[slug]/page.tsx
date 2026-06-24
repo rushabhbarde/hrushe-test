@@ -137,12 +137,16 @@ function getDerivedProductCategories(product: Product) {
 }
 
 function getGenderCollectionTitle(collectionSlug: string) {
-  return collectionSlug === "women" ? "Women's Sale" : "Men's Sale";
+  return collectionSlug === "women" ? "ALL WOMENSWEAR" : "ALL MENSWEAR";
+}
+
+function getGenderAllLabel(collectionSlug: string) {
+  return collectionSlug === "women" ? "ALL WOMENSWEAR" : "ALL MENSWEAR";
 }
 
 function FilterSortIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
       <path d="M4 7h16M4 17h16" strokeLinecap="square" />
       <path d="M8 4v6M16 14v6" strokeLinecap="square" />
     </svg>
@@ -209,7 +213,7 @@ export default function CollectionPage() {
   const activeControlCount = Number(activeCategory !== "all") + Number(sort !== "edit");
   const activeCategoryLabel =
     activeCategory === "all"
-      ? `All ${collectionSlug === "women" ? "Women" : "Men"}`
+      ? getGenderAllLabel(collectionSlug)
       : normaliseCategoryLabel(activeCategory);
   const filteredProducts = useMemo(() => {
     const productsForCategory =
@@ -268,7 +272,7 @@ export default function CollectionPage() {
                 onClick={() => setActiveCategory("all")}
                 aria-pressed={activeCategory === "all"}
               >
-                All {collectionSlug === "women" ? "Women" : "Men"}
+                {getGenderAllLabel(collectionSlug)}
               </button>
               {displayTabs.map((category) => (
                 <button
@@ -369,7 +373,7 @@ export default function CollectionPage() {
                       onClick={() => setActiveCategory("all")}
                       aria-pressed={activeCategory === "all"}
                     >
-                      All {collectionSlug === "women" ? "Women" : "Men"}
+                      {getGenderAllLabel(collectionSlug)}
                     </button>
                     {displayTabs.map((category) => (
                       <button

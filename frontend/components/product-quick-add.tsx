@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
@@ -128,6 +128,21 @@ export function ProductQuickAdd({
     event.preventDefault();
     event.stopPropagation();
   };
+  const closeIconSelectorOnBlur = (event: FocusEvent<HTMLDivElement>) => {
+    if (variant !== "icon") {
+      return;
+    }
+
+    const nextFocusedElement = event.relatedTarget;
+    if (!(nextFocusedElement instanceof Node) || !event.currentTarget.contains(nextFocusedElement)) {
+      setSelectingSize(false);
+    }
+  };
+  const closeIconSelectorOnEscape = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (variant === "icon" && event.key === "Escape") {
+      setSelectingSize(false);
+    }
+  };
 
   if (soldOut) {
     return null;
@@ -139,8 +154,8 @@ export function ProductQuickAdd({
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
-      ? "absolute bottom-0 right-0 w-[min(18rem,calc(100vw-2rem))] border border-black/15 bg-[var(--surface)] p-2"
-      : "border border-black/15 bg-[var(--surface)] p-2";
+      ? "absolute bottom-0 right-0 w-[min(17rem,calc(100vw-2rem))] border border-black/15 bg-[var(--surface)] px-3 py-2.5"
+      : "border border-black/15 bg-[var(--surface)] px-3 py-2.5";
   const buttonClassName =
     variant === "icon"
       ? "flex h-6 w-6 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] opacity-0 transition duration-200 hover:bg-white group-hover/card:opacity-100 group-focus-within/card:opacity-100"
@@ -153,28 +168,23 @@ export function ProductQuickAdd({
       onMouseOver={variant === "icon" ? () => void revealSizeSelector() : undefined}
       onMouseLeave={variant === "icon" ? () => setSelectingSize(false) : undefined}
       onFocus={variant === "icon" ? () => void revealSizeSelector() : undefined}
+      onBlur={closeIconSelectorOnBlur}
+      onKeyDown={closeIconSelectorOnEscape}
     >
       {selectingSize && availableSizes.length > 1 ? (
         <div className={chooserClassName} role="group" aria-label="Choose a size to add">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {availableSizes.map((size) => (
               <button
                 key={size}
                 type="button"
                 onClick={() => addProduct(activeProduct, size)}
-                className="min-h-10 border border-[var(--border)] bg-[var(--surface)] text-[0.68rem] font-semibold uppercase hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                className="grid min-h-10 min-w-14 place-items-center border border-[var(--border)] bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
               >
                 {size}
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setSelectingSize(false)}
-            className="mt-2 min-h-9 w-full text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]"
-          >
-            Cancel
-          </button>
         </div>
       ) : (
         <button

@@ -130,14 +130,14 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]">
-      <div className="border-b border-[var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
+      <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
           <span>Dispatches in 1–3 business days · 7-day returns</span>
           <span className="hidden sm:block">One free size exchange</span>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-2 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 py-1.5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <div className="flex items-center gap-2 lg:gap-7">
             <button
@@ -168,7 +168,7 @@ export function SiteHeader() {
               </span>
             </button>
 
-            <nav className="hidden items-center gap-8 text-[0.78rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
+            <nav className="hidden items-center gap-7 text-[0.74rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
