@@ -89,6 +89,25 @@ export default function RootLayout({
         "query-input": "required name=search_term_string",
       },
     },
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "HRUSHE primary storefronts",
+      itemListElement: [
+        {
+          "@type": "SiteNavigationElement",
+          position: 1,
+          name: "Women",
+          url: "https://hrushe.in/women",
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 2,
+          name: "Men",
+          url: "https://hrushe.in/men",
+        },
+      ],
+    },
   ]);
 
   return (

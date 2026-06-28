@@ -53,6 +53,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes = [
     "",
+    "/women",
+    "/men",
     "/shop",
     "/new-in",
     "/story",
@@ -79,8 +81,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const routeEntries: MetadataRoute.Sitemap = [...staticRoutes, ...collectionRoutes].map((path) => ({
     url: `${siteUrl}${path}`,
-    changeFrequency: path === "" ? "daily" : "weekly",
-    priority: path === "" ? 1 : 0.7,
+    changeFrequency: path === "" || path === "/women" || path === "/men" ? "daily" : "weekly",
+    priority: path === "" || path === "/women" || path === "/men" ? 1 : 0.7,
   }));
 
   return [...routeEntries, ...productRoutes];

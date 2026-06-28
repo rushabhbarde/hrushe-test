@@ -10,13 +10,56 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 
 const navItems = [
+  { href: "/women", label: "Women" },
+  { href: "/men", label: "Men" },
   { href: "/new-in", label: "New In" },
-  { href: "/collection/men", label: "Men" },
-  { href: "/collection/women", label: "Women" },
   { href: "/story", label: "Story" },
 ];
 
+const audienceMenus = {
+  Women: {
+    image: "/uploads/banners/banner2.png",
+    imageAlt: "HRUSHE womenswear edit",
+    featured: [
+      { href: "/women", label: "Women Home" },
+      { href: "/new-in", label: "New Arrivals" },
+      { href: "/collection/women", label: "All Womenswear" },
+    ],
+    categories: [
+      { href: "/collection/women", label: "Clothing" },
+      { href: "/shop", label: "Sale: New Pieces Added", tone: "sale" },
+      { href: "/shop", label: "T-Shirts" },
+      { href: "/shop", label: "Oversized Fits" },
+      { href: "/shop", label: "Accessories" },
+    ],
+  },
+  Men: {
+    image: "/uploads/banners/banner1.png",
+    imageAlt: "HRUSHE menswear edit",
+    featured: [
+      { href: "/men", label: "Men Home" },
+      { href: "/new-in", label: "New Arrivals" },
+      { href: "/collection/men", label: "All Menswear" },
+    ],
+    categories: [
+      { href: "/collection/men", label: "Clothing" },
+      { href: "/shop", label: "Sale: New Pieces Added", tone: "sale" },
+      { href: "/shop", label: "T-Shirts" },
+      { href: "/shop", label: "Relaxed Fits" },
+      { href: "/shop", label: "Accessories" },
+    ],
+  },
+} as const;
+
 function routeIsActive(pathname: string, href: string) {
+  if (href === "/women") {
+    return pathname === href || pathname.startsWith("/collection/women");
+  }
+
+  if (href === "/men") {
+    return pathname === href || pathname.startsWith("/collection/men");
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -77,13 +120,14 @@ export function SiteHeader() {
   const { openLogin } = useAuthModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [activeAudienceMenu, setActiveAudienceMenu] = useState<keyof typeof audienceMenus | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
 
   useEffect(() => {
-    if (!isAccountMenuOpen && !isMobileMenuOpen) {
+    if (!isAccountMenuOpen && !isMobileMenuOpen && !activeAudienceMenu) {
       return;
     }
 
@@ -103,6 +147,7 @@ export function SiteHeader() {
       if (event.key === "Escape") {
         setIsAccountMenuOpen(false);
         setIsMobileMenuOpen(false);
+        setActiveAudienceMenu(null);
       }
     };
 
@@ -113,7 +158,7 @@ export function SiteHeader() {
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isAccountMenuOpen, isMobileMenuOpen]);
+  }, [activeAudienceMenu, isAccountMenuOpen, isMobileMenuOpen]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) {
@@ -129,7 +174,10 @@ export function SiteHeader() {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]">
+    <header
+      className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]"
+      onMouseLeave={() => setActiveAudienceMenu(null)}
+    >
       <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between">
           <span>Dispatches in 1–3 business days · 7-day returns</span>
@@ -169,16 +217,22 @@ export function SiteHeader() {
             </button>
 
             <nav className="hidden items-center gap-7 text-[0.74rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
-                  className={routeIsActive(pathname, item.href) ? "nav-link-active" : "hover:text-[var(--foreground)]"}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const audienceMenu = item.label in audienceMenus ? (item.label as keyof typeof audienceMenus) : null;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onMouseEnter={() => setActiveAudienceMenu(audienceMenu)}
+                    onFocus={() => setActiveAudienceMenu(audienceMenu)}
+                    aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
+                    className={routeIsActive(pathname, item.href) ? "nav-link-active" : "hover:text-[var(--foreground)]"}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 
@@ -278,6 +332,66 @@ export function SiteHeader() {
           </div>
         </div>
       </div>
+
+      {activeAudienceMenu ? (
+        <div className="absolute left-0 top-full hidden w-[min(760px,52vw)] border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="flex min-h-[620px] flex-col px-8 py-7">
+            <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
+              {audienceMenus[activeAudienceMenu].featured.map((item) => (
+                <Link
+                  key={`${activeAudienceMenu}-${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setActiveAudienceMenu(null)}
+                  className="block hover:text-[var(--accent)]"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-14 space-y-4 text-[0.92rem]">
+              {audienceMenus[activeAudienceMenu].categories.map((item) => (
+                <Link
+                  key={`${activeAudienceMenu}-${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setActiveAudienceMenu(null)}
+                  className={`block hover:text-[var(--accent)] ${
+                    "tone" in item && item.tone === "sale" ? "font-medium text-[var(--accent)]" : ""
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-auto space-y-4 text-[0.86rem]">
+              <Link href="/signup" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
+                Sign up for first access
+              </Link>
+              <Link href="/account" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
+                My Account
+              </Link>
+              <Link href="/contact" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
+                Contact Us
+              </Link>
+            </div>
+          </div>
+          <Link
+            href={activeAudienceMenu === "Women" ? "/collection/women" : "/collection/men"}
+            onClick={() => setActiveAudienceMenu(null)}
+            className="group relative min-h-[620px] overflow-hidden bg-[var(--surface)]"
+          >
+            <Image
+              src={audienceMenus[activeAudienceMenu].image}
+              alt={audienceMenus[activeAudienceMenu].imageAlt}
+              fill
+              sizes="380px"
+              className="object-cover transition duration-500 group-hover:scale-[1.03]"
+            />
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
+              Shop {activeAudienceMenu}
+            </span>
+          </Link>
+        </div>
+      ) : null}
 
       {isMobileMenuOpen ? (
         <div id="mobile-site-navigation" className="border-t border-[var(--border)] lg:hidden">
