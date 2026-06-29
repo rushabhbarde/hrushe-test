@@ -109,18 +109,14 @@ function productMatchesAudience(product: Product, audience: Audience) {
 export async function AudienceHomePage({ audience }: { audience: Audience }) {
   const products = await getStorefrontProducts();
   const config = audienceHomeConfig[audience];
-  const leadProduct =
-    products.find((product) => productMatchesAudience(product, audience) && (product.featured || product.newIn || product.newArrival)) ||
-    products.find((product) => productMatchesAudience(product, audience)) ||
-    null;
-  const heroMedia = leadProduct?.thumbnailUrl || leadProduct?.images?.[0] || config.fallbackImage;
+  const heroMedia = config.fallbackImage;
   const cardProducts = products.filter((product) => productMatchesAudience(product, audience)).slice(0, config.cards.length);
 
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main>
-        <section className="relative isolate flex min-h-[100svh] w-full items-end justify-center overflow-hidden bg-[var(--foreground)] text-white">
+        <section className="relative isolate h-[calc(100svh-5.5rem)] w-full overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-5.75rem)]">
           <div className="absolute inset-0">
             <Image
               src={heroMedia}
@@ -132,7 +128,7 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
             />
           </div>
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.04)_48%,rgba(0,0,0,0.46)_100%)]" />
-          <div className="relative z-10 mx-auto flex w-full max-w-[1600px] items-end justify-center px-4 pb-6 pt-28 text-center sm:px-6 sm:pb-7 lg:px-8 lg:pb-8">
+          <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-7 text-center sm:px-6 sm:pb-8 lg:px-8 lg:pb-9">
             <div className="max-w-[56rem]">
               <h1 className="text-[1.8rem] font-bold uppercase leading-none tracking-normal sm:text-[2.15rem] lg:text-[2.45rem]">
                 {config.title}
