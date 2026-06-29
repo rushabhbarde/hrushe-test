@@ -32,11 +32,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/",
-        destination: "/men",
-        permanent: false,
-      },
-      {
         source: "/product/begie-solid-tee-oversize",
         destination: "/product/beige-solid-tee-oversize",
         permanent: true,

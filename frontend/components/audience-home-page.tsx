@@ -4,8 +4,6 @@ import { HomepageNewsletter } from "@/components/homepage-newsletter";
 import { ServicePromise } from "@/components/service-promise";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import type { Product } from "@/lib/catalog";
-import { getStorefrontProducts } from "@/lib/server-storefront";
 
 type Audience = "women" | "men";
 
@@ -90,27 +88,9 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
   },
 };
 
-function productMatchesAudience(product: Product, audience: Audience) {
-  const expectedGender = audience === "women" ? "Women" : "Men";
-
-  if (product.gender === expectedGender || product.gender === "Unisex") {
-    return true;
-  }
-
-  const categories = [product.category, ...(product.categories || [])]
-    .join(" ")
-    .toLowerCase();
-
-  return audience === "women"
-    ? /\bwomen\b|womenswear|woman/.test(categories)
-    : /\bmen\b|menswear|man/.test(categories) && !/women|womenswear/.test(categories);
-}
-
-export async function AudienceHomePage({ audience }: { audience: Audience }) {
-  const products = await getStorefrontProducts();
+export function AudienceHomePage({ audience }: { audience: Audience }) {
   const config = audienceHomeConfig[audience];
   const heroMedia = config.fallbackImage;
-  const cardProducts = products.filter((product) => productMatchesAudience(product, audience)).slice(0, config.cards.length);
 
   return (
     <div className="page-shell bg-[var(--background)]">
@@ -147,22 +127,19 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
         </section>
 
         <section className="grid border-y border-[var(--border)] bg-[var(--foreground)] text-white lg:grid-cols-2">
-          {config.cards.map((card, index) => {
-            const productImage = cardProducts[index]?.thumbnailUrl || cardProducts[index]?.images?.[0] || "";
-            const cardImage = productImage || card.image;
-
+          {config.cards.map((card) => {
             return (
               <Link
                 key={card.label}
                 href={card.href}
-                className="group relative min-h-[72svh] overflow-hidden border-b border-white/10 lg:min-h-[760px] lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+                className="group relative block h-[72svh] min-h-[520px] overflow-hidden border-b border-white/10 sm:h-[78svh] lg:h-[calc(100svh-5.75rem)] lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
               >
                 <Image
-                  src={cardImage}
+                  src={card.image}
                   alt={card.imageAlt}
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover transition duration-700 group-hover:scale-[1.025]"
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                   style={{ objectPosition: card.objectPosition || "center" }}
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_48%,rgba(0,0,0,0.42)_100%)]" />
