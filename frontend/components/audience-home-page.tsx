@@ -25,6 +25,15 @@ type AudienceHomeConfig = {
     imageAlt: string;
     objectPosition?: string;
   }>;
+  saleBanner: {
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+    ctaHref: string;
+    image: string;
+    imageAlt: string;
+    objectPosition?: string;
+  };
 };
 
 const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
@@ -56,6 +65,15 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
         objectPosition: "right center",
       },
     ],
+    saleBanner: {
+      title: "Sale: New Pieces Added",
+      subtitle: "Online Exclusive",
+      ctaLabel: "Shop Women",
+      ctaHref: "/collection/women",
+      image: "/uploads/banners/banner2.png",
+      imageAlt: "HRUSHE womenswear sale campaign",
+      objectPosition: "center",
+    },
   },
   men: {
     label: "Men",
@@ -84,7 +102,30 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
         imageAlt: "HRUSHE menswear t-shirts and tank tops edit",
         objectPosition: "center",
       },
+      {
+        label: "Polo Shirts",
+        href: "/collection/men",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear polo shirts edit",
+        objectPosition: "center",
+      },
+      {
+        label: "Shirts",
+        href: "/collection/men",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE menswear shirts edit",
+        objectPosition: "center",
+      },
     ],
+    saleBanner: {
+      title: "Sale: New Pieces Added",
+      subtitle: "Online Exclusive",
+      ctaLabel: "Shop Men",
+      ctaHref: "/collection/men",
+      image: "/uploads/banners/banner1.png",
+      imageAlt: "HRUSHE menswear sale campaign",
+      objectPosition: "center",
+    },
   },
 };
 
@@ -137,7 +178,7 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
               <Link
                 key={card.label}
                 href={card.href}
-                className="group relative block h-[72svh] min-h-[520px] overflow-hidden border-b border-white/10 sm:h-[78svh] lg:h-[calc(100svh-5.75rem)] lg:min-h-0 lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+                className="group relative block h-[72svh] min-h-[520px] overflow-hidden border-b border-white/10 sm:h-[78svh] lg:h-[calc(100svh-5.75rem)] lg:min-h-0 lg:border-r lg:border-white/10 lg:even:border-r-0 last:lg:border-r-0"
               >
                 <Image
                   src={card.image}
@@ -155,6 +196,37 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
               </Link>
             );
           })}
+        </section>
+
+        <section className="relative isolate h-[calc(100svh-3.5rem)] min-h-[620px] overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-3.75rem)]">
+          <Image
+            src={config.saleBanner.image}
+            alt={config.saleBanner.imageAlt}
+            fill
+            sizes="100vw"
+            className="h-full w-full object-cover"
+            style={{ objectPosition: config.saleBanner.objectPosition || "center" }}
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.06)_45%,rgba(0,0,0,0.5)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-10 text-center sm:px-6 sm:pb-12 lg:px-8 lg:pb-14">
+            <div>
+              <h2 className="text-[1.55rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
+                {config.saleBanner.title}
+              </h2>
+              <p className="mt-5 text-[0.95rem] font-bold uppercase tracking-[0.08em] sm:text-[1.05rem]">
+                {config.saleBanner.subtitle}
+              </p>
+              <Link
+                href={config.saleBanner.ctaHref}
+                className="group mt-6 inline-flex min-h-6 items-center px-1 text-[0.72rem] font-medium uppercase tracking-[0.05em] transition-colors hover:text-white/75"
+              >
+                <span>{config.saleBanner.ctaLabel}</span>
+                <span aria-hidden="true" className="ml-1.5 transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1">
+                  ›
+                </span>
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="border-y border-[var(--border)] bg-[var(--foreground)] text-[var(--background)]">
