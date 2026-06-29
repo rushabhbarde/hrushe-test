@@ -20,6 +20,22 @@ const audienceMenus = {
   Women: {
     image: "/uploads/banners/banner2.png",
     imageAlt: "HRUSHE womenswear edit",
+    cards: [
+      {
+        href: "/shop",
+        label: "Sale: New Pieces Added",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE womenswear sale edit",
+        objectPosition: "center",
+      },
+      {
+        href: "/women",
+        label: "Shop Women",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE womenswear campaign",
+        objectPosition: "right center",
+      },
+    ],
     featured: [
       { href: "/women", label: "Women Home" },
       { href: "/new-in", label: "New Arrivals" },
@@ -36,6 +52,22 @@ const audienceMenus = {
   Men: {
     image: "/uploads/banners/banner1.png",
     imageAlt: "HRUSHE menswear edit",
+    cards: [
+      {
+        href: "/shop",
+        label: "Sale: New Pieces Added",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear sale edit",
+        objectPosition: "center",
+      },
+      {
+        href: "/men",
+        label: "Shop Men",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear campaign",
+        objectPosition: "left center",
+      },
+    ],
     featured: [
       { href: "/men", label: "Men Home" },
       { href: "/new-in", label: "New Arrivals" },
@@ -334,7 +366,7 @@ export function SiteHeader() {
       </div>
 
       {activeAudienceMenu ? (
-        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[1.12fr_1fr]">
           <div className="flex h-full flex-col overflow-y-auto px-8 py-7">
             <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
               {audienceMenus[activeAudienceMenu].featured.map((item) => (
@@ -374,22 +406,31 @@ export function SiteHeader() {
               </Link>
             </div>
           </div>
-          <Link
-            href={activeAudienceMenu === "Women" ? "/collection/women" : "/collection/men"}
-            onClick={() => setActiveAudienceMenu(null)}
-            className="group relative h-full overflow-hidden bg-[var(--surface)]"
-          >
-            <Image
-              src={audienceMenus[activeAudienceMenu].image}
-              alt={audienceMenus[activeAudienceMenu].imageAlt}
-              fill
-              sizes="380px"
-              className="object-cover transition duration-500 group-hover:scale-[1.03]"
-            />
-            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
-              Shop {activeAudienceMenu}
-            </span>
-          </Link>
+          <div className="h-full min-h-0 overflow-y-auto overscroll-contain bg-[var(--surface)]">
+            {audienceMenus[activeAudienceMenu].cards.map((card) => (
+              <Link
+                key={`${activeAudienceMenu}-${card.href}-${card.label}`}
+                href={card.href}
+                onClick={() => setActiveAudienceMenu(null)}
+                className="group relative block h-[11cm] overflow-hidden border-b border-white/10 last:border-b-0"
+              >
+                <Image
+                  src={card.image}
+                  alt={card.imageAlt}
+                  fill
+                  sizes="360px"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  style={{ objectPosition: card.objectPosition }}
+                />
+                <span className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
+                  <span>{card.label}</span>
+                  <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
+                    ›
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
 

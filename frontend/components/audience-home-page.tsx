@@ -1,7 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HomepageNewsletter } from "@/components/homepage-newsletter";
-import { ServicePromise } from "@/components/service-promise";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -15,9 +13,6 @@ type AudienceHomeConfig = {
   primaryCtaHref: string;
   secondaryCtaLabel: string;
   secondaryCtaHref: string;
-  storyEyebrow: string;
-  storyTitle: string;
-  storyDescription: string;
   cards: Array<{
     label: string;
     href: string;
@@ -45,10 +40,6 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
     primaryCtaHref: "/new-in",
     secondaryCtaLabel: "Shop All Womenswear",
     secondaryCtaHref: "/collection/women",
-    storyEyebrow: "Womenswear",
-    storyTitle: "Clean summer pieces, cut for repeat wear.",
-    storyDescription:
-      "Considered colours, quiet fits, and everyday pieces designed to move from first plans to late evenings.",
     cards: [
       {
         label: "Dresses",
@@ -83,10 +74,6 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
     primaryCtaHref: "/new-in",
     secondaryCtaLabel: "Shop All Menswear",
     secondaryCtaHref: "/collection/men",
-    storyEyebrow: "Menswear",
-    storyTitle: "Relaxed uniforms with a sharper line.",
-    storyDescription:
-      "Easy proportions, graphic essentials, and summer layers built with the same quiet HRUSHE discipline.",
     cards: [
       {
         label: "Pants & Shorts",
@@ -132,12 +119,19 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
 export function AudienceHomePage({ audience }: { audience: Audience }) {
   const config = audienceHomeConfig[audience];
   const heroMedia = config.fallbackImage;
+  const cardSections = config.cards.reduce<Array<typeof config.cards>>((sections, card, index) => {
+    if (index % 2 === 0) {
+      sections.push([]);
+    }
+    sections[sections.length - 1].push(card);
+    return sections;
+  }, []);
 
   return (
-    <div className="page-shell bg-[var(--background)]">
+    <div className="page-shell flex h-svh flex-col overflow-hidden bg-[var(--background)]">
       <SiteHeader />
-      <main>
-        <section className="relative isolate h-[calc(100svh-3.5rem)] w-full overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-3.75rem)]">
+      <main className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth">
+        <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
           <div className="absolute inset-0">
             <Image
               src={heroMedia}
@@ -172,33 +166,38 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
           </div>
         </section>
 
-        <section className="grid border-y border-[var(--border)] bg-[var(--foreground)] text-white lg:grid-cols-2">
-          {config.cards.map((card) => {
-            return (
-              <Link
-                key={card.label}
-                href={card.href}
-                className="group relative block h-[72svh] min-h-[520px] overflow-hidden border-b border-white/10 sm:h-[78svh] lg:h-[calc(100svh-5.75rem)] lg:min-h-0 lg:border-r lg:border-white/10 lg:even:border-r-0 last:lg:border-r-0"
-              >
-                <Image
-                  src={card.image}
-                  alt={card.imageAlt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
-                  style={{ objectPosition: card.objectPosition || "center" }}
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_48%,rgba(0,0,0,0.42)_100%)]" />
-                <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 px-5 pb-6 text-[0.82rem] font-semibold uppercase tracking-[0.06em] sm:px-8 sm:pb-8">
-                  <span>{card.label}</span>
-                  <span aria-hidden="true" className="text-white/75">›</span>
-                </div>
-              </Link>
-            );
-          })}
-        </section>
+        {cardSections.map((cards, sectionIndex) => (
+          <section
+            key={`${audience}-category-section-${sectionIndex}`}
+            className="grid h-full snap-start snap-always grid-rows-2 border-y border-[var(--border)] bg-[var(--foreground)] text-white lg:grid-cols-2 lg:grid-rows-1"
+          >
+            {cards.map((card) => {
+              return (
+                <Link
+                  key={card.label}
+                  href={card.href}
+                  className="group relative block min-h-0 overflow-hidden border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+                >
+                  <Image
+                    src={card.image}
+                    alt={card.imageAlt}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
+                    style={{ objectPosition: card.objectPosition || "center" }}
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_48%,rgba(0,0,0,0.42)_100%)]" />
+                  <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 px-5 pb-6 text-[0.82rem] font-semibold uppercase tracking-[0.06em] sm:px-8 sm:pb-8">
+                    <span>{card.label}</span>
+                    <span aria-hidden="true" className="text-white/75">›</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        ))}
 
-        <section className="relative isolate h-[calc(100svh-3.5rem)] min-h-[620px] overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-3.75rem)]">
+        <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
           <Image
             src={config.saleBanner.image}
             alt={config.saleBanner.imageAlt}
@@ -229,38 +228,10 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
           </div>
         </section>
 
-        <section className="border-y border-[var(--border)] bg-[var(--foreground)] text-[var(--background)]">
-          <div className="mx-auto grid max-w-[1600px] gap-8 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-            <p className="eyebrow text-white/55">{config.storyEyebrow}</p>
-            <div>
-              <h2 className="max-w-[18ch] text-[2rem] font-medium uppercase leading-[0.98] tracking-[-0.04em] sm:text-[3rem]">
-                {config.storyTitle}
-              </h2>
-              <p className="mt-7 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
-                {config.storyDescription}
-              </p>
-              <Link href={config.secondaryCtaHref} className="mt-8 inline-flex min-h-11 items-center border-b border-white text-xs font-semibold uppercase tracking-[0.12em]">
-                Shop {config.label}
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-          <ServicePromise />
-        </section>
-
-        <section className="border-t border-[var(--border)] bg-[var(--surface)]">
-          <div className="mx-auto max-w-[1600px] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-            <p className="eyebrow text-[var(--muted)]">First access</p>
-            <h2 className="mt-4 max-w-[16ch] text-[2rem] font-medium uppercase leading-[0.98] tracking-[-0.04em] sm:text-[3rem]">
-              Restocks, product notes and new uniforms.
-            </h2>
-            <HomepageNewsletter />
-          </div>
+        <section className="min-h-full snap-start bg-[var(--foreground)] text-[var(--background)]">
+          <SiteFooter />
         </section>
       </main>
-      <SiteFooter />
     </div>
   );
 }

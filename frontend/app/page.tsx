@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 const entryCards = [
   {
     label: "Shop Women",
+    sideLabel: "Men >",
     href: "/women",
     image: "/uploads/banners/shopwomen.png",
     alt: "HRUSHE womenswear campaign",
@@ -25,6 +26,7 @@ const entryCards = [
   },
   {
     label: "Shop Men",
+    sideLabel: "< Women",
     href: "/men",
     image: "/uploads/banners/shopmen.png",
     alt: "HRUSHE menswear campaign",
@@ -48,12 +50,12 @@ export default function Home() {
         </Link>
       </header>
 
-      <section className="grid min-h-[calc(100svh-4rem)] bg-[var(--foreground)] text-white sm:min-h-[calc(100svh-4.5rem)] lg:grid-cols-2">
-        {entryCards.map((card) => (
+      <section className="flex min-h-[calc(100svh-4rem)] snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] sm:min-h-[calc(100svh-4.5rem)] lg:grid lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+        {entryCards.map((card, index) => (
           <Link
             key={card.href}
             href={card.href}
-            className="group relative block h-[calc((100svh-4rem)/2)] min-h-[380px] overflow-hidden border-b border-white/10 lg:h-[calc(100svh-4.5rem)] lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+            className="group relative block h-[calc(100svh-4rem)] w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 sm:h-[calc(100svh-4.5rem)] lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
           >
             <Image
               src={card.image}
@@ -65,7 +67,22 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center px-5 pb-11 text-center sm:pb-14 lg:pb-20">
+            <div className="absolute inset-x-0 top-[58%] z-10 flex -translate-y-1/2 items-center justify-center px-4 lg:hidden">
+              {index === 1 ? (
+                <span className="absolute left-4 text-[1.05rem] font-bold uppercase tracking-tight">
+                  {card.sideLabel}
+                </span>
+              ) : null}
+              <span className="text-[clamp(2.55rem,13vw,4.4rem)] font-bold uppercase leading-none tracking-tight">
+                {card.label}
+              </span>
+              {index === 0 ? (
+                <span className="absolute right-4 text-[1.05rem] font-bold uppercase tracking-tight">
+                  {card.sideLabel}
+                </span>
+              ) : null}
+            </div>
+            <div className="absolute inset-x-0 bottom-0 z-10 hidden justify-center px-5 pb-11 text-center sm:pb-14 lg:flex lg:pb-20">
               <span className="relative inline-flex pb-2 text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.75rem] lg:text-[2rem]">
                 {card.label}
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-white opacity-0 transition group-hover:opacity-100" />
