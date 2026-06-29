@@ -131,20 +131,19 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
               className="object-cover object-center"
             />
           </div>
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.08)_46%,rgba(0,0,0,0.6)_100%)]" />
-          <div className="relative z-10 mx-auto flex w-full max-w-[1600px] items-end justify-center px-4 pb-8 pt-28 text-center sm:px-6 sm:pb-12 lg:px-8">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.04)_48%,rgba(0,0,0,0.46)_100%)]" />
+          <div className="relative z-10 mx-auto flex w-full max-w-[1600px] items-end justify-center px-4 pb-6 pt-28 text-center sm:px-6 sm:pb-7 lg:px-8 lg:pb-8">
             <div className="max-w-[56rem]">
-              <p className="eyebrow text-white/75">{config.label}</p>
-              <h1 className="mt-3 text-[2rem] font-semibold uppercase leading-none tracking-normal sm:text-[2.35rem] lg:text-[2.8rem]">
+              <h1 className="text-[1.8rem] font-bold uppercase leading-none tracking-normal sm:text-[2.15rem] lg:text-[2.45rem]">
                 {config.title}
               </h1>
-              <div className="mt-5 flex flex-col items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-white sm:flex-row sm:gap-7">
-                <Link href={config.primaryCtaHref} className="inline-flex min-h-10 items-center border-b border-white/80 px-1 pb-1 transition-colors hover:border-white hover:text-white/80">
+              <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
+                <Link href={config.primaryCtaHref} className="inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
                   {config.primaryCtaLabel}
                 </Link>
-                <span className="hidden h-3 w-px bg-white/45 sm:block" aria-hidden="true" />
-                <Link href={config.secondaryCtaHref} className="inline-flex min-h-10 items-center border-b border-white/80 px-1 pb-1 transition-colors hover:border-white hover:text-white/80">
-                  {config.secondaryCtaLabel}
+                <Link href={config.secondaryCtaHref} className="inline-flex min-h-6 items-center gap-2 px-1 transition-colors hover:text-white/75">
+                  <span>{config.secondaryCtaLabel}</span>
+                  <span aria-hidden="true">›</span>
                 </Link>
               </div>
             </div>
