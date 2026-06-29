@@ -66,7 +66,7 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
             <div className="absolute inset-x-0 bottom-0 z-10 flex justify-center px-5 pb-11 text-center sm:pb-14 lg:pb-20">
-              <span className="relative inline-flex pb-2 text-[2rem] font-bold uppercase leading-none tracking-normal sm:text-[2.5rem] lg:text-[2.85rem]">
+              <span className="relative inline-flex pb-2 text-[1.5rem] font-bold uppercase leading-none tracking-normal sm:text-[2.5rem] lg:text-[2.85rem]">
                 {card.label}
                 <span className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-white opacity-0 transition group-hover:opacity-100" />
               </span>
