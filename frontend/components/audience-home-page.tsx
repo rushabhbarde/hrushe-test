@@ -59,7 +59,7 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
   },
   men: {
     label: "Men",
-    title: "Dress Code: Vacation",
+    title: "Defined Quietly",
     fallbackImage: "/uploads/banners/banner1.png",
     primaryCtaLabel: "Shop New Arrivals",
     primaryCtaHref: "/new-in",
