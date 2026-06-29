@@ -19,14 +19,14 @@ const entryCards = [
   {
     label: "Shop Women",
     href: "/women",
-    image: "/uploads/banners/banner2.png",
+    image: "/uploads/banners/shopwomen.png",
     alt: "HRUSHE womenswear campaign",
     objectPosition: "center",
   },
   {
     label: "Shop Men",
     href: "/men",
-    image: "/uploads/banners/banner1.png",
+    image: "/uploads/banners/shopmen.png",
     alt: "HRUSHE menswear campaign",
     objectPosition: "center",
   },
