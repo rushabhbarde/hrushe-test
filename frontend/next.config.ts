@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/",
-        destination: "/women",
+        destination: "/men",
         permanent: false,
       },
       {
