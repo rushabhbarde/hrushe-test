@@ -334,8 +334,8 @@ export function SiteHeader() {
       </div>
 
       {activeAudienceMenu ? (
-        <div className="absolute left-0 top-full hidden w-[min(760px,52vw)] border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="flex min-h-[620px] flex-col px-8 py-7">
+        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="flex h-full flex-col overflow-y-auto px-8 py-7">
             <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
               {audienceMenus[activeAudienceMenu].featured.map((item) => (
                 <Link
@@ -377,7 +377,7 @@ export function SiteHeader() {
           <Link
             href={activeAudienceMenu === "Women" ? "/collection/women" : "/collection/men"}
             onClick={() => setActiveAudienceMenu(null)}
-            className="group relative min-h-[620px] overflow-hidden bg-[var(--surface)]"
+            className="group relative h-full overflow-hidden bg-[var(--surface)]"
           >
             <Image
               src={audienceMenus[activeAudienceMenu].image}

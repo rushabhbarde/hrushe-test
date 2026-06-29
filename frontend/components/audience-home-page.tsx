@@ -120,7 +120,7 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main>
-        <section className="relative isolate flex min-h-[calc(100svh-8rem)] w-full items-end justify-center overflow-hidden bg-[var(--foreground)] text-white sm:min-h-[calc(100svh-7rem)]">
+        <section className="relative isolate flex min-h-[100svh] w-full items-end justify-center overflow-hidden bg-[var(--foreground)] text-white">
           <div className="absolute inset-0">
             <Image
               src={heroMedia}
