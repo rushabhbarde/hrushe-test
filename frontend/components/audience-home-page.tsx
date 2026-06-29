@@ -96,7 +96,7 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main>
-        <section className="relative isolate h-[calc(100svh-5.5rem)] w-full overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-5.75rem)]">
+        <section className="relative isolate h-[calc(100svh-3.5rem)] w-full overflow-hidden bg-[var(--foreground)] text-white sm:h-[calc(100svh-3.75rem)]">
           <div className="absolute inset-0">
             <Image
               src={heroMedia}
@@ -108,18 +108,23 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
             />
           </div>
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.04)_48%,rgba(0,0,0,0.46)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-7 text-center sm:px-6 sm:pb-8 lg:px-8 lg:pb-9">
+          <div className="absolute inset-x-0 bottom-8 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-7 text-center sm:bottom-10 sm:px-6 sm:pb-8 lg:bottom-12 lg:px-8 lg:pb-9">
             <div className="max-w-[56rem]">
               <h1 className="text-[1.6rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
                 {config.title}
               </h1>
               <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
-                <Link href={config.primaryCtaHref} className="inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
-                  {config.primaryCtaLabel}
+                <Link href={config.primaryCtaHref} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
+                  <span>{config.primaryCtaLabel}</span>
+                  <span aria-hidden="true" className="ml-0 max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-3 group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-3 group-focus-visible:opacity-100">
+                    ›
+                  </span>
                 </Link>
-                <Link href={config.secondaryCtaHref} className="inline-flex min-h-6 items-center gap-2 px-1 transition-colors hover:text-white/75">
+                <Link href={config.secondaryCtaHref} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
                   <span>{config.secondaryCtaLabel}</span>
-                  <span aria-hidden="true">›</span>
+                  <span aria-hidden="true" className="ml-0 max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-3 group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-3 group-focus-visible:opacity-100">
+                    ›
+                  </span>
                 </Link>
               </div>
             </div>
