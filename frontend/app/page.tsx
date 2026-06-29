@@ -37,7 +37,7 @@ const entryCards = [
 export default function Home() {
   return (
     <main className="min-h-svh bg-[var(--background)] text-[var(--foreground)]">
-      <header className="relative z-20 flex h-16 items-center justify-center border-b border-[var(--border)] bg-[var(--header-background)] px-4 sm:h-[4.5rem]">
+      <header className="relative z-20 flex h-14 items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4">
         <Link href="/" aria-label="HRUSHE home" className="inline-flex items-center justify-center">
           <Image
             src="/NEW_LOGO.png"
@@ -45,17 +45,17 @@ export default function Home() {
             width={220}
             height={72}
             priority
-            className="h-10 w-auto object-contain sm:h-12"
+            className="h-8 w-auto object-contain sm:h-12"
           />
         </Link>
       </header>
 
-      <section className="flex min-h-[calc(100svh-4rem)] snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] sm:min-h-[calc(100svh-4.5rem)] lg:grid lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <section className="flex min-h-[calc(100svh-3.5rem)] snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] sm:min-h-[calc(100svh-4.5rem)] lg:grid lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
         {entryCards.map((card, index) => (
           <Link
             key={card.href}
             href={card.href}
-            className="group relative block h-[calc(100svh-4rem)] w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 sm:h-[calc(100svh-4.5rem)] lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+            className="group relative block h-[calc(100svh-3.5rem)] w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 sm:h-[calc(100svh-4.5rem)] lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
           >
             <Image
               src={card.image}
@@ -67,17 +67,17 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute inset-x-0 top-[58%] z-10 flex -translate-y-1/2 items-center justify-center px-4 lg:hidden">
+            <div className="absolute inset-x-0 top-[51%] z-10 flex -translate-y-1/2 items-center justify-center px-4 lg:hidden">
               {index === 1 ? (
-                <span className="absolute left-4 text-[1.05rem] font-bold uppercase tracking-tight">
+                <span className="absolute left-4 text-[0.92rem] font-bold uppercase tracking-tight">
                   {card.sideLabel}
                 </span>
               ) : null}
-              <span className="text-[clamp(2.55rem,13vw,4.4rem)] font-bold uppercase leading-none tracking-tight">
+              <span className="text-[clamp(2.25rem,10.8vw,3.35rem)] font-bold uppercase leading-none tracking-tight">
                 {card.label}
               </span>
               {index === 0 ? (
-                <span className="absolute right-4 text-[1.05rem] font-bold uppercase tracking-tight">
+                <span className="absolute right-4 text-[0.92rem] font-bold uppercase tracking-tight">
                   {card.sideLabel}
                 </span>
               ) : null}
