@@ -412,7 +412,7 @@ export function SiteHeader() {
                 key={`${activeAudienceMenu}-${card.href}-${card.label}`}
                 href={card.href}
                 onClick={() => setActiveAudienceMenu(null)}
-                className="group relative block h-[11cm] overflow-hidden border-b border-white/10 last:border-b-0"
+                className="group relative block h-[25.984rem] min-h-[25.984rem] max-h-[25.984rem] overflow-hidden border-b border-white/10 last:border-b-0"
               >
                 <Image
                   src={card.image}
