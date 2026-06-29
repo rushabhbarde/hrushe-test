@@ -110,7 +110,7 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.04)_48%,rgba(0,0,0,0.46)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-7 text-center sm:px-6 sm:pb-8 lg:px-8 lg:pb-9">
             <div className="max-w-[56rem]">
-              <h1 className="text-[1.8rem] font-bold uppercase leading-none tracking-normal sm:text-[2.15rem] lg:text-[2.45rem]">
+              <h1 className="text-[1.6rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
                 {config.title}
               </h1>
               <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
