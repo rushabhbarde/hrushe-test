@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Shop Women & Men",
@@ -67,17 +68,17 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute inset-x-0 top-[51%] z-10 flex -translate-y-1/2 items-center justify-center px-4 lg:hidden">
+            <div className="absolute left-6 right-6 top-[56%] z-10 flex -translate-y-1/2 items-baseline gap-4 whitespace-nowrap font-sans lg:hidden">
               {index === 1 ? (
-                <span className="absolute left-4 text-[0.92rem] font-bold uppercase tracking-tight">
+                <span className="text-[0.9rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem]">
                   {card.sideLabel}
                 </span>
               ) : null}
-              <span className="text-[clamp(2.15rem,10vw,3.05rem)] font-bold uppercase leading-none tracking-tight">
+              <span className="text-[1.55rem] font-bold uppercase leading-none tracking-tight sm:text-[1.85rem] lg:text-[2.15rem]">
                 {card.label}
               </span>
               {index === 0 ? (
-                <span className="absolute right-4 text-[0.92rem] font-bold uppercase tracking-tight">
+                <span className="text-[0.9rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem]">
                   {card.sideLabel}
                 </span>
               ) : null}
@@ -91,6 +92,8 @@ export default function Home() {
           </Link>
         ))}
       </section>
+
+      <SiteFooter />
     </main>
   );
 }
