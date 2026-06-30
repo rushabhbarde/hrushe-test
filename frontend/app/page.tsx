@@ -37,8 +37,8 @@ const entryCards = [
 
 export default function Home() {
   return (
-    <main className="min-h-svh bg-[var(--background)] pt-14 text-[var(--foreground)] sm:pt-[4.5rem] lg:pt-0">
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
+    <main className="min-h-svh bg-[var(--background)] pt-[3.375rem] text-[var(--foreground)] sm:pt-[4.5rem] lg:pt-0">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-[3.375rem] items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
         <Link href="/" aria-label="HRUSHE home" className="inline-flex items-center justify-center">
           <Image
             src="/NEW_LOGO.png"
@@ -46,17 +46,17 @@ export default function Home() {
             width={220}
             height={72}
             priority
-            className="h-8 w-auto object-contain sm:h-12"
+            className="h-7 w-auto object-contain sm:h-12"
           />
         </Link>
       </header>
 
-      <section className="flex min-h-[calc(100svh-3.5rem)] snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] sm:min-h-[calc(100svh-4.5rem)] lg:grid lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <section className="flex min-h-[calc(100svh-3.375rem)] snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] sm:min-h-[calc(100svh-4.5rem)] lg:grid lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
         {entryCards.map((card, index) => (
           <Link
             key={card.href}
             href={card.href}
-            className="group relative block h-[calc(100svh-3.5rem)] w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 sm:h-[calc(100svh-4.5rem)] lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+            className="group relative block h-[calc(100svh-3.375rem)] w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 sm:h-[calc(100svh-4.5rem)] lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
           >
             <Image
               src={card.image}
@@ -68,17 +68,17 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute inset-x-4 top-[56%] z-10 flex -translate-y-1/2 items-baseline justify-center gap-4 whitespace-nowrap font-sans lg:hidden">
+            <div className="absolute inset-x-3 top-[51%] z-10 flex -translate-y-1/2 items-center justify-center gap-5 whitespace-nowrap font-sans lg:hidden">
               {index === 1 ? (
-                <span className="text-[0.9rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem]">
+                <span className="text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.1rem]">
                   {card.sideLabel}
                 </span>
               ) : null}
-              <span className="text-[1.55rem] font-bold uppercase leading-none tracking-tight sm:text-[1.85rem] lg:text-[2.15rem]">
+              <span className="text-[clamp(2.35rem,12vw,3.35rem)] font-bold uppercase leading-none tracking-tight sm:text-[3.1rem]">
                 {card.label}
               </span>
               {index === 0 ? (
-                <span className="text-[0.9rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem]">
+                <span className="text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.1rem]">
                   {card.sideLabel}
                 </span>
               ) : null}

@@ -82,15 +82,18 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <footer className="border-t border-white/15 bg-[var(--foreground)] text-[var(--background)]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div>
+        <div className="mx-auto grid w-full max-w-[1600px] gap-9 px-6 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
+          <div className="max-w-lg">
             <p className="eyebrow text-white/45">{settings.brandName}</p>
-            <p className="mt-2 text-2xl font-medium uppercase leading-none tracking-[-0.04em] text-white">
+            <p className="mt-3 text-[2rem] font-medium uppercase leading-none tracking-[-0.04em] text-white sm:text-[2.6rem]">
               Defined Quietly.
+            </p>
+            <p className="mt-4 text-sm leading-6 text-white/55">
+              Everyday uniforms, clear proportions, honest materials.
             </p>
           </div>
 
-          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/75">
+          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/72 md:justify-end">
             <Link href="/women" className="hover:text-white">
               Women
             </Link>
@@ -107,7 +110,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
         </div>
 
         <div className="border-t border-white/15">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-4 text-[10px] uppercase tracking-[0.14em] text-white/45 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-6 py-5 text-[10px] uppercase tracking-[0.14em] text-white/45 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
             <p>&copy; 2026 HRUSHE. All rights reserved.</p>
             <a href={`mailto:${settings.contactEmail}`} className="hover:text-white">
               {settings.contactEmail}
