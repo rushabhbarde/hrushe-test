@@ -73,7 +73,7 @@ export default function Home() {
                   {card.sideLabel}
                 </span>
               ) : null}
-              <span className="text-[clamp(2.25rem,10.8vw,3.35rem)] font-bold uppercase leading-none tracking-tight">
+              <span className="text-[clamp(2.15rem,10vw,3.05rem)] font-bold uppercase leading-none tracking-tight">
                 {card.label}
               </span>
               {index === 0 ? (
