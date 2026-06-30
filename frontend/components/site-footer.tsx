@@ -61,7 +61,7 @@ const footerGroups = [
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ compact = false }: { compact?: boolean }) {
   const [settings, setSettings] = useState(defaultSettings);
 
   useEffect(() => {
@@ -78,6 +78,45 @@ export function SiteFooter() {
 
   const phoneDigits = settings.contactPhone.replace(/\D/g, "");
   const whatsappDigits = settings.supportWhatsapp.replace(/\D/g, "");
+
+  if (compact) {
+    return (
+      <footer className="border-t border-white/15 bg-[var(--foreground)] text-[var(--background)]">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <div>
+            <p className="eyebrow text-white/45">{settings.brandName}</p>
+            <p className="mt-2 text-2xl font-medium uppercase leading-none tracking-[-0.04em] text-white">
+              Defined Quietly.
+            </p>
+          </div>
+
+          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/75">
+            <Link href="/women" className="hover:text-white">
+              Women
+            </Link>
+            <Link href="/men" className="hover:text-white">
+              Men
+            </Link>
+            <Link href="/new-in" className="hover:text-white">
+              New In
+            </Link>
+            <Link href="/contact" className="hover:text-white">
+              Contact
+            </Link>
+          </nav>
+        </div>
+
+        <div className="border-t border-white/15">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 py-4 text-[10px] uppercase tracking-[0.14em] text-white/45 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+            <p>&copy; 2026 HRUSHE. All rights reserved.</p>
+            <a href={`mailto:${settings.contactEmail}`} className="hover:text-white">
+              {settings.contactEmail}
+            </a>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="border-t border-white/15 bg-[var(--foreground)] text-[var(--background)]">

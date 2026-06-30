@@ -37,8 +37,8 @@ const entryCards = [
 
 export default function Home() {
   return (
-    <main className="min-h-svh bg-[var(--background)] text-[var(--foreground)]">
-      <header className="relative z-20 flex h-14 items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4">
+    <main className="min-h-svh bg-[var(--background)] pt-14 text-[var(--foreground)] sm:pt-[4.5rem] lg:pt-0">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
         <Link href="/" aria-label="HRUSHE home" className="inline-flex items-center justify-center">
           <Image
             src="/NEW_LOGO.png"
@@ -68,7 +68,7 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute left-6 right-6 top-[56%] z-10 flex -translate-y-1/2 items-baseline gap-4 whitespace-nowrap font-sans lg:hidden">
+            <div className="absolute inset-x-4 top-[56%] z-10 flex -translate-y-1/2 items-baseline justify-center gap-4 whitespace-nowrap font-sans lg:hidden">
               {index === 1 ? (
                 <span className="text-[0.9rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem]">
                   {card.sideLabel}
@@ -93,7 +93,7 @@ export default function Home() {
         ))}
       </section>
 
-      <SiteFooter />
+      <SiteFooter compact />
     </main>
   );
 }
