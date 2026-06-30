@@ -68,21 +68,18 @@ export default function Home() {
               style={{ objectPosition: card.objectPosition }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
-            <div className="absolute inset-x-3 top-[51%] z-10 flex -translate-y-1/2 items-center justify-center gap-5 whitespace-nowrap font-sans lg:hidden">
-              {index === 1 ? (
-                <span className="text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.1rem]">
-                  {card.sideLabel}
-                </span>
-              ) : null}
-              <span className="text-[clamp(2.35rem,12vw,3.35rem)] font-bold uppercase leading-none tracking-tight sm:text-[3.1rem]">
+            <div className="absolute inset-x-0 top-[51%] z-10 flex -translate-y-1/2 justify-center px-5 font-sans lg:hidden">
+              <span className="text-center text-[1.75rem] font-bold uppercase leading-none tracking-tight sm:text-[2rem]">
                 {card.label}
               </span>
-              {index === 0 ? (
-                <span className="text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.1rem]">
-                  {card.sideLabel}
-                </span>
-              ) : null}
             </div>
+            <span
+              className={`absolute top-[51%] z-10 -translate-y-1/2 whitespace-nowrap font-sans text-[0.92rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem] lg:hidden ${
+                index === 0 ? "right-4" : "left-4"
+              }`}
+            >
+              {card.sideLabel}
+            </span>
             <div className="absolute inset-x-0 bottom-0 z-10 hidden justify-center px-5 pb-11 text-center sm:pb-14 lg:flex lg:pb-20">
               <span className="relative inline-flex pb-2 text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.75rem] lg:text-[2rem]">
                 {card.label}

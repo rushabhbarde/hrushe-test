@@ -81,8 +81,8 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <footer className="border-t border-white/15 bg-[var(--foreground)] text-[var(--background)]">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-9 px-6 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
+      <footer className="flex min-h-[calc(100svh-3.375rem)] flex-col justify-between border-t border-white/15 bg-[var(--foreground)] text-[var(--background)] sm:min-h-0">
+        <div className="mx-auto grid w-full max-w-[1600px] flex-1 content-center gap-9 px-6 py-12 sm:flex-none sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
           <div className="max-w-lg">
             <p className="eyebrow text-white/45">{settings.brandName}</p>
             <p className="mt-3 text-[2rem] font-medium uppercase leading-none tracking-[-0.04em] text-white sm:text-[2.6rem]">
