@@ -514,65 +514,6 @@ body :where([class*="shadow-"]) {
   opacity: 0.36;
 }
 
-.collection-plp__feature-row {
-  display: flex;
-  gap: clamp(0.75rem, 1vw, 1rem);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  border-bottom: 1px solid var(--border);
-  padding: 0 var(--page-gutter) clamp(1.35rem, 1.8vw, 1.8rem);
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-}
-
-.collection-plp__feature-row::-webkit-scrollbar {
-  display: none;
-}
-
-.collection-plp__feature-card {
-  flex: 0 0 clamp(18rem, 31vw, 39rem);
-  min-width: 0;
-  scroll-snap-align: start;
-  color: var(--foreground);
-  text-decoration: none;
-}
-
-.collection-plp__feature-media {
-  position: relative;
-  display: block;
-  aspect-ratio: 2.68 / 1;
-  overflow: hidden;
-  background: #f3f3f1;
-}
-
-.collection-plp__feature-media img {
-  transition: transform 360ms ease;
-}
-
-.collection-plp__feature-card:hover .collection-plp__feature-media img {
-  transform: scale(1.018);
-}
-
-.collection-plp__feature-copy {
-  display: grid;
-  gap: 0.22rem;
-  padding: 0.86rem 0.9rem 0;
-}
-
-.collection-plp__feature-title {
-  font-size: clamp(1rem, 1.18vw, 1.22rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-}
-
-.collection-plp__feature-subtitle {
-  color: var(--muted);
-  font-size: clamp(0.78rem, 0.86vw, 0.92rem);
-  font-weight: 500;
-  line-height: 1.25;
-}
-
 .collection-plp__layout-controls {
   justify-content: flex-end;
 }
@@ -607,48 +548,37 @@ body :where([class*="shadow-"]) {
   box-sizing: border-box;
 }
 
-.collection-layout-icon--rows {
+.collection-layout-icon--three {
   width: 1.05rem;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.collection-layout-icon--rows span {
-  width: 1.05rem;
-  height: 0.28rem;
-  border: 1.7px solid currentColor;
-}
-
-.collection-layout-icon--columns {
-  width: 1.02rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.collection-layout-icon--columns span {
-  width: 0.28rem;
+.collection-layout-icon--three span {
+  width: 0.2rem;
   height: 1rem;
   border: 1.7px solid currentColor;
 }
 
-.collection-layout-icon--quad {
+.collection-layout-icon--four {
   width: 1.02rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.collection-layout-icon--quad span {
+.collection-layout-icon--four span {
   width: 0.36rem;
   height: 0.36rem;
   border: 1.7px solid currentColor;
 }
 
-.collection-layout-icon--matrix {
+.collection-layout-icon--six {
   width: 1rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.075rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.1rem;
 }
 
-.collection-layout-icon--matrix span {
-  width: 0.18rem;
-  height: 0.18rem;
+.collection-layout-icon--six span {
+  width: 0.22rem;
+  height: 0.22rem;
   background: currentColor;
 }
 
@@ -689,7 +619,6 @@ body :where([class*="shadow-"]) {
 }
 
 .collection-plp__grid--editorial,
-.collection-plp__grid--classic,
 .collection-plp__grid--matrix {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -827,8 +756,7 @@ body :where([class*="shadow-"]) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .collection-plp__grid--editorial,
-  .collection-plp__grid--classic {
+  .collection-plp__grid--editorial {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -846,10 +774,6 @@ body :where([class*="shadow-"]) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .collection-plp__grid--classic {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
   .collection-plp__grid--matrix {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -865,9 +789,6 @@ body :where([class*="shadow-"]) {
     justify-content: flex-start;
   }
 
-  .collection-plp__feature-card {
-    flex-basis: clamp(17rem, 42vw, 27rem);
-  }
 }
 
 @media (max-width: 640px) {
@@ -887,19 +808,6 @@ body :where([class*="shadow-"]) {
 
   .collection-plp__toolbar {
     min-height: 4.15rem;
-  }
-
-  .collection-plp__feature-row {
-    gap: 0.7rem;
-    padding-bottom: 1.15rem;
-  }
-
-  .collection-plp__feature-card {
-    flex-basis: 76vw;
-  }
-
-  .collection-plp__feature-media {
-    aspect-ratio: 2.1 / 1;
   }
 
   .collection-plp__filter-button,

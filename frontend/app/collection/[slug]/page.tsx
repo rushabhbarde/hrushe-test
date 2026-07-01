@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -23,16 +22,9 @@ import {
 } from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 
-type CollectionLayout = "runway" | "editorial" | "classic" | "matrix";
-type LayoutIconVariant = "rows" | "columns" | "quad" | "matrix";
+type CollectionLayout = "runway" | "editorial" | "matrix";
+type LayoutIconVariant = "three" | "four" | "six";
 type SortOption = "edit" | "newest" | "price-low" | "price-high";
-type CollectionFeatureCard = {
-  title: string;
-  subtitle: string;
-  href: string;
-  image: string;
-  imagePosition?: string;
-};
 
 const preferredCategoryOrder = [
   "T-Shirts",
@@ -52,10 +44,9 @@ const sortOptions: Array<{ value: SortOption; label: string }> = [
 ];
 
 const layoutOptions: Array<{ value: CollectionLayout; label: string; icon: LayoutIconVariant; cells: number }> = [
-  { value: "runway", label: "Large product view", icon: "rows", cells: 2 },
-  { value: "editorial", label: "Four column view", icon: "columns", cells: 2 },
-  { value: "classic", label: "Dense view", icon: "quad", cells: 4 },
-  { value: "matrix", label: "Wardrobe grid view", icon: "matrix", cells: 16 },
+  { value: "runway", label: "3 product view", icon: "three", cells: 3 },
+  { value: "editorial", label: "4 product view", icon: "four", cells: 4 },
+  { value: "matrix", label: "6 product view", icon: "six", cells: 6 },
 ];
 
 function sortCollectionProducts(products: Product[], sort: SortOption) {
@@ -152,58 +143,6 @@ function getGenderAllLabel(collectionSlug: string) {
   return collectionSlug === "women" ? "ALL WOMENSWEAR" : "ALL MENSWEAR";
 }
 
-function getCollectionFeatureCards(collectionSlug: string): CollectionFeatureCard[] {
-  if (collectionSlug === "women") {
-    return [
-      {
-        title: "New Arrivals",
-        subtitle: "Fresh everyday uniforms",
-        href: "/collection/women",
-        image: "/uploads/banners/shopwomen.png",
-        imagePosition: "center",
-      },
-      {
-        title: "T-Shirts",
-        subtitle: "Clean jersey essentials",
-        href: "/collection/t-shirts",
-        image: "/uploads/banners/banner2.png",
-        imagePosition: "center",
-      },
-      {
-        title: "Sale Edit",
-        subtitle: "New pieces added",
-        href: "/shop",
-        image: "/uploads/banners/banner2.png",
-        imagePosition: "center",
-      },
-    ];
-  }
-
-  return [
-    {
-      title: "T-Shirts",
-      subtitle: "Graphic everyday staples",
-      href: "/collection/t-shirts",
-      image: "/uploads/banners/shopmen.png",
-      imagePosition: "center",
-    },
-    {
-      title: "Oversized",
-      subtitle: "Relaxed proportions",
-      href: "/collection/oversized",
-      image: "/uploads/banners/banner1.png",
-      imagePosition: "center",
-    },
-    {
-      title: "Sale Edit",
-      subtitle: "New pieces added",
-      href: "/shop",
-      image: "/uploads/banners/banner1.png",
-      imagePosition: "center",
-    },
-  ];
-}
-
 function LayoutIcon({ variant, cells }: { variant: LayoutIconVariant; cells: number }) {
   return (
     <span className={`collection-layout-icon collection-layout-icon--${variant}`} aria-hidden="true">
@@ -289,7 +228,6 @@ export default function CollectionPage() {
 
   if (isGenderCollection) {
     const genderTitle = getGenderCollectionTitle(collectionSlug);
-    const featureCards = getCollectionFeatureCards(collectionSlug);
 
     return (
       <div className="page-shell bg-[var(--background)]">
@@ -307,27 +245,6 @@ export default function CollectionPage() {
               </div>
             </div>
           </header>
-
-          <section className="collection-plp__feature-row" aria-label={`${genderTitle} featured edits`}>
-            {featureCards.map((card) => (
-              <Link key={card.title} href={card.href} className="collection-plp__feature-card">
-                <span className="collection-plp__feature-media" aria-hidden="true">
-                  <Image
-                    src={card.image}
-                    alt=""
-                    fill
-                    sizes="(max-width: 640px) 76vw, (max-width: 1180px) 40vw, 31vw"
-                    className="object-cover"
-                    style={{ objectPosition: card.imagePosition }}
-                  />
-                </span>
-                <span className="collection-plp__feature-copy">
-                  <span className="collection-plp__feature-title">{card.title}</span>
-                  <span className="collection-plp__feature-subtitle">{card.subtitle}</span>
-                </span>
-              </Link>
-            ))}
-          </section>
 
           <div className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
             <div className="collection-plp__layout-controls" aria-label="Product grid density">
@@ -367,7 +284,13 @@ export default function CollectionPage() {
           ) : filteredProducts.length > 0 ? (
             <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label={`${genderTitle} products`}>
               {filteredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} variant="editorial" priority={index < 4} showInfo={false} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="editorial"
+                  priority={index < 4}
+                  showInfo={layout !== "matrix"}
+                />
               ))}
             </section>
           ) : (
