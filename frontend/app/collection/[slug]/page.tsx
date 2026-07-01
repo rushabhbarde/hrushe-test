@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
-import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
+import { ProductListingSkeleton } from "@/components/product-listing-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -144,15 +144,6 @@ function getGenderAllLabel(collectionSlug: string) {
   return collectionSlug === "women" ? "ALL WOMENSWEAR" : "ALL MENSWEAR";
 }
 
-function FilterSortIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M4 7h16M4 17h16" strokeLinecap="square" />
-      <path d="M8 4v6M16 14v6" strokeLinecap="square" />
-    </svg>
-  );
-}
-
 function LayoutIcon({ variant, cells }: { variant: LayoutIconVariant; cells: number }) {
   return (
     <span className={`collection-layout-icon collection-layout-icon--${variant}`} aria-hidden="true">
@@ -184,7 +175,7 @@ export default function CollectionPage() {
   const { products, loading } = useStorefrontData();
   const [activeCategory, setActiveCategory] = useState("all");
   const [sort, setSort] = useState<SortOption>("edit");
-  const [layout, setLayout] = useState<CollectionLayout>("editorial");
+  const [layout, setLayout] = useState<CollectionLayout>("matrix");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const collectionSlug = params.slug || "";
   const isGenderCollection = collectionSlug === "men" || collectionSlug === "women";
@@ -244,49 +235,40 @@ export default function CollectionPage() {
         <SiteHeader />
         <main className="collection-plp">
           <header className="collection-plp__intro">
-            <h1>{genderTitle}</h1>
+            <div>
+              <p>Shop</p>
+              <h1>
+                {genderTitle}
+                {!loading && visibleProducts.length > 0 ? <span>{visibleProducts.length}</span> : null}
+              </h1>
+              <div className="collection-plp__description">
+                A focused HRUSHE edit of available pieces, arranged for quick browsing.
+              </div>
+            </div>
           </header>
 
+          <nav className="collection-plp__category-nav" aria-label={`${genderTitle} categories`}>
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              aria-pressed={activeCategory === "all"}
+            >
+              View All
+            </button>
+            {displayTabs.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                aria-pressed={slugsMatch(activeCategory, category)}
+                disabled={loading && categoryTabs.length === 0}
+              >
+                {normaliseCategoryLabel(category)}
+              </button>
+            ))}
+          </nav>
+
           <div className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
-            <div className="collection-plp__filter-actions">
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="collection-plp__filter-button"
-                aria-haspopup="dialog"
-              >
-                <FilterSortIcon />
-                <span>Filter &amp; sort</span>
-                {activeControlCount > 0 ? <sup>{activeControlCount}</sup> : null}
-              </button>
-              {activeControlCount > 0 ? (
-                <button type="button" onClick={resetControls} className="collection-plp__reset-button">
-                  Reset
-                </button>
-              ) : null}
-            </div>
-
-            <nav className="collection-plp__category-nav" aria-label={`${genderTitle} categories`}>
-              <button
-                type="button"
-                onClick={() => setActiveCategory("all")}
-                aria-pressed={activeCategory === "all"}
-              >
-                {getGenderAllLabel(collectionSlug)}
-              </button>
-              {displayTabs.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveCategory(category)}
-                  aria-pressed={slugsMatch(activeCategory, category)}
-                  disabled={loading && categoryTabs.length === 0}
-                >
-                  {normaliseCategoryLabel(category)}
-                </button>
-              ))}
-            </nav>
-
             <div className="collection-plp__layout-controls" aria-label="Product grid density">
               {layoutOptions.map((option) => (
                 <button
@@ -300,11 +282,23 @@ export default function CollectionPage() {
                 </button>
               ))}
             </div>
-          </div>
 
-          <div className="collection-plp__status" aria-live="polite">
-            <span>{loading ? "Loading pieces" : `${filteredProducts.length} ${filteredProducts.length === 1 ? "piece" : "pieces"}`}</span>
-            <span>{activeCategoryLabel}</span>
+            <div className="collection-plp__filter-actions">
+              {activeControlCount > 0 ? (
+                <button type="button" onClick={resetControls} className="collection-plp__reset-button">
+                  Reset
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="collection-plp__filter-button"
+                aria-haspopup="dialog"
+              >
+                <span>Filter &amp; Sort</span>
+                {activeControlCount > 0 ? <sup>{activeControlCount}</sup> : null}
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -443,7 +437,11 @@ export default function CollectionPage() {
                 <span>{visibleProducts.length} pieces available</span>
                 <span>Filtered by collection</span>
               </div>
-              <ProductListingGrid products={visibleProducts} />
+              <section className="collection-plp__grid collection-plp__grid--matrix" aria-label={`${displayCategory} products`}>
+                {visibleProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
+                ))}
+              </section>
             </>
           ) : (
             <div className="space-y-10">
@@ -459,7 +457,11 @@ export default function CollectionPage() {
                     <h2 id="related-collection-products" className="font-medium text-[var(--foreground)]">You may also like</h2>
                     <span>Newest available pieces</span>
                   </div>
-                  <ProductListingGrid products={relatedProducts} />
+                  <section className="collection-plp__grid collection-plp__grid--matrix" aria-label="Newest available pieces">
+                    {relatedProducts.map((product, index) => (
+                      <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
+                    ))}
+                  </section>
                 </section>
               ) : null}
             </div>

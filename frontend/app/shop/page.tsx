@@ -127,19 +127,23 @@ export default function ShopPage() {
 
         <section className="pt-10 sm:pt-12">
           {loading ? (
-            <div className="grid grid-cols-2 gap-x-2.5 gap-y-12 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-5">
+            <div className="collection-plp__grid collection-plp__grid--matrix" aria-hidden="true">
               {Array.from({ length: 8 }, (_, index) => (
-                <div key={index} className="loading-pulse">
-                  <div className="aspect-[18/25] bg-[var(--surface-strong)]" />
-                  <div className="mt-4 h-3 w-4/5 bg-[var(--surface-strong)]" />
-                  <div className="mt-2 h-3 w-2/5 bg-[var(--surface-strong)]" />
+                <div key={index} className="bg-[var(--background)]">
+                  <div className="loading-pulse aspect-[4/5] bg-[var(--surface-strong)]" />
+                  <div className="px-5 py-5">
+                    <div className="h-3 w-4/5 bg-[var(--surface-strong)]" />
+                    <div className="mt-2 h-3 w-2/5 bg-[var(--surface-strong)]" />
+                  </div>
                 </div>
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-2.5 gap-y-12 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-x-5 xl:gap-y-16">
-              {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
-            </div>
+            <section className="collection-plp__grid collection-plp__grid--matrix" aria-label="All HRUSHE products">
+              {filteredProducts.map((product, index) => (
+                <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
+              ))}
+            </section>
           ) : (
             <div>
               <EmptyState

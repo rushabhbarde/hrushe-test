@@ -26,9 +26,8 @@ function getAvailableSizes(product: Product) {
 
 function QuickAddBagIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path d="M7 9V7a5 5 0 0 1 10 0v2" strokeLinecap="square" />
-      <path d="M5.5 8.5h13l-1 11h-11l-1-11Z" />
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" strokeLinecap="square" />
     </svg>
   );
 }
@@ -128,6 +127,10 @@ export function ProductQuickAdd({
     event.preventDefault();
     event.stopPropagation();
   };
+  const handleIconQuickAdd = (event: MouseEvent<HTMLButtonElement>) => {
+    preventIconClick(event);
+    void prepareQuickAdd();
+  };
   const closeIconSelectorOnBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (variant !== "icon") {
       return;
@@ -150,7 +153,7 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? "absolute bottom-12 right-4 z-20 hidden h-6 w-6 md:block"
+      ? "absolute bottom-4 right-4 z-20 hidden h-6 w-6 md:block"
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
@@ -158,7 +161,7 @@ export function ProductQuickAdd({
       : "border border-black/15 bg-[var(--surface)] px-3 py-2.5";
   const buttonClassName =
     variant === "icon"
-      ? "flex h-6 w-6 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] opacity-0 transition duration-200 hover:bg-white group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+      ? "flex h-6 w-6 items-center justify-center bg-transparent text-[var(--foreground)] transition duration-200 hover:text-[var(--muted)]"
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
 
   return (
@@ -190,7 +193,7 @@ export function ProductQuickAdd({
         <button
           type="button"
           onMouseDown={variant === "icon" ? preventIconClick : undefined}
-          onClick={variant === "icon" ? preventIconClick : () => void prepareQuickAdd()}
+          onClick={variant === "icon" ? handleIconQuickAdd : () => void prepareQuickAdd()}
           disabled={loading}
           className={buttonClassName}
           aria-label={`Quick add ${getProductDisplayName(product)}`}

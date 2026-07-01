@@ -7,6 +7,7 @@ import type { CSSProperties, MouseEvent } from "react";
 import type { Product } from "@/lib/catalog";
 import { apiRequest } from "@/lib/api";
 import { getProductDisplayName } from "@/lib/product-presentation";
+import { getCompareAtPrice } from "@/lib/pricing";
 import { WishlistButton } from "@/components/wishlist-button";
 import { ProductQuickAdd } from "@/components/product-quick-add";
 
@@ -115,10 +116,11 @@ export function ProductCard({
   const productHref = `/product/${product.slug || product.id}`;
   const image = product.thumbnailUrl || product.images?.[0] || "";
   const colour = product.colour || product.colors?.[0] || "";
-  const colourOptions = getProductColourOptions(product);
-  const visibleColourOptions = colourOptions.slice(0, 2);
-  const hiddenColourCount = Math.max(0, colourOptions.length - visibleColourOptions.length);
   const isEditorial = variant === "editorial";
+  const colourOptions = getProductColourOptions(product);
+  const visibleColourOptions = colourOptions.slice(0, isEditorial ? 3 : 2);
+  const compareAtPrice = getCompareAtPrice(product.price, product.compareAtPrice);
+  const hasDiscount = Boolean(compareAtPrice);
   const galleryImages = getProductGalleryImages(product, image, galleryDetailImages);
   const activeGalleryIndex = galleryImages.length > 0 ? galleryIndex % galleryImages.length : 0;
   const activeImage = isEditorial ? galleryImages[activeGalleryIndex] || image : image;
@@ -191,8 +193,8 @@ export function ProductCard({
               fill
               loading={priority ? "eager" : "lazy"}
               sizes={imageSizes}
-              className={`object-cover object-center transition-transform duration-300 motion-reduce:transition-none md:group-hover/image:scale-[1.015] ${
-                isEditorial ? "mix-blend-normal" : ""
+              className={`object-center transition-transform duration-300 motion-reduce:transition-none md:group-hover/image:scale-[1.015] ${
+                isEditorial ? "object-contain mix-blend-normal" : "object-cover"
               }`}
             />
           ) : (
@@ -213,6 +215,11 @@ export function ProductCard({
           {!isEditorial && (product.newIn || product.newArrival) ? (
             <span className="absolute left-3 top-3 bg-[var(--surface)] px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]">
               New
+            </span>
+          ) : null}
+          {isEditorial && hasDiscount ? (
+            <span className="absolute right-5 top-5 z-10 text-[0.68rem] font-medium uppercase leading-none text-[var(--accent)]">
+              Sale
             </span>
           ) : null}
         </Link>
@@ -251,55 +258,61 @@ export function ProductCard({
           </>
         ) : null}
         <ProductQuickAdd product={product} variant={isEditorial ? "icon" : "bar"} />
-        <WishlistButton
-          productId={product.id}
-          label={`Save ${productName} to favourites`}
-          className={`absolute z-10 flex items-center justify-center bg-[var(--surface)] text-[var(--foreground)] hover:bg-white ${
-            isEditorial
-              ? "bottom-4 right-4 h-6 w-6"
-              : "right-3 top-3 h-11 w-11 border border-black/10 hover:border-[var(--foreground)]"
-          }`}
-          iconClassName={isEditorial ? "h-3.5 w-3.5" : "h-4 w-4"}
-        />
+        {isEditorial ? null : (
+          <WishlistButton
+            productId={product.id}
+            label={`Save ${productName} to favourites`}
+            className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center border border-black/10 bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--foreground)] hover:bg-white"
+            iconClassName="h-4 w-4"
+          />
+        )}
       </div>
       <Link
         href={productHref}
-        className={`block ${isEditorial ? "min-h-[6.6rem] px-4 py-4 sm:px-5 sm:py-5" : "pt-3"}`}
+        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-5 py-5" : "pt-3"}`}
         aria-label={`View details for ${productName}`}
       >
         {isEditorial ? (
           <div className="flex items-start justify-between gap-5">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 text-[0.9rem] font-medium leading-[1.22] text-[var(--foreground)] sm:text-[0.98rem]">
+              <h3 className="line-clamp-2 text-[0.88rem] font-semibold leading-[1.18] text-[var(--foreground)]">
                 {productName}
               </h3>
-              <p className="mt-1 text-[0.9rem] font-medium leading-none text-[var(--foreground)] sm:text-[0.98rem]">
-                {formatPrice(product.price)}
-              </p>
+              {colour ? (
+                <p className="mt-1.5 text-[0.8rem] font-semibold leading-none text-[var(--muted)]">
+                  {colour.replace(/begie/gi, "Beige")}
+                </p>
+              ) : null}
+              {visibleColourOptions.length > 0 ? (
+                <div className="mt-4 flex items-center gap-2 text-[0.78rem] font-medium leading-none text-[var(--muted)]" aria-label={`${colourOptions.length} colour options`}>
+                  {visibleColourOptions.map((colourOption) => (
+                    <span
+                      key={colourOption}
+                      className="product-swatch h-3.5 w-3.5 rounded-full border border-black/10"
+                      style={{ "--swatch": getSwatchColour(colourOption) } as CSSProperties}
+                      title={colourOption}
+                      aria-label={colourOption}
+                    />
+                  ))}
+                  <span>{colourOptions.length} {colourOptions.length === 1 ? "Colour" : "Colours"}</span>
+                </div>
+              ) : null}
               {product.availability === "sold-out" || product.status === "Sold Out" ? (
                 <p className="mt-2 text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
                   Currently unavailable
                 </p>
               ) : null}
             </div>
-            {visibleColourOptions.length > 0 ? (
-              <div className="mt-8 flex shrink-0 items-center gap-2" aria-label={`${colourOptions.length} colour options`}>
-                {visibleColourOptions.map((colourOption) => (
-                  <span
-                    key={colourOption}
-                    className="product-swatch h-3 w-3 border border-black/10"
-                    style={{ "--swatch": getSwatchColour(colourOption) } as CSSProperties}
-                    title={colourOption}
-                    aria-label={colourOption}
-                  />
-                ))}
-                {hiddenColourCount > 0 ? (
-                  <span className="text-[0.84rem] font-medium leading-none text-[var(--foreground)]">
-                    +{hiddenColourCount}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
+            <p className="flex shrink-0 items-center gap-1.5 text-[0.84rem] font-semibold leading-none">
+              {compareAtPrice ? (
+                <span className="text-[var(--foreground)] line-through decoration-[1px]">
+                  {formatPrice(compareAtPrice)}
+                </span>
+              ) : null}
+              <span className={compareAtPrice ? "text-[var(--accent)]" : "text-[var(--foreground)]"}>
+                {formatPrice(product.price)}
+              </span>
+            </p>
           </div>
         ) : (
           <div>
@@ -308,7 +321,14 @@ export function ProductCard({
                 {productName}
               </h3>
               <p className="shrink-0 text-[0.8rem] font-semibold text-[var(--foreground)] sm:text-[0.88rem]">
-                {formatPrice(product.price)}
+                {compareAtPrice ? (
+                  <>
+                    <span className="mr-1.5 line-through decoration-[1px]">{formatPrice(compareAtPrice)}</span>
+                    <span className="text-[var(--accent)]">{formatPrice(product.price)}</span>
+                  </>
+                ) : (
+                  formatPrice(product.price)
+                )}
               </p>
             </div>
             {product.availability === "sold-out" || product.status === "Sold Out" ? (
