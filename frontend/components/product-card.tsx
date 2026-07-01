@@ -104,10 +104,12 @@ export function ProductCard({
   product,
   variant = "default",
   priority = false,
+  showInfo = true,
 }: {
   product: Product;
   variant?: "default" | "editorial";
   priority?: boolean;
+  showInfo?: boolean;
 }) {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryDetailImages, setGalleryDetailImages] = useState<string[]>([]);
@@ -267,6 +269,7 @@ export function ProductCard({
           />
         )}
       </div>
+      {showInfo ? (
       <Link
         href={productHref}
         className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-5 py-5" : "pt-3"}`}
@@ -343,6 +346,7 @@ export function ProductCard({
           </div>
         )}
       </Link>
+      ) : null}
     </article>
   );
 }

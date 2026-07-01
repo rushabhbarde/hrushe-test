@@ -308,27 +308,6 @@ export default function CollectionPage() {
             </div>
           </header>
 
-          <nav className="collection-plp__category-nav" aria-label={`${genderTitle} categories`}>
-            <button
-              type="button"
-              onClick={() => setActiveCategory("all")}
-              aria-pressed={activeCategory === "all"}
-            >
-              View All
-            </button>
-            {displayTabs.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setActiveCategory(category)}
-                aria-pressed={slugsMatch(activeCategory, category)}
-                disabled={loading && categoryTabs.length === 0}
-              >
-                {normaliseCategoryLabel(category)}
-              </button>
-            ))}
-          </nav>
-
           <section className="collection-plp__feature-row" aria-label={`${genderTitle} featured edits`}>
             {featureCards.map((card) => (
               <Link key={card.title} href={card.href} className="collection-plp__feature-card">
@@ -388,7 +367,7 @@ export default function CollectionPage() {
           ) : filteredProducts.length > 0 ? (
             <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label={`${genderTitle} products`}>
               {filteredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} variant="editorial" priority={index < 4} />
+                <ProductCard key={product.id} product={product} variant="editorial" priority={index < 4} showInfo={false} />
               ))}
             </section>
           ) : (
@@ -521,7 +500,7 @@ export default function CollectionPage() {
               </div>
               <section className="collection-plp__grid collection-plp__grid--matrix" aria-label={`${displayCategory} products`}>
                 {visibleProducts.map((product, index) => (
-                  <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
+                  <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} showInfo={false} />
                 ))}
               </section>
             </>
@@ -541,7 +520,7 @@ export default function CollectionPage() {
                   </div>
                   <section className="collection-plp__grid collection-plp__grid--matrix" aria-label="Newest available pieces">
                     {relatedProducts.map((product, index) => (
-                      <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
+                      <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} showInfo={false} />
                     ))}
                   </section>
                 </section>
