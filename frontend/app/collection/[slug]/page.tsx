@@ -28,12 +28,19 @@ type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
 const preferredCategoryOrder = [
   "T-Shirts",
-  "Shirts",
   "Oversized",
   "Polos",
-  "Bottomwear",
-  "Outerwear",
+  "Shirts",
+  "Pants",
+  "Shorts",
+  "Hoodies",
+  "Knitwear",
+  "Sweaters",
+  "Denim",
+  "Footwear",
   "Accessories",
+  "Outerwear",
+  "Bottomwear",
 ];
 
 const sortOptions: Array<{ value: SortOption; label: string }> = [
@@ -44,9 +51,9 @@ const sortOptions: Array<{ value: SortOption; label: string }> = [
 ];
 
 const layoutOptions: Array<{ value: CollectionLayout; label: string; icon: LayoutIconVariant; cells: number }> = [
-  { value: "runway", label: "3 product view", icon: "three", cells: 3 },
+  { value: "runway", label: "3 product view", icon: "three", cells: 1 },
   { value: "editorial", label: "4 product view", icon: "four", cells: 4 },
-  { value: "matrix", label: "6 product view", icon: "six", cells: 6 },
+  { value: "matrix", label: "6 product view", icon: "six", cells: 9 },
 ];
 
 function sortCollectionProducts(products: Product[], sort: SortOption) {
@@ -116,11 +123,37 @@ function getDerivedProductCategories(product: Product) {
     categories.add("Polos");
   }
 
+  if (searchText.includes("hoodie") || searchText.includes("sweatshirt")) {
+    categories.add("Hoodies");
+  }
+
+  if (searchText.includes("knit")) {
+    categories.add("Knitwear");
+  }
+
+  if (searchText.includes("sweater")) {
+    categories.add("Sweaters");
+  }
+
+  if (searchText.includes("denim") || searchText.includes("jean")) {
+    categories.add("Denim");
+  }
+
+  if (searchText.includes("shoe") || searchText.includes("sneaker") || searchText.includes("footwear")) {
+    categories.add("Footwear");
+  }
+
   if (searchText.includes("shirt") && !searchText.includes("t-shirt") && !searchText.includes("tshirt")) {
     categories.add("Shirts");
   }
 
-  if (searchText.includes("pant") || searchText.includes("trouser") || searchText.includes("short")) {
+  if (searchText.includes("pant") || searchText.includes("trouser")) {
+    categories.add("Pants");
+    categories.add("Bottomwear");
+  }
+
+  if (searchText.includes("short")) {
+    categories.add("Shorts");
     categories.add("Bottomwear");
   }
 
@@ -245,6 +278,27 @@ export default function CollectionPage() {
               </div>
             </div>
           </header>
+
+          <nav className="collection-plp__category-nav" aria-label={`${genderTitle} categories`}>
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              aria-pressed={activeCategory === "all"}
+            >
+              View All
+            </button>
+            {displayTabs.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                aria-pressed={slugsMatch(activeCategory, category)}
+                disabled={loading}
+              >
+                {normaliseCategoryLabel(category)}
+              </button>
+            ))}
+          </nav>
 
           <div className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
             <div className="collection-plp__layout-controls" aria-label="Product grid density">
