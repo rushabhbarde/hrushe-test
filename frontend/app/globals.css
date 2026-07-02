@@ -628,16 +628,16 @@ body :where([class*="shadow-"]) {
 }
 
 .collection-plp__grid [data-product-card-variant="editorial"] img {
-  object-fit: contain;
-  padding: clamp(1.65rem, 3.6vw, 4.25rem);
+  object-fit: cover;
+  padding: 0;
 }
 
 .collection-plp__grid--runway [data-product-card-variant="editorial"] img {
-  padding: clamp(1.9rem, 3.8vw, 4.7rem);
+  padding: 0;
 }
 
 .collection-plp__grid--matrix [data-product-card-variant="editorial"] img {
-  padding: clamp(1.25rem, 2.6vw, 3rem);
+  padding: 0;
 }
 
 .collection-filter-drawer {
@@ -821,7 +821,7 @@ body :where([class*="shadow-"]) {
   }
 
   .collection-plp__grid [data-product-card-variant="editorial"] img {
-    padding: clamp(1.1rem, 6vw, 2rem);
+    padding: 0;
   }
 }
 
@@ -1194,14 +1194,14 @@ body :where([class*="shadow-"]) {
 .support-float-button {
   position: relative;
   display: inline-flex;
-  min-height: 3.5rem;
+  min-height: 3.25rem;
   align-items: center;
   justify-content: center;
-  gap: 0.72rem;
+  gap: 0.62rem;
   overflow: hidden;
   border: 1px solid var(--foreground);
   background: var(--foreground);
-  padding: 0.48rem 0.52rem 0.48rem 0.58rem;
+  padding: 0.42rem 0.9rem 0.42rem 0.48rem;
   color: var(--background);
   isolation: isolate;
 }
@@ -1220,7 +1220,7 @@ body :where([class*="shadow-"]) {
 
 .support-float-button__icon {
   display: grid;
-  width: 2.55rem;
+  width: 2.35rem;
   aspect-ratio: 1;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--background) 26%, transparent);
@@ -1348,12 +1348,13 @@ body :where([class*="shadow-"]) {
 
 @media (max-width: 640px) {
   .support-float-button {
-    min-height: 3.25rem;
-    padding: 0.42rem;
+    min-height: 3rem;
+    gap: 0.5rem;
+    padding: 0.38rem 0.76rem 0.38rem 0.42rem;
   }
 
   .support-float-button__icon {
-    width: 2.4rem;
+    width: 2.18rem;
   }
 }
 

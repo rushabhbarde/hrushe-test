@@ -91,33 +91,16 @@ function buildSubject(option: IssueOption | null) {
   return option ? `${option.label} support request` : "Support request";
 }
 
-function ConciergeIcon() {
+function MessageSquareIcon() {
   return (
-    <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
       <path
-        d="M8.5 16.5v-1.2a7.5 7.5 0 0 1 15 0v1.2"
+        d="M5 5.25h14a1.75 1.75 0 0 1 1.75 1.75v8.25A1.75 1.75 0 0 1 19 17H9.25L4 20.25V7a1.75 1.75 0 0 1 1.75-1.75Z"
         stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinecap="square"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
       />
-      <path
-        d="M8.5 17h4v6h-1.25A2.75 2.75 0 0 1 8.5 20.25V17ZM23.5 17h-4v6h1.25a2.75 2.75 0 0 0 2.75-2.75V17Z"
-        stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinejoin="miter"
-      />
-      <path
-        d="M19.25 23.25c-.8 1.15-1.9 1.75-3.25 1.75h-2.25"
-        stroke="currentColor"
-        strokeWidth="1.55"
-        strokeLinecap="square"
-      />
-      <path
-        d="M16 8.5v3.75M14.15 10.35h3.7"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="square"
-      />
+      <path d="M8 10h8M8 13h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
@@ -397,14 +380,11 @@ export function SupportChatbot() {
         aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
       >
         <span className="support-float-button__icon">
-          {isOpen ? <CloseSupportIcon /> : <ConciergeIcon />}
+          {isOpen ? <CloseSupportIcon /> : <MessageSquareIcon />}
         </span>
-        <span className="hidden text-left leading-none sm:grid">
-          <span className="text-[0.56rem] font-medium uppercase tracking-[0.18em] opacity-60">
-            HRUSHE
-          </span>
-          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.14em]">
-            {isOpen ? "Close" : "Concierge"}
+        <span className="grid text-left leading-none">
+          <span className="text-[0.72rem] font-semibold uppercase tracking-[0.12em]">
+            {isOpen ? "Close" : "Need help?"}
           </span>
         </span>
       </button>

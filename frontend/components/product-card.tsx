@@ -196,7 +196,7 @@ export function ProductCard({
               loading={priority ? "eager" : "lazy"}
               sizes={imageSizes}
               className={`object-center transition-transform duration-300 motion-reduce:transition-none md:group-hover/image:scale-[1.015] ${
-                isEditorial ? "object-contain mix-blend-normal" : "object-cover"
+                isEditorial ? "object-cover mix-blend-normal" : "object-cover"
               }`}
             />
           ) : (

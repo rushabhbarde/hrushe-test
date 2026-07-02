@@ -92,23 +92,6 @@ export function ProductQuickAdd({
     }
   };
 
-  const revealSizeSelector = async () => {
-    const immediateSizes = getAvailableSizes(activeProduct);
-
-    if (immediateSizes.length > 1) {
-      setSelectingSize(true);
-    }
-
-    if (!productDetail) {
-      const detail = await loadProductOptions({ silent: true });
-      const detailSizes = detail ? getAvailableSizes(detail) : [];
-
-      if (detailSizes.length > 1) {
-        setSelectingSize(true);
-      }
-    }
-  };
-
   const prepareQuickAdd = async () => {
     const detail = await loadProductOptions();
 
@@ -153,7 +136,7 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? "absolute bottom-4 right-4 z-20 hidden h-6 w-6 md:block"
+      ? "absolute bottom-4 right-4 z-20 hidden h-6 w-6 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100 md:block"
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
@@ -167,10 +150,7 @@ export function ProductQuickAdd({
   return (
     <div
       className={wrapperClassName}
-      onMouseEnter={variant === "icon" ? () => void revealSizeSelector() : undefined}
-      onMouseOver={variant === "icon" ? () => void revealSizeSelector() : undefined}
       onMouseLeave={variant === "icon" ? () => setSelectingSize(false) : undefined}
-      onFocus={variant === "icon" ? () => void revealSizeSelector() : undefined}
       onBlur={closeIconSelectorOnBlur}
       onKeyDown={closeIconSelectorOnEscape}
     >
