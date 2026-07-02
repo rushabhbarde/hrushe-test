@@ -376,11 +376,11 @@ function ProductInfoPanel({
                   fill
                   priority={active}
                   loading={active ? "eager" : "lazy"}
-                    unoptimized={shouldBypassImageOptimization(colourImage)}
-                    sizes="72px"
-                    className="object-cover"
-                  />
-                ) : null;
+                  unoptimized={shouldBypassImageOptimization(colourImage)}
+                  sizes="72px"
+                  className="object-cover"
+                />
+              ) : null;
 
               if (active) {
                 return (
@@ -923,11 +923,14 @@ export default function ProductDetailPage() {
         </div>
 
         {mediaItems.length > 1 ? (
-          <section className="grid bg-[#f7f7f7] lg:grid-cols-3" aria-label="Product detail gallery">
-            {mediaItems.slice(1, 4).map((item, index) => (
+          <section
+            className="hide-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-[#f7f7f7]"
+            aria-label="Product detail gallery"
+          >
+            {mediaItems.slice(1).map((item, index) => (
               <div
                 key={item.id}
-                className="relative min-h-[28rem] border-t border-white lg:min-h-[calc(100vh-8rem)] lg:border-l lg:border-t-0"
+                className="relative min-h-[70svh] w-[86vw] flex-none snap-start border-t border-white sm:w-[70vw] lg:min-h-[calc(100vh-8rem)] lg:w-[42vw] lg:border-l lg:border-t-0 xl:w-[34vw]"
               >
                 {item.type === "image" ? (
                   <Image
@@ -936,7 +939,7 @@ export default function ProductDetailPage() {
                     fill
                     loading="lazy"
                     unoptimized={shouldBypassImageOptimization(item.src)}
-                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    sizes="(max-width: 640px) 86vw, (max-width: 1024px) 70vw, (max-width: 1280px) 42vw, 34vw"
                     className={`object-cover object-center ${index === 2 ? "lg:object-left" : ""}`}
                   />
                 ) : (
