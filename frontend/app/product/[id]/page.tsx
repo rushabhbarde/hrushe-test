@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
-import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { SizeGuideModal, SizeGuideTable } from "@/components/size-guide";
-import { ServicePromise } from "@/components/service-promise";
+import { SizeGuideModal } from "@/components/size-guide";
 import { WishlistButton } from "@/components/wishlist-button";
 import { useCart } from "@/components/cart-provider";
 import { useToast } from "@/components/toast-provider";
@@ -19,30 +17,21 @@ import { isPersistedMediaSource, shouldBypassImageOptimization } from "@/lib/ima
 import { useStorefrontData } from "@/lib/use-storefront";
 import {
   getProductDisplayName,
-  getProductFabricLine,
   getProductFitLine,
 } from "@/lib/product-presentation";
 
 const productInfoSections = [
   {
-    key: "description",
-    title: "Product",
+    key: "details",
+    title: "Product Details",
   },
   {
-    key: "fabric",
-    title: "Fabric & construction",
+    key: "faqs",
+    title: "Product FAQs",
   },
   {
-    key: "wash",
-    title: "Care",
-  },
-  {
-    key: "size",
-    title: "Fit & measurements",
-  },
-  {
-    key: "delivery",
-    title: "Delivery & returns",
+    key: "shipping",
+    title: "Shipping & Returns",
   },
 ] as const;
 
@@ -106,29 +95,6 @@ function normalizeProduct(product: Product): Product {
 
 function resolveSwatchColor(color: string, accent: string) {
   return swatchColors[color.toLowerCase().trim()] || accent || "#d9d9d9";
-}
-
-function getProductSummary(description: string) {
-  const normalized = description.replace(/\s+/g, " ").trim();
-
-  if (!normalized) {
-    return "";
-  }
-
-  const sentences =
-    normalized.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()).filter(Boolean) ||
-    [];
-
-  if (sentences.length >= 2) {
-    return sentences.slice(0, 2).join(" ");
-  }
-
-  if (normalized.length <= 220) {
-    return normalized;
-  }
-
-  const clipped = normalized.slice(0, 220);
-  return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
 }
 
 function getProductFit(product: Product) {
@@ -280,16 +246,14 @@ type ProductInfoPanelProps = {
   priceText: string;
   compareAtPriceText: string;
   hasDiscount: boolean;
-  description: string;
+  reviewCount: number;
   selectedColor: string;
   selectedSize: string;
-  quantity: number;
   addError: string;
   requiresSize: boolean;
   canAddToCart: boolean;
   onColorSelect: (color: string) => void;
   onSizeSelect: (size: string) => void;
-  onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
   onOpenSizeGuide: () => void;
   actionRef?: React.Ref<HTMLDivElement>;
@@ -301,22 +265,31 @@ function ProductInfoPanel({
   priceText,
   compareAtPriceText,
   hasDiscount,
-  description,
+  reviewCount,
   selectedColor,
   selectedSize,
-  quantity,
   addError,
   requiresSize,
   canAddToCart,
   onColorSelect,
   onSizeSelect,
-  onQuantityChange,
   onAddToCart,
   onOpenSizeGuide,
   actionRef,
 }: ProductInfoPanelProps) {
+  const [openPanel, setOpenPanel] =
+    useState<(typeof productInfoSections)[number]["key"] | null>(null);
   const displayName = getProductDisplayName(product);
   const soldOut = product.status === "Sold Out" || product.availability === "sold-out";
+  const fitLabel = getProductFit(product) || getProductFitLine(product) || "Regular fit";
+  const detailRows = getProductDetailRows(product);
+  const washCare = getWashCare(product);
+  const modelNote = [
+    product.modelHeight ? `Model is ${product.modelHeight}` : "",
+    product.modelWornSize ? `wearing size ${product.modelWornSize}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const colorProducts = [product, ...siblingProducts].filter(
     (item, index, items) =>
       Boolean(item.colors[0]) &&
@@ -325,60 +298,72 @@ function ProductInfoPanel({
           candidate.colors[0]?.toLowerCase() === item.colors[0]?.toLowerCase()
       ) === index
   );
+
   return (
-    <div className="flex flex-col border-b border-[var(--border)] bg-[var(--background)] px-4 pb-10 pt-8 sm:px-6 lg:min-h-[640px] lg:border-b-0 lg:px-0 lg:py-4">
-      <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
-      <div className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="max-w-[20ch] text-[1.5rem] font-medium leading-[1.12] tracking-[-0.025em] text-[var(--foreground)] lg:text-[2rem]">
-            {displayName}
-          </h2>
-          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-[1.05rem] font-semibold leading-none text-[var(--foreground)]">
-              {priceText}
+    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(3rem,8vw,10rem)] lg:py-[clamp(3.5rem,7vw,8rem)]">
+      <div className="flex items-start justify-between gap-6 text-[0.95rem] font-semibold leading-tight text-[var(--foreground)]">
+        <h2 className="max-w-[28ch]">{displayName}</h2>
+        <div className="shrink-0 text-right">
+          {hasDiscount ? (
+            <p className="mb-1 text-[0.82rem] text-[var(--muted)] line-through decoration-[1.5px]">
+              {compareAtPriceText}
             </p>
-            {hasDiscount ? (
-              <p className="text-[0.82rem] leading-none text-[var(--muted)] line-through decoration-[1.5px]">
-                {compareAtPriceText}
-              </p>
-            ) : null}
-          </div>
+          ) : null}
+          <p className={hasDiscount ? "text-[var(--accent)]" : ""}>{priceText}</p>
         </div>
-        <WishlistButton
-          productId={product.id}
-          label={`Add ${displayName} to wishlist`}
-          className="inline-flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
-          iconClassName="h-4 w-4"
-        />
       </div>
-      <p className="mt-4 text-[0.74rem] tracking-[0.04em] text-[var(--muted)]">
-        MRP incl. of all taxes
-      </p>
-      {description ? (
-        <p className="mt-8 max-w-[31rem] text-[0.92rem] leading-7 text-[var(--muted)]">
-          {description}
-        </p>
-      ) : null}
-      {getProductFabricLine(product) || getProductFitLine(product) ? (
-        <div className="mt-8 grid grid-cols-2 border-y border-[var(--border)] py-5 text-[0.7rem] uppercase tracking-[0.1em] text-[var(--muted)]">
-          <p>{getProductFabricLine(product)}</p>
-          <p className="text-right">{getProductFitLine(product)}</p>
-        </div>
-      ) : null}
+
+      <div className="mt-8 flex flex-wrap items-center gap-3 text-[0.82rem] leading-none">
+        <span aria-label="5 star rating" className="tracking-[0.08em] text-[var(--foreground)]">
+          ★★★★★
+        </span>
+        <span className="text-[var(--muted)] underline underline-offset-2">
+          {reviewCount > 0
+            ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
+            : "No reviews yet"}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={onOpenSizeGuide}
+        className="mt-8 inline-flex w-fit items-center gap-2 text-left text-[0.9rem] font-semibold text-[var(--foreground)]"
+      >
+        <span aria-hidden="true">ⓘ</span>
+        <span>Sizing &amp; Fit</span>
+        <span className="font-medium">{fitLabel}</span>
+      </button>
 
       {colorProducts.length > 0 ? (
-        <div className="mt-8">
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
-            Colour: {selectedColor || product.colors[0]}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2.5">
+        <div className="mt-9">
+          <div className="flex items-center justify-between gap-5">
+            <p className="flex items-baseline gap-3 text-[0.9rem] text-[var(--muted)]">
+              <span className="font-semibold text-[var(--foreground)]">
+                Colour
+                <sup className="ml-1 text-[0.55rem] text-[var(--muted)]">
+                  {colorProducts.length}
+                </sup>
+              </span>
+              <span>{selectedColor || product.colors[0]}</span>
+            </p>
+            <div className="flex items-center gap-2 text-[0.82rem] font-medium text-[var(--muted)]">
+              <span>Add to Wishlist</span>
+              <WishlistButton
+                productId={product.id}
+                label={`Add ${displayName} to wishlist`}
+                className="inline-flex h-9 w-9 items-center justify-center text-[var(--foreground)]"
+                iconClassName="h-4 w-4"
+              />
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-6 gap-1.5">
             {colorProducts.map((colorProduct) => {
               const color = colorProduct.colors[0];
               const active = colorProduct.id === product.id;
-              const swatchClassName = `relative inline-flex h-[68px] w-[52px] overflow-hidden border transition ${
+              const swatchClassName = `relative inline-flex aspect-square w-full overflow-hidden bg-[var(--surface-strong)] transition ${
                 active
-                  ? "border-[var(--foreground)]"
-                  : "border-[var(--border)] hover:border-[var(--foreground)]"
+                  ? "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--foreground)]"
+                  : "hover:after:absolute hover:after:inset-x-0 hover:after:bottom-0 hover:after:h-0.5 hover:after:bg-[var(--foreground)]"
               }`;
               const colourImage = colorProduct.images[0];
               const swatchStyle = colourImage
@@ -391,11 +376,11 @@ function ProductInfoPanel({
                   fill
                   priority={active}
                   loading={active ? "eager" : "lazy"}
-                  unoptimized={shouldBypassImageOptimization(colourImage)}
-                  sizes="52px"
-                  className="object-cover"
-                />
-              ) : null;
+                    unoptimized={shouldBypassImageOptimization(colourImage)}
+                    sizes="72px"
+                    className="object-cover"
+                  />
+                ) : null;
 
               if (active) {
                 return (
@@ -430,20 +415,35 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-6">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Size</p>
-            {product.sizeGuide?.length ? (
+        <div className="mt-9">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="flex items-center gap-3 text-[0.9rem] text-[var(--muted)]">
+              <span className="font-semibold text-[var(--foreground)]">Size</span>
+              {selectedSize ? <span>{selectedSize}</span> : null}
+              <span className={soldOut ? "text-[var(--accent)]" : "text-green-700"}>
+                {soldOut ? "Sold Out" : "In Stock"}
+              </span>
+            </p>
+            <div className="flex items-center gap-4 text-[0.82rem] font-medium">
               <button
                 type="button"
                 onClick={onOpenSizeGuide}
-                className="min-h-11 text-[0.68rem] font-medium uppercase tracking-[0.1em] underline underline-offset-4"
+                className="underline underline-offset-4"
               >
-                Size guide
+                Find your size
               </button>
-            ) : null}
+              {product.sizeGuide?.length ? (
+                <button
+                  type="button"
+                  onClick={onOpenSizeGuide}
+                  className="text-[var(--muted)] underline underline-offset-4"
+                >
+                  Size Chart
+                </button>
+              ) : null}
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-5 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
               const available =
@@ -464,12 +464,12 @@ function ProductInfoPanel({
                   disabled={!available}
                   aria-pressed={active}
                   aria-label={`${size}${available ? "" : " — unavailable"}`}
-                  className={`inline-flex min-h-12 min-w-12 items-center justify-center border px-3 text-[0.72rem] font-semibold uppercase transition ${
+                  className={`inline-flex min-h-12 items-center justify-center px-3 text-[0.82rem] font-medium uppercase transition ${
                     active
-                      ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]"
+                      ? "bg-[var(--foreground)] text-[var(--background)]"
                       : available
-                        ? "border-[rgba(17,17,17,0.16)] bg-[var(--surface)] text-[var(--foreground)]"
-                        : "cursor-not-allowed border-[rgba(17,17,17,0.08)] bg-[var(--surface)] text-[var(--muted)] line-through opacity-45"
+                        ? "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[#ececec]"
+                        : "cursor-not-allowed bg-[#f6f6f6] text-[var(--muted)] line-through opacity-45"
                   }`}
                 >
                   {size}
@@ -477,61 +477,94 @@ function ProductInfoPanel({
               );
             })}
           </div>
-          {product.modelHeight || product.modelWornSize ? (
-            <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
-              {[product.modelHeight ? `Model height ${product.modelHeight}` : "", product.modelWornSize ? `Wears size ${product.modelWornSize}` : ""].filter(Boolean).join(" · ")}
-            </p>
-          ) : product.sizeGuide?.length ? (
-            <p className="mt-4 text-xs leading-6 text-[var(--muted)]">Compare the garment measurements before ordering.</p>
-          ) : null}
         </div>
       ) : null}
 
-      <div className="mt-6 flex items-center justify-between border-y border-[var(--border)] py-3">
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">Quantity</p>
-        <div className="inline-grid grid-cols-[44px_44px_44px] items-center border border-[var(--border)]" aria-label="Product quantity">
-          <button
-            type="button"
-            onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-            className="flex h-11 items-center justify-center text-base"
-            aria-label="Decrease quantity"
-          >
-            −
-          </button>
-          <output className="flex h-11 items-center justify-center border-x border-[var(--border)] text-sm" aria-live="polite">
-            {quantity}
-          </output>
-          <button
-            type="button"
-            onClick={() => onQuantityChange(Math.min(10, quantity + 1))}
-            disabled={quantity >= 10}
-            className="flex h-11 items-center justify-center text-base"
-            aria-label="Increase quantity"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <div ref={actionRef} className="mt-7 space-y-4 lg:mt-auto lg:pt-8">
+      <div ref={actionRef} className="mt-9 space-y-4">
         <button
           type="button"
           onClick={onAddToCart}
           disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-          className="inline-flex min-h-12 w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.76rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="inline-flex min-h-[4.25rem] w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.86rem] font-bold uppercase tracking-[0.05em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
           {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
         {addError ? <p className="text-sm text-[var(--accent)]" role="alert">{addError}</p> : null}
-        <ServicePromise compact />
+        <div className="divide-y divide-[var(--border)] text-[0.9rem] font-medium">
+          <div className="flex items-center justify-between py-4">
+            <span>{product.returnEligible ? "Free size exchange" : "Free shipping on prepaid orders"}</span>
+            <span aria-hidden="true">›</span>
+          </div>
+          <div className="flex items-center justify-between py-4">
+            <span>Dispatches in 1–3 business days</span>
+            <span aria-hidden="true">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-auto border-t border-[var(--border)] pt-8">
+        <div className="grid gap-2 lg:grid-cols-3 lg:gap-4">
+          {productInfoSections.map((section) => {
+            const isOpen = openPanel === section.key;
+
+            return (
+              <div key={section.key} className="border-b border-[var(--border)] lg:border-b-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenPanel((current) => (current === section.key ? null : section.key))
+                  }
+                  className="flex w-full items-center gap-4 py-4 text-left text-[0.86rem] font-semibold"
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-lg leading-none" aria-hidden="true">
+                    +
+                  </span>
+                  <span>{section.title}</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {openPanel ? (
+          <div className="mt-3 max-w-[42rem] text-[0.86rem] leading-7 text-[var(--muted)]">
+            {openPanel === "details" ? (
+              <div className="space-y-4">
+                {product.description ? <p>{product.description}</p> : null}
+                {modelNote ? <p>{modelNote}</p> : null}
+                {detailRows.length > 0 ? (
+                  <dl className="grid gap-2 sm:grid-cols-2">
+                    {detailRows.map((item) => (
+                      <div key={item.label} className="flex gap-2">
+                        <dt className="font-semibold text-[var(--foreground)]">{item.label}:</dt>
+                        <dd>{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
+                {washCare ? <p>{washCare}</p> : null}
+              </div>
+            ) : null}
+            {openPanel === "faqs" ? (
+              <p>
+                Need help with fit or fabric? Message HRUSHE support and we will help you choose the right size before checkout.
+              </p>
+            ) : null}
+            {openPanel === "shipping" ? (
+              <p>
+                Orders dispatch within 1–3 business days. One size exchange is available when eligible, and returns follow the product return policy.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
-  const { products, addProductReview, loading } = useStorefrontData();
+  const { products, loading } = useStorefrontData();
   const { addItem, openCart } = useCart();
   const { pushToast } = useToast();
   const matchedProduct = useMemo(
@@ -549,21 +582,11 @@ export default function ProductDetailPage() {
     matchedProduct?.colors[0] || ""
   );
   const [selectedSize, setSelectedSize] = useState("");
-  const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState("");
-  const [reviewerName, setReviewerName] = useState("");
-  const [reviewQuote, setReviewQuote] = useState("");
-  const [reviewRating, setReviewRating] = useState("5");
-  const [reviewError, setReviewError] = useState("");
-  const [reviewSaved, setReviewSaved] = useState(false);
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const mainAddToCartRef = useRef<HTMLDivElement>(null);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [showStickyAddToCart, setShowStickyAddToCart] = useState(false);
-  const [openSection, setOpenSection] =
-    useState<(typeof productInfoSections)[number]["key"] | null>("description");
 
   useEffect(() => {
     let active = true;
@@ -621,16 +644,8 @@ export default function ProductDetailPage() {
     setActiveMediaIndex(0);
     setSelectedColor(product.colors[0] || "");
     setSelectedSize("");
-    setQuantity(1);
     setAddError("");
   }, [product]);
-
-  useEffect(() => {
-    if (reviewSaved) {
-      const timerId = window.setTimeout(() => setReviewSaved(false), 2000);
-      return () => window.clearTimeout(timerId);
-    }
-  }, [reviewSaved]);
 
   useEffect(() => {
     const actionElement = mainAddToCartRef.current;
@@ -724,9 +739,6 @@ export default function ProductDetailPage() {
   const hasDiscount = compareAtPrice > product.price;
   const priceText = `₹${product.price.toLocaleString("en-IN")}`;
   const compareAtPriceText = compareAtPrice ? `₹${compareAtPrice.toLocaleString("en-IN")}` : "";
-  const productSummary = getProductSummary(product.description);
-  const detailRows = getProductDetailRows(product);
-  const washCare = getWashCare(product);
   const hasMultipleMedia = mediaItems.length > 1;
   const productUnavailable = product.status === "Sold Out" || product.availability === "sold-out";
 
@@ -781,31 +793,6 @@ export default function ProductDetailPage() {
     showPreviousMedia();
   };
 
-  const onReviewSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setReviewSubmitting(true);
-    setReviewError("");
-
-    try {
-      await addProductReview(product.id, {
-        reviewerName,
-        quote: reviewQuote,
-        rating: Number(reviewRating),
-        photo: "",
-      });
-      setReviewerName("");
-      setReviewQuote("");
-      setReviewRating("5");
-      setReviewSaved(true);
-    } catch (error) {
-      setReviewError(
-        error instanceof Error ? error.message : "Could not save your review."
-      );
-    } finally {
-      setReviewSubmitting(false);
-    }
-  };
-
   const handleAddToCart = () => {
     if (requiresSize && !selectedSize) {
       const message = "Please select a size before adding to cart.";
@@ -827,7 +814,7 @@ export default function ProductDetailPage() {
       price: product.price,
       size: selectedSize,
       color: effectiveColor,
-      quantity,
+      quantity: 1,
       accent: product.accent,
       image: product.images[0],
     });
@@ -839,21 +826,12 @@ export default function ProductDetailPage() {
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto w-full pb-28 lg:max-w-[1440px] lg:px-8 lg:pb-24 lg:pt-12 xl:pt-16">
+      <main className="w-full pb-20 lg:pb-0">
         <h1 className="sr-only">{product.name}</h1>
-        <div className="px-4 py-4 sm:px-6 lg:px-0 lg:pb-8 lg:pt-0">
-          <Breadcrumbs
-            items={[
-              { label: "Home", href: "/" },
-              { label: product.category || "Shop", href: product.category ? `/collection/${product.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "/shop" },
-              { label: getProductDisplayName(product) },
-            ]}
-          />
-        </div>
-        <div className="lg:mx-auto lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1.45fr)_minmax(380px,0.85fr)] lg:items-start lg:gap-12 xl:gap-16">
+        <div className="lg:grid lg:grid-cols-[minmax(0,50.5vw)_minmax(420px,1fr)] lg:items-start">
           <section aria-label="Product media gallery">
             <div
-              className="relative overflow-hidden border-b border-[var(--border)] bg-[var(--surface-strong)] lg:border"
+              className="relative overflow-hidden border-b border-[var(--border)] bg-[#f7f7f7] lg:min-h-[calc(100vh-8rem)] lg:border-b-0"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -861,67 +839,70 @@ export default function ProductDetailPage() {
               }}
               style={{ touchAction: "pan-y" }}
             >
-              <div className="relative aspect-[4/5]">
+              <div className="relative aspect-[4/5] lg:min-h-[calc(100vh-8rem)] lg:aspect-auto">
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
-                  imageClassName="object-cover object-center"
+                  imageClassName="object-contain object-center"
                   onVideoEnded={showNextMedia}
                 />
               </div>
               {hasMultipleMedia ? (
-                <div className="absolute inset-x-4 bottom-4 flex items-center justify-between">
-                  <button type="button" onClick={showPreviousMedia} className="flex h-12 w-12 items-center justify-center border border-white/60 bg-white text-lg text-black" aria-label="Previous product media">←</button>
-                  <p className="bg-white px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-black">{activeMediaIndex + 1} / {mediaItems.length}</p>
-                  <button type="button" onClick={showNextMedia} className="flex h-12 w-12 items-center justify-center border border-white/60 bg-white text-lg text-black" aria-label="Next product media">→</button>
-                </div>
+                <>
+                  <button
+                    type="button"
+                    onClick={showPreviousMedia}
+                    className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)]"
+                    aria-label="Previous product media"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={showNextMedia}
+                    className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)]"
+                    aria-label="Next product media"
+                  >
+                    ›
+                  </button>
+                </>
               ) : null}
+              <div className="absolute bottom-5 left-5 flex max-w-[80%] items-center gap-2 text-[0.78rem] font-medium text-[var(--muted)]">
+                <span className="bg-white px-3 py-2 text-[var(--foreground)]">
+                  {activeMediaIndex + 1} / {Math.max(mediaItems.length, 1)}
+                </span>
+                <span className="hidden bg-white px-3 py-2 sm:inline">
+                  {product.modelHeight || product.modelWornSize
+                    ? [
+                        product.modelHeight ? `Model is ${product.modelHeight}` : "",
+                        product.modelWornSize ? `wearing size ${product.modelWornSize}` : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                    : "Product gallery"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={showNextMedia}
+                className="absolute bottom-5 right-5 flex h-10 w-10 items-center justify-center text-2xl leading-none text-[var(--foreground)]"
+                aria-label="Expand product media"
+              >
+                ⛶
+              </button>
             </div>
-            {hasMultipleMedia ? (
-              <>
-              <div className="flex items-center justify-center px-4 py-1 lg:hidden" aria-label="Choose product image">
-                {mediaItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveMediaIndex(index)}
-                    aria-label={`Show ${item.type} ${index + 1}`}
-                    aria-pressed={activeMediaIndex === index}
-                    className="flex h-11 w-11 items-center justify-center"
-                  >
-                    <span className={`block h-1 w-5 transition ${activeMediaIndex === index ? "bg-[var(--foreground)]" : "bg-[var(--border)]"}`} />
-                  </button>
-                ))}
-              </div>
-              <div className="hidden grid-cols-5 gap-2 pt-3 lg:grid">
-                {mediaItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveMediaIndex(index)}
-                    aria-label={`Show ${item.type} ${index + 1}`}
-                    aria-pressed={activeMediaIndex === index}
-                    className={`relative aspect-[4/5] overflow-hidden border ${activeMediaIndex === index ? "border-[var(--foreground)]" : "border-[var(--border)]"}`}
-                  >
-                    {item.type === "image" ? <Image src={item.src} alt="" fill priority={index === 0} loading={index === 0 ? "eager" : "lazy"} sizes="120px" className="object-cover" /> : <span className="flex h-full items-center justify-center bg-black text-[0.6rem] uppercase tracking-[0.12em] text-white">Video</span>}
-                  </button>
-                ))}
-              </div>
-              </>
-            ) : null}
           </section>
 
-          <section aria-label="Product details and purchase options" className="lg:sticky lg:top-28">
+          <section aria-label="Product details and purchase options" className="lg:sticky lg:top-[7rem]">
             <ProductInfoPanel
               product={product}
               siblingProducts={siblingProducts}
               priceText={priceText}
               compareAtPriceText={compareAtPriceText}
               hasDiscount={hasDiscount}
-              description={productSummary}
+              reviewCount={reviews.length}
               selectedColor={selectedColor}
               selectedSize={selectedSize}
-              quantity={quantity}
               addError={addError}
               requiresSize={requiresSize}
               canAddToCart={canAddToCart}
@@ -934,7 +915,6 @@ export default function ProductDetailPage() {
                 setSelectedSize(size);
                 setAddError("");
               }}
-              onQuantityChange={setQuantity}
               onAddToCart={handleAddToCart}
               onOpenSizeGuide={() => setSizeGuideOpen(true)}
               actionRef={mainAddToCartRef}
@@ -942,265 +922,52 @@ export default function ProductDetailPage() {
           </section>
         </div>
 
-        <section className="mt-12 border-t border-[rgba(17,17,17,0.08)] px-5 pt-8 sm:mt-14 sm:px-6 lg:px-0 lg:pt-10">
-          <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
-            <div>
-              {productInfoSections.map((section) => {
-                const isOpen = openSection === section.key;
-
-                return (
-                  <div
-                    key={section.key}
-                    className="border-b border-[rgba(17,17,17,0.08)]"
-                  >
-                    <button
-                      type="button"
-                      id={`product-section-${section.key}-trigger`}
-                      aria-expanded={isOpen}
-                      aria-controls={`product-section-${section.key}-panel`}
-                      onClick={() =>
-                        setOpenSection((current) =>
-                          current === section.key ? null : section.key
-                        )
-                      }
-                      className="flex w-full items-center justify-between py-4 text-left"
-                    >
-                      <span className="text-[1.02rem] font-medium tracking-[0.01em] text-[var(--foreground)]">
-                        {section.title}
-                      </span>
-                      <span className="text-2xl leading-none text-[var(--muted)]">
-                        {isOpen ? "−" : "+"}
-                      </span>
-                    </button>
-                    {isOpen ? (
-                      <div
-                        id={`product-section-${section.key}-panel`}
-                        role="region"
-                        aria-labelledby={`product-section-${section.key}-trigger`}
-                        className="pb-5 text-sm leading-7 text-[var(--muted)]"
-                      >
-                        {section.key === "description" ? (
-                          <div className="space-y-3">
-                            <p>{product.description}</p>
-                            {product.variants?.find((variant) => variant.sku)?.sku ? (
-                              <p>SKU: {product.variants.find((variant) => variant.sku)?.sku}</p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        {section.key === "fabric" ? (
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            {detailRows.map((item) => (
-                              <div
-                                key={item.label}
-                                className="border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.55)] px-4 py-3"
-                              >
-                                <p className="text-[0.64rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                                  {item.label}
-                                </p>
-                                <p className="mt-1 font-medium text-[var(--foreground)]">
-                                  {item.value}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-                        {section.key === "wash" ? (
-                          <p>{washCare || "Care instructions have not been added yet."}</p>
-                        ) : null}
-                        {section.key === "size" ? (
-                          <div className="space-y-4">
-                            {getProductFit(product) ? <p>{getProductFit(product)}</p> : null}
-                            {product.modelHeight || product.modelWornSize ? (
-                              <p>
-                                {[
-                                  product.modelHeight ? `Model height ${product.modelHeight}` : "",
-                                  product.modelWornSize ? `Wears size ${product.modelWornSize}` : "",
-                                ]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
-                            ) : null}
-                            {product.sizeGuide?.length ? (
-                              <>
-                                <p>Garment measurements in inches.</p>
-                                <SizeGuideTable rows={product.sizeGuide} />
-                              </>
-                            ) : (
-                              <p>Garment measurements have not been added yet.</p>
-                            )}
-                          </div>
-                        ) : null}
-                        {section.key === "delivery" ? (
-                          <div className="space-y-4">
-                            <p>
-                              Orders are dispatched within 1–3 business days. Delivery time depends on the destination and courier service.
-                            </p>
-                            <p>
-                              {product.returnEligible
-                                ? "This item is eligible for return within 7 days of delivery and one size exchange at no charge."
-                                : "Return eligibility has not been specified for this item. Contact support before ordering if you need confirmation."}
-                            </p>
-                            <ServicePromise />
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="border border-[rgba(17,17,17,0.08)] bg-[rgba(255,255,255,0.72)] px-5 py-6 sm:px-6 sm:py-7">
-              <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                Product reviews
-              </p>
-              <h2 className="mt-3 text-[1.7rem] font-medium uppercase leading-[1.08] tracking-[-0.05em] text-[var(--foreground)]">
-                Verified customer reviews.
-              </h2>
-              <div className="mt-6 space-y-4">
-                {reviews.length > 0 ? (
-                  reviews.slice(0, 4).map((review, index) => (
-                    <div
-                      key={`${review.reviewerName}-${index}`}
-                      className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] p-4"
-                    >
-                      <div className="flex gap-4">
-                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#ece7df]">
-                          {review.photo ? (
-                            <Image
-                              src={review.photo}
-                              alt={review.reviewerName}
-                              fill
-                              unoptimized={shouldBypassImageOptimization(review.photo)}
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-[var(--muted)]">
-                              {review.reviewerName.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-base leading-7 text-[var(--foreground)]">
-                            &ldquo;{review.quote}&rdquo;
-                          </p>
-                          <p className="mt-4 font-semibold">{review.reviewerName}</p>
-                          <p className="mt-1 text-sm text-[var(--muted)]">
-                            {"★".repeat(review.rating || 5)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
+        {mediaItems.length > 1 ? (
+          <section className="grid bg-[#f7f7f7] lg:grid-cols-3" aria-label="Product detail gallery">
+            {mediaItems.slice(1, 4).map((item, index) => (
+              <div
+                key={item.id}
+                className="relative min-h-[28rem] border-t border-white lg:min-h-[calc(100vh-8rem)] lg:border-l lg:border-t-0"
+              >
+                {item.type === "image" ? (
+                  <Image
+                    src={item.src}
+                    alt={item.alt}
+                    fill
+                    loading="lazy"
+                    unoptimized={shouldBypassImageOptimization(item.src)}
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    className={`object-cover object-center ${index === 2 ? "lg:object-left" : ""}`}
+                  />
                 ) : (
-                  <div className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] p-5 text-sm text-[var(--muted)]">
-                    No verified reviews yet.
-                  </div>
+                  <video
+                    src={item.src}
+                    poster={item.posterUrl || undefined}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="h-full w-full object-cover"
+                  />
                 )}
               </div>
-
-              <button
-                type="button"
-                onClick={() => setReviewFormOpen((current) => !current)}
-                className="button-secondary mt-8 inline-flex items-center justify-center px-6 text-[0.68rem] font-semibold uppercase tracking-[0.1em]"
-              >
-                {reviewFormOpen ? "Close review form" : "Write a review"}
-              </button>
-              <form
-                className={`${reviewFormOpen ? "grid" : "hidden"} mt-8 gap-5 border-t border-[var(--border)] pt-6`}
-                onSubmit={(event) => void onReviewSubmit(event)}
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
-                    Your name
-                    <input
-                      value={reviewerName}
-                      onChange={(event) => setReviewerName(event.target.value)}
-                      className="min-h-12 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3 text-base font-normal normal-case tracking-normal text-[var(--foreground)]"
-                      autoComplete="name"
-                      required
-                    />
-                  </label>
-                  <div className="border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3">
-                    <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
-                      Rating
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((value) => {
-                        const active = value <= Number(reviewRating);
-
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setReviewRating(String(value))}
-                            className={`text-xl transition ${
-                              active ? "text-[var(--accent)]" : "text-black/20"
-                            }`}
-                            aria-label={`Rate ${value} star${value === 1 ? "" : "s"}`}
-                          >
-                            ★
-                          </button>
-                        );
-                      })}
-                      <span className="ml-2 text-sm text-[var(--muted)]">
-                        {reviewRating}/5
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <label className="grid gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Your review
-                  <textarea
-                    value={reviewQuote}
-                    onChange={(event) => setReviewQuote(event.target.value)}
-                    className="min-h-36 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-4 py-3 text-base font-normal normal-case tracking-normal text-[var(--foreground)]"
-                    placeholder="Tell us about the fit, fabric, and overall feel."
-                    required
-                  />
-                </label>
-
-                {reviewError ? (
-                  <p className="text-sm text-[var(--accent)]">{reviewError}</p>
-                ) : null}
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={reviewSubmitting}
-                    className="inline-flex min-h-11 items-center justify-center bg-[var(--foreground)] px-6 text-[0.82rem] font-medium uppercase tracking-[0.14em] text-[var(--background)] transition disabled:opacity-60"
-                  >
-                    {reviewSubmitting
-                      ? "Submitting..."
-                      : reviewSaved
-                        ? "Review submitted"
-                        : "Submit review"}
-                  </button>
-                  <p className="text-sm text-[var(--muted)]">
-                    Only verified purchases are published after moderation.
-                  </p>
-                </div>
-              </form>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-12 px-5 sm:mt-14 sm:px-6 lg:px-0">
-          <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-            Related products
-          </p>
-          <h2 className="mt-3 text-[1.7rem] font-medium uppercase leading-[1.08] tracking-[-0.05em] text-[var(--foreground)]">
-            More from the current edit.
-          </h2>
-          <div className="product-row-scroll -mx-5 mt-6 flex gap-3 overflow-x-auto px-5 pb-3 sm:-mx-6 sm:mt-8 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 xl:grid-cols-4 xl:gap-6">
-            {relatedProducts.map((item) => (
-              <div key={item.id} className="min-w-[72vw] sm:min-w-[44vw] md:min-w-0">
-                <ProductCard product={item} />
-              </div>
             ))}
-          </div>
-        </section>
+          </section>
+        ) : null}
+
+        {relatedProducts.length > 0 ? (
+          <section className="border-t border-[var(--border)] bg-[var(--background)] py-14 lg:py-16">
+            <h2 className="text-center text-[0.86rem] font-bold uppercase tracking-[0.04em]">
+              Style With
+            </h2>
+            <div className="collection-plp__grid collection-plp__grid--editorial mt-10">
+              {relatedProducts.map((item) => (
+                <ProductCard key={item.id} product={item} variant="editorial" />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
 
       {showStickyAddToCart ? (
