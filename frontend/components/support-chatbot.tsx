@@ -93,14 +93,26 @@ function buildSubject(option: IssueOption | null) {
 
 function MessageSquareIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 64 64" className="h-6 w-6" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="support-message-gradient" x1="16" y1="12" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#6bc36f" />
+          <stop offset="1" stopColor="#4aa7d8" />
+        </linearGradient>
+      </defs>
       <path
-        d="M5 5.25h14a1.75 1.75 0 0 1 1.75 1.75v8.25A1.75 1.75 0 0 1 19 17H9.25L4 20.25V7a1.75 1.75 0 0 1 1.75-1.75Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
+        d="M18 13.5h28c8.3 0 13.5 5.2 13.5 13.5v10.1c0 8.3-5.2 13.5-13.5 13.5h-9.2L22.9 59c-2.2 1.35-4.9-.5-4.4-3.05l1.08-5.35H18c-8.3 0-13.5-5.2-13.5-13.5V27C4.5 18.7 9.7 13.5 18 13.5Z"
+        stroke="url(#support-message-gradient)"
+        strokeWidth="4.4"
         strokeLinejoin="round"
       />
-      <path d="M8 10h8M8 13h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path
+        d="M19.8 32.5c3.3-4.6 7.7-4.6 10.9 0 3.2 4.5 7.8 4.5 11.1 0"
+        stroke="url(#support-message-gradient)"
+        strokeWidth="4.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
