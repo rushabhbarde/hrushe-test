@@ -55,6 +55,20 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
         imageAlt: "HRUSHE womenswear shirts and blouses edit",
         objectPosition: "right center",
       },
+      {
+        label: "T-Shirts & Tank Tops",
+        href: "/collection/women",
+        image: "/uploads/banners/shopwomen.png",
+        imageAlt: "HRUSHE womenswear t-shirts and tank tops edit",
+        objectPosition: "center",
+      },
+      {
+        label: "Pants & Shorts",
+        href: "/collection/women",
+        image: "/uploads/banners/shopwomen.png",
+        imageAlt: "HRUSHE womenswear pants and shorts edit",
+        objectPosition: "left center",
+      },
     ],
     saleBanner: {
       title: "Sale: New Pieces Added",
@@ -76,11 +90,11 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
     secondaryCtaHref: "/collection/men",
     cards: [
       {
-        label: "Pants & Shorts",
+        label: "Shirts",
         href: "/collection/men",
-        image: "/uploads/banners/banner1.png",
-        imageAlt: "HRUSHE menswear pants and shorts edit",
-        objectPosition: "left center",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE menswear shirts edit",
+        objectPosition: "center",
       },
       {
         label: "T-Shirts & Tank Tops",
@@ -97,11 +111,11 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
         objectPosition: "center",
       },
       {
-        label: "Shirts",
+        label: "Pants & Shorts",
         href: "/collection/men",
-        image: "/uploads/banners/banner2.png",
-        imageAlt: "HRUSHE menswear shirts edit",
-        objectPosition: "center",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear pants and shorts edit",
+        objectPosition: "left center",
       },
     ],
     saleBanner: {
@@ -119,13 +133,7 @@ const audienceHomeConfig: Record<Audience, AudienceHomeConfig> = {
 export function AudienceHomePage({ audience }: { audience: Audience }) {
   const config = audienceHomeConfig[audience];
   const heroMedia = config.fallbackImage;
-  const cardSections = config.cards.reduce<Array<typeof config.cards>>((sections, card, index) => {
-    if (index % 2 === 0) {
-      sections.push([]);
-    }
-    sections[sections.length - 1].push(card);
-    return sections;
-  }, []);
+  const categoryImageSizes = "(max-width: 1024px) 50vw, 25vw";
 
   return (
     <div className="page-shell flex h-svh flex-col overflow-hidden bg-[var(--background)]">
@@ -166,36 +174,35 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
           </div>
         </section>
 
-        {cardSections.map((cards, sectionIndex) => (
-          <section
-            key={`${audience}-category-section-${sectionIndex}`}
-            className="grid h-full snap-start snap-always grid-rows-2 border-y border-[var(--border)] bg-[var(--foreground)] text-white lg:grid-cols-2 lg:grid-rows-1"
-          >
-            {cards.map((card) => {
-              return (
-                <Link
-                  key={card.label}
-                  href={card.href}
-                  className="group relative block min-h-0 overflow-hidden border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
-                >
-                  <Image
-                    src={card.image}
-                    alt={card.imageAlt}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
-                    style={{ objectPosition: card.objectPosition || "center" }}
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_48%,rgba(0,0,0,0.42)_100%)]" />
-                  <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 px-5 pb-6 text-[0.82rem] font-semibold uppercase tracking-[0.06em] sm:px-8 sm:pb-8">
-                    <span>{card.label}</span>
-                    <span aria-hidden="true" className="text-white/75">›</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </section>
-        ))}
+        <section className="flex h-full snap-start snap-always snap-x snap-mandatory overflow-x-auto overflow-y-hidden bg-[var(--foreground)] text-white overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {config.cards.map((card) => {
+            return (
+              <Link
+                key={card.label}
+                href={card.href}
+                className="group relative block h-full min-w-[50vw] snap-start overflow-hidden bg-[var(--foreground)] lg:min-w-[25vw]"
+              >
+                <Image
+                  src={card.image}
+                  alt={card.imageAlt}
+                  fill
+                  sizes={categoryImageSizes}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
+                  style={{ objectPosition: card.objectPosition || "center" }}
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0)_38%,rgba(0,0,0,0.62)_100%)]" />
+                <div className="absolute inset-x-0 bottom-0 flex justify-end px-5 pb-6 text-right sm:px-7 sm:pb-8 lg:px-8 lg:pb-9">
+                  <span className="inline-flex max-w-[16rem] items-center justify-end gap-2 text-[0.78rem] font-medium uppercase leading-tight tracking-[0.08em] sm:text-[0.88rem]">
+                    {card.label}
+                    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1">
+                      &gt;
+                    </span>
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </section>
 
         <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
           <Image

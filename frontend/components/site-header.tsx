@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthModal } from "@/components/auth-modal-provider";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
@@ -149,7 +148,6 @@ export function SiteHeader() {
   const { itemCount, openCart } = useCart();
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
-  const { openLogin } = useAuthModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [activeAudienceMenu, setActiveAudienceMenu] = useState<keyof typeof audienceMenus | null>(null);
@@ -157,6 +155,7 @@ export function SiteHeader() {
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
+  const loginHref = `/login?next=${encodeURIComponent("/account")}`;
 
   useEffect(() => {
     if (!isAccountMenuOpen && !isMobileMenuOpen && !activeAudienceMenu) {
@@ -292,7 +291,7 @@ export function SiteHeader() {
                   </span>
                 </HeaderIcon>
               ) : (
-                <HeaderIcon label="Account" onClick={() => openLogin(pathname)}>
+                <HeaderIcon label="Account" onClick={() => router.push(loginHref)}>
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
@@ -321,7 +320,10 @@ export function SiteHeader() {
             </div>
 
             <div className="hidden lg:block">
-              <HeaderIcon label="Wishlist" onClick={isAuthenticated ? openWishlist : () => openLogin(pathname)}>
+              <HeaderIcon
+                label="Wishlist"
+                onClick={isAuthenticated ? openWishlist : () => router.push(loginHref)}
+              >
                 <span className="relative inline-flex">
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
                     <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
@@ -398,7 +400,11 @@ export function SiteHeader() {
               <Link href="/signup" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
                 Sign up for first access
               </Link>
-              <Link href="/account" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
+              <Link
+                href={isAuthenticated ? "/account" : loginHref}
+                onClick={() => setActiveAudienceMenu(null)}
+                className="block hover:text-[var(--accent)]"
+              >
                 My Account
               </Link>
               <Link href="/contact" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
@@ -473,7 +479,7 @@ export function SiteHeader() {
                     if (isAuthenticated) {
                       router.push("/account");
                     } else {
-                      openLogin(pathname);
+                      router.push(loginHref);
                     }
                   }}
                   className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
@@ -487,7 +493,7 @@ export function SiteHeader() {
                     if (isAuthenticated) {
                       openWishlist();
                     } else {
-                      openLogin(pathname);
+                      router.push(loginHref);
                     }
                   }}
                   className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
