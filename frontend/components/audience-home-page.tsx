@@ -192,9 +192,9 @@ export function AudienceHomePage({ audience }: { audience: Audience }) {
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0)_38%,rgba(0,0,0,0.62)_100%)]" />
                 <div className="absolute inset-x-0 bottom-0 flex justify-end px-5 pb-6 text-right sm:px-7 sm:pb-8 lg:px-8 lg:pb-9">
-                  <span className="inline-flex max-w-[16rem] items-center justify-end gap-2 text-[0.78rem] font-medium uppercase leading-tight tracking-[0.08em] sm:text-[0.88rem]">
+                  <span className="inline-flex max-w-[16rem] items-center justify-end text-[0.78rem] font-medium uppercase leading-tight tracking-[0.08em] sm:text-[0.88rem]">
                     {card.label}
-                    <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1">
+                    <span aria-hidden="true" className="ml-0 max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-2 group-hover:max-w-4 group-hover:translate-x-1 group-hover:opacity-100 group-focus-visible:ml-2 group-focus-visible:max-w-4 group-focus-visible:translate-x-1 group-focus-visible:opacity-100">
                       &gt;
                     </span>
                   </span>
