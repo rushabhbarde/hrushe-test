@@ -91,40 +91,6 @@ function buildSubject(option: IssueOption | null) {
   return option ? `${option.label} support request` : "Support request";
 }
 
-function MessageSquareIcon() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-6 w-6" fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="support-message-gradient" x1="16" y1="12" x2="50" y2="56" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#6bc36f" />
-          <stop offset="1" stopColor="#4aa7d8" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M18 13.5h28c8.3 0 13.5 5.2 13.5 13.5v10.1c0 8.3-5.2 13.5-13.5 13.5h-9.2L22.9 59c-2.2 1.35-4.9-.5-4.4-3.05l1.08-5.35H18c-8.3 0-13.5-5.2-13.5-13.5V27C4.5 18.7 9.7 13.5 18 13.5Z"
-        stroke="url(#support-message-gradient)"
-        strokeWidth="4.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M19.8 32.5c3.3-4.6 7.7-4.6 10.9 0 3.2 4.5 7.8 4.5 11.1 0"
-        stroke="url(#support-message-gradient)"
-        strokeWidth="4.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CloseSupportIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none" aria-hidden="true">
-      <path d="M10 10l12 12M22 10 10 22" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" />
-    </svg>
-  );
-}
-
 export function SupportChatbot() {
   const pathname = usePathname();
   const { user, isChecking } = useCustomerAuth();
@@ -154,7 +120,21 @@ export function SupportChatbot() {
     }));
   }, [user]);
 
+  useEffect(() => {
+    const openSupport = () => setIsOpen(true);
+
+    window.addEventListener("hrushe:open-support", openSupport);
+
+    return () => {
+      window.removeEventListener("hrushe:open-support", openSupport);
+    };
+  }, []);
+
   if (shouldHide) {
+    return null;
+  }
+
+  if (!isOpen) {
     return null;
   }
 
@@ -227,13 +207,12 @@ export function SupportChatbot() {
           : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
       }`}
     >
-      {isOpen ? (
-        <div
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby="support-panel-title"
-          className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
-        >
+      <div
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="support-panel-title"
+        className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
+      >
           <div className="bg-[#111111] px-5 py-4 text-white">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -381,25 +360,7 @@ export function SupportChatbot() {
               </>
             )}
           </div>
-        </div>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className="support-float-button group"
-        aria-expanded={isOpen}
-        aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
-      >
-        <span className="support-float-button__icon">
-          {isOpen ? <CloseSupportIcon /> : <MessageSquareIcon />}
-        </span>
-        <span className="grid text-left leading-none">
-          <span className="text-[0.72rem] font-semibold uppercase tracking-[0.12em]">
-            {isOpen ? "Close" : "Need help?"}
-          </span>
-        </span>
-      </button>
+      </div>
     </div>
   );
 }

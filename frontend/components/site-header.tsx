@@ -142,6 +142,15 @@ function LogoutIcon() {
   );
 }
 
+function SupportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M5 6.8c0-1.55 1.25-2.8 2.8-2.8h8.4c1.55 0 2.8 1.25 2.8 2.8v5.4c0 1.55-1.25 2.8-2.8 2.8h-3.15L8.6 18.2c-.66.47-1.55-.12-1.38-.91L7.7 15h-.15C6.14 15 5 13.86 5 12.45V6.8Z" strokeLinejoin="round" />
+      <path d="M8.8 9.4h6.4M8.8 12h3.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
@@ -325,8 +334,12 @@ export function SiteHeader() {
                 onClick={isAuthenticated ? openWishlist : () => router.push(loginHref)}
               >
                 <span className="relative inline-flex">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-                    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <path
+                      d="M5.5 5.5h7.05c.4 0 .78.16 1.06.44l5.45 5.45a1.5 1.5 0 0 1 0 2.12l-5.55 5.55a1.5 1.5 0 0 1-2.12 0l-5.45-5.45a1.5 1.5 0 0 1-.44-1.06V5.5Z"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="9" cy="9" r="1.05" />
                   </svg>
                   {wishlistCount > 0 ? (
                     <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
@@ -361,6 +374,13 @@ export function SiteHeader() {
                   </span>
                 ) : null}
               </span>
+            </HeaderIcon>
+
+            <HeaderIcon
+              label="Support"
+              onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
+            >
+              <SupportIcon />
             </HeaderIcon>
 
           </div>
