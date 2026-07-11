@@ -27,6 +27,71 @@ export type AdminBanner = {
   scheduleEnd: string | null;
 };
 
+export type HomepageAudience = "home" | "women" | "men";
+export type HomepageSectionType = "entry-cards" | "audience-hero" | "category-cards" | "sale-banner";
+export type HomepageTitleFontSize = "small" | "medium" | "large";
+export type HomepageTextPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "center-left"
+  | "center"
+  | "center-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+export type HomepageTextAlign = "left" | "center" | "right";
+
+export type HomepageCard = {
+  id: string;
+  title: string;
+  subtitle: string;
+  ctaText: string;
+  ctaLink: string;
+  image: string;
+  mobileImage: string;
+  imageAlt: string;
+  objectPosition: string;
+  titleFontSize: HomepageTitleFontSize;
+  titlePosition: HomepageTextPosition;
+  textAlign: HomepageTextAlign;
+  isVisible: boolean;
+};
+
+export type HomepageSection = {
+  id: string;
+  audience: HomepageAudience;
+  sectionType: HomepageSectionType;
+  label: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  ctaText: string;
+  ctaLink: string;
+  secondaryCtaText: string;
+  secondaryCtaLink: string;
+  image: string;
+  mobileImage: string;
+  imageAlt: string;
+  objectPosition: string;
+  backgroundColor: "default" | "light" | "dark";
+  textColor: "default" | "light" | "dark";
+  titleFontSize: HomepageTitleFontSize;
+  titlePosition: HomepageTextPosition;
+  textAlign: HomepageTextAlign;
+  cards: HomepageCard[];
+  displayOrder: number;
+  isVisible: boolean;
+  publishStart: string | null;
+  publishEnd: string | null;
+};
+
+export type HomeManagement = {
+  banners: AdminBanner[];
+  sections: HomepageSection[];
+  lastPublishedAt: string | null;
+};
+
 export type ProductAdminMeta = {
   productId: string;
   status: ProductStatus;
@@ -217,10 +282,7 @@ export type ShippingSettings = {
 };
 
 export type AdminWorkspace = {
-  homeManagement: {
-    banners: AdminBanner[];
-    lastPublishedAt: string | null;
-  };
+  homeManagement: HomeManagement;
   catalogCategories: string[];
   productMeta: Record<string, ProductAdminMeta>;
   orderMeta: Record<string, OrderAdminMeta>;
@@ -267,6 +329,342 @@ const defaultContentPages = contentPageKeys.reduce<Record<ContentPageKey, Conten
   {} as Record<ContentPageKey, ContentPageRecord>
 );
 
+export const homepageAudienceLabels: Record<HomepageAudience, string> = {
+  home: "Main homepage",
+  women: "Women",
+  men: "Men",
+};
+
+export const homepageSectionTypeLabels: Record<HomepageSectionType, string> = {
+  "entry-cards": "Entry cards",
+  "audience-hero": "Audience hero",
+  "category-cards": "Category card rail",
+  "sale-banner": "Sale banner",
+};
+
+export const homepageTitleFontSizeLabels: Record<HomepageTitleFontSize, string> = {
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
+};
+
+export const homepageTextPositionLabels: Record<HomepageTextPosition, string> = {
+  "top-left": "Top left",
+  "top-center": "Top centre",
+  "top-right": "Top right",
+  "center-left": "Centre left",
+  center: "Centre",
+  "center-right": "Centre right",
+  "bottom-left": "Bottom left",
+  "bottom-center": "Bottom centre",
+  "bottom-right": "Bottom right",
+};
+
+export const homepageTextAlignLabels: Record<HomepageTextAlign, string> = {
+  left: "Left",
+  center: "Centre",
+  right: "Right",
+};
+
+function defaultHomepageCard(
+  card: Partial<HomepageCard> & Pick<HomepageCard, "id" | "title" | "ctaLink" | "image" | "imageAlt">
+): HomepageCard {
+  return {
+    subtitle: "",
+    ctaText: "",
+    mobileImage: "",
+    objectPosition: "center",
+    titleFontSize: "small",
+    titlePosition: "bottom-right",
+    textAlign: "right",
+    isVisible: true,
+    ...card,
+  };
+}
+
+export const defaultHomepageSections: HomepageSection[] = [
+  {
+    id: "home-entry",
+    audience: "home",
+    sectionType: "entry-cards",
+    label: "Homepage audience entry",
+    title: "Shop Women & Men",
+    subtitle: "",
+    description: "",
+    ctaText: "",
+    ctaLink: "",
+    secondaryCtaText: "",
+    secondaryCtaLink: "",
+    image: "",
+    mobileImage: "",
+    imageAlt: "",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "large",
+    titlePosition: "bottom-center",
+    textAlign: "center",
+    cards: [
+      defaultHomepageCard({
+        id: "entry-women",
+        title: "Shop Women",
+        subtitle: "Men >",
+        ctaLink: "/women",
+        image: "/uploads/banners/shopwomen.png",
+        imageAlt: "HRUSHE womenswear campaign",
+        objectPosition: "center",
+        titleFontSize: "large",
+        titlePosition: "bottom-center",
+        textAlign: "center",
+      }),
+      defaultHomepageCard({
+        id: "entry-men",
+        title: "Shop Men",
+        subtitle: "< Women",
+        ctaLink: "/men",
+        image: "/uploads/banners/shopmen.png",
+        imageAlt: "HRUSHE menswear campaign",
+        objectPosition: "center",
+        titleFontSize: "large",
+        titlePosition: "bottom-center",
+        textAlign: "center",
+      }),
+    ],
+    displayOrder: 10,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "women-hero",
+    audience: "women",
+    sectionType: "audience-hero",
+    label: "Women hero",
+    title: "Summer: New & Now",
+    subtitle: "",
+    description: "",
+    ctaText: "Shop New Arrivals",
+    ctaLink: "/new-in",
+    secondaryCtaText: "Shop All Womenswear",
+    secondaryCtaLink: "/collection/women",
+    image: "/uploads/banners/banner2.png",
+    mobileImage: "",
+    imageAlt: "HRUSHE Women campaign",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "large",
+    titlePosition: "bottom-center",
+    textAlign: "center",
+    cards: [],
+    displayOrder: 10,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "women-categories",
+    audience: "women",
+    sectionType: "category-cards",
+    label: "Women category cards",
+    title: "Women categories",
+    subtitle: "",
+    description: "",
+    ctaText: "",
+    ctaLink: "",
+    secondaryCtaText: "",
+    secondaryCtaLink: "",
+    image: "",
+    mobileImage: "",
+    imageAlt: "",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "small",
+    titlePosition: "bottom-right",
+    textAlign: "right",
+    cards: [
+      defaultHomepageCard({
+        id: "women-dresses",
+        title: "Dresses",
+        ctaLink: "/collection/women",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE womenswear dresses edit",
+        objectPosition: "center",
+      }),
+      defaultHomepageCard({
+        id: "women-shirts",
+        title: "Shirts & Blouses",
+        ctaLink: "/collection/women",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE womenswear shirts and blouses edit",
+        objectPosition: "right center",
+      }),
+      defaultHomepageCard({
+        id: "women-tshirts",
+        title: "T-Shirts & Tank Tops",
+        ctaLink: "/collection/women",
+        image: "/uploads/banners/shopwomen.png",
+        imageAlt: "HRUSHE womenswear t-shirts and tank tops edit",
+        objectPosition: "center",
+      }),
+      defaultHomepageCard({
+        id: "women-pants",
+        title: "Pants & Shorts",
+        ctaLink: "/collection/women",
+        image: "/uploads/banners/shopwomen.png",
+        imageAlt: "HRUSHE womenswear pants and shorts edit",
+        objectPosition: "left center",
+      }),
+    ],
+    displayOrder: 20,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "women-sale",
+    audience: "women",
+    sectionType: "sale-banner",
+    label: "Women sale banner",
+    title: "Sale: New Pieces Added",
+    subtitle: "Online Exclusive",
+    description: "",
+    ctaText: "Shop Women",
+    ctaLink: "/collection/women",
+    secondaryCtaText: "",
+    secondaryCtaLink: "",
+    image: "/uploads/banners/banner2.png",
+    mobileImage: "",
+    imageAlt: "HRUSHE womenswear sale campaign",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "large",
+    titlePosition: "bottom-center",
+    textAlign: "center",
+    cards: [],
+    displayOrder: 30,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "men-hero",
+    audience: "men",
+    sectionType: "audience-hero",
+    label: "Men hero",
+    title: "Defined Quietly",
+    subtitle: "",
+    description: "",
+    ctaText: "Shop New Arrivals",
+    ctaLink: "/new-in",
+    secondaryCtaText: "Shop All Menswear",
+    secondaryCtaLink: "/collection/men",
+    image: "/uploads/banners/banner1.png",
+    mobileImage: "",
+    imageAlt: "HRUSHE Men campaign",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "large",
+    titlePosition: "bottom-center",
+    textAlign: "center",
+    cards: [],
+    displayOrder: 10,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "men-categories",
+    audience: "men",
+    sectionType: "category-cards",
+    label: "Men category cards",
+    title: "Men categories",
+    subtitle: "",
+    description: "",
+    ctaText: "",
+    ctaLink: "",
+    secondaryCtaText: "",
+    secondaryCtaLink: "",
+    image: "",
+    mobileImage: "",
+    imageAlt: "",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "small",
+    titlePosition: "bottom-right",
+    textAlign: "right",
+    cards: [
+      defaultHomepageCard({
+        id: "men-shirts",
+        title: "Shirts",
+        ctaLink: "/collection/men",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE menswear shirts edit",
+        objectPosition: "center",
+      }),
+      defaultHomepageCard({
+        id: "men-tshirts",
+        title: "T-Shirts & Tank Tops",
+        ctaLink: "/collection/men",
+        image: "/uploads/banners/banner2.png",
+        imageAlt: "HRUSHE menswear t-shirts and tank tops edit",
+        objectPosition: "center",
+      }),
+      defaultHomepageCard({
+        id: "men-polos",
+        title: "Polo Shirts",
+        ctaLink: "/collection/men",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear polo shirts edit",
+        objectPosition: "center",
+      }),
+      defaultHomepageCard({
+        id: "men-pants",
+        title: "Pants & Shorts",
+        ctaLink: "/collection/men",
+        image: "/uploads/banners/banner1.png",
+        imageAlt: "HRUSHE menswear pants and shorts edit",
+        objectPosition: "left center",
+      }),
+    ],
+    displayOrder: 20,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+  {
+    id: "men-sale",
+    audience: "men",
+    sectionType: "sale-banner",
+    label: "Men sale banner",
+    title: "Sale: New Pieces Added",
+    subtitle: "Online Exclusive",
+    description: "",
+    ctaText: "Shop Men",
+    ctaLink: "/collection/men",
+    secondaryCtaText: "",
+    secondaryCtaLink: "",
+    image: "/uploads/banners/banner1.png",
+    mobileImage: "",
+    imageAlt: "HRUSHE menswear sale campaign",
+    objectPosition: "center",
+    backgroundColor: "dark",
+    textColor: "light",
+    titleFontSize: "large",
+    titlePosition: "bottom-center",
+    textAlign: "center",
+    cards: [],
+    displayOrder: 30,
+    isVisible: true,
+    publishStart: null,
+    publishEnd: null,
+  },
+];
+
 export const defaultAdminWorkspace: AdminWorkspace = {
   homeManagement: {
     banners: [
@@ -285,6 +683,7 @@ export const defaultAdminWorkspace: AdminWorkspace = {
         scheduleEnd: null,
       },
     ],
+    sections: defaultHomepageSections,
     lastPublishedAt: null,
   },
   catalogCategories: [...defaultCatalogCategories],
@@ -466,4 +865,51 @@ export function getActiveHomepageBanners(workspace: AdminWorkspace) {
 
     return true;
   });
+}
+
+export function sortHomepageRecords<T extends { displayOrder?: number; id?: string }>(records: T[]) {
+  return [...records].sort((first, second) => {
+    const orderDifference = (first.displayOrder || 0) - (second.displayOrder || 0);
+    if (orderDifference !== 0) {
+      return orderDifference;
+    }
+
+    return String(first.id || "").localeCompare(String(second.id || ""));
+  });
+}
+
+export function isHomepageSectionActive(section: HomepageSection, now = Date.now()) {
+  if (!section.isVisible) {
+    return false;
+  }
+
+  const startsAt = section.publishStart ? new Date(section.publishStart).getTime() : null;
+  const endsAt = section.publishEnd ? new Date(section.publishEnd).getTime() : null;
+
+  if (Number.isFinite(startsAt) && (startsAt as number) > now) {
+    return false;
+  }
+
+  if (Number.isFinite(endsAt) && (endsAt as number) < now) {
+    return false;
+  }
+
+  return true;
+}
+
+export function getHomepageSectionsForAudience(
+  homeManagement: HomeManagement,
+  audience: HomepageAudience,
+  { includeHidden = false }: { includeHidden?: boolean } = {}
+) {
+  const sections = homeManagement.sections.filter((section) => section.audience === audience);
+  const eligibleSections = includeHidden
+    ? sections
+    : sections.filter((section) => isHomepageSectionActive(section));
+
+  return sortHomepageRecords(eligibleSections);
+}
+
+export function getVisibleHomepageCards(cards: HomepageCard[]) {
+  return cards.filter((card) => card.isVisible);
 }

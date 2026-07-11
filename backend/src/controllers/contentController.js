@@ -175,6 +175,141 @@ function assertBannerIsValid(banner = {}) {
   }
 }
 
+const APPROVED_HOMEPAGE_SECTION_TYPES = new Set([
+  "entry-cards",
+  "audience-hero",
+  "category-cards",
+  "sale-banner",
+]);
+const APPROVED_HOMEPAGE_AUDIENCES = new Set(["home", "women", "men"]);
+const APPROVED_TEXT_POSITIONS = new Set([
+  "top-left",
+  "top-center",
+  "top-right",
+  "center-left",
+  "center",
+  "center-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+]);
+const APPROVED_TEXT_ALIGNMENTS = new Set(["left", "center", "right"]);
+const APPROVED_FONT_SIZES = new Set(["small", "medium", "large"]);
+
+function assertHomepageDateRange(record = {}, label = "section") {
+  const startsAt = record.publishStart ? new Date(record.publishStart).getTime() : null;
+  const endsAt = record.publishEnd ? new Date(record.publishEnd).getTime() : null;
+
+  if ((record.publishStart && !Number.isFinite(startsAt)) || (record.publishEnd && !Number.isFinite(endsAt))) {
+    throw new AppError(`Homepage ${label} schedule contains an invalid date.`, 400);
+  }
+  if (Number.isFinite(startsAt) && Number.isFinite(endsAt) && endsAt <= startsAt) {
+    throw new AppError(`Homepage ${label} end date must be after its start date.`, 400);
+  }
+}
+
+function assertHomepageCardIsValid(card = {}) {
+  [
+    card.image,
+    card.mobileImage,
+  ].filter(Boolean).forEach((url) => {
+    if (hasEmbeddedMedia(url) || !isSafeContentUrl(url)) {
+      throw new AppError("Homepage card images must use an HTTPS or site-relative URL.", 400);
+    }
+  });
+
+  if (card.ctaLink && !isSafeContentUrl(card.ctaLink, { navigation: true })) {
+    throw new AppError("Homepage card links must use an HTTPS or site-relative URL.", 400);
+  }
+
+  if (card.titleFontSize && !APPROVED_FONT_SIZES.has(card.titleFontSize)) {
+    throw new AppError("Homepage card font size must use an approved preset.", 400);
+  }
+  if (card.titlePosition && !APPROVED_TEXT_POSITIONS.has(card.titlePosition)) {
+    throw new AppError("Homepage card title position must use an approved preset.", 400);
+  }
+  if (card.textAlign && !APPROVED_TEXT_ALIGNMENTS.has(card.textAlign)) {
+    throw new AppError("Homepage card alignment must use an approved preset.", 400);
+  }
+
+  for (const [value, limit, label] of [
+    [card.title, 120, "title"],
+    [card.subtitle, 160, "subtitle"],
+    [card.ctaText, 80, "CTA label"],
+    [card.imageAlt, 180, "image alt text"],
+  ]) {
+    if (String(value || "").length > limit) {
+      throw new AppError(`Homepage card ${label} must be ${limit} characters or fewer.`, 400);
+    }
+  }
+}
+
+function assertHomepageSectionIsValid(section = {}) {
+  if (section.sectionType && !APPROVED_HOMEPAGE_SECTION_TYPES.has(section.sectionType)) {
+    throw new AppError("Homepage section type must use an approved preset.", 400);
+  }
+  if (section.audience && !APPROVED_HOMEPAGE_AUDIENCES.has(section.audience)) {
+    throw new AppError("Homepage section audience must use an approved preset.", 400);
+  }
+  if (section.titleFontSize && !APPROVED_FONT_SIZES.has(section.titleFontSize)) {
+    throw new AppError("Homepage section font size must use an approved preset.", 400);
+  }
+  if (section.titlePosition && !APPROVED_TEXT_POSITIONS.has(section.titlePosition)) {
+    throw new AppError("Homepage section title position must use an approved preset.", 400);
+  }
+  if (section.textAlign && !APPROVED_TEXT_ALIGNMENTS.has(section.textAlign)) {
+    throw new AppError("Homepage section alignment must use an approved preset.", 400);
+  }
+
+  [
+    section.image,
+    section.mobileImage,
+  ].filter(Boolean).forEach((url) => {
+    if (hasEmbeddedMedia(url) || !isSafeContentUrl(url)) {
+      throw new AppError("Homepage section images must use an HTTPS or site-relative URL.", 400);
+    }
+  });
+
+  [section.ctaLink, section.secondaryCtaLink].filter(Boolean).forEach((url) => {
+    if (!isSafeContentUrl(url, { navigation: true })) {
+      throw new AppError("Homepage section links must use an HTTPS or site-relative URL.", 400);
+    }
+  });
+
+  for (const [value, limit, label] of [
+    [section.label, 120, "label"],
+    [section.title, 160, "title"],
+    [section.subtitle, 240, "subtitle"],
+    [section.description, 600, "description"],
+    [section.ctaText, 80, "CTA label"],
+    [section.secondaryCtaText, 80, "secondary CTA label"],
+    [section.imageAlt, 180, "image alt text"],
+  ]) {
+    if (String(value || "").length > limit) {
+      throw new AppError(`Homepage section ${label} must be ${limit} characters or fewer.`, 400);
+    }
+  }
+
+  assertHomepageDateRange(section);
+
+  if (Array.isArray(section.cards)) {
+    if (section.cards.length > 24) {
+      throw new AppError("A homepage card section can contain at most 24 cards.", 400);
+    }
+    section.cards.forEach(assertHomepageCardIsValid);
+  }
+}
+
+function assertHomepageSectionsAreValid(sections = []) {
+  if (!Array.isArray(sections)) {
+    throw new AppError("Homepage sections must be an array.", 400);
+  }
+  if (sections.length > 40) {
+    throw new AppError("Homepage management can contain at most 40 sections.", 400);
+  }
+  sections.forEach(assertHomepageSectionIsValid);
+}
+
 function assertWebsiteSettingsAreValid(settings = {}) {
   if (String(settings.brandName || "").trim().length > 80) {
     throw new AppError("Brand name must be 80 characters or fewer.", 400);
@@ -205,6 +340,9 @@ function assertWorkspaceMediaIsStorable(patch = {}) {
   const banners = Array.isArray(patch?.homeManagement?.banners)
     ? patch.homeManagement.banners
     : [];
+  const sections = Array.isArray(patch?.homeManagement?.sections)
+    ? patch.homeManagement.sections
+    : [];
 
   if (
     [
@@ -219,6 +357,15 @@ function assertWorkspaceMediaIsStorable(patch = {}) {
         banner?.mobileImage,
         banner?.posterImage,
       ].some(hasEmbeddedMedia)
+    ) ||
+    sections.some((section) =>
+      [
+        section?.image,
+        section?.mobileImage,
+        ...(Array.isArray(section?.cards)
+          ? section.cards.flatMap((card) => [card?.image, card?.mobileImage])
+          : []),
+      ].some(hasEmbeddedMedia)
     )
   ) {
     throw new AppError(
@@ -231,6 +378,9 @@ function assertWorkspaceMediaIsStorable(patch = {}) {
     assertBannerIsValid(patch.homepageBanner);
   }
   banners.forEach(assertBannerIsValid);
+  if (Object.prototype.hasOwnProperty.call(patch?.homeManagement || {}, "sections")) {
+    assertHomepageSectionsAreValid(sections);
+  }
 }
 
 function isBannerScheduledForNow(banner) {
@@ -423,6 +573,23 @@ const getHomepageBanner = asyncHandler(async (req, res) => {
   return res.json(homepageBannerCache.data);
 });
 
+const getHomepageManagement = asyncHandler(async (req, res) => {
+  const content = await getSiteContent();
+  const homeManagement =
+    content.adminWorkspace?.homeManagement && typeof content.adminWorkspace.homeManagement === "object"
+      ? content.adminWorkspace.homeManagement
+      : {};
+  const hasCustomSections = Array.isArray(homeManagement.sections);
+  const sections = hasCustomSections ? homeManagement.sections : [];
+
+  res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
+  return res.json({
+    sections,
+    lastPublishedAt: homeManagement.lastPublishedAt || null,
+    hasCustomSections,
+  });
+});
+
 const getPublicWebsiteSettings = asyncHandler(async (req, res) => {
   const content = await getSiteContent();
   const settings = content.adminWorkspace?.websiteSettings || {};
@@ -503,6 +670,7 @@ const updateAdminWorkspace = asyncHandler(async (req, res) => {
 
 module.exports = {
   getHomepageBanner,
+  getHomepageManagement,
   getPublicWebsiteSettings,
   updateHomepageBanner,
   getAdminWorkspace,

@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getHomepageBanner,
+  getHomepageManagement,
   getPublicWebsiteSettings,
   updateHomepageBanner,
   getAdminWorkspace,
@@ -16,6 +17,7 @@ const { requireCsrf } = require("../middleware/csrfMiddleware");
 const router = express.Router();
 
 router.get("/homepage", getHomepageBanner);
+router.get("/homepage-management", getHomepageManagement);
 router.get("/settings", getPublicWebsiteSettings);
 router.put("/homepage", protect, requireCsrf, requireAdminPermission("home.manage"), updateHomepageBanner);
 router.get("/admin-workspace", protect, adminOnly, getAdminWorkspace);

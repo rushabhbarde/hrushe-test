@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  getHomepageSectionsForAudience,
+  getVisibleHomepageCards,
+  type HomepageCard,
+  type HomepageTextAlign,
+  type HomepageTextPosition,
+  type HomepageTitleFontSize,
+} from "@/lib/admin-workspace";
+import { getHomepageManagement } from "@/lib/server-storefront";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
@@ -16,26 +25,56 @@ export const metadata: Metadata = {
   },
 };
 
-const entryCards = [
-  {
-    label: "Shop Women",
-    sideLabel: "Men >",
-    href: "/women",
-    image: "/uploads/banners/shopwomen.png",
-    alt: "HRUSHE womenswear campaign",
-    objectPosition: "center",
-  },
-  {
-    label: "Shop Men",
-    sideLabel: "< Women",
-    href: "/men",
-    image: "/uploads/banners/shopmen.png",
-    alt: "HRUSHE menswear campaign",
-    objectPosition: "center",
-  },
-];
+const entryTitleFontSizeClasses: Record<HomepageTitleFontSize, string> = {
+  small: "text-[0.9rem] sm:text-[1.2rem] lg:text-[1.35rem]",
+  medium: "text-[1rem] sm:text-[1.55rem] lg:text-[1.75rem]",
+  large: "text-[1rem] sm:text-[1.75rem] lg:text-[2rem]",
+};
 
-export default function Home() {
+const entryTextAlignClasses: Record<HomepageTextAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+
+const entryPositionClasses: Record<HomepageTextPosition, string> = {
+  "top-left": "absolute inset-x-0 top-0 z-10 hidden justify-start px-5 pt-11 sm:pt-14 lg:flex lg:pt-20",
+  "top-center": "absolute inset-x-0 top-0 z-10 hidden justify-center px-5 pt-11 sm:pt-14 lg:flex lg:pt-20",
+  "top-right": "absolute inset-x-0 top-0 z-10 hidden justify-end px-5 pt-11 sm:pt-14 lg:flex lg:pt-20",
+  "center-left": "absolute inset-y-0 left-0 z-10 hidden items-center justify-start px-5 lg:flex",
+  center: "absolute inset-0 z-10 hidden items-center justify-center px-5 lg:flex",
+  "center-right": "absolute inset-y-0 right-0 z-10 hidden items-center justify-end px-5 lg:flex",
+  "bottom-left": "absolute inset-x-0 bottom-0 z-10 hidden justify-start px-5 pb-11 sm:pb-14 lg:flex lg:pb-20",
+  "bottom-center": "absolute inset-x-0 bottom-0 z-10 hidden justify-center px-5 pb-11 text-center sm:pb-14 lg:flex lg:pb-20",
+  "bottom-right": "absolute inset-x-0 bottom-0 z-10 hidden justify-end px-5 pb-11 sm:pb-14 lg:flex lg:pb-20",
+};
+
+function getCardImage(card: HomepageCard) {
+  return card.image || card.mobileImage || "/uploads/banners/shopwomen.png";
+}
+
+function EntryCardDesktopTitle({ card }: { card: HomepageCard }) {
+  const position = card.titlePosition || "bottom-center";
+  const fontSize = card.titleFontSize || "large";
+  const textAlign = card.textAlign || "center";
+
+  return (
+    <div className={entryPositionClasses[position] || entryPositionClasses["bottom-center"]}>
+      <span className={`relative inline-flex pb-2 ${entryTitleFontSizeClasses[fontSize]} font-bold uppercase leading-none tracking-tight ${entryTextAlignClasses[textAlign]}`}>
+        {card.title}
+        <span className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-white opacity-0 transition group-hover:opacity-100" />
+      </span>
+    </div>
+  );
+}
+
+export default async function Home() {
+  const homeManagement = await getHomepageManagement();
+  const entrySection = getHomepageSectionsForAudience(homeManagement, "home").find(
+    (section) => section.sectionType === "entry-cards"
+  );
+  const entryCards = entrySection ? getVisibleHomepageCards(entrySection.cards) : [];
+
   return (
     <main className="h-svh overflow-hidden bg-[var(--background)] text-[var(--foreground)] lg:h-auto lg:min-h-svh lg:overflow-visible">
       <header className="fixed inset-x-0 top-0 z-30 flex h-[3.375rem] items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
@@ -52,41 +91,41 @@ export default function Home() {
       </header>
 
       <div className="mt-[3.375rem] h-[calc(100svh-3.375rem)] snap-y snap-mandatory overflow-y-auto [scrollbar-width:none] sm:mt-[4.5rem] sm:h-[calc(100svh-4.5rem)] lg:mt-0 lg:h-auto lg:snap-none lg:overflow-visible [&::-webkit-scrollbar]:hidden">
-        <section className="flex h-full snap-start snap-always snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] lg:grid lg:h-auto lg:min-h-[calc(100svh-4.5rem)] lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+        <section
+          className="flex h-full snap-start snap-always snap-x snap-mandatory overflow-x-auto bg-[var(--foreground)] text-white [scrollbar-width:none] lg:grid lg:h-auto lg:min-h-[calc(100svh-4.5rem)] lg:snap-none lg:grid-cols-2 lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+          style={{ gridTemplateColumns: `repeat(${Math.max(entryCards.length, 1)}, minmax(0, 1fr))` }}
+        >
           {entryCards.map((card, index) => (
             <Link
-              key={card.href}
-              href={card.href}
+              key={card.id}
+              href={card.ctaLink || "/shop"}
               className="group relative block h-full w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
             >
               <Image
-                src={card.image}
-                alt={card.alt}
+                src={getCardImage(card)}
+                alt={card.imageAlt || card.title}
                 fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.02]"
-                style={{ objectPosition: card.objectPosition }}
+                style={{ objectPosition: card.objectPosition || "center" }}
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
               <div className="absolute inset-x-0 top-[51%] z-10 flex -translate-y-1/2 justify-center px-5 font-sans lg:hidden">
                 <span className="text-center text-[1.75rem] font-bold uppercase leading-none tracking-tight sm:text-[2rem]">
-                  {card.label}
+                  {card.title}
                 </span>
               </div>
-              <span
-                className={`absolute top-[51%] z-10 -translate-y-1/2 whitespace-nowrap font-sans text-[0.92rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem] lg:hidden ${
-                  index === 0 ? "right-4" : "left-4"
-                }`}
-              >
-                {card.sideLabel}
-              </span>
-              <div className="absolute inset-x-0 bottom-0 z-10 hidden justify-center px-5 pb-11 text-center sm:pb-14 lg:flex lg:pb-20">
-                <span className="relative inline-flex pb-2 text-[1rem] font-bold uppercase leading-none tracking-tight sm:text-[1.75rem] lg:text-[2rem]">
-                  {card.label}
-                  <span className="absolute bottom-0 left-1/2 h-0.5 w-10 -translate-x-1/2 bg-white opacity-0 transition group-hover:opacity-100" />
+              {card.subtitle ? (
+                <span
+                  className={`absolute top-[51%] z-10 -translate-y-1/2 whitespace-nowrap font-sans text-[0.92rem] font-bold uppercase leading-none tracking-tight sm:text-[1rem] lg:hidden ${
+                    index === 0 ? "right-4" : "left-4"
+                  }`}
+                >
+                  {card.subtitle}
                 </span>
-              </div>
+              ) : null}
+              <EntryCardDesktopTitle card={card} />
             </Link>
           ))}
         </section>

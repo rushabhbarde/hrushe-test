@@ -1,4 +1,9 @@
 import "server-only";
+import {
+  defaultAdminWorkspace,
+  normalizeAdminWorkspace,
+  type HomeManagement,
+} from "@/lib/admin-workspace";
 import type { Product } from "@/lib/catalog";
 import { isPersistedMediaSource } from "@/lib/image-source";
 import {
@@ -67,4 +72,29 @@ export async function getHomepageContent() {
   const imageUrl = isPersistedMediaSource(homepage.imageUrl) ? homepage.imageUrl : "";
   const posterImage = isPersistedMediaSource(homepage.posterImage) ? homepage.posterImage : "";
   return { ...homepage, mediaUrl, imageUrl, posterImage };
+}
+
+export async function getHomepageManagement() {
+  const fallback = {
+    ...defaultAdminWorkspace.homeManagement,
+    hasCustomSections: false,
+  };
+  const payload = await storefrontFetch<Partial<HomeManagement> & { hasCustomSections?: boolean }>(
+    "/content/homepage-management",
+    fallback
+  );
+  const { hasCustomSections, ...homeManagementPayload } = payload;
+  const hasSectionsPayload = Array.isArray(payload.sections);
+  const sectionsPayload =
+    hasSectionsPayload && (hasCustomSections || payload.sections!.length > 0)
+      ? payload.sections!
+      : defaultAdminWorkspace.homeManagement.sections;
+
+  return normalizeAdminWorkspace({
+    homeManagement: {
+      ...defaultAdminWorkspace.homeManagement,
+      ...homeManagementPayload,
+      sections: sectionsPayload,
+    },
+  }).homeManagement;
 }
