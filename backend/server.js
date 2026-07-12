@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const connectDB = require("./src/config/db");
 const env = require("./src/config/env");
 env.assertProductionEnv();
@@ -18,6 +19,8 @@ const mediaRoutes = require("./src/routes/mediaRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { createRateLimiter } = require("./src/middleware/rateLimitMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
+const { logEvent, requestContextMiddleware } = require("./src/utils/logger");
+const { recordMetric } = require("./src/utils/metrics");
 const {
   cleanupExpiredInventoryReservations,
 } = require("./src/services/checkoutInventory");
@@ -25,6 +28,7 @@ const {
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+app.use(requestContextMiddleware);
 const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/order/checkout/webhook/razorpay");
 
@@ -84,6 +88,20 @@ app.use((req, res, next) => {
   );
   next();
 });
+
+app.get("/healthz", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/readyz", (req, res) => {
+  const mongoReady = mongoose.connection.readyState === 1;
+
+  res.status(mongoReady ? 200 : 503).json({
+    status: mongoReady ? "ready" : "not-ready",
+    mongo: mongoReady ? "connected" : "not-connected",
+  });
+});
+
 app.use(createRateLimiter({ name: "api", max: 600, windowMs: 15 * 60 * 1000 }));
 app.use(
   express.json({
@@ -122,20 +140,40 @@ app.use("/media", mediaRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-connectDB()
-  .then(async () => {
-    await ensureAdminUser();
-    const cleanupInventory = () =>
-      cleanupExpiredInventoryReservations().catch((error) => {
-        console.error("Inventory reservation cleanup failed", error);
-      });
-    await cleanupInventory();
-    setInterval(cleanupInventory, 5 * 60 * 1000).unref();
-    app.listen(env.PORT, () => {
-      console.log(`Server running on port ${env.PORT}`);
+let cleanupInterval = null;
+
+async function startDatabaseBackedTasks() {
+  await connectDB();
+  await ensureAdminUser();
+  const cleanupInventory = () =>
+    cleanupExpiredInventoryReservations().catch((error) => {
+      logEvent(
+        "inventory.cleanup.failed",
+        {
+          message: error?.message,
+          code: error?.code || "",
+        },
+        "error"
+      );
     });
-  })
-  .catch((error) => {
-    console.error("Server startup failed", error);
-    process.exit(1);
-  });
+  const cleanedUp = await cleanupExpiredInventoryReservations();
+  recordMetric("inventory.reservations.cleanup", { releasedOrders: cleanedUp });
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(cleanupInventory, 5 * 60 * 1000);
+    cleanupInterval.unref();
+  }
+}
+
+app.listen(env.PORT, () => {
+  logEvent("server.started", { port: env.PORT });
+});
+
+startDatabaseBackedTasks().catch((error) => {
+  logEvent(
+    "startup.database_tasks.failed",
+    {
+      message: error?.message,
+    },
+    "error"
+  );
+});

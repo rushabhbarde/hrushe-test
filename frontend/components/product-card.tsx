@@ -263,7 +263,7 @@ export function ProductCard({
         {isEditorial ? null : (
           <WishlistButton
             productId={product.id}
-            label={`Save ${productName} to favourites`}
+            label={`Save ${productName}`}
             className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center border border-black/10 bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--foreground)] hover:bg-white"
             iconClassName="h-4 w-4"
           />

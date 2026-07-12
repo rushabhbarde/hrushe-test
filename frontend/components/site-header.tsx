@@ -144,9 +144,20 @@ function LogoutIcon() {
 
 function SupportIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M5 6.8c0-1.55 1.25-2.8 2.8-2.8h8.4c1.55 0 2.8 1.25 2.8 2.8v5.4c0 1.55-1.25 2.8-2.8 2.8h-3.15L8.6 18.2c-.66.47-1.55-.12-1.38-.91L7.7 15h-.15C6.14 15 5 13.86 5 12.45V6.8Z" strokeLinejoin="round" />
-      <path d="M8.8 9.4h6.4M8.8 12h3.9" strokeLinecap="round" />
+    <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <path d="M7 10.5c0-2.2 1.8-4 4-4h10c2.2 0 4 1.8 4 4v6.2c0 2.2-1.8 4-4 4h-3.2L16 24.2l-2.4-3.5H11c-2.2 0-4-1.8-4-4v-6.2Z" strokeLinejoin="round" />
+      <path d="M16 3.6V1.8M8.7 6.2 7.4 4.9M23.3 6.2l1.3-1.3M10.2 25.7l-1.3 1.3M21.8 25.7l1.3 1.3M16 28.4v1.8" strokeLinecap="round" />
+      <text x="16" y="15.6" textAnchor="middle" fontSize="5.9" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
+        HELP
+      </text>
+    </svg>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.6L12 15.5l-6.5 4.1V6A1.5 1.5 0 0 1 7 4.5Z" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -330,17 +341,11 @@ export function SiteHeader() {
 
             <div className="hidden lg:block">
               <HeaderIcon
-                label="Wishlist"
+                label="Saved"
                 onClick={isAuthenticated ? openWishlist : () => router.push(loginHref)}
               >
                 <span className="relative inline-flex">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                    <path
-                      d="M5.5 5.5h7.05c.4 0 .78.16 1.06.44l5.45 5.45a1.5 1.5 0 0 1 0 2.12l-5.55 5.55a1.5 1.5 0 0 1-2.12 0l-5.45-5.45a1.5 1.5 0 0 1-.44-1.06V5.5Z"
-                      strokeLinejoin="round"
-                    />
-                    <circle cx="9" cy="9" r="1.05" />
-                  </svg>
+                  <SaveIcon />
                   {wishlistCount > 0 ? (
                     <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
                       {wishlistCount}
@@ -518,7 +523,7 @@ export function SiteHeader() {
                   }}
                   className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
                 >
-                  Wishlist{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
+                  Save{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
                 </button>
                 <button
                   type="button"

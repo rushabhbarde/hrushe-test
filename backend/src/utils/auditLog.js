@@ -1,4 +1,5 @@
 const AuditLog = require("../models/AuditLog");
+const { logEvent } = require("./logger");
 
 async function recordAuditLog(req, action, target = {}, metadata = {}) {
   try {
@@ -13,7 +14,7 @@ async function recordAuditLog(req, action, target = {}, metadata = {}) {
       userAgent: String(req.headers["user-agent"] || "").slice(0, 500),
     });
   } catch (error) {
-    console.error("Audit log write failed", { action, message: error?.message });
+    logEvent("audit_log.write_failed", { action, message: error?.message }, "error");
   }
 }
 

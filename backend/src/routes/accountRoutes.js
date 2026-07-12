@@ -3,6 +3,8 @@ const {
   getAccountSummary,
   getProfile,
   updateProfile,
+  requestEmailChangeOtp,
+  verifyEmailChangeOtp,
   getAddresses,
   createAddress,
   updateAddress,
@@ -28,6 +30,8 @@ router.use(protect);
 router.get("/summary", getAccountSummary);
 router.get("/profile", getProfile);
 router.put("/profile", requireCsrf, updateProfile);
+router.post("/email-change/request-otp", requireCsrf, requestEmailChangeOtp);
+router.post("/email-change/verify", requireCsrf, verifyEmailChangeOtp);
 
 router.get("/addresses", getAddresses);
 router.post("/addresses", requireCsrf, createAddress);

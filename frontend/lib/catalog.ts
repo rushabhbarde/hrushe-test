@@ -34,7 +34,16 @@ export type ProductSizeMeasurement = {
   sleeve: string;
 };
 
-export type ProductStatus = "Active" | "Draft" | "Hidden" | "Sold Out";
+export type ProductStatus =
+  | "Active"
+  | "Draft"
+  | "Hidden"
+  | "Sold Out"
+  | "active"
+  | "draft"
+  | "hidden"
+  | "archived"
+  | "sold_out";
 export type ProductFitType = "Oversized" | "Regular";
 export type ProductGender = "Men" | "Women" | "Unisex";
 export type ProductCollectionLabel = "New In" | "Featured" | "Collection";

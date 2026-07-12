@@ -347,10 +347,10 @@ function ProductInfoPanel({
               <span>{selectedColor || product.colors[0]}</span>
             </p>
             <div className="flex items-center gap-2 text-[0.82rem] font-medium text-[var(--muted)]">
-              <span>Add to Wishlist</span>
+              <span>Save</span>
               <WishlistButton
                 productId={product.id}
-                label={`Add ${displayName} to wishlist`}
+                label={`Save ${displayName}`}
                 className="inline-flex h-9 w-9 items-center justify-center text-[var(--foreground)]"
                 iconClassName="h-4 w-4"
               />

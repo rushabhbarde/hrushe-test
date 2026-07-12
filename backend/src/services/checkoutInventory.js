@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const AppError = require("../utils/AppError");
+const { getPaiseValue, paiseToRupees } = require("../utils/money");
 
 const MAX_CART_LINES = 25;
 const MAX_ITEM_QUANTITY = 10;
@@ -135,7 +136,8 @@ const resolveCheckoutItems = async (rawItems = []) => {
       size,
       color,
       fit: normalizeFit(selection.fit),
-      price: Number(product.price),
+      price: paiseToRupees(getPaiseValue(product, "pricePaise", "price")),
+      pricePaise: getPaiseValue(product, "pricePaise", "price"),
       name: product.name,
       image: product.images?.[0] || product.galleryImages?.[0] || "",
       sku: variant?.sku || "",
@@ -144,7 +146,7 @@ const resolveCheckoutItems = async (rawItems = []) => {
   });
 };
 
-const updateReservedVariant = async (item, operation) => {
+const updateReservedVariant = async (item, operation, { session } = {}) => {
   if (!item.inventoryTracked || !item.sku) {
     return true;
   }
@@ -178,6 +180,7 @@ const updateReservedVariant = async (item, operation) => {
           ...(isReserve ? { "variant.stock": { $gte: quantity } } : { "variant.reserved": { $gte: quantity } }),
         },
       ],
+      ...(session ? { session } : {}),
     }
   );
 
@@ -206,19 +209,32 @@ const reserveInventory = async (items) => {
   return reserved.length > 0;
 };
 
-const transitionOrderInventory = async (order, operation) => {
+const transitionOrderInventory = async (order, operation, options = {}) => {
   if (!order || order.inventoryReservationStatus !== "reserved") {
     return;
   }
 
   const trackedItems = order.products.filter((item) => item.inventoryTracked);
-  await Promise.all(trackedItems.map((item) => updateReservedVariant(item, operation)));
+  const results = await Promise.all(
+    trackedItems.map((item) => updateReservedVariant(item, operation, options))
+  );
+
+  if (results.some((updated) => !updated)) {
+    const action = operation === "commit" ? "committed" : "released";
+    throw new AppError(
+      `Inventory reservation could not be ${action}. Please retry or reconcile the order.`,
+      409
+    );
+  }
+
   order.inventoryReservationStatus = operation === "commit" ? "committed" : "released";
   order.inventoryReservationExpiresAt = null;
 };
 
-const commitOrderInventory = (order) => transitionOrderInventory(order, "commit");
-const releaseOrderInventory = (order) => transitionOrderInventory(order, "release");
+const commitOrderInventory = (order, options = {}) =>
+  transitionOrderInventory(order, "commit", options);
+const releaseOrderInventory = (order, options = {}) =>
+  transitionOrderInventory(order, "release", options);
 
 const releaseInventoryItems = async (items) => {
   await Promise.all(

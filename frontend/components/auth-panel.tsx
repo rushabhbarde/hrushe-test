@@ -616,14 +616,14 @@ export function AuthPanel({
     view === "forgot-password"
       ? "Verify your email OTP and set a fresh password without leaving checkout."
       : mode === "login"
-        ? "Sign in to track orders, save favourites, and move through checkout faster."
+        ? "Sign in to track orders, save pieces, and move through checkout faster."
         : "Join HRUSHE to save delivery details, place orders, and keep every drop close.";
   const panelHighlights =
     view === "forgot-password"
       ? ["Email OTP verification", "Secure password reset", "Return to your saved bag"]
       : mode === "login"
-        ? ["Saved bag and favourites", "Fast checkout access", "Order tracking in one place"]
-        : ["Verified email signup", "Saved delivery profile", "Wishlist and cart shortcuts"];
+        ? ["Saved bag and pieces", "Fast checkout access", "Order tracking in one place"]
+        : ["Verified email signup", "Saved delivery profile", "Saved pieces and cart shortcuts"];
   const formClass = "auth-switch-panel mt-5 grid gap-3.5 sm:mt-6 sm:gap-4";
   const inputClass =
     "lux-input bg-white/75 text-[0.95rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.68)]";
@@ -649,7 +649,7 @@ export function AuthPanel({
               Quiet access. Faster orders.
             </h2>
             <p className="mt-6 max-w-xs text-sm leading-6 text-white/64">
-              A clean member space for saved delivery details, wishlist pieces,
+              A clean member space for saved delivery details, saved pieces,
               and checkout without repeating yourself.
             </p>
           </div>
@@ -673,7 +673,7 @@ export function AuthPanel({
           <div className="mb-5 border border-[var(--border)] bg-black px-4 py-4 text-white lg:hidden">
             <p className="eyebrow text-white/58">HRUSHE Account</p>
             <p className="mt-2 text-sm leading-5 text-white/76">
-              Secure access for saved bags, wishlist pieces, and faster checkout.
+              Secure access for saved bags, saved pieces, and faster checkout.
             </p>
           </div>
 

@@ -12,6 +12,10 @@ const {
   failCheckout,
   cancelCheckout,
   razorpayWebhook,
+  getPaymentReconciliation,
+  reconcileOrderPayment,
+  bulkReconcileOrders,
+  scanPaymentReconciliation,
   reorderOrder,
 } = require("../controllers/orderController");
 const {
@@ -46,6 +50,10 @@ if (env.ENABLE_COD) {
   router.post("/place", protect, requireCsrf, placeOrder);
 }
 router.get("/myorders", protect, getMyOrders);
+router.get("/reconciliation", protect, requireAdminPermission("orders.manage"), getPaymentReconciliation);
+router.post("/reconciliation/bulk", protect, requireCsrf, requireAdminPermission("orders.manage"), bulkReconcileOrders);
+router.post("/reconciliation/scan", protect, requireCsrf, requireAdminPermission("orders.manage"), scanPaymentReconciliation);
+router.post("/:id/reconcile", protect, requireCsrf, requireAdminPermission("orders.manage"), reconcileOrderPayment);
 router.post("/:id/reorder", protect, requireCsrf, reorderOrder);
 router.get("/:id/invoice", protect, downloadInvoice);
 router.get("/all", protect, requireAdminPermission("orders.view"), getAllOrders);

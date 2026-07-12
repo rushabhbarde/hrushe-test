@@ -3,18 +3,25 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const SupportRequest = require("../models/SupportRequest");
+const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
-const { buildSupportRequestAdminEmail } = require("../utils/emailTemplates");
+const { buildOtpEmail, buildSupportRequestAdminEmail } = require("../utils/emailTemplates");
 const { serializeUser, serializeAddress } = require("../utils/serializeUser");
+const { clearCsrfCookie } = require("../middleware/csrfMiddleware");
+const { recordAuditLog } = require("../utils/auditLog");
+const { logEvent } = require("../utils/logger");
+const {
+  createOtpVerification,
+  deleteOtpVerifications,
+  normalizeEmail,
+  verifyOtpCode,
+} = require("../utils/otpVerification");
+const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
 
 const FAVORITE_COLOR_LIMIT = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
-const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
-
 const validateEmail = (email) => {
   if (!EMAIL_PATTERN.test(email)) {
     throw new AppError("Enter a valid email address", 400);
@@ -22,9 +29,16 @@ const validateEmail = (email) => {
 };
 
 const validateIndianPhone = (phone) => {
-  if (!/^[6-9]\d{9}$/.test(phone)) {
+  if (!isValidIndianPhone(phone)) {
     throw new AppError("Enter a valid 10-digit Indian phone number", 400);
   }
+};
+
+const authCookieOptions = {
+  sameSite: env.COOKIE_SAME_SITE,
+  httpOnly: true,
+  secure: env.COOKIE_SECURE,
+  path: "/",
 };
 
 const formatAddressText = (address) =>
@@ -163,7 +177,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
   const normalizedName = String(name).trim();
   const normalizedEmail = normalizeEmail(email);
-  const normalizedPhone = normalizePhone(phone);
+  const normalizedPhone = normalizeIndianPhone(phone);
 
   if (normalizedName.length < 2) {
     throw new AppError("Full name must be at least 2 characters long", 400);
@@ -172,8 +186,11 @@ const updateProfile = asyncHandler(async (req, res) => {
   validateEmail(normalizedEmail);
   validateIndianPhone(normalizedPhone);
 
-  const [existingEmailUser, existingPhoneUser, user] = await Promise.all([
-    User.findOne({ email: normalizedEmail, _id: { $ne: req.user._id } }),
+  if (normalizedEmail !== normalizeEmail(req.user.email)) {
+    throw new AppError("Email changes require OTP verification.", 400);
+  }
+
+  const [existingPhoneUser, user] = await Promise.all([
     User.findOne({ phone: normalizedPhone, _id: { $ne: req.user._id } }),
     User.findById(req.user._id),
   ]);
@@ -182,16 +199,11 @@ const updateProfile = asyncHandler(async (req, res) => {
     throw new AppError("User not found", 404);
   }
 
-  if (existingEmailUser) {
-    throw new AppError("Email is already in use", 409);
-  }
-
   if (existingPhoneUser) {
     throw new AppError("Phone number is already in use", 409);
   }
 
   user.name = normalizedName;
-  user.email = normalizedEmail;
   user.phone = normalizedPhone;
   user.gender = String(gender || "").trim();
   user.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
@@ -201,6 +213,132 @@ const updateProfile = asyncHandler(async (req, res) => {
   return res.json({
     message: "Profile updated successfully",
     user: serializeUser(user),
+  });
+});
+
+const requestEmailChangeOtp = asyncHandler(async (req, res) => {
+  const newEmail = normalizeEmail(req.body.newEmail);
+
+  if (!newEmail) {
+    throw new AppError("New email is required", 400);
+  }
+
+  validateEmail(newEmail);
+
+  if (newEmail === normalizeEmail(req.user.email)) {
+    throw new AppError("This email is already linked to your account", 400);
+  }
+
+  const existingUser = await User.findOne({
+    email: newEmail,
+    _id: { $ne: req.user._id },
+  });
+
+  if (existingUser) {
+    throw new AppError("Choose a different email address.", 409);
+  }
+
+  const { otp, expiresInMinutes } = await createOtpVerification({
+    email: newEmail,
+    purpose: "email-change",
+    userId: req.user._id,
+  });
+
+  let delivery;
+  try {
+    delivery = await sendEmail({
+      to: newEmail,
+      subject: "Confirm your new HRUSHE email",
+      html: buildOtpEmail({
+        purpose: "email-change",
+        otp,
+        expiryMinutes: expiresInMinutes,
+        email: newEmail,
+      }),
+      mergeInfo: {
+        otp,
+        email: newEmail,
+        expiry_minutes: expiresInMinutes,
+        expiryMinutes: expiresInMinutes,
+      },
+    });
+  } catch (error) {
+    await deleteOtpVerifications({ email: newEmail, purpose: "email-change", userId: req.user._id });
+    logEvent("email.change_otp.delivery_failed", {
+      message: error?.message,
+      code: error?.code,
+      responseCode: error?.responseCode,
+    }, "error");
+    throw new AppError("OTP email could not be sent. Please try again later.", 502);
+  }
+
+  if (!delivery.delivered) {
+    await deleteOtpVerifications({ email: newEmail, purpose: "email-change", userId: req.user._id });
+    throw new AppError("OTP email could not be sent. Please try again later.", 502);
+  }
+
+  const response = {
+    message: "If this email can be used, an OTP has been sent.",
+    expiresInMinutes,
+  };
+
+  if (env.OTP_DEV_MODE) {
+    response.devOtp = otp;
+  }
+
+  return res.json(response);
+});
+
+const verifyEmailChangeOtp = asyncHandler(async (req, res) => {
+  const newEmail = normalizeEmail(req.body.newEmail);
+  const otp = String(req.body.otp || "").trim();
+
+  if (!newEmail || !otp) {
+    throw new AppError("New email and OTP are required", 400);
+  }
+
+  validateEmail(newEmail);
+
+  await verifyOtpCode({
+    email: newEmail,
+    purpose: "email-change",
+    userId: req.user._id,
+    otp,
+  });
+
+  const existingUser = await User.findOne({
+    email: newEmail,
+    _id: { $ne: req.user._id },
+  });
+
+  if (existingUser) {
+    throw new AppError("Choose a different email address.", 409);
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const previousEmail = user.email;
+  user.email = newEmail;
+  user.emailVerifiedAt = new Date();
+  user.isVerified = true;
+  user.tokenVersion = Number(user.tokenVersion || 0) + 1;
+  await user.save();
+
+  await deleteOtpVerifications({ email: newEmail, purpose: "email-change", userId: req.user._id });
+  await recordAuditLog(req, "account.email-change", { type: "user", id: user._id }, {
+    before: previousEmail,
+    after: newEmail,
+  });
+
+  res.clearCookie("token", authCookieOptions);
+  clearCsrfCookie(res);
+
+  return res.json({
+    message: "Email changed successfully. Please sign in again with your new email.",
   });
 });
 
@@ -585,11 +723,11 @@ const createSupportRequest = asyncHandler(async (req, res) => {
       throw new Error(delivery.reason || "Support request email delivery failed");
     }
   } catch (error) {
-    console.error("Support request email failed", {
+    logEvent("support.request.email_failed", {
       message: error?.message,
       code: error?.code,
       responseCode: error?.responseCode,
-    });
+    }, "error");
   }
 
   return res.status(201).json({
@@ -602,6 +740,8 @@ module.exports = {
   getAccountSummary,
   getProfile,
   updateProfile,
+  requestEmailChangeOtp,
+  verifyEmailChangeOtp,
   getAddresses,
   createAddress,
   updateAddress,

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { getPaiseValue, paiseToRupees, rupeesToPaise } = require("../utils/money");
 
 const slugify = (value = "") =>
   value
@@ -175,9 +176,27 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    pricePaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Product pricePaise must be an integer.",
+      },
+      default: undefined,
+    },
     compareAtPrice: {
       type: Number,
       min: 0,
+    },
+    compareAtPricePaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Product compareAtPricePaise must be an integer.",
+      },
+      default: undefined,
     },
     category: {
       type: String,
@@ -206,8 +225,27 @@ const productSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Active", "Draft", "Hidden", "Sold Out"],
+      enum: [
+        "Active",
+        "Draft",
+        "Hidden",
+        "Sold Out",
+        "active",
+        "draft",
+        "hidden",
+        "archived",
+        "sold_out",
+      ],
       default: undefined,
+    },
+    archivedAt: {
+      type: Date,
+      default: null,
+    },
+    archivedFromStatus: {
+      type: String,
+      default: "",
+      trim: true,
     },
     fitType: {
       type: String,
@@ -359,8 +397,29 @@ productSchema.pre("validate", function productPreValidate() {
     }
   }
 
-  if (this.compareAtPrice !== undefined && this.compareAtPrice !== null && this.compareAtPrice <= this.price) {
+  if (this.pricePaise === undefined || this.pricePaise === null) {
+    this.pricePaise = rupeesToPaise(this.price);
+  } else {
+    this.price = paiseToRupees(this.pricePaise);
+  }
+
+  if (
+    this.compareAtPrice !== undefined &&
+    this.compareAtPrice !== null &&
+    (this.compareAtPricePaise === undefined || this.compareAtPricePaise === null)
+  ) {
+    this.compareAtPricePaise = rupeesToPaise(this.compareAtPrice);
+  } else if (this.compareAtPricePaise !== undefined && this.compareAtPricePaise !== null) {
+    this.compareAtPrice = paiseToRupees(this.compareAtPricePaise);
+  }
+
+  if (
+    this.compareAtPricePaise !== undefined &&
+    this.compareAtPricePaise !== null &&
+    this.compareAtPricePaise <= getPaiseValue(this, "pricePaise", "price")
+  ) {
     this.compareAtPrice = undefined;
+    this.compareAtPricePaise = undefined;
   }
 });
 

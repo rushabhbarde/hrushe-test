@@ -85,6 +85,23 @@ function mergePlainObjects(baseValue, nextValue) {
   return merged;
 }
 
+function collectChangedPaths(value, prefix = "") {
+  if (!isPlainObject(value)) {
+    return prefix ? [prefix] : [];
+  }
+
+  return Object.entries(value).flatMap(([key, nestedValue]) => {
+    if (key === "version") {
+      return [];
+    }
+    const nextPrefix = prefix ? `${prefix}.${key}` : key;
+    if (!isPlainObject(nestedValue) || Array.isArray(nestedValue)) {
+      return [nextPrefix];
+    }
+    return collectChangedPaths(nestedValue, nextPrefix);
+  });
+}
+
 function normalizeWorkspaceBanner(banner = {}) {
   const legacyImage = String(banner.desktopImage || banner.mobileImage || "").trim();
   const rawMediaUrl = String(banner.mediaUrl || legacyImage).trim();
@@ -506,6 +523,11 @@ const getSiteContent = async () => {
     content.homepageBanner = normalizedBanner;
   }
 
+  if (!Number.isInteger(content.adminWorkspaceVersion) || content.adminWorkspaceVersion < 1) {
+    content.adminWorkspaceVersion = 1;
+    contentChanged = true;
+  }
+
   const workspace = content.adminWorkspace || {};
   const rawWorkspaceBanners = Array.isArray(workspace?.homeManagement?.banners)
     ? workspace.homeManagement.banners
@@ -641,14 +663,25 @@ const updateHomepageBanner = asyncHandler(async (req, res) => {
 
 const getAdminWorkspace = asyncHandler(async (req, res) => {
   const content = await getSiteContent();
-  return res.json(content.adminWorkspace || {});
+  return res.json({
+    ...(content.adminWorkspace || {}),
+    version: content.adminWorkspaceVersion || 1,
+  });
 });
 
 const updateAdminWorkspace = asyncHandler(async (req, res) => {
-  assertCanUpdateAdminWorkspace(req.user, req.body || {});
-  assertWorkspaceMediaIsStorable(req.body || {});
-  if (req.body?.websiteSettings) {
-    assertWebsiteSettingsAreValid(req.body.websiteSettings);
+  const submittedVersion = Number(req.body?.version);
+  if (!Number.isInteger(submittedVersion) || submittedVersion < 1) {
+    throw new AppError("Admin workspace version is required.", 400);
+  }
+
+  const patch = { ...(req.body || {}) };
+  delete patch.version;
+
+  assertCanUpdateAdminWorkspace(req.user, patch);
+  assertWorkspaceMediaIsStorable(patch);
+  if (patch?.websiteSettings) {
+    assertWebsiteSettingsAreValid(patch.websiteSettings);
   }
 
   const content = await getSiteContent();
@@ -656,16 +689,45 @@ const updateAdminWorkspace = asyncHandler(async (req, res) => {
     content.adminWorkspace && typeof content.adminWorkspace === "object"
       ? content.adminWorkspace
       : {};
+  const previousVersion = content.adminWorkspaceVersion || 1;
+  const nextWorkspace = mergePlainObjects(currentWorkspace, patch);
+  const nextVersion = previousVersion + 1;
+  const updatedContent = await SiteContent.findOneAndUpdate(
+    { key: "main", adminWorkspaceVersion: submittedVersion },
+    {
+      $set: { adminWorkspace: nextWorkspace },
+      $inc: { adminWorkspaceVersion: 1 },
+    },
+    { new: true, runValidators: true }
+  );
 
-  content.adminWorkspace = mergePlainObjects(currentWorkspace, req.body || {});
-  await content.save();
+  if (!updatedContent) {
+    const freshContent = await getSiteContent();
+    return res.status(409).json({
+      error: "CONTENT_VERSION_CONFLICT",
+      message: "This content was updated by another administrator.",
+      currentVersion: freshContent.adminWorkspaceVersion || 1,
+    });
+  }
+
   homepageBannerCache = null;
+  const changedPaths = collectChangedPaths(patch);
 
-  if (Object.prototype.hasOwnProperty.call(req.body || {}, "homeManagement")) {
+  await recordAuditLog(req, "admin-workspace.update", { type: "site-content", id: updatedContent._id }, {
+    changedPaths,
+    previousVersion,
+    newVersion: nextVersion,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (Object.prototype.hasOwnProperty.call(patch, "homeManagement")) {
     await recordAuditLog(req, "homepage.publish", { type: "site-content", id: content._id });
   }
 
-  return res.json(content.adminWorkspace || {});
+  return res.json({
+    ...(updatedContent.adminWorkspace || {}),
+    version: updatedContent.adminWorkspaceVersion || nextVersion,
+  });
 });
 
 module.exports = {

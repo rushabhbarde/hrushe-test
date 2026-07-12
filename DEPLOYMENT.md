@@ -36,6 +36,8 @@ R2_SECRET_ACCESS_KEY=<your-r2-secret-access-key>
 R2_BUCKET_NAME=hrushe-media
 R2_PUBLIC_URL=https://media.hrushe.in
 R2_ENDPOINT=https://<your-cloudflare-account-id>.r2.cloudflarestorage.com
+ERROR_MONITORING_PROVIDER=structured-log
+ERROR_MONITORING_DSN=
 ```
 
 Notes:
@@ -48,6 +50,7 @@ Notes:
 - `ADMIN_ROLE=super-admin` keeps the bootstrap admin able to manage staff and role assignments.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
 - R2 variables are optional for local development. In production, set them so admin media uploads and base64 media migrations store files in Cloudflare R2 instead of MongoDB GridFS.
+- `ERROR_MONITORING_PROVIDER` and `ERROR_MONITORING_DSN` are optional. Without a DSN, backend errors are still emitted as redacted structured JSON events named `error.captured` for log-drain forwarding.
 
 ## Frontend Production Environment
 

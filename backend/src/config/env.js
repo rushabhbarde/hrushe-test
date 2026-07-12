@@ -1,3 +1,5 @@
+const { logEvent } = require("../utils/logger");
+
 const parseOrigins = (value) =>
   String(value || "")
     .split(",")
@@ -18,8 +20,13 @@ const normalizeCookieSameSite = (value) => {
   // SameSite=None. The storefront now proxies API requests through its own
   // origin, so migrate that known legacy value to the safer Lax policy.
   if (process.env.NODE_ENV === "production" && normalized === "none") {
-    console.warn(
-      "[config] COOKIE_SAME_SITE=none is legacy configuration; using lax for same-origin API proxy cookies. Update the Render environment value to lax."
+    logEvent(
+      "config.cookie_same_site.legacy_value",
+      {
+        message:
+          "COOKIE_SAME_SITE=none is legacy configuration; using lax for same-origin API proxy cookies. Update the Render environment value to lax.",
+      },
+      "warn"
     );
     return "lax";
   }

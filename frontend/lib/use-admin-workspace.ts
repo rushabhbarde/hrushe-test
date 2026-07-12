@@ -99,7 +99,10 @@ export function useAdminWorkspace() {
 
     const saved = await apiRequest<Partial<AdminWorkspace>>("/content/admin-workspace", {
       method: "PUT",
-      body: JSON.stringify(normalized),
+      body: JSON.stringify({
+        ...(patch as Partial<AdminWorkspace>),
+        version: current.version,
+      }),
       headers: getAdminAuthHeaders(),
     });
     const normalizedSaved = normalizeAdminWorkspace(saved);

@@ -12,6 +12,12 @@ const {
   normalizeAdminRoleId,
 } = require("../config/adminRoles");
 const { recordAuditLog } = require("../utils/auditLog");
+const {
+  buildPaginationMeta,
+  parsePaginationQuery,
+  sendListResponse,
+} = require("../utils/pagination");
+const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -129,14 +135,26 @@ function serializeStaffUser(user) {
 }
 
 const listCustomers = asyncHandler(async (req, res) => {
-  const [users, orders] = await Promise.all([
-    User.find({ role: { $ne: "admin" } })
+  const filter = { role: { $ne: "admin" } };
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 50,
+    maxLimit: 100,
+  });
+  const [users, total] = await Promise.all([
+    User.find(filter)
       .select("-password -passwordResetOtp -passwordResetOtpExpiresAt")
-      .populate("wishlist"),
-    Order.find({})
+      .populate("wishlist")
       .sort({ createdAt: -1 })
-      .select("userId totalAmount createdAt orderStatus paymentStatus customerEmail"),
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    User.countDocuments(filter),
   ]);
+  const userIds = users.map((user) => user._id);
+  const orders = userIds.length
+    ? await Order.find({ userId: { $in: userIds } })
+      .sort({ createdAt: -1 })
+      .select("userId totalAmount createdAt orderStatus paymentStatus customerEmail")
+    : [];
 
   const ordersByUser = new Map();
 
@@ -161,7 +179,13 @@ const listCustomers = asyncHandler(async (req, res) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-  res.json(serialized);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
+  });
+
+  return sendListResponse(res, req.query, serialized, pagination);
 });
 
 const getCustomerById = asyncHandler(async (req, res) => {
@@ -173,11 +197,26 @@ const getCustomerById = asyncHandler(async (req, res) => {
     throw new AppError("Customer not found", 404);
   }
 
-  const orders = await Order.find({ userId: user._id }).sort({ createdAt: -1 });
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 100,
+    maxLimit: 100,
+  });
+  const [orders, totalOrders] = await Promise.all([
+    Order.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    Order.countDocuments({ userId: user._id }),
+  ]);
 
   res.json({
     ...serializeCustomer(user, orders),
     orders,
+    ordersPagination: buildPaginationMeta({
+      page: paginationParams.page,
+      limit: paginationParams.limit,
+      total: totalOrders,
+    }),
   });
 });
 
@@ -195,7 +234,7 @@ const listStaffUsers = asyncHandler(async (req, res) => {
 const createStaffUser = asyncHandler(async (req, res) => {
   const name = String(req.body.name || "").trim();
   const email = String(req.body.email || "").trim().toLowerCase();
-  const phone = String(req.body.phone || "").trim();
+  const phone = normalizeIndianPhone(req.body.phone);
   const password = String(req.body.password || "");
   const adminRole = String(req.body.adminRole || "").trim();
 
@@ -205,6 +244,10 @@ const createStaffUser = asyncHandler(async (req, res) => {
 
   if (!EMAIL_PATTERN.test(email)) {
     throw new AppError("Enter a valid staff email address", 400);
+  }
+
+  if (req.body.phone && !isValidIndianPhone(req.body.phone)) {
+    throw new AppError("Enter a valid 10-digit Indian phone number", 400);
   }
 
   validateStaffPassword(password);

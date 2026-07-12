@@ -1,8 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
+  commitOrderInventory,
   normalizeCheckoutSelections,
+  releaseOrderInventory,
 } = require("../src/services/checkoutInventory");
+const Product = require("../src/models/Product");
 
 const productId = "507f1f77bcf86cd799439011";
 
@@ -52,4 +55,59 @@ test("invalid cart identifiers and quantities are rejected", () => {
     () => normalizeCheckoutSelections([{ productId, quantity: 11 }]),
     /maximum of 10/i
   );
+});
+
+test("inventory commit fails instead of silently confirming missing reservations", async (t) => {
+  const originalUpdateOne = Product.updateOne;
+  t.after(() => {
+    Product.updateOne = originalUpdateOne;
+  });
+
+  Product.updateOne = async () => ({ modifiedCount: 0 });
+
+  const order = {
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(),
+    products: [
+      {
+        productId,
+        quantity: 1,
+        sku: "HRU-TEST-M-BLK",
+        inventoryTracked: true,
+      },
+    ],
+  };
+
+  await assert.rejects(
+    () => commitOrderInventory(order),
+    /could not be committed/i
+  );
+  assert.equal(order.inventoryReservationStatus, "reserved");
+});
+
+test("inventory release records released only after every variant is updated", async (t) => {
+  const originalUpdateOne = Product.updateOne;
+  t.after(() => {
+    Product.updateOne = originalUpdateOne;
+  });
+
+  Product.updateOne = async () => ({ modifiedCount: 1 });
+
+  const order = {
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(),
+    products: [
+      {
+        productId,
+        quantity: 1,
+        sku: "HRU-TEST-M-BLK",
+        inventoryTracked: true,
+      },
+    ],
+  };
+
+  await releaseOrderInventory(order);
+
+  assert.equal(order.inventoryReservationStatus, "released");
+  assert.equal(order.inventoryReservationExpiresAt, null);
 });

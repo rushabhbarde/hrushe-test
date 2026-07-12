@@ -496,14 +496,14 @@ function AccountPageContent() {
         method: "DELETE",
       });
       await Promise.all([refreshWishlist(), loadAccountData()]);
-      pushToast("Removed from wishlist");
+      pushToast("Removed from saved");
     } catch (wishlistError) {
       setError(
         wishlistError instanceof Error
           ? wishlistError.message
-          : "Could not remove from wishlist."
+          : "Could not remove from saved."
       );
-      pushToast("Could not update wishlist", "error");
+      pushToast("Could not update saved pieces", "error");
     } finally {
       setSubmitting("");
     }
@@ -668,7 +668,7 @@ function AccountPageContent() {
                       note="Keep multiple shipping locations ready for faster checkout."
                     />
                     <AccountMetric
-                      label="Wishlist"
+                      label="Saved"
                       value={`${wishlistProducts.length}`}
                       note="Saved pieces stay ready for later when you want to convert quickly."
                     />
@@ -794,7 +794,7 @@ function AccountPageContent() {
                     >
                       <div className="grid gap-3 sm:grid-cols-2">
                         {[
-                          { id: "wishlist", label: "Open wishlist" },
+                          { id: "wishlist", label: "Open saved" },
                           { id: "addresses", label: "Manage addresses" },
                           { id: "preferences", label: "Update preferences" },
                           { id: "support", label: "Contact support" },
@@ -1307,13 +1307,13 @@ function AccountPageContent() {
 
             {activeSection === "wishlist" ? (
               <AccountSectionCard
-                eyebrow="Wishlist"
+                eyebrow="Saved"
                 title="Saved for your next drop"
                 description="Keep shortlisted pieces together, remove them, or move them straight into cart when you are ready."
               >
                 {wishlistProducts.length === 0 ? (
                   <EmptyState
-                    title="Your wishlist is empty."
+                    title="No saved pieces yet."
                     description="Save pieces you love and find them here later."
                     ctaHref="/shop"
                     ctaLabel="Explore collection"

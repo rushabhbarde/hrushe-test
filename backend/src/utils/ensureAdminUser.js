@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Cart = require("../models/Cart");
 const env = require("../config/env");
 const { normalizeAdminRoleId } = require("../config/adminRoles");
+const { logEvent } = require("./logger");
 
 const ADMIN_EMAIL = env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
@@ -39,7 +40,7 @@ async function ensureAdminUser() {
       isVerified: true,
       emailVerifiedAt: new Date(),
     });
-    console.log("Admin user created in database.");
+    logEvent("admin.bootstrap.created", { email: ADMIN_EMAIL, adminRole: ADMIN_ROLE });
   } else {
     let shouldSave = false;
 
@@ -73,7 +74,7 @@ async function ensureAdminUser() {
 
     if (shouldSave) {
       await adminUser.save();
-      console.log("Admin user refreshed in database.");
+      logEvent("admin.bootstrap.refreshed", { email: ADMIN_EMAIL, adminRole: ADMIN_ROLE });
     }
   }
 

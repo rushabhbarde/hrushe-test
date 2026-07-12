@@ -137,7 +137,7 @@ export default function CartPage() {
       toggleWishlist(item.productId);
     }
 
-    removeCartLine(item, "Moved to wishlist");
+    removeCartLine(item, "Moved to saved");
   };
 
   const changeQuantity = (item: CartLine, nextQuantity: number) => {
@@ -171,7 +171,7 @@ export default function CartPage() {
               <div className="reveal-up flex flex-col gap-5 border-b border-[var(--border)] pb-5 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="eyebrow text-[var(--accent)]">
-                    {activeCartTab === "bag" ? "Shopping bag" : "Favourites"}
+                    {activeCartTab === "bag" ? "Shopping bag" : "Saved"}
                   </p>
                   <h1 className="display-font mt-3 text-4xl tracking-[-0.06em] sm:text-5xl lg:text-6xl">
                     {activeCartTab === "bag" ? "Selected pieces." : "Saved pieces."}
@@ -196,7 +196,7 @@ export default function CartPage() {
                     onClick={() => setActiveCartTab("favourites")}
                     aria-pressed={activeCartTab === "favourites"}
                   >
-                    Favourites
+                    Saved
                   </button>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function CartPage() {
                       <div className="md:col-span-2">
                         <EmptyState
                           title="Your bag is still empty."
-                          description="Move one of your favourites into the bag when you are ready to checkout."
+                          description="Move one of your saved pieces into the bag when you are ready to checkout."
                           ctaHref="/shop"
                           ctaLabel="Explore products"
                         />
@@ -314,7 +314,7 @@ export default function CartPage() {
                                   type="button"
                                   onClick={() => moveToWishlist(item)}
                                   className="flex h-8 w-8 items-center justify-center text-lg text-[var(--muted)] transition hover:rotate-180 hover:bg-[var(--hover-fill)] hover:text-[var(--foreground)]"
-                                  aria-label={`Move ${item.name} to wishlist`}
+                                  aria-label={`Move ${item.name} to saved`}
                                 >
                                   ↻
                                 </button>
@@ -330,8 +330,8 @@ export default function CartPage() {
                     {wishlistProducts.length === 0 ? (
                       <div className="md:col-span-2">
                         <EmptyState
-                          title="No favourite pieces yet."
-                          description="Use the heart on any product card to save it here, then move it into your bag whenever you are ready."
+                          title="No saved pieces yet."
+                          description="Use the save icon on any product card to keep it here, then move it into your bag whenever you are ready."
                           ctaHref="/shop"
                           ctaLabel="Browse products"
                         />
@@ -351,7 +351,7 @@ export default function CartPage() {
                               type="button"
                               onClick={() => {
                                 removeWishlistItem(product.id);
-                                pushToast("Removed from favourites.", "error");
+                                pushToast("Removed from saved.", "error");
                               }}
                               className="lux-action-muted w-full"
                             >
@@ -396,7 +396,7 @@ export default function CartPage() {
                       onClick={(event) => {
                         if (!items.length) {
                           event.preventDefault();
-                          pushToast("Move a favourite to your bag before checkout.", "error");
+                          pushToast("Move a saved piece to your bag before checkout.", "error");
                           return;
                         }
 

@@ -195,6 +195,7 @@ export const adminPermissionCatalog = [
   "home.manage",
   "products.view",
   "products.edit",
+  "products.delete",
   "orders.view",
   "orders.manage",
   "shipping.manage",
@@ -268,6 +269,7 @@ export const adminRoleDefinitions: AdminRoleRecord[] = [
       "dashboard.view",
       "products.view",
       "products.edit",
+      "products.delete",
       "media.manage",
       "reviews.manage",
     ],
@@ -282,6 +284,7 @@ export type ShippingSettings = {
 };
 
 export type AdminWorkspace = {
+  version: number;
   homeManagement: HomeManagement;
   catalogCategories: string[];
   productMeta: Record<string, ProductAdminMeta>;
@@ -666,6 +669,7 @@ export const defaultHomepageSections: HomepageSection[] = [
 ];
 
 export const defaultAdminWorkspace: AdminWorkspace = {
+  version: 1,
   homeManagement: {
     banners: [
       {

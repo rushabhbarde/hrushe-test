@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const env = require("../config/env");
+const { logEvent } = require("./logger");
 
 const normalizedMailFrom = () => String(env.MAIL_FROM || "").trim();
 const normalizedMailFromName = () => String(env.MAIL_FROM_NAME || "Hrushe").trim();
@@ -236,16 +237,17 @@ const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) =>
     const shouldRetryWithoutTemplate = Boolean(error?.meta?.usedTemplate && html);
 
     if (shouldRetryWithoutTemplate) {
-      console.error(
-        "ZeptoMail template send failed, retrying without template",
-        sanitizeMailError(error)
+      logEvent(
+        "email.zeptomail.template_failed_retrying_html",
+        sanitizeMailError(error),
+        "error"
       );
 
       try {
         return await sendViaZeptoMail({ to, subject, html });
       } catch (htmlError) {
         error = htmlError;
-        console.error("ZeptoMail HTML retry failed", sanitizeMailError(error));
+        logEvent("email.zeptomail.html_retry_failed", sanitizeMailError(error), "error");
       }
     }
 
@@ -253,12 +255,12 @@ const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) =>
       throw error;
     }
 
-    console.error("ZeptoMail failed, falling back to SMTP", sanitizeMailError(error));
+    logEvent("email.zeptomail.failed_falling_back_to_smtp", sanitizeMailError(error), "error");
 
     try {
       return await sendViaSmtp({ to, subject, html, text });
     } catch (smtpError) {
-      console.error("SMTP fallback failed", sanitizeMailError(smtpError));
+      logEvent("email.smtp.fallback_failed", sanitizeMailError(smtpError), "error");
       throw smtpError;
     }
   }

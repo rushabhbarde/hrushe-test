@@ -1,13 +1,10 @@
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
-const VerificationCode = require("../models/VerificationCode");
 const env = require("../config/env");
 const generateToken = require("../utils/generateToken");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
-const { sendMsg91Otp } = require("../utils/sendMsg91Otp");
 const { sendEmail } = require("../utils/mailer");
 const { serializeUser } = require("../utils/serializeUser");
 const {
@@ -16,22 +13,23 @@ const {
   setCsrfCookie,
 } = require("../middleware/csrfMiddleware");
 const { recordAuditLog } = require("../utils/auditLog");
+const { logEvent } = require("../utils/logger");
 const {
   buildOtpEmail,
   buildPasswordChangedEmail,
   buildWelcomeEmail,
 } = require("../utils/emailTemplates");
+const {
+  OTP_EXPIRY_MINUTES,
+  createOtpVerification,
+  deleteOtpVerifications,
+  normalizeEmail,
+  verifyOtpCode,
+} = require("../utils/otpVerification");
+const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
 
-const OTP_EXPIRY_MINUTES = 10;
 const PASSWORD_HASH_ROUNDS = 12;
-const OTP_REQUEST_COOLDOWN_MS = 60 * 1000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const generateOtp = () => String(crypto.randomInt(100000, 1000000));
-
-const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
-
-const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
 
 const validateEmail = (email) => {
   if (!email || !EMAIL_PATTERN.test(email)) {
@@ -40,7 +38,7 @@ const validateEmail = (email) => {
 };
 
 const validateIndianPhone = (phone) => {
-  if (!/^[6-9]\d{9}$/.test(phone)) {
+  if (!isValidIndianPhone(phone)) {
     throw new AppError("Enter a valid 10-digit Indian phone number", 400);
   }
 };
@@ -58,20 +56,14 @@ const validatePasswordStrength = (password, label = "Password") => {
 };
 
 const logEmailFailure = (label, error) => {
-  console.error(`${label} email failed`, {
+  logEvent("email.delivery.failed", {
+    label,
     message: error?.message,
     code: error?.code,
     response: error?.response,
     responseCode: error?.responseCode,
     command: error?.command,
-  });
-};
-
-const clearPasswordResetOtp = async (user) => {
-  user.passwordResetOtp = undefined;
-  user.passwordResetOtpExpiresAt = undefined;
-  user.passwordResetOtpRequestedAt = undefined;
-  await user.save();
+  }, "error");
 };
 
 const cookieOptions = {
@@ -108,7 +100,7 @@ const signup = asyncHandler(async (req, res) => {
 
   const normalizedName = String(name).trim();
   const normalizedEmail = normalizeEmail(email);
-  const normalizedPhone = normalizePhone(phone);
+  const normalizedPhone = normalizeIndianPhone(phone);
 
   if (normalizedName.length < 2) {
     throw new AppError("Full name must be at least 2 characters long", 400);
@@ -117,9 +109,6 @@ const signup = asyncHandler(async (req, res) => {
   validateEmail(normalizedEmail);
   validateIndianPhone(normalizedPhone);
 
-  if (normalizedEmail !== req.user.email) {
-    throw new AppError("Email changes require verification. Contact support to update your email.", 400);
-  }
   validatePasswordStrength(password);
 
   const existingUser = await User.findOne({ email: normalizedEmail });
@@ -132,25 +121,11 @@ const signup = asyncHandler(async (req, res) => {
     throw new AppError("Phone number is already in use", 409);
   }
 
-  const verification = await VerificationCode.findOne({
+  await verifyOtpCode({
     email: normalizedEmail,
     purpose: "signup",
-  }).sort({ createdAt: -1 });
-
-  if (!verification) {
-    throw new AppError("Please verify your email with OTP first", 400);
-  }
-
-  if (verification.expiresAt.getTime() < Date.now()) {
-    await VerificationCode.deleteMany({ email: normalizedEmail, purpose: "signup" });
-    throw new AppError("Signup OTP has expired. Please request a new one", 400);
-  }
-
-  const isOtpValid = await bcrypt.compare(String(otp).trim(), verification.codeHash);
-
-  if (!isOtpValid) {
-    throw new AppError("Invalid signup OTP", 400);
-  }
+    otp,
+  });
 
   const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
   const user = await User.create({
@@ -164,7 +139,7 @@ const signup = asyncHandler(async (req, res) => {
     lastLoginAt: new Date(),
   });
 
-  await VerificationCode.deleteMany({ email: normalizedEmail, purpose: "signup" });
+  await deleteOtpVerifications({ email: normalizedEmail, purpose: "signup" });
   await Cart.create({ userId: user._id, items: [] });
 
   try {
@@ -202,7 +177,7 @@ const login = asyncHandler(async (req, res) => {
   const user = await User.findOne(
     isEmailLogin
       ? { email: loginIdentifier.toLowerCase() }
-      : { phone: normalizePhone(loginIdentifier) }
+      : { phone: normalizeIndianPhone(loginIdentifier) }
   );
   if (!user || user.role === "admin") {
     throw new AppError("Invalid credentials", 401);
@@ -261,18 +236,13 @@ const updateMe = asyncHandler(async (req, res) => {
   }
 
   const normalizedEmail = normalizeEmail(email);
-  const normalizedPhone = normalizePhone(phone);
+  const normalizedPhone = normalizeIndianPhone(phone);
 
   validateEmail(normalizedEmail);
   validateIndianPhone(normalizedPhone);
 
-  const existingEmailUser = await User.findOne({
-    email: normalizedEmail,
-    _id: { $ne: req.user._id },
-  });
-
-  if (existingEmailUser) {
-    throw new AppError("Email is already in use", 409);
+  if (normalizedEmail !== normalizeEmail(req.user.email)) {
+    throw new AppError("Email changes require OTP verification.", 400);
   }
 
   const existingPhoneUser = await User.findOne({
@@ -288,7 +258,6 @@ const updateMe = asyncHandler(async (req, res) => {
     req.user._id,
     {
       name: name.trim(),
-      email: normalizedEmail,
       phone: normalizedPhone,
       address: (address || "").trim(),
     },
@@ -381,20 +350,11 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
     });
   }
 
-  if (
-    user.passwordResetOtpRequestedAt &&
-    Date.now() - user.passwordResetOtpRequestedAt.getTime() < OTP_REQUEST_COOLDOWN_MS
-  ) {
-    throw new AppError("Please wait a minute before requesting another OTP", 429);
-  }
-
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-
-  user.passwordResetOtp = await bcrypt.hash(otp, 10);
-  user.passwordResetOtpExpiresAt = expiresAt;
-  user.passwordResetOtpRequestedAt = new Date();
-  await user.save();
+  const { otp, expiresInMinutes } = await createOtpVerification({
+    email,
+    purpose: "password-reset",
+    userId: user._id,
+  });
 
   let delivery;
   try {
@@ -404,20 +364,20 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
       html: buildOtpEmail({
         purpose: "password-reset",
         otp,
-        expiryMinutes: OTP_EXPIRY_MINUTES,
+        expiryMinutes: expiresInMinutes,
         email,
       }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_PASSWORD_RESET_OTP || undefined,
       mergeInfo: {
         otp,
         email,
-        expiry_minutes: OTP_EXPIRY_MINUTES,
-        expiryMinutes: OTP_EXPIRY_MINUTES,
+        expiry_minutes: expiresInMinutes,
+        expiryMinutes: expiresInMinutes,
       },
     });
   } catch (error) {
     logEmailFailure("Password reset OTP", error);
-    await clearPasswordResetOtp(user);
+    await deleteOtpVerifications({ email, purpose: "password-reset", userId: user._id });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -429,7 +389,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
       "Password reset OTP",
       new Error(delivery.reason || "Mail delivery failed")
     );
-    await clearPasswordResetOtp(user);
+    await deleteOtpVerifications({ email, purpose: "password-reset", userId: user._id });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -438,7 +398,7 @@ const requestPasswordResetOtp = asyncHandler(async (req, res) => {
 
   const response = {
     message: "If an account exists, a password reset OTP has been sent.",
-    expiresInMinutes: OTP_EXPIRY_MINUTES,
+    expiresInMinutes: expiresInMinutes,
     deliveryMethod: delivery.delivered ? "email" : "dev",
   };
 
@@ -464,25 +424,9 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
     throw new AppError("Email is already in use", 409);
   }
 
-  const recentOtp = await VerificationCode.findOne({
+  const { otp, expiresInMinutes } = await createOtpVerification({
     email,
     purpose: "signup",
-    createdAt: { $gt: new Date(Date.now() - OTP_REQUEST_COOLDOWN_MS) },
-  });
-
-  if (recentOtp) {
-    throw new AppError("Please wait a minute before requesting another OTP", 429);
-  }
-
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-
-  await VerificationCode.deleteMany({ email, purpose: "signup" });
-  await VerificationCode.create({
-    email,
-    purpose: "signup",
-    codeHash: await bcrypt.hash(otp, 10),
-    expiresAt,
   });
 
   let delivery;
@@ -493,20 +437,20 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
       html: buildOtpEmail({
         purpose: "signup",
         otp,
-        expiryMinutes: OTP_EXPIRY_MINUTES,
+        expiryMinutes: expiresInMinutes,
         email,
       }),
       templateKey: env.ZEPTOMAIL_TEMPLATE_SIGNUP_OTP || undefined,
       mergeInfo: {
         otp,
         email,
-        expiry_minutes: OTP_EXPIRY_MINUTES,
-        expiryMinutes: OTP_EXPIRY_MINUTES,
+        expiry_minutes: expiresInMinutes,
+        expiryMinutes: expiresInMinutes,
       },
     });
   } catch (error) {
     logEmailFailure("Signup OTP", error);
-    await VerificationCode.deleteMany({ email, purpose: "signup" });
+    await deleteOtpVerifications({ email, purpose: "signup" });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -515,7 +459,7 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
 
   if (!delivery.delivered) {
     logEmailFailure("Signup OTP", new Error(delivery.reason || "Mail delivery failed"));
-    await VerificationCode.deleteMany({ email, purpose: "signup" });
+    await deleteOtpVerifications({ email, purpose: "signup" });
     throw new AppError(
       "OTP email could not be sent. Please check mail settings and try again.",
       502
@@ -524,7 +468,7 @@ const requestSignupOtp = asyncHandler(async (req, res) => {
 
   const response = {
     message: "Signup OTP sent successfully",
-    expiresInMinutes: OTP_EXPIRY_MINUTES,
+    expiresInMinutes: expiresInMinutes,
     deliveryMethod: delivery.delivered ? "email" : "dev",
   };
 
@@ -549,29 +493,21 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpiresAt) {
-    throw new AppError("OTP reset request not found", 400);
+  if (!user) {
+    throw new AppError("OTP is invalid or expired. Please request a new one.", 400);
   }
 
-  if (user.passwordResetOtpExpiresAt.getTime() < Date.now()) {
-    user.passwordResetOtp = "";
-    user.passwordResetOtpExpiresAt = null;
-    await user.save();
-    throw new AppError("OTP has expired. Please request a new one", 400);
-  }
-
-  const isOtpValid = await bcrypt.compare(otp, user.passwordResetOtp);
-
-  if (!isOtpValid) {
-    throw new AppError("Invalid OTP", 400);
-  }
+  await verifyOtpCode({
+    email,
+    purpose: "password-reset",
+    userId: user._id,
+    otp,
+  });
 
   user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS);
   user.tokenVersion = Number(user.tokenVersion || 0) + 1;
-  user.passwordResetOtp = "";
-  user.passwordResetOtpExpiresAt = null;
-  user.passwordResetOtpRequestedAt = null;
   await user.save();
+  await deleteOtpVerifications({ email, purpose: "password-reset", userId: user._id });
 
   return res.json({ message: "Password reset successful" });
 });

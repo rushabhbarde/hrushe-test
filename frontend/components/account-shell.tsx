@@ -30,7 +30,7 @@ const navigationItems: {
   { id: "profile", label: "Profile", description: "Personal details and account identity" },
   { id: "addresses", label: "Address book", description: "Shipping addresses and defaults" },
   { id: "orders", label: "Orders", description: "History, tracking, and reorder" },
-  { id: "wishlist", label: "Wishlist", description: "Saved products and move to cart" },
+  { id: "wishlist", label: "Saved", description: "Saved products and move to cart" },
   { id: "preferences", label: "Preferences", description: "Sizing, fit, and color tastes" },
   { id: "notifications", label: "Notifications", description: "Email and WhatsApp settings" },
   { id: "support", label: "Support", description: "Track, return, exchange, and contact help" },
@@ -77,7 +77,7 @@ function AccountNavIcon({ id }: { id: AccountSectionId }) {
     case "wishlist":
       return (
         <svg {...sharedProps}>
-          <path d="M12 20s-6.8-4.3-6.8-9.6A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 6.8 2.4C18.8 15.7 12 20 12 20Z" />
+          <path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.6L12 15.5l-6.5 4.1V6A1.5 1.5 0 0 1 7 4.5Z" />
         </svg>
       );
     case "preferences":

@@ -38,8 +38,8 @@ export function WishlistButton({
         toggleWishlist(productId);
         pushToast(
           active
-            ? "Removed from favourites."
-            : "Added to favourites. Ready whenever you are."
+            ? "Removed from saved."
+            : "Saved. Ready whenever you are."
         );
       }}
       className={className}
@@ -49,9 +49,9 @@ export function WishlistButton({
         className={iconClassName || "h-5 w-5"}
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.9"
       >
-        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+        <path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.6L12 15.5l-6.5 4.1V6A1.5 1.5 0 0 1 7 4.5Z" strokeLinejoin="round" />
       </svg>
     </button>
   );

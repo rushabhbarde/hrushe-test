@@ -6,6 +6,12 @@ const {
   buildSupportRequestAdminEmail,
   buildSupportStatusEmail,
 } = require("../utils/emailTemplates");
+const {
+  buildPaginationMeta,
+  parsePaginationQuery,
+  sendListResponse,
+} = require("../utils/pagination");
+const { logEvent } = require("../utils/logger");
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_CATEGORIES = [
@@ -130,11 +136,11 @@ async function notifyTeam(request, customerName, customerEmail) {
       throw new Error(delivery.reason || "Support request email delivery failed");
     }
   } catch (error) {
-    console.error("Support request email failed", {
+    logEvent("support.request.email_failed", {
       message: error?.message,
       code: error?.code,
       responseCode: error?.responseCode,
-    });
+    }, "error");
   }
 }
 
@@ -189,6 +195,10 @@ const createSupportTicket = asyncHandler(async (req, res) => {
 
 const getSupportRequests = asyncHandler(async (req, res) => {
   const filter = {};
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 50,
+    maxLimit: 100,
+  });
 
   if (req.query.status) {
     filter.status = String(req.query.status);
@@ -224,11 +234,26 @@ const getSupportRequests = asyncHandler(async (req, res) => {
     }
   }
 
-  const requests = await SupportRequest.find(filter)
-    .populate("userId", "name email phone")
-    .sort({ createdAt: -1 });
+  const [requests, total] = await Promise.all([
+    SupportRequest.find(filter)
+      .populate("userId", "name email phone")
+      .sort({ createdAt: -1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    SupportRequest.countDocuments(filter),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
+  });
 
-  return res.json(requests.map(serializeTicket));
+  return sendListResponse(
+    res,
+    req.query,
+    requests.map(serializeTicket),
+    pagination
+  );
 });
 
 const getSupportRequestById = asyncHandler(async (req, res) => {
@@ -297,12 +322,12 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
         throw new Error(delivery.reason || "Support status email delivery failed");
       }
     } catch (error) {
-      console.error("Support status email failed", {
+      logEvent("support.status.email_failed", {
         message: error?.message,
         code: error?.code,
         response: error?.response,
         responseCode: error?.responseCode,
-      });
+      }, "error");
     }
   }
 

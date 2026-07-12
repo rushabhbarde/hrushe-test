@@ -4,6 +4,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
 const { buildNewsletterSignupAdminEmail } = require("../utils/emailTemplates");
+const { logEvent } = require("../utils/logger");
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,12 +42,12 @@ const subscribeToNewsletter = asyncHandler(async (req, res) => {
         throw new Error(delivery.reason || "Newsletter email delivery failed");
       }
     } catch (error) {
-      console.error("Newsletter notification email failed", {
+      logEvent("newsletter.notification.email_failed", {
         message: error?.message,
         code: error?.code,
         response: error?.response,
         responseCode: error?.responseCode,
-      });
+      }, "error");
     }
   }
 

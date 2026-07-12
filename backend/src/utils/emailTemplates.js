@@ -278,14 +278,25 @@ const buildWelcomeEmail = ({ name }) =>
 
 const buildOtpEmail = ({ purpose, otp, expiryMinutes, email }) => {
   const isSignup = purpose === "signup";
+  const isEmailChange = purpose === "email-change";
 
   return renderEmailContent({
-    preheader: isSignup ? "Your signup OTP is here." : "Your password reset OTP is here.",
-    eyebrow: isSignup ? "Email Verification" : "Password Reset",
-    title: isSignup ? "Confirm your email." : "Reset your password.",
+    preheader: isSignup
+      ? "Your signup OTP is here."
+      : isEmailChange
+        ? "Your email change OTP is here."
+        : "Your password reset OTP is here.",
+    eyebrow: isSignup || isEmailChange ? "Email Verification" : "Password Reset",
+    title: isSignup
+      ? "Confirm your email."
+      : isEmailChange
+        ? "Confirm your new email."
+        : "Reset your password.",
     intro: isSignup
       ? "Use the one-time code below to finish creating your HRUSHE account."
-      : "Use the one-time code below to continue resetting your HRUSHE password.",
+      : isEmailChange
+        ? "Use the one-time code below to confirm this new email for your HRUSHE account."
+        : "Use the one-time code below to continue resetting your HRUSHE password.",
     sections: [
       buildCodeBlock({
         label: "One-time code",
@@ -302,7 +313,7 @@ const buildOtpEmail = ({ purpose, otp, expiryMinutes, email }) => {
       }),
     ],
     ctaLabel: "Continue to HRUSHE",
-    ctaUrl: buildSiteUrl(isSignup ? "/signup" : "/login"),
+    ctaUrl: buildSiteUrl(isSignup ? "/signup" : isEmailChange ? "/account" : "/login"),
     closingNote: "For support, reply to this email or contact team@hrushe.in.",
   });
 };

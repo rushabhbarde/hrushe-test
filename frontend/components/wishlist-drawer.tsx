@@ -48,7 +48,7 @@ export function WishlistDrawer() {
     <div className="fixed inset-0 z-50">
       <button
         type="button"
-        aria-label="Close wishlist drawer"
+        aria-label="Close saved drawer"
         className="absolute inset-0 bg-black/35"
         onClick={closeWishlist}
       />
@@ -61,14 +61,14 @@ export function WishlistDrawer() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="eyebrow text-[var(--muted)]">Favourites</p>
-            <h2 id="wishlist-drawer-title" className="mt-2 text-2xl font-semibold">Favourites</h2>
+            <p className="eyebrow text-[var(--muted)]">Saved</p>
+            <h2 id="wishlist-drawer-title" className="mt-2 text-2xl font-semibold">Saved pieces</h2>
           </div>
           <button
             type="button"
             ref={initialFocusRef}
             onClick={closeWishlist}
-            aria-label="Close wishlist"
+            aria-label="Close saved"
             className="flex h-10 w-10 items-center justify-center border border-[var(--border)]"
           >
             ×
@@ -78,7 +78,7 @@ export function WishlistDrawer() {
         <div className="hide-scrollbar mt-6 flex-1 space-y-5 overflow-y-auto">
           {wishlistProducts.length === 0 ? (
             <div className="empty-shell p-6">
-              <p className="text-lg font-semibold">Your wishlist is empty.</p>
+              <p className="text-lg font-semibold">No saved pieces yet.</p>
               <p className="mt-3 text-sm text-[var(--muted)]">
                 Save pieces you love and find them here later.
               </p>
@@ -126,10 +126,10 @@ export function WishlistDrawer() {
                         window.setTimeout(() => {
                           removeWishlistItem(product.id);
                           setRemovingIds((current) => current.filter((id) => id !== product.id));
-                          pushToast("Removed from wishlist", "error");
+                          pushToast("Removed from saved", "error");
                         }, 220);
                       }}
-                      aria-label={`Remove ${product.name} from wishlist`}
+                      aria-label={`Remove ${product.name} from saved`}
                       className="absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-white text-[var(--foreground)] transition hover:border-[var(--foreground)]"
                     >
                       <svg
@@ -137,10 +137,10 @@ export function WishlistDrawer() {
                         className="h-5 w-5"
                         fill="currentColor"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="1.9"
                         aria-hidden="true"
                       >
-                        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+                        <path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.6L12 15.5l-6.5 4.1V6A1.5 1.5 0 0 1 7 4.5Z" strokeLinejoin="round" />
                       </svg>
                     </button>
                   </div>

@@ -6,6 +6,12 @@ const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const { hasAdminPermission } = require("../config/adminRoles");
 const { recordAuditLog } = require("../utils/auditLog");
+const {
+  buildPaginationMeta,
+  parsePaginationQuery,
+  sendListResponse,
+} = require("../utils/pagination");
+const { getPaiseValue, paiseToRupees, rupeesToPaise } = require("../utils/money");
 const productListCache = new Map();
 const PRODUCT_LIST_CACHE_TTL = 60 * 1000;
 
@@ -123,13 +129,61 @@ const PRODUCT_DETAIL_FIELDS = [
   "modelHeight",
   "modelWornSize",
 ];
-const PRODUCT_STATUSES = ["Active", "Draft", "Hidden", "Sold Out"];
+const PRODUCT_STATUSES = [
+  "Active",
+  "Draft",
+  "Hidden",
+  "Sold Out",
+  "active",
+  "draft",
+  "hidden",
+  "archived",
+  "sold_out",
+];
 const PRODUCT_FIT_TYPES = ["Oversized", "Regular", ""];
 const PRODUCT_GENDERS = ["Men", "Women", "Unisex", ""];
 const PRODUCT_COLLECTION_LABELS = ["New In", "Featured", "Collection"];
 
 const normalizeOptionalText = (value) =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeStatusKey = (status) => {
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (!normalized) {
+    return "active";
+  }
+
+  if (normalized === "sold_out") {
+    return "sold_out";
+  }
+
+  return normalized;
+};
+
+const isActiveStatus = (status) =>
+  !status || ["active"].includes(normalizeStatusKey(status));
+
+const isSoldOutStatus = (status) => normalizeStatusKey(status) === "sold_out";
+const isArchivedStatus = (status) => normalizeStatusKey(status) === "archived";
+
+const normalizeSku = (value) => normalizeOptionalText(value).toUpperCase();
+
+const parseNonNegativeInteger = (value, label, defaultValue = 0) => {
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new AppError(`${label} must be a non-negative whole number`, 400);
+  }
+
+  return parsed;
+};
 
 const normalizeProductSizeGuide = (value) => {
   if (!Array.isArray(value)) {
@@ -151,22 +205,55 @@ const normalizeProductSizeGuide = (value) => {
     );
 };
 
-const normalizeProductVariants = (value) => {
+const normalizeProductVariants = (value, { existingVariants = [], preserveReserved = false } = {}) => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value
-    .map((variant) => ({
-      sku: normalizeOptionalText(variant?.sku).toUpperCase(),
-      size: normalizeOptionalText(variant?.size),
-      color: normalizeOptionalText(variant?.color),
-      fit: normalizeOptionalText(variant?.fit),
-      stock: Math.max(0, Number.parseInt(variant?.stock, 10) || 0),
-      reserved: Math.max(0, Number.parseInt(variant?.reserved, 10) || 0),
-      active: variant?.active !== false,
-    }))
+  const existingBySku = new Map(
+    existingVariants
+      .map((variant) => [normalizeSku(variant?.sku), variant])
+      .filter(([sku]) => sku)
+  );
+
+  const normalizedVariants = value
+    .map((variant) => {
+      const sku = normalizeSku(variant?.sku);
+      const submittedReserved = variant?.reserved;
+
+      if (submittedReserved !== undefined && submittedReserved !== null && submittedReserved !== "") {
+        parseNonNegativeInteger(submittedReserved, "Reserved stock");
+      }
+
+      return {
+        sku,
+        size: normalizeOptionalText(variant?.size),
+        color: normalizeOptionalText(variant?.color),
+        fit: normalizeOptionalText(variant?.fit),
+        stock: parseNonNegativeInteger(variant?.stock, "Stock"),
+        reserved: preserveReserved
+          ? parseNonNegativeInteger(existingBySku.get(sku)?.reserved, "Reserved stock")
+          : 0,
+        active: variant?.active !== false,
+      };
+    })
     .filter((variant) => variant.sku);
+
+  if (preserveReserved) {
+    const nextSkus = new Set(normalizedVariants.map((variant) => variant.sku));
+    const removedReservedVariant = existingVariants.find(
+      (variant) => normalizeSku(variant?.sku) && Number(variant?.reserved || 0) > 0 && !nextSkus.has(normalizeSku(variant.sku))
+    );
+
+    if (removedReservedVariant) {
+      throw new AppError(
+        "Variants with active reserved inventory cannot be removed or have their SKU changed.",
+        409
+      );
+    }
+  }
+
+  return normalizedVariants;
 };
 
 const isApprovedReview = (review) =>
@@ -178,11 +265,14 @@ const canViewUnpublishedProducts = (req) =>
   hasAdminPermission(req.user, "products.view");
 
 const publicProductConditions = [
-  { $or: [{ status: "Active" }, { status: { $exists: false } }] },
+  { $or: [{ status: { $in: ["Active", "active"] } }, { status: { $exists: false } }] },
   { name: { $not: /^test(?:\s|$)/i } },
 ];
 
-const normalizeProductPayload = (payload, { partial = false } = {}) => {
+const normalizeProductPayload = (
+  payload,
+  { partial = false, existingVariants = [], preserveReserved = false } = {}
+) => {
   const normalized = {};
 
   if (!partial || payload.name !== undefined) {
@@ -199,10 +289,23 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
 
   if (!partial || payload.price !== undefined) {
     normalized.price = payload.price;
+    normalized.pricePaise = payload.pricePaise !== undefined
+      ? payload.pricePaise
+      : rupeesToPaise(payload.price);
+  } else if (payload.pricePaise !== undefined) {
+    normalized.pricePaise = payload.pricePaise;
+    normalized.price = paiseToRupees(payload.pricePaise);
   }
 
   if (!partial || payload.compareAtPrice !== undefined) {
     normalized.compareAtPrice = payload.compareAtPrice;
+    normalized.compareAtPricePaise =
+      payload.compareAtPrice !== undefined && payload.compareAtPrice !== null
+        ? rupeesToPaise(payload.compareAtPrice)
+        : undefined;
+  } else if (payload.compareAtPricePaise !== undefined) {
+    normalized.compareAtPricePaise = payload.compareAtPricePaise;
+    normalized.compareAtPrice = paiseToRupees(payload.compareAtPricePaise);
   }
 
   if (
@@ -243,6 +346,10 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
     normalized.status = PRODUCT_STATUSES.includes(payload.status)
       ? payload.status
       : "Draft";
+    if (normalized.status !== "archived") {
+      normalized.archivedAt = null;
+      normalized.archivedFromStatus = "";
+    }
   }
 
   if (!partial || payload.fitType !== undefined) {
@@ -268,7 +375,10 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
   }
 
   if (!partial || payload.variants !== undefined) {
-    normalized.variants = normalizeProductVariants(payload.variants);
+    normalized.variants = normalizeProductVariants(payload.variants, {
+      existingVariants,
+      preserveReserved,
+    });
   }
 
   PRODUCT_DETAIL_FIELDS.forEach((field) => {
@@ -313,7 +423,7 @@ const normalizeProductPayload = (payload, { partial = false } = {}) => {
 };
 
 const getAvailability = (product) => {
-  if (product.status === "Sold Out") {
+  if (isSoldOutStatus(product.status)) {
     return "sold-out";
   }
 
@@ -327,14 +437,18 @@ const getAvailability = (product) => {
 };
 
 const getValidCompareAtPrice = (product) =>
-  Number(product.compareAtPrice) > Number(product.price) ? Number(product.compareAtPrice) : undefined;
+  getPaiseValue(product, "compareAtPricePaise", "compareAtPrice") >
+  getPaiseValue(product, "pricePaise", "price")
+    ? paiseToRupees(getPaiseValue(product, "compareAtPricePaise", "compareAtPrice"))
+    : undefined;
 
 const mapPublicProductListItem = (product) => ({
   id: product._id.toString(),
   slug: correctLegacySlug(product.slug),
   displayName: correctLegacyText(product.name),
   colour: correctLegacyText(product.colors?.[0] || ""),
-  price: Number(product.price) || 0,
+  price: paiseToRupees(getPaiseValue(product, "pricePaise", "price")),
+  pricePaise: getPaiseValue(product, "pricePaise", "price"),
   ...(getValidCompareAtPrice(product) ? { compareAtPrice: getValidCompareAtPrice(product) } : {}),
   thumbnailUrl: (product.images || []).find(isUsableMediaUrl) || "",
   availability: getAvailability(product),
@@ -357,7 +471,7 @@ const mapAdminProductListItem = (product) => ({
 });
 
 const assertActiveProductIsComplete = (product) => {
-  if (product.status !== "Active") {
+  if (!isActiveStatus(product.status)) {
     return;
   }
 
@@ -366,7 +480,7 @@ const assertActiveProductIsComplete = (product) => {
   if (!String(product.name || "").trim()) missing.push("name");
   if (!String(product.slug || "").trim()) missing.push("slug");
   if (!String(product.description || "").trim()) missing.push("factual description");
-  if (!(Number(product.price) > 0)) missing.push("price");
+  if (!(getPaiseValue(product, "pricePaise", "price") > 0)) missing.push("price");
   if (!String(product.category || "").trim()) missing.push("category");
   if (!Array.isArray(product.colors) || product.colors.length === 0) missing.push("colour");
   if (!Array.isArray(product.sizes) || product.sizes.length === 0) missing.push("size options");
@@ -399,7 +513,9 @@ const getProductDetailResponse = async (product, { includePrivate = false } = {}
     ...productData,
     name: correctLegacyText(productData.name),
     slug: correctLegacySlug(productData.slug),
+    price: paiseToRupees(getPaiseValue(productData, "pricePaise", "price")),
     compareAtPrice: getValidCompareAtPrice(productData),
+    pricePaise: getPaiseValue(productData, "pricePaise", "price"),
     images: (productData.images || []).filter(isUsableMediaUrl),
     galleryImages: (productData.galleryImages || []).filter(isUsableMediaUrl),
     videos: (productData.videos || [])
@@ -453,6 +569,10 @@ const getProductDetailResponse = async (product, { includePrivate = false } = {}
 const getProducts = asyncHandler(async (req, res) => {
   const includePrivate = canViewUnpublishedProducts(req);
   const { category, featured, bestSeller, newIn, newArrival, q } = req.query;
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: includePrivate ? 50 : 100,
+    maxLimit: 100,
+  });
   const cacheKey = JSON.stringify({
     category: category || "",
     featured: featured || "",
@@ -461,6 +581,8 @@ const getProducts = asyncHandler(async (req, res) => {
     newArrival: newArrival || "",
     q: q || "",
     includePrivate,
+    page: paginationParams.page,
+    limit: paginationParams.limit,
   });
   const cached = productListCache.get(cacheKey);
 
@@ -469,7 +591,7 @@ const getProducts = asyncHandler(async (req, res) => {
       "Cache-Control",
       includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
     );
-    return res.json(cached.data);
+    return sendListResponse(res, req.query, cached.data, cached.pagination);
   }
 
   const query = {};
@@ -536,9 +658,19 @@ const getProducts = asyncHandler(async (req, res) => {
     query.$and = andConditions;
   }
 
-  const products = await Product.find(query)
-    .sort({ createdAt: -1, name: 1 })
-    .lean();
+  const [products, total] = await Promise.all([
+    Product.find(query)
+      .sort({ createdAt: -1, name: 1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit)
+      .lean(),
+    Product.countDocuments(query),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
+  });
   const data = products.map((product) =>
     includePrivate ? mapAdminProductListItem(product) : mapPublicProductListItem(product)
   );
@@ -546,13 +678,14 @@ const getProducts = asyncHandler(async (req, res) => {
   productListCache.set(cacheKey, {
     timestamp: Date.now(),
     data,
+    pagination,
   });
 
   res.set(
     "Cache-Control",
     includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
   );
-  return res.json(data);
+  return sendListResponse(res, req.query, data, pagination);
 });
 
 const getProductSitemapEntries = asyncHandler(async (req, res) => {
@@ -622,7 +755,6 @@ const createProduct = asyncHandler(async (req, res) => {
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
   assertNoEmbeddedMedia(req.body);
-  const update = normalizeProductPayload(req.body, { partial: true });
   const query = mongoose.Types.ObjectId.isValid(id)
     ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
     : { slug: id.toLowerCase() };
@@ -632,6 +764,11 @@ const updateProduct = asyncHandler(async (req, res) => {
     throw new AppError("Product not found", 404);
   }
 
+  const update = normalizeProductPayload(req.body, {
+    partial: true,
+    existingVariants: product.variants || [],
+    preserveReserved: true,
+  });
   const previousPrice = product.price;
   const previousStatus = product.status;
   Object.assign(product, update);
@@ -707,29 +844,57 @@ const addProductReview = asyncHandler(async (req, res) => {
 });
 
 const getAdminProductReviews = asyncHandler(async (req, res) => {
-  const products = await Product.find({ "reviews.0": { $exists: true } })
-    .select("name reviews")
-    .sort({ updatedAt: -1 })
-    .lean();
-
-  const reviews = products.flatMap((product) =>
-    product.reviews.map((review) => ({
-      productId: product._id.toString(),
-      productName: product.name,
-      review: {
-        id: review._id.toString(),
-        reviewerName: review.reviewerName,
-        quote: review.quote,
-        rating: review.rating,
-        photo: review.photo,
-        status: review.status || "approved",
-        verifiedPurchase: Boolean(review.verifiedPurchase),
-        createdAt: review.createdAt,
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 50,
+    maxLimit: 100,
+  });
+  const match = { "reviews.0": { $exists: true } };
+  const [rows, totals] = await Promise.all([
+    Product.aggregate([
+      { $match: match },
+      { $unwind: "$reviews" },
+      { $sort: { "reviews.createdAt": -1, updatedAt: -1 } },
+      { $skip: paginationParams.skip },
+      { $limit: paginationParams.limit },
+      {
+        $project: {
+          productId: { $toString: "$_id" },
+          productName: "$name",
+          review: {
+            id: { $toString: "$reviews._id" },
+            reviewerName: "$reviews.reviewerName",
+            quote: "$reviews.quote",
+            rating: "$reviews.rating",
+            photo: "$reviews.photo",
+            status: { $ifNull: ["$reviews.status", "approved"] },
+            verifiedPurchase: "$reviews.verifiedPurchase",
+            createdAt: "$reviews.createdAt",
+          },
+        },
       },
-    }))
-  );
+    ]),
+    Product.aggregate([
+      { $match: match },
+      { $unwind: "$reviews" },
+      { $count: "total" },
+    ]),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total: totals[0]?.total || 0,
+  });
+  const reviews = rows.map((row) => ({
+    productId: row.productId,
+    productName: correctLegacyText(row.productName),
+    review: {
+      ...row.review,
+      photo: isUsableMediaUrl(row.review?.photo) ? row.review.photo : "",
+      verifiedPurchase: Boolean(row.review?.verifiedPurchase),
+    },
+  }));
 
-  return res.json({ reviews });
+  return res.json({ reviews, pagination });
 });
 
 const updateProductReviewStatus = asyncHandler(async (req, res) => {
@@ -769,15 +934,105 @@ const deleteProduct = asyncHandler(async (req, res) => {
   const query = mongoose.Types.ObjectId.isValid(id)
     ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
     : { slug: id.toLowerCase() };
-  const product = await Product.findOneAndDelete(query);
+  const product = await Product.findOne(query);
 
   if (!product) {
     throw new AppError("Product not found", 404);
   }
 
+  const hasReservedInventory = (product.variants || []).some(
+    (variant) => Number(variant?.reserved || 0) > 0
+  );
+
+  if (hasReservedInventory) {
+    throw new AppError("Products with active reserved inventory cannot be archived.", 409);
+  }
+
+  if (!isArchivedStatus(product.status)) {
+    product.archivedFromStatus = product.status || "Draft";
+    product.status = "archived";
+    product.archivedAt = new Date();
+    await product.save();
+    await recordAuditLog(req, "product.archive", { type: "product", id: product._id }, {
+      archivedFromStatus: product.archivedFromStatus,
+    });
+  }
   clearProductListCache();
 
-  return res.json({ message: "Product deleted successfully" });
+  return res.json({ message: "Product archived successfully", product });
+});
+
+const restoreProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const query = mongoose.Types.ObjectId.isValid(id)
+    ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
+    : { slug: id.toLowerCase() };
+  const product = await Product.findOne(query);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  if (!isArchivedStatus(product.status)) {
+    return res.json({ message: "Product is already active in the catalog lifecycle.", product });
+  }
+
+  const nextStatus = PRODUCT_STATUSES.includes(product.archivedFromStatus)
+    ? product.archivedFromStatus
+    : "Draft";
+  product.status = isArchivedStatus(nextStatus) ? "Draft" : nextStatus;
+  product.archivedAt = null;
+  product.archivedFromStatus = "";
+  assertActiveProductIsComplete(product);
+  await product.save();
+  clearProductListCache();
+  await recordAuditLog(req, "product.restore", { type: "product", id: product._id }, {
+    status: product.status,
+  });
+
+  return res.json({ message: "Product restored successfully", product });
+});
+
+const permanentlyDeleteProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const confirmation = String(req.body?.confirmation || req.query?.confirmation || "").trim();
+
+  if (confirmation !== "DELETE_PERMANENTLY") {
+    throw new AppError("Permanent deletion requires confirmation.", 400);
+  }
+
+  const query = mongoose.Types.ObjectId.isValid(id)
+    ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
+    : { slug: id.toLowerCase() };
+  const product = await Product.findOne(query);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  const [referencedOrder, hasReservedInventory] = await Promise.all([
+    Order.exists({ "products.productId": product._id }),
+    Promise.resolve(
+      (product.variants || []).some((variant) => Number(variant?.reserved || 0) > 0)
+    ),
+  ]);
+
+  if (referencedOrder) {
+    throw new AppError("Products referenced by orders cannot be permanently deleted.", 409);
+  }
+
+  if (hasReservedInventory) {
+    throw new AppError("Products with active reserved inventory cannot be permanently deleted.", 409);
+  }
+
+  await product.deleteOne();
+  clearProductListCache();
+  await recordAuditLog(req, "product.permanent-delete", { type: "product", id: product._id }, {
+    slug: product.slug,
+    name: product.name,
+  });
+
+  return res.json({ message: "Product permanently deleted." });
 });
 
 module.exports = {
@@ -790,4 +1045,12 @@ module.exports = {
   getAdminProductReviews,
   updateProductReviewStatus,
   deleteProduct,
+  restoreProduct,
+  permanentlyDeleteProduct,
+  __private: {
+    isArchivedStatus,
+    isActiveStatus,
+    normalizeProductPayload,
+    normalizeProductVariants,
+  },
 };

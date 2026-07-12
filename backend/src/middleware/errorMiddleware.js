@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
 const AppError = require("../utils/AppError");
+const { captureError } = require("../utils/errorMonitoring");
+const { getRequestId, logEvent } = require("../utils/logger");
 
 const notFound = (req, res, next) => {
   next(new AppError(`Route not found: ${req.originalUrl}`, 404));
@@ -17,7 +19,15 @@ const errorHandler = (error, req, res, next) => {
   } else if (normalizedError.name === "ValidationError") {
     normalizedError = new AppError(normalizedError.message, 400);
   } else if (normalizedError.code === 11000) {
-    normalizedError = new AppError("A record with this value already exists", 409);
+    const duplicateFields = Object.keys(normalizedError.keyPattern || normalizedError.keyValue || {});
+    const duplicateField = duplicateFields[0] || "";
+    const message =
+      duplicateField === "phone"
+        ? "Phone number is already in use"
+        : duplicateField === "email"
+          ? "Email is already in use"
+          : "A record with this value already exists";
+    normalizedError = new AppError(message, 409);
   } else if (!normalizedError.isOperational) {
     normalizedError = new AppError(
       normalizedError.message || "Internal server error",
@@ -28,7 +38,23 @@ const errorHandler = (error, req, res, next) => {
   const statusCode = normalizedError.statusCode || 500;
 
   if (statusCode >= 500) {
-    console.error(normalizedError);
+    captureError(normalizedError, {
+      requestId: getRequestId(req),
+      method: req.method,
+      path: req.originalUrl || req.url,
+      userId: req.user?._id?.toString?.() || "",
+    });
+  } else {
+    logEvent(
+      "http.request.error",
+      {
+        statusCode,
+        method: req.method,
+        path: req.originalUrl || req.url,
+        message: normalizedError.message,
+      },
+      "warn"
+    );
   }
 
   const publicMessage =
@@ -39,6 +65,7 @@ const errorHandler = (error, req, res, next) => {
   res.status(statusCode).json({
     message: publicMessage,
     status: normalizedError.status || "error",
+    requestId: getRequestId(req),
   });
 };
 

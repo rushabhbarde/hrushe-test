@@ -41,6 +41,11 @@ const siteContentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: () => ({}),
     },
+    adminWorkspaceVersion: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
   },
   { timestamps: true }
 );

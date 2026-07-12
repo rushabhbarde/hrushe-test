@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Counter = require("./Counter");
+const { paiseToRupees, rupeesToPaise } = require("../utils/money");
 
 const orderProductSchema = new mongoose.Schema(
   {
@@ -32,6 +33,15 @@ const orderProductSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+    },
+    pricePaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order item pricePaise must be an integer.",
+      },
+      default: undefined,
     },
     name: {
       type: String,
@@ -154,6 +164,60 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    subtotalPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order subtotalPaise must be an integer.",
+      },
+      default: undefined,
+    },
+    discountPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order discountPaise must be an integer.",
+      },
+      default: 0,
+    },
+    shippingPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order shippingPaise must be an integer.",
+      },
+      default: 0,
+    },
+    taxPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order taxPaise must be an integer.",
+      },
+      default: 0,
+    },
+    totalPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order totalPaise must be an integer.",
+      },
+      default: undefined,
+    },
+    refundPaise: {
+      type: Number,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Order refundPaise must be an integer.",
+      },
+      default: 0,
+    },
     shippingAddress: {
       type: String,
       required: true,
@@ -247,6 +311,25 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    paymentReconciliationStartedAt: {
+      type: Date,
+      default: null,
+    },
+    paymentReconciliationResultCode: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    paymentReconciliationLockId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    paymentReconciliationActorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -283,11 +366,38 @@ orderSchema.pre("save", async function assignOrderNumber() {
   this.orderNumber = counter.value;
 });
 
+orderSchema.pre("validate", function normalizeMoneyFields() {
+  this.products = (this.products || []).map((item) => {
+    if (item.pricePaise === undefined || item.pricePaise === null) {
+      item.pricePaise = rupeesToPaise(item.price);
+    } else {
+      item.price = paiseToRupees(item.pricePaise);
+    }
+    return item;
+  });
+
+  if (this.totalPaise === undefined || this.totalPaise === null) {
+    this.totalPaise = rupeesToPaise(this.totalAmount);
+  } else {
+    this.totalAmount = paiseToRupees(this.totalPaise);
+  }
+
+  if (this.subtotalPaise === undefined || this.subtotalPaise === null) {
+    this.subtotalPaise = this.products.reduce(
+      (sum, item) => sum + Number(item.pricePaise || 0) * Number(item.quantity || 0),
+      0
+    );
+  }
+});
+
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, createdAt: -1 });
 orderSchema.index({ customerEmail: 1, createdAt: -1 });
 orderSchema.index({ inventoryReservationStatus: 1, inventoryReservationExpiresAt: 1 });
+orderSchema.index({ paymentReconciliationResultCode: 1, createdAt: -1 });
+orderSchema.index({ paymentReconciliationStartedAt: 1 });
+orderSchema.index({ totalPaise: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -1,6 +1,7 @@
 const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const Razorpay = require("razorpay");
 const env = require("../config/env");
 const AppError = require("../utils/AppError");
@@ -11,6 +12,29 @@ const { buildInvoicePdf } = require("../utils/invoicePdf");
 const { hasAdminPermission } = require("../config/adminRoles");
 const WebhookEvent = require("../models/WebhookEvent");
 const { recordAuditLog } = require("../utils/auditLog");
+const { logEvent } = require("../utils/logger");
+const { recordMetric } = require("../utils/metrics");
+const {
+  buildPaginationMeta,
+  parsePaginationQuery,
+  sendListResponse,
+  setPaginationHeaders,
+} = require("../utils/pagination");
+const {
+  calculateOrderTotals,
+  getPaiseValue,
+  paiseToRupees,
+} = require("../utils/money");
+const {
+  RECONCILIATION_LOCK_WINDOW_MS,
+  RECONCILIATION_RESULT_CODES,
+  buildReconciliationSummary,
+} = require("../utils/reconciliation");
+const {
+  buildReviewCandidateQuery,
+  mapReconciliationOrder,
+  scanStuckOrders,
+} = require("../services/reconciliationScanner");
 const {
   RESERVATION_WINDOW_MS,
   resolveCheckoutItems,
@@ -87,7 +111,8 @@ const buildCustomerOrderProducts = (products = []) =>
     size: item.size || "",
     color: item.color || "",
     fit: item.fit || "",
-    price: item.price,
+    price: paiseToRupees(getPaiseValue(item, "pricePaise", "price")),
+    pricePaise: getPaiseValue(item, "pricePaise", "price"),
     name: item.name,
     image: item.image || "",
   }));
@@ -108,6 +133,7 @@ const buildPublicTrackingResponse = (order) => ({
   trackingId: order.trackingId,
   trackingUrl: order.trackingUrl,
   totalAmount: order.totalAmount,
+  totalPaise: getPaiseValue(order, "totalPaise", "totalAmount"),
   products: buildCustomerOrderProducts(order.products),
   createdAt: order.createdAt,
   updatedAt: order.updatedAt,
@@ -232,6 +258,205 @@ const recordCheckoutLog = (order, event, source, payload = {}) => {
   });
 };
 
+const summarizeRazorpayPayment = (payment = {}) => ({
+  id: payment.id || "",
+  status: payment.status || "",
+  amount: Number(payment.amount) || 0,
+  currency: String(payment.currency || "").toUpperCase(),
+  method: payment.method || "",
+  captured: Boolean(payment.captured),
+  createdAt: payment.created_at ? new Date(Number(payment.created_at) * 1000) : null,
+  errorCode: payment.error_code || "",
+  errorDescription: payment.error_description || "",
+});
+
+const selectRazorpayPaymentForOrder = (order, response) => {
+  const expectedAmount = getPaiseValue(order, "totalPaise", "totalAmount");
+  const expectedCurrency = env.RAZORPAY_CURRENCY;
+  const payments = Array.isArray(response?.items)
+    ? [...response.items].sort((left, right) => Number(right.created_at || 0) - Number(left.created_at || 0))
+    : [];
+  const capturedPayments = payments.filter(
+    (payment) =>
+      payment.status === "captured" &&
+      payment.captured === true
+  );
+  const capturedPayment = capturedPayments.find(
+    (payment) =>
+      Number(payment.amount) === expectedAmount &&
+      String(payment.currency || "").toUpperCase() === expectedCurrency
+  );
+  const amountMismatchPayment = capturedPayments.find(
+    (payment) =>
+      Number(payment.amount) !== expectedAmount &&
+      String(payment.currency || "").toUpperCase() === expectedCurrency
+  );
+  const currencyMismatchPayment = capturedPayments.find(
+    (payment) =>
+      Number(payment.amount) === expectedAmount &&
+      String(payment.currency || "").toUpperCase() !== expectedCurrency
+  );
+  const failedPayment = payments.find((payment) => payment.status === "failed");
+
+  return {
+    capturedPayment,
+    amountMismatchPayment,
+    currencyMismatchPayment,
+    failedPayment,
+    latestPayment: payments[0] || null,
+    paymentCount: payments.length,
+  };
+};
+
+async function runWithOptionalTransaction(work) {
+  let session = null;
+
+  try {
+    session = await mongoose.startSession();
+    let result;
+    try {
+      await session.withTransaction(async () => {
+        result = await work(session);
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      const transactionUnsupported =
+        /transaction numbers|replica set|sharded cluster|transactions are not supported/i.test(message);
+      if (!transactionUnsupported) {
+        throw error;
+      }
+      result = await work(null);
+    }
+    return result;
+  } catch (error) {
+    if (session) {
+      throw error;
+    }
+    return work(null);
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
+  }
+}
+
+const hasTrackedInventory = (order) =>
+  (order.products || []).some((item) => item.inventoryTracked);
+
+const isReservationExpired = (order) =>
+  order.inventoryReservationExpiresAt &&
+  order.inventoryReservationExpiresAt.getTime() < Date.now();
+
+const createReconciliationLockId = () =>
+  typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : crypto.randomBytes(16).toString("hex");
+
+const getReconciliationActorId = (req) =>
+  mongoose.Types.ObjectId.isValid(req.user?._id) ? req.user._id : null;
+
+const assertReconciliationLockOwner = (order, lockId) => {
+  if (!lockId) {
+    return;
+  }
+
+  if (String(order.paymentReconciliationLockId || "") !== lockId) {
+    throw new AppError("Payment reconciliation lock ownership changed. Please retry.", 409);
+  }
+};
+
+const setReconciliationResult = (order, resultCode, lockId) => {
+  assertReconciliationLockOwner(order, lockId);
+  order.paymentReconciliationResultCode = resultCode;
+  order.paymentReconciliationStartedAt = null;
+  order.paymentReconciliationLockId = "";
+  order.paymentReconciliationActorId = null;
+};
+
+const escapeRegExp = (value) =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const parseDateFilter = (from, to) => {
+  const createdAt = {};
+  const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+
+  if (fromDate && !Number.isNaN(fromDate.getTime())) {
+    createdAt.$gte = fromDate;
+  }
+
+  if (toDate && !Number.isNaN(toDate.getTime())) {
+    createdAt.$lte = toDate;
+  }
+
+  return Object.keys(createdAt).length > 0 ? createdAt : null;
+};
+
+const buildReconciliationFilter = (query = {}, now = Date.now()) => {
+  const filter = {};
+  const clauses = [];
+
+  if (query.resultCode) {
+    filter.paymentReconciliationResultCode = String(query.resultCode).trim();
+  }
+
+  if (query.paymentStatus) {
+    filter.paymentStatus = String(query.paymentStatus).trim();
+  }
+
+  if (query.orderStatus) {
+    filter.orderStatus = String(query.orderStatus).trim();
+  }
+
+  if (query.checkoutProvider) {
+    filter.checkoutProvider = String(query.checkoutProvider).trim();
+  }
+
+  const createdAt = parseDateFilter(query.from, query.to);
+  if (createdAt) {
+    filter.createdAt = createdAt;
+  }
+
+  const search = String(query.search || "").trim();
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+    const searchClauses = [
+      { customerName: searchRegex },
+      { customerEmail: searchRegex },
+      { customerPhone: searchRegex },
+      { checkoutSessionId: searchRegex },
+    ];
+    if (/^\d+$/.test(search)) {
+      searchClauses.push({ orderNumber: Number(search) });
+    }
+    clauses.push({ $or: searchClauses });
+  }
+
+  const includeAll = ["true", "1", "yes"].includes(
+    String(query.includeAll || "").trim().toLowerCase()
+  );
+  if (!includeAll) {
+    clauses.push(buildReviewCandidateQuery(now));
+  }
+
+  if (clauses.length > 0) {
+    filter.$and = clauses;
+  }
+
+  return filter;
+};
+
+const normalizeOrderIdList = (value) => {
+  const rawIds = Array.isArray(value) ? value : [];
+  return Array.from(
+    new Set(
+      rawIds
+        .map((id) => String(id || "").trim())
+        .filter(Boolean)
+    )
+  );
+};
+
 const sendOrderEmail = async (order, subject, summaryLine) => {
   if (!order.customerEmail) {
     return;
@@ -258,13 +483,13 @@ const safelySendOrderEmail = async (order, subject, summaryLine) => {
   try {
     await sendOrderEmail(order, subject, summaryLine);
   } catch (error) {
-    console.error("Order email failed", {
+    logEvent("order.email.failed", {
       orderId: order?._id?.toString?.(),
       orderNumber: order?.orderNumber,
       message: error?.message,
       code: error?.code,
       responseCode: error?.responseCode,
-    });
+    }, "error");
   }
 };
 
@@ -288,20 +513,24 @@ const placeOrder = asyncHandler(async (req, res) => {
     quantity: item.quantity,
     size: item.size,
     color: item.color || "",
-    price: item.productId.price,
+    price: paiseToRupees(getPaiseValue(item.productId, "pricePaise", "price")),
+    pricePaise: getPaiseValue(item.productId, "pricePaise", "price"),
     name: item.productId.name,
     image: item.productId.images[0] || "",
   }));
 
-  const totalAmount = products.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const totals = calculateOrderTotals({ items: products });
+  const totalAmount = paiseToRupees(totals.totalPaise);
 
   const order = await Order.create({
     userId: req.user._id,
     products,
     totalAmount,
+    subtotalPaise: totals.subtotalPaise,
+    discountPaise: totals.discountPaise,
+    shippingPaise: totals.shippingPaise,
+    taxPaise: totals.taxPaise,
+    totalPaise: totals.totalPaise,
     shippingAddress,
     customerName: req.user.name,
     customerEmail: req.user.email,
@@ -316,11 +545,30 @@ const placeOrder = asyncHandler(async (req, res) => {
 });
 
 const getMyOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ userId: req.user._id }).sort({
-    createdAt: -1,
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 50,
+    maxLimit: 100,
+  });
+  const filter = { userId: req.user._id };
+  const [orders, total] = await Promise.all([
+    Order.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    Order.countDocuments(filter),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
   });
 
-  return res.json(orders.map(buildPublicTrackingResponse));
+  return sendListResponse(
+    res,
+    req.query,
+    orders.map(buildPublicTrackingResponse),
+    pagination
+  );
 });
 
 const getOrderById = asyncHandler(async (req, res) => {
@@ -415,12 +663,26 @@ const trackOrder = asyncHandler(async (req, res) => {
 });
 
 const getAllOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find()
-    .select("-checkoutLogs -checkoutUrl")
-    .populate("userId", "name email phone address")
-    .sort({ createdAt: -1 });
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 100,
+    maxLimit: 100,
+  });
+  const [orders, total] = await Promise.all([
+    Order.find()
+      .select("-checkoutLogs -checkoutUrl")
+      .populate("userId", "name email phone address")
+      .sort({ createdAt: -1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    Order.countDocuments({}),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
+  });
 
-  return res.json(orders);
+  return sendListResponse(res, req.query, orders, pagination);
 });
 
 const updateOrderStatus = asyncHandler(async (req, res) => {
@@ -552,10 +814,8 @@ const createCheckout = asyncHandler(async (req, res) => {
 
   const normalizedItems = await resolveCheckoutItems(items);
 
-  const totalAmount = normalizedItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const totals = calculateOrderTotals({ items: normalizedItems });
+  const totalAmount = paiseToRupees(totals.totalPaise);
 
   const hasInventoryReservation = await reserveInventory(normalizedItems);
 
@@ -564,7 +824,7 @@ const createCheckout = asyncHandler(async (req, res) => {
 
   try {
     razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100),
+      amount: totals.totalPaise,
       currency: env.RAZORPAY_CURRENCY,
       receipt: `hrushe_${Date.now().toString(36)}`,
       notes: {
@@ -577,7 +837,7 @@ const createCheckout = asyncHandler(async (req, res) => {
     if (hasInventoryReservation) {
       await releaseInventoryItems(normalizedItems);
     }
-    console.error("Razorpay order creation failed", {
+    logEvent("payment.razorpay_order.creation_failed", {
       message:
         error?.error?.description ||
         error?.description ||
@@ -590,7 +850,7 @@ const createCheckout = asyncHandler(async (req, res) => {
       reason: error?.error?.reason,
       statusCode: error?.statusCode || error?.error?.statusCode,
       metadata: error?.error?.metadata,
-    });
+    }, "error");
 
     throw new AppError(
       error?.error?.description ||
@@ -607,6 +867,11 @@ const createCheckout = asyncHandler(async (req, res) => {
       userId: req.user?._id || null,
       products: normalizedItems,
       totalAmount,
+      subtotalPaise: totals.subtotalPaise,
+      discountPaise: totals.discountPaise,
+      shippingPaise: totals.shippingPaise,
+      taxPaise: totals.taxPaise,
+      totalPaise: totals.totalPaise,
       shippingAddress,
       shippingAddressDetails,
       customerName: fullName,
@@ -639,6 +904,20 @@ const createCheckout = asyncHandler(async (req, res) => {
     }
     throw error;
   }
+
+  recordMetric("checkout.created", {
+    orderId: order._id.toString(),
+    checkoutProvider: order.checkoutProvider,
+    amountPaise: totals.totalPaise,
+    inventoryReserved: hasInventoryReservation,
+  });
+  logEvent("checkout.created", {
+    orderId: order._id.toString(),
+    orderNumber: order.orderNumber || null,
+    checkoutProvider: order.checkoutProvider,
+    checkoutSessionId: order.checkoutSessionId,
+    amountPaise: totals.totalPaise,
+  });
 
   return res.status(201).json({
     appOrderId: order.id,
@@ -717,6 +996,17 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     "Your HRUSHE order is confirmed",
     "Thank you for shopping with HRUSHE. Your order has been confirmed."
   );
+  recordMetric("payment.verified", {
+    orderId: order._id.toString(),
+    checkoutProvider: order.checkoutProvider,
+    amountPaise: getPaiseValue(order, "totalPaise", "totalAmount"),
+  });
+  logEvent("payment.verified", {
+    orderId: order._id.toString(),
+    orderNumber: order.orderNumber || null,
+    checkoutProvider: order.checkoutProvider,
+    checkoutSessionId: order.checkoutSessionId,
+  });
 
   return res.json({
     success: true,
@@ -744,7 +1034,10 @@ const failCheckout = asyncHandler(async (req, res) => {
   assertCheckoutStateToken(order, checkoutState);
 
   if (order.paymentStatus !== "paid") {
-    await releaseOrderInventory(order);
+    // Browser failure callbacks are not authoritative; Razorpay can still send
+    // a captured webhook after a customer closes or fails the checkout window.
+    // Keep the reservation until provider failure or expiry so late captures can
+    // still safely commit inventory.
     order.paymentStatus = req.method === "POST" ? "cancelled" : "failed";
   }
   recordCheckoutLog(order, "checkout_failure_return", "redirect", req.query);
@@ -775,7 +1068,6 @@ const cancelCheckout = asyncHandler(async (req, res) => {
   assertCheckoutStateToken(order, checkoutState);
 
   if (order.paymentStatus !== "paid") {
-    await releaseOrderInventory(order);
     order.paymentStatus = "cancelled";
     order.orderStatus = "Cancelled";
   }
@@ -869,7 +1161,7 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
 
   try {
     if (event === "payment.captured") {
-      const expectedAmount = Math.round(Number(order.totalAmount) * 100);
+      const expectedAmount = getPaiseValue(order, "totalPaise", "totalAmount");
       if (
         Number(paymentEntity?.amount) !== expectedAmount ||
         String(paymentEntity?.currency || "").toUpperCase() !== env.RAZORPAY_CURRENCY
@@ -897,14 +1189,510 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
     webhookEvent.status = "completed";
     webhookEvent.processedAt = new Date();
     await webhookEvent.save();
+    recordMetric("payment.webhook.processed", {
+      event,
+      status: "completed",
+      orderId: order._id.toString(),
+      checkoutProvider: order.checkoutProvider,
+    });
+    logEvent("payment.webhook.processed", {
+      event,
+      providerEventId,
+      orderId: order._id.toString(),
+      paymentStatus: order.paymentStatus,
+      orderStatus: order.orderStatus,
+    });
   } catch (error) {
     webhookEvent.status = "failed";
     webhookEvent.error = String(error?.message || "Webhook processing failed").slice(0, 500);
     await webhookEvent.save().catch(() => undefined);
+    recordMetric("payment.webhook.failed", {
+      event,
+      orderId: order._id.toString(),
+      checkoutProvider: order.checkoutProvider,
+    });
     throw error;
   }
 
   return res.json({ received: true });
+});
+
+const reconcileOrderForAdmin = async (req, orderId) => {
+  let order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  if (order.checkoutProvider !== "razorpay" || !order.checkoutSessionId) {
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+      reason: "missing-razorpay-order-id",
+    });
+    return {
+      statusCode: 400,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        message: "This order does not have a Razorpay checkout session.",
+        action: "manual-review",
+        order,
+      },
+    };
+  }
+
+  if (order.paymentStatus === "paid") {
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.ALREADY_RECONCILED,
+      checkoutSessionId: order.checkoutSessionId,
+    });
+    recordCheckoutLog(order, "razorpay_reconciliation_already_paid", "admin", {
+      resultCode: RECONCILIATION_RESULT_CODES.ALREADY_RECONCILED,
+    });
+    await order.save();
+    return {
+      statusCode: 200,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.ALREADY_RECONCILED,
+        message: "Order is already reconciled as paid.",
+        action: "no-change",
+        order,
+      },
+    };
+  }
+
+  const lockId = createReconciliationLockId();
+  const lockCutoff = new Date(Date.now() - RECONCILIATION_LOCK_WINDOW_MS);
+  const lockedOrder = await Order.findOneAndUpdate(
+    {
+      _id: order._id,
+      paymentStatus: { $ne: "paid" },
+      $or: [
+        { paymentReconciliationStartedAt: null },
+        { paymentReconciliationStartedAt: { $exists: false } },
+        { paymentReconciliationStartedAt: { $lte: lockCutoff } },
+      ],
+    },
+    {
+      $set: {
+        paymentReconciliationStartedAt: new Date(),
+        paymentReconciliationLockId: lockId,
+        paymentReconciliationActorId: getReconciliationActorId(req),
+      },
+    },
+    { new: true }
+  );
+
+  if (!lockedOrder) {
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.RECONCILIATION_ALREADY_RUNNING,
+      reason: "reconciliation-in-progress",
+      checkoutSessionId: order.checkoutSessionId,
+    });
+    return {
+      statusCode: 409,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.RECONCILIATION_ALREADY_RUNNING,
+        message: "This order is already being reconciled. Please retry shortly.",
+        action: "retry-later",
+        order,
+      },
+    };
+  }
+
+  order = lockedOrder;
+
+  let paymentsResponse;
+
+  try {
+    const razorpay = getRazorpayClient();
+    paymentsResponse = await razorpay.orders.fetchPayments(order.checkoutSessionId);
+  } catch (error) {
+    logEvent("payment.reconciliation.provider_fetch_failed", {
+      orderId: order._id.toString(),
+      checkoutSessionId: order.checkoutSessionId,
+      message:
+        error?.error?.description ||
+        error?.description ||
+        error?.message ||
+        "Unknown Razorpay error",
+      code: error?.error?.code || error?.code,
+      statusCode: error?.statusCode || error?.error?.statusCode,
+    }, "error");
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE,
+      checkoutSessionId: order.checkoutSessionId,
+    });
+    setReconciliationResult(order, RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE, lockId);
+    await order.save();
+    return {
+      statusCode: 502,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE,
+        message: "Could not fetch Razorpay payment status. Please try again.",
+        action: "no-change",
+        order,
+      },
+    };
+  }
+
+  const {
+    capturedPayment,
+    amountMismatchPayment,
+    currencyMismatchPayment,
+    failedPayment,
+    latestPayment,
+    paymentCount,
+  } = selectRazorpayPaymentForOrder(order, paymentsResponse);
+
+  if (currencyMismatchPayment && !capturedPayment) {
+    await recordAuditLog(req, "payment.reconcile-mismatch", { type: "order", id: order._id }, {
+      checkoutSessionId: order.checkoutSessionId,
+      resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
+      providerPayment: summarizeRazorpayPayment(currencyMismatchPayment),
+    });
+    setReconciliationResult(
+      order,
+      RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
+      lockId
+    );
+    await order.save();
+    return {
+      statusCode: 409,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
+        message: "Captured Razorpay payment currency does not match this order.",
+        action: "manual-review",
+        order,
+        providerPayment: summarizeRazorpayPayment(currencyMismatchPayment),
+      },
+    };
+  }
+
+  if (amountMismatchPayment && !capturedPayment) {
+    await recordAuditLog(req, "payment.reconcile-mismatch", { type: "order", id: order._id }, {
+      checkoutSessionId: order.checkoutSessionId,
+      resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
+      providerPayment: summarizeRazorpayPayment(amountMismatchPayment),
+    });
+    setReconciliationResult(
+      order,
+      RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
+      lockId
+    );
+    await order.save();
+    return {
+      statusCode: 409,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
+        message: "Captured Razorpay payment amount does not match this order.",
+        action: "manual-review",
+        order,
+        providerPayment: summarizeRazorpayPayment(amountMismatchPayment),
+      },
+    };
+  }
+
+  if (capturedPayment) {
+    if (
+      hasTrackedInventory(order) &&
+      !["reserved", "committed"].includes(order.inventoryReservationStatus)
+    ) {
+      await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+        resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        reason: "reservation-missing",
+        checkoutSessionId: order.checkoutSessionId,
+        paymentId: capturedPayment.id,
+      });
+      setReconciliationResult(
+        order,
+        RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        lockId
+      );
+      await order.save();
+      return {
+        statusCode: 409,
+        body: {
+          resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+          message: "Captured payment found, but the inventory reservation is missing.",
+          action: "manual-review",
+          order,
+          providerPayment: summarizeRazorpayPayment(capturedPayment),
+        },
+      };
+    }
+
+    if (hasTrackedInventory(order) && isReservationExpired(order)) {
+      await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+        resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        reason: "reservation-expired",
+        checkoutSessionId: order.checkoutSessionId,
+        paymentId: capturedPayment.id,
+      });
+      setReconciliationResult(
+        order,
+        RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        lockId
+      );
+      await order.save();
+      return {
+        statusCode: 409,
+        body: {
+          resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+          message: "Captured payment found, but the inventory reservation has expired.",
+          action: "manual-review",
+          order,
+          providerPayment: summarizeRazorpayPayment(capturedPayment),
+        },
+      };
+    }
+
+    await runWithOptionalTransaction(async (session) => {
+      assertReconciliationLockOwner(order, lockId);
+      if (order.inventoryReservationStatus === "reserved") {
+        await commitOrderInventory(order, { session });
+      }
+      order.paymentStatus = "paid";
+      if (["Pending", "Cancelled"].includes(order.orderStatus)) {
+        order.orderStatus = "Confirmed";
+      }
+      order.checkoutUrl = "";
+      setReconciliationResult(
+        order,
+        RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED,
+        lockId
+      );
+      recordCheckoutLog(order, "razorpay_reconciliation_paid", "admin", {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED,
+        payment: summarizeRazorpayPayment(capturedPayment),
+        paymentCount,
+      });
+      await order.save(session ? { session } : undefined);
+      if (order.userId) {
+        await Cart.findOneAndUpdate(
+          { userId: order.userId },
+          { items: [] },
+          session ? { session } : undefined
+        );
+      }
+    });
+
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED,
+      checkoutSessionId: order.checkoutSessionId,
+      paymentId: capturedPayment.id,
+    });
+
+    return {
+      statusCode: 200,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED,
+        message: "Payment reconciled as paid.",
+        action: "marked-paid",
+        order,
+        providerPayment: summarizeRazorpayPayment(capturedPayment),
+      },
+    };
+  }
+
+  if (failedPayment && order.paymentStatus !== "paid") {
+    await runWithOptionalTransaction(async (session) => {
+      assertReconciliationLockOwner(order, lockId);
+      if (order.inventoryReservationStatus === "reserved") {
+        await releaseOrderInventory(order, { session });
+      }
+      order.paymentStatus = "failed";
+      if (order.orderStatus === "Pending") {
+        order.orderStatus = "Cancelled";
+      }
+      setReconciliationResult(
+        order,
+        RECONCILIATION_RESULT_CODES.PAYMENT_FAILED_RESERVATION_RELEASED,
+        lockId
+      );
+      recordCheckoutLog(order, "razorpay_reconciliation_failed", "admin", {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_FAILED_RESERVATION_RELEASED,
+        payment: summarizeRazorpayPayment(failedPayment),
+        paymentCount,
+      });
+      await order.save(session ? { session } : undefined);
+    });
+
+    await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+      resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_FAILED_RESERVATION_RELEASED,
+      checkoutSessionId: order.checkoutSessionId,
+      paymentId: failedPayment.id,
+    });
+
+    return {
+      statusCode: 200,
+      body: {
+        resultCode: RECONCILIATION_RESULT_CODES.PAYMENT_FAILED_RESERVATION_RELEASED,
+        message: "Payment reconciled as failed.",
+        action: "marked-failed",
+        order,
+        providerPayment: summarizeRazorpayPayment(failedPayment),
+      },
+    };
+  }
+
+  await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
+    resultCode: RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT,
+    checkoutSessionId: order.checkoutSessionId,
+    providerPayment: latestPayment ? summarizeRazorpayPayment(latestPayment) : null,
+    paymentCount,
+  });
+  setReconciliationResult(order, RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT, lockId);
+  await order.save();
+
+  return {
+    statusCode: 200,
+    body: {
+      resultCode: RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT,
+      message: "No captured or failed Razorpay payment was found for this order.",
+      action: "no-change",
+      order,
+      providerPayment: latestPayment ? summarizeRazorpayPayment(latestPayment) : null,
+      paymentCount,
+    },
+  };
+};
+
+const getPaymentReconciliation = asyncHandler(async (req, res) => {
+  const now = Date.now();
+  const paginationParams = parsePaginationQuery(req.query, {
+    defaultLimit: 50,
+    maxLimit: 100,
+  });
+  const filter = buildReconciliationFilter(req.query, now);
+
+  const [orders, total, summaryOrders] = await Promise.all([
+    Order.find(filter)
+      .select("-checkoutLogs -checkoutUrl")
+      .sort({ createdAt: -1 })
+      .skip(paginationParams.skip)
+      .limit(paginationParams.limit),
+    Order.countDocuments(filter),
+    Order.find(filter)
+      .select(
+        "paymentStatus orderStatus inventoryReservationStatus inventoryReservationExpiresAt paymentReconciliationStartedAt paymentReconciliationResultCode createdAt"
+      )
+      .sort({ createdAt: -1 })
+      .limit(1000),
+  ]);
+  const pagination = buildPaginationMeta({
+    page: paginationParams.page,
+    limit: paginationParams.limit,
+    total,
+  });
+  const summary = {
+    totalMatching: total,
+    summaryWindow: summaryOrders.length,
+    ...buildReconciliationSummary(summaryOrders, now),
+  };
+
+  setPaginationHeaders(res, pagination);
+  return res.json({
+    data: orders.map((order) => mapReconciliationOrder(order, now)),
+    pagination,
+    summary,
+  });
+});
+
+const reconcileOrderPayment = asyncHandler(async (req, res) => {
+  const result = await reconcileOrderForAdmin(req, req.params.id);
+  recordMetric("payment.reconciliation.result", {
+    orderId: req.params.id,
+    resultCode: result.body.resultCode,
+    action: result.body.action,
+    statusCode: result.statusCode,
+  });
+  logEvent("payment.reconciliation.result", {
+    orderId: req.params.id,
+    resultCode: result.body.resultCode,
+    action: result.body.action,
+    statusCode: result.statusCode,
+  });
+  return res.status(result.statusCode).json(result.body);
+});
+
+const bulkReconcileOrders = asyncHandler(async (req, res) => {
+  if (req.body?.confirmation !== "RECONCILE_SELECTED_ORDERS") {
+    throw new AppError("Bulk reconciliation requires confirmation.", 400);
+  }
+
+  const orderIds = normalizeOrderIdList(req.body?.orderIds || req.body?.ids);
+  if (orderIds.length === 0) {
+    throw new AppError("Select at least one order to reconcile.", 400);
+  }
+
+  if (orderIds.length > 25) {
+    throw new AppError("Bulk reconciliation is limited to 25 orders at a time.", 400);
+  }
+
+  const results = [];
+  for (const orderId of orderIds) {
+    try {
+      const result = await reconcileOrderForAdmin(req, orderId);
+      results.push({
+        orderId,
+        ok: result.statusCode < 400,
+        statusCode: result.statusCode,
+        resultCode: result.body.resultCode,
+        action: result.body.action,
+        message: result.body.message,
+        order: result.body.order,
+        providerPayment: result.body.providerPayment,
+        paymentCount: result.body.paymentCount,
+      });
+    } catch (error) {
+      results.push({
+        orderId,
+        ok: false,
+        statusCode: error.statusCode || 500,
+        resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+        action: "manual-review",
+        message: error.message || "Order reconciliation failed.",
+      });
+    }
+  }
+
+  recordMetric("payment.reconciliation.bulk", {
+    requested: orderIds.length,
+    succeeded: results.filter((result) => result.ok).length,
+    failed: results.filter((result) => !result.ok).length,
+  });
+
+  return res.json({
+    requested: orderIds.length,
+    succeeded: results.filter((result) => result.ok).length,
+    failed: results.filter((result) => !result.ok).length,
+    results,
+  });
+});
+
+const scanPaymentReconciliation = asyncHandler(async (req, res) => {
+  if (req.body?.confirmation !== "SCAN_PAYMENT_RECONCILIATION") {
+    throw new AppError("Payment reconciliation scan requires confirmation.", 400);
+  }
+
+  const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
+  const markManualReview = req.body?.markManualReview === true;
+  const result = await scanStuckOrders({ limit, markManualReview });
+
+  await recordAuditLog(req, "payment.reconciliation-scan", { type: "order" }, {
+    limit,
+    markManualReview,
+    scanned: result.scanned,
+    flagged: result.flagged,
+    markedManualReview: result.markedManualReview,
+  });
+  recordMetric("payment.reconciliation.scan", {
+    scanned: result.scanned,
+    flagged: result.flagged,
+    markedManualReview: result.markedManualReview,
+  });
+
+  return res.json(result);
 });
 
 const reorderOrder = asyncHandler(async (req, res) => {
@@ -978,5 +1766,18 @@ module.exports = {
   failCheckout,
   cancelCheckout,
   razorpayWebhook,
+  getPaymentReconciliation,
+  reconcileOrderPayment,
+  bulkReconcileOrders,
+  scanPaymentReconciliation,
   reorderOrder,
+  __private: {
+    RECONCILIATION_RESULT_CODES,
+    assertReconciliationLockOwner,
+    buildReconciliationFilter,
+    reconcileOrderForAdmin,
+    selectRazorpayPaymentForOrder,
+    setReconciliationResult,
+    summarizeRazorpayPayment,
+  },
 };

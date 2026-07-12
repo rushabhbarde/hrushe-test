@@ -9,6 +9,8 @@ const {
   getAdminProductReviews,
   updateProductReviewStatus,
   deleteProduct,
+  restoreProduct,
+  permanentlyDeleteProduct,
 } = require("../controllers/productController");
 const {
   protect,
@@ -44,6 +46,14 @@ router.post(
 );
 router.post("/", protect, requireCsrf, requireAdminPermission("products.edit"), createProduct);
 router.put("/:id", protect, requireCsrf, requireAdminPermission("products.edit"), updateProduct);
+router.put("/:id/restore", protect, requireCsrf, requireAdminPermission("products.edit"), restoreProduct);
+router.delete(
+  "/:id/permanent",
+  protect,
+  requireCsrf,
+  requireAdminPermission("products.delete"),
+  permanentlyDeleteProduct
+);
 router.delete("/:id", protect, requireCsrf, requireAdminPermission("products.edit"), deleteProduct);
 
 module.exports = router;
