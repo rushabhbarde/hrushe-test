@@ -99,7 +99,7 @@ export default async function Home() {
             <Link
               key={card.id}
               href={card.ctaLink || "/shop"}
-              className="group relative block h-full w-full flex-none snap-start snap-always overflow-hidden border-r border-white/10 lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none lg:border-b-0 lg:border-r lg:border-white/10 last:lg:border-r-0"
+              className="group relative block h-full w-full flex-none snap-start snap-always overflow-hidden lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none"
             >
               <Image
                 src={getCardImage(card)}

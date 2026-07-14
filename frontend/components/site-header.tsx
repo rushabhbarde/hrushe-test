@@ -7,6 +7,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
+import { apiRequest } from "@/lib/api";
+import {
+  defaultAdminWorkspace,
+  getHomepageSectionsForAudience,
+  normalizeAdminWorkspace,
+  type HomeManagement,
+  type HomepageAudience,
+  type HomepageSection,
+} from "@/lib/admin-workspace";
 
 const navItems = [
   { href: "/women", label: "Women" },
@@ -15,7 +24,32 @@ const navItems = [
   { href: "/story", label: "Story" },
 ];
 
-const audienceMenus = {
+type AudienceMenuKey = "Women" | "Men";
+type AudienceMenuItem = {
+  href: string;
+  label: string;
+  tone?: "sale";
+};
+type AudienceMenuCard = {
+  href: string;
+  label: string;
+  image: string;
+  imageAlt: string;
+  objectPosition: string;
+};
+type AudienceMenu = {
+  image: string;
+  imageAlt: string;
+  cards: AudienceMenuCard[];
+  featured: AudienceMenuItem[];
+  categories: AudienceMenuItem[];
+};
+type AudienceMenus = Record<AudienceMenuKey, AudienceMenu>;
+type HomepageManagementPayload = Partial<HomeManagement> & {
+  hasCustomSections?: boolean;
+};
+
+const defaultAudienceMenus: AudienceMenus = {
   Women: {
     image: "/uploads/banners/banner2.png",
     imageAlt: "HRUSHE womenswear edit",
@@ -80,7 +114,72 @@ const audienceMenus = {
       { href: "/shop", label: "Accessories" },
     ],
   },
-} as const;
+};
+
+const audienceMenuKeys: AudienceMenuKey[] = ["Women", "Men"];
+const audienceMap: Record<AudienceMenuKey, HomepageAudience> = {
+  Women: "women",
+  Men: "men",
+};
+
+function isAudienceMenuKey(value: string): value is AudienceMenuKey {
+  return audienceMenuKeys.includes(value as AudienceMenuKey);
+}
+
+function normalizeHomepageManagementPayload(payload: HomepageManagementPayload) {
+  const { hasCustomSections, ...homeManagementPayload } = payload || {};
+  const hasSectionsPayload = Array.isArray(payload?.sections);
+  const sectionsPayload =
+    hasSectionsPayload && (hasCustomSections || payload.sections!.length > 0)
+      ? payload.sections!
+      : defaultAdminWorkspace.homeManagement.sections;
+
+  return normalizeAdminWorkspace({
+    homeManagement: {
+      ...defaultAdminWorkspace.homeManagement,
+      ...homeManagementPayload,
+      sections: sectionsPayload,
+    },
+  }).homeManagement;
+}
+
+function sectionToMenuCard(
+  section: HomepageSection | undefined,
+  fallback: AudienceMenuCard
+): AudienceMenuCard {
+  if (!section) {
+    return fallback;
+  }
+
+  return {
+    href: section.ctaLink || fallback.href,
+    label: section.title || fallback.label,
+    image: section.image || section.mobileImage || fallback.image,
+    imageAlt: section.imageAlt || fallback.imageAlt,
+    objectPosition: section.objectPosition || fallback.objectPosition,
+  };
+}
+
+function buildAudienceMenus(homeManagement: HomeManagement): AudienceMenus {
+  return audienceMenuKeys.reduce((menus, key) => {
+    const fallback = defaultAudienceMenus[key];
+    const sections = getHomepageSectionsForAudience(homeManagement, audienceMap[key]);
+    const saleSection = sections.find((section) => section.sectionType === "sale-banner");
+    const heroSection = sections.find((section) => section.sectionType === "audience-hero");
+
+    menus[key] = {
+      ...fallback,
+      image: heroSection?.image || fallback.image,
+      imageAlt: heroSection?.imageAlt || fallback.imageAlt,
+      cards: [
+        sectionToMenuCard(saleSection, fallback.cards[0]),
+        sectionToMenuCard(heroSection, fallback.cards[1]),
+      ],
+    };
+
+    return menus;
+  }, {} as AudienceMenus);
+}
 
 function routeIsActive(pathname: string, href: string) {
   if (href === "/women") {
@@ -172,12 +271,35 @@ export function SiteHeader() {
   const { isAuthenticated, user, logout } = useCustomerAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const [activeAudienceMenu, setActiveAudienceMenu] = useState<keyof typeof audienceMenus | null>(null);
+  const [activeAudienceMenu, setActiveAudienceMenu] = useState<AudienceMenuKey | null>(null);
+  const [audienceMenus, setAudienceMenus] = useState<AudienceMenus>(() =>
+    buildAudienceMenus(defaultAdminWorkspace.homeManagement)
+  );
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
   const loginHref = `/login?next=${encodeURIComponent("/account")}`;
+
+  useEffect(() => {
+    let active = true;
+
+    void apiRequest<HomepageManagementPayload>("/content/homepage-management")
+      .then((payload) => {
+        if (active) {
+          setAudienceMenus(buildAudienceMenus(normalizeHomepageManagementPayload(payload)));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setAudienceMenus(buildAudienceMenus(defaultAdminWorkspace.homeManagement));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAccountMenuOpen && !isMobileMenuOpen && !activeAudienceMenu) {
@@ -271,7 +393,7 @@ export function SiteHeader() {
 
             <nav className="hidden items-center gap-7 text-[0.74rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
               {navItems.map((item) => {
-                const audienceMenu = item.label in audienceMenus ? (item.label as keyof typeof audienceMenus) : null;
+                const audienceMenu = isAudienceMenuKey(item.label) ? item.label : null;
 
                 return (
                   <Link
