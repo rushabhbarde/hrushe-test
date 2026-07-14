@@ -518,7 +518,7 @@ export function SiteHeader() {
 
       {activeAudienceMenu ? (
         <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[1.12fr_1fr]">
-          <div className="flex h-full flex-col overflow-y-auto px-8 py-7">
+          <div className="hide-scrollbar flex h-full flex-col overflow-y-auto px-8 py-7">
             <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
               {audienceMenus[activeAudienceMenu].featured.map((item) => (
                 <Link
@@ -561,7 +561,7 @@ export function SiteHeader() {
               </Link>
             </div>
           </div>
-          <div className="h-full min-h-0 overflow-y-auto overscroll-contain bg-[var(--surface)]">
+          <div className="hide-scrollbar h-full min-h-0 overflow-y-auto overscroll-contain bg-[var(--surface)]">
             {audienceMenus[activeAudienceMenu].cards.map((card) => (
               <Link
                 key={`${activeAudienceMenu}-${card.href}-${card.label}`}

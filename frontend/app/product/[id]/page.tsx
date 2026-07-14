@@ -930,7 +930,7 @@ export default function ProductDetailPage() {
             {mediaItems.slice(1).map((item, index) => (
               <div
                 key={item.id}
-                className="relative min-h-[70svh] w-[86vw] flex-none snap-start border-t border-white sm:w-[70vw] lg:min-h-[calc(100vh-8rem)] lg:w-[42vw] lg:border-l lg:border-t-0 xl:w-[34vw]"
+                className="relative min-h-[70svh] w-[86vw] flex-none snap-start sm:w-[70vw] lg:min-h-[calc(100vh-8rem)] lg:w-[42vw] xl:w-[34vw]"
               >
                 {item.type === "image" ? (
                   <Image
