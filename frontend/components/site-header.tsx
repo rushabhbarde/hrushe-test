@@ -517,7 +517,7 @@ export function SiteHeader() {
       </div>
 
       {activeAudienceMenu ? (
-        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden border-r border-t border-[var(--border)] bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[1.12fr_1fr]">
+        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[1.12fr_1fr]">
           <div className="hide-scrollbar flex h-full flex-col overflow-y-auto px-8 py-7">
             <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
               {audienceMenus[activeAudienceMenu].featured.map((item) => (
@@ -567,7 +567,7 @@ export function SiteHeader() {
                 key={`${activeAudienceMenu}-${card.href}-${card.label}`}
                 href={card.href}
                 onClick={() => setActiveAudienceMenu(null)}
-                className="group relative block h-[34.25rem] min-h-[34.25rem] max-h-[34.25rem] overflow-hidden border-b border-white/10 last:border-b-0"
+                className="group relative block h-[34.25rem] min-h-[34.25rem] max-h-[34.25rem] overflow-hidden"
               >
                 <Image
                   src={card.image}
