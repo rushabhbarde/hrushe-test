@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
@@ -325,6 +326,16 @@ export function AuthPanel({
         {error}
       </p>
     ) : null;
+    const prestigeLogo = (
+      <Image
+        src="/NEW_LOGO.png"
+        alt="HRUSHE"
+        width={260}
+        height={60}
+        priority
+        className="mx-auto h-auto w-48 brightness-0 invert sm:w-52"
+      />
+    );
 
     if (view === "forgot-password") {
       return (
@@ -337,7 +348,7 @@ export function AuthPanel({
             Back to login
           </button>
           <div className="mx-auto max-w-md">
-            <p className="text-center text-3xl font-black uppercase leading-none tracking-tight">HRUSHE</p>
+            {prestigeLogo}
             <p className="mt-2 text-center text-sm font-semibold uppercase tracking-[0.12em] text-white/72">
               Reset access
             </p>
@@ -543,10 +554,7 @@ export function AuthPanel({
     return (
       <section className={`w-full text-white ${className}`.trim()}>
         <div className="mx-auto max-w-md">
-          <p className="text-center text-3xl font-black uppercase leading-none tracking-tight">HRUSHE</p>
-          <p className="mt-2 text-center text-sm font-semibold uppercase tracking-[0.12em] text-white/72">
-            Prestige
-          </p>
+          {prestigeLogo}
           <form className="mt-28 grid gap-7 lg:mt-32" onSubmit={(event) => void onLoginSubmit(event)}>
             <label className={prestigeField}>
               Your email address

@@ -31,7 +31,7 @@ function LoginPageContent() {
         <div className="absolute left-[14%] top-[30%] h-[24rem] w-[24rem] rounded-full bg-black/24 blur-3xl" />
         <div className="absolute bottom-[10%] left-[6%] h-24 w-[42rem] bg-black/10 blur-3xl" />
       </section>
-      <aside className="relative flex min-h-dvh items-center overflow-hidden bg-[radial-gradient(circle_at_52%_18%,rgba(255,255,255,0.12),transparent_16rem),linear-gradient(135deg,#2a2a2a,#111_55%,#1d1d1d)] px-6 py-20 sm:px-10 lg:px-12">
+      <aside className="auth-prestige-gradient relative flex min-h-dvh items-center overflow-hidden px-6 py-20 sm:px-10 lg:px-12">
         <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:4px_4px]" />
         <AuthPanel
           initialMode="login"

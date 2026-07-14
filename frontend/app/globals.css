@@ -10,6 +10,9 @@
   --border: rgba(17, 17, 15, 0.14);
   --accent: #711e2a;
   --accent-dark: #4f111b;
+  --brand-highlight: linear-gradient(120deg, #8B1018 0%, #5A071B 48%, #2D0016 100%);
+  --brand-highlight-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.16) 0%, rgba(90, 7, 27, 0.13) 48%, rgba(45, 0, 22, 0.1) 100%);
+  --brand-highlight-shadow: rgba(90, 7, 27, 0.2);
   --success: #127a49;
   --danger: #c43a35;
   --shadow: none;
@@ -44,6 +47,9 @@
   --border: rgba(255, 255, 255, 0.1);
   --accent: #d2d2d2;
   --accent-dark: #ffffff;
+  --brand-highlight: linear-gradient(120deg, #8B1018 0%, #5A071B 48%, #2D0016 100%);
+  --brand-highlight-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.28) 0%, rgba(90, 7, 27, 0.24) 48%, rgba(45, 0, 22, 0.2) 100%);
+  --brand-highlight-shadow: rgba(139, 16, 24, 0.3);
   --success: #75d69f;
   --danger: #ef6b65;
   --shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
@@ -857,8 +863,10 @@ body :where([class*="shadow-"]) {
 }
 
 .button-primary {
-  background: var(--foreground);
-  color: var(--background);
+  border: 1px solid transparent;
+  background: var(--brand-highlight);
+  background-size: 140% 140%;
+  color: #ffffff;
   box-shadow: none;
   min-height: 48px;
   letter-spacing: 0.1em;
@@ -943,10 +951,11 @@ body :where([class*="shadow-"]) {
   align-items: center;
   justify-content: center;
   gap: 0.8rem;
-  border: 1px solid var(--foreground);
-  background: var(--foreground);
+  border: 1px solid transparent;
+  background: var(--brand-highlight);
+  background-size: 140% 140%;
   padding: 0.85rem 1.2rem;
-  color: var(--background);
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1008,14 +1017,24 @@ body :where([class*="shadow-"]) {
   animation: auth-switch-panel 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.auth-prestige-gradient {
+  background:
+    radial-gradient(circle at 52% 18%, rgba(255, 255, 255, 0.14), transparent 16rem),
+    var(--brand-highlight);
+}
+
 .nav-link-active {
   color: var(--accent);
+  background: var(--brand-highlight);
+  background-clip: text;
   font-weight: 600;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(17, 17, 17, 0.18), transparent);
+  background: linear-gradient(90deg, transparent, var(--brand-highlight-shadow), transparent);
 }
 
 .editorial-card {
@@ -1122,7 +1141,7 @@ body :where([class*="shadow-"]) {
   position: absolute;
   inset: 0;
   width: 42%;
-  background: var(--foreground);
+  background: var(--brand-highlight);
   animation: hrushe-symbol-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
@@ -1211,9 +1230,7 @@ body :where([class*="shadow-"]) {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent) 64%, var(--foreground)), var(--foreground) 56%),
-    var(--foreground);
+  background: var(--brand-highlight);
   opacity: 0;
   transition: opacity 180ms ease;
 }
@@ -1303,7 +1320,8 @@ body :where([class*="shadow-"]) {
 
 @media (hover: hover) and (pointer: fine) {
   .button-primary:hover {
-    background: var(--accent-dark);
+    background-position: 100% 50%;
+    box-shadow: 0 14px 30px var(--brand-highlight-shadow);
   }
 
   .button-secondary:hover {
@@ -1318,8 +1336,8 @@ body :where([class*="shadow-"]) {
   }
 
   .lux-action:hover {
-    background: var(--accent-dark);
-    border-color: var(--accent-dark);
+    background-position: 100% 50%;
+    box-shadow: 0 14px 30px var(--brand-highlight-shadow);
   }
 
   .lux-action-muted:hover {
