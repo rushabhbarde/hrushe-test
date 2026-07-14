@@ -137,7 +137,9 @@ Gate result: Local report-mode audit passed, but production/staging post-migrati
 
 ## Deployment Evidence
 
-No release-candidate deployment was performed from this workspace.
+No successful release-candidate deployment was performed from this workspace.
+
+Render deployment logs provided on 2026-07-14 show the backend restarting and exiting with status 1 because production configuration is missing `INTERNAL_SCHEDULER_SECRET`. The logs also show a legacy `COOKIE_SAME_SITE=none` value being normalized to `lax` at runtime, with a warning to update the Render environment value.
 
 Read-only production probes on `https://hrushe.in`:
 
@@ -277,6 +279,8 @@ Commands run on 2026-07-14:
 - No clean post-migration production audits.
 - Release-candidate code is not committed to an immutable SHA.
 - Latest backend is not deployed to production; live scheduler route returns 404.
+- Render production configuration is missing `INTERNAL_SCHEDULER_SECRET`.
+- Render still has legacy `COOKIE_SAME_SITE=none`; update it to `lax`.
 - Reconciliation scheduler is not configured or observed running.
 - Hosted monitoring provider receipt is not verified.
 - Critical alerts are not installed or delivery-tested.
