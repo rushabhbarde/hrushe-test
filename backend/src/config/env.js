@@ -43,6 +43,8 @@ const buildAllowedOrigins = () =>
 
 const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
+  APP_ENV: process.env.APP_ENV || process.env.NODE_ENV || "development",
+  APP_RELEASE: process.env.APP_RELEASE || process.env.RENDER_GIT_COMMIT || "",
   PORT: Number(process.env.PORT) || 5001,
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
   ALLOWED_ORIGINS: buildAllowedOrigins(),
@@ -68,6 +70,7 @@ const env = {
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || "",
   RAZORPAY_CURRENCY: process.env.RAZORPAY_CURRENCY || "INR",
   RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || "",
+  INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET || "",
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "",
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "",
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || "",
@@ -149,6 +152,7 @@ function assertProductionEnv() {
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
     RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,

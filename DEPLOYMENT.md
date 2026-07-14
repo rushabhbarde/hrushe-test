@@ -13,6 +13,8 @@ Set these variables on Render for the backend service:
 
 ```text
 NODE_ENV=production
+APP_ENV=production
+APP_RELEASE=<git-sha-or-release-id>
 PORT=10000
 CLIENT_URL=https://www.hrushe.in
 ALLOWED_ORIGINS=https://www.hrushe.in,https://hrushe.in,https://hrushe-test.vercel.app
@@ -30,6 +32,7 @@ RAZORPAY_KEY_ID=<your-razorpay-key-id>
 RAZORPAY_KEY_SECRET=<your-razorpay-key-secret>
 RAZORPAY_CURRENCY=INR
 RAZORPAY_WEBHOOK_SECRET=<your-razorpay-webhook-secret>
+INTERNAL_SCHEDULER_SECRET=<strong-random-scheduler-secret>
 R2_ACCOUNT_ID=<your-cloudflare-account-id>
 R2_ACCESS_KEY_ID=<your-r2-access-key-id>
 R2_SECRET_ACCESS_KEY=<your-r2-secret-access-key>
@@ -49,6 +52,8 @@ Notes:
 - `ADMIN_PASSWORD` is required in production and must not be the default local password.
 - `ADMIN_ROLE=super-admin` keeps the bootstrap admin able to manage staff and role assignments.
 - `BACKEND_PUBLIC_URL` must be the public Render URL used by webhook and operational flows.
+- `APP_ENV` and `APP_RELEASE` are attached to structured error-monitoring events.
+- `INTERNAL_SCHEDULER_SECRET` signs internal scheduler requests and must not be reused for customer/admin auth.
 - R2 variables are optional for local development. In production, set them so admin media uploads and base64 media migrations store files in Cloudflare R2 instead of MongoDB GridFS.
 - `ERROR_MONITORING_PROVIDER` and `ERROR_MONITORING_DSN` are optional. Without a DSN, backend errors are still emitted as redacted structured JSON events named `error.captured` for log-drain forwarding.
 

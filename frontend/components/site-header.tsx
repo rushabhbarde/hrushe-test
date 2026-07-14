@@ -145,9 +145,11 @@ function LogoutIcon() {
 function SupportIcon() {
   return (
     <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <path d="M7 10.5c0-2.2 1.8-4 4-4h10c2.2 0 4 1.8 4 4v6.2c0 2.2-1.8 4-4 4h-3.2L16 24.2l-2.4-3.5H11c-2.2 0-4-1.8-4-4v-6.2Z" strokeLinejoin="round" />
-      <path d="M16 3.6V1.8M8.7 6.2 7.4 4.9M23.3 6.2l1.3-1.3M10.2 25.7l-1.3 1.3M21.8 25.7l1.3 1.3M16 28.4v1.8" strokeLinecap="round" />
-      <text x="16" y="15.6" textAnchor="middle" fontSize="5.9" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
+      <path
+        d="M7.5 8.5h17c1.66 0 3 1.34 3 3v7.2c0 1.66-1.34 3-3 3h-5.2L16 25.8l-3.3-4.1H7.5c-1.66 0-3-1.34-3-3v-7.2c0-1.66 1.34-3 3-3Z"
+        strokeLinejoin="round"
+      />
+      <text x="16" y="17.1" textAnchor="middle" fontSize="6.1" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
         HELP
       </text>
     </svg>

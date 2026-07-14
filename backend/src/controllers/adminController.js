@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
@@ -13,6 +14,11 @@ const {
 } = require("../config/adminRoles");
 const { recordAuditLog } = require("../utils/auditLog");
 const {
+  RECONCILIATION_RESULT_CODES,
+  STUCK_INITIATED_MS,
+} = require("../utils/reconciliation");
+const { getOperationsState } = require("../utils/operationsState");
+const {
   buildPaginationMeta,
   parsePaginationQuery,
   sendListResponse,
@@ -21,6 +27,11 @@ const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OPERATIONS_SUMMARY_CACHE_MS = 15 * 1000;
+let operationsSummaryCache = {
+  expiresAt: 0,
+  value: null,
+};
 
 function validateStaffPassword(password) {
   const value = String(password || "");
@@ -188,6 +199,110 @@ const listCustomers = asyncHandler(async (req, res) => {
   return sendListResponse(res, req.query, serialized, pagination);
 });
 
+const getOperationsSummary = asyncHandler(async (req, res) => {
+  const now = Date.now();
+
+  if (operationsSummaryCache.value && operationsSummaryCache.expiresAt > now) {
+    return res.json({
+      ...operationsSummaryCache.value,
+      cached: true,
+    });
+  }
+
+  const nowDate = new Date(now);
+  const initiatedCutoff = new Date(now - STUCK_INITIATED_MS);
+  const [
+    manualReview,
+    providerUnavailable,
+    capturedUnconfirmed,
+    amountMismatch,
+    currencyMismatch,
+    activeReservations,
+    expiredReservations,
+    paidReserved,
+    failedWithReservation,
+    confirmedButUnpaid,
+    initiatedOlderThan20Minutes,
+  ] = await Promise.all([
+    Order.countDocuments({
+      paymentReconciliationResultCode:
+        RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+    }),
+    Order.countDocuments({
+      paymentReconciliationResultCode:
+        RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE,
+    }),
+    Order.countDocuments({
+      paymentStatus: "paid",
+      inventoryReservationStatus: "reserved",
+    }),
+    Order.countDocuments({
+      paymentReconciliationResultCode:
+        RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
+    }),
+    Order.countDocuments({
+      paymentReconciliationResultCode:
+        RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
+    }),
+    Order.countDocuments({ inventoryReservationStatus: "reserved" }),
+    Order.countDocuments({
+      inventoryReservationStatus: "reserved",
+      inventoryReservationExpiresAt: { $lte: nowDate },
+    }),
+    Order.countDocuments({
+      paymentStatus: "paid",
+      inventoryReservationStatus: "reserved",
+    }),
+    Order.countDocuments({
+      paymentStatus: "failed",
+      inventoryReservationStatus: "reserved",
+    }),
+    Order.countDocuments({
+      orderStatus: "Confirmed",
+      paymentStatus: { $ne: "paid" },
+    }),
+    Order.countDocuments({
+      paymentStatus: "initiated",
+      createdAt: { $lte: initiatedCutoff },
+    }),
+  ]);
+  const state = getOperationsState();
+  const summary = {
+    payments: {
+      manualReview,
+      providerUnavailable,
+      capturedUnconfirmed,
+      amountMismatch,
+      currencyMismatch,
+    },
+    inventory: {
+      activeReservations,
+      expiredReservations,
+      consistencyWarnings:
+        paidReserved + failedWithReservation + confirmedButUnpaid + expiredReservations,
+    },
+    orders: {
+      initiatedOlderThan20Minutes,
+      failedWithReservation,
+      confirmedButUnpaid,
+    },
+    system: {
+      mongoReady: mongoose.connection.readyState === 1,
+      lastReconciliationScanAt: state.lastReconciliationScanAt,
+      lastCriticalErrorAt: state.lastCriticalErrorAt,
+    },
+    cached: false,
+    generatedAt: new Date(now),
+  };
+
+  operationsSummaryCache = {
+    expiresAt: now + OPERATIONS_SUMMARY_CACHE_MS,
+    value: summary,
+  };
+
+  return res.json(summary);
+});
+
 const getCustomerById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
     .select("-password -passwordResetOtp -passwordResetOtpExpiresAt")
@@ -256,9 +371,15 @@ const createStaffUser = asyncHandler(async (req, res) => {
     throw new AppError("Choose a valid staff role", 400);
   }
 
-  const existingUser = await User.findOne({ email });
+  const [existingUser, existingPhoneUser] = await Promise.all([
+    User.findOne({ email }),
+    phone ? User.findOne({ phone }) : null,
+  ]);
   if (existingUser) {
     throw new AppError("A user with this email already exists", 409);
+  }
+  if (existingPhoneUser) {
+    throw new AppError("Phone number is already in use", 409);
   }
 
   const staffUser = await User.create({
@@ -313,6 +434,7 @@ const updateStaffUserRole = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getOperationsSummary,
   listCustomers,
   getCustomerById,
   listStaffUsers,

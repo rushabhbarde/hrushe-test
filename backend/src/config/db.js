@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const env = require("./env");
 const { logEvent } = require("../utils/logger");
+const { captureError } = require("../utils/errorMonitoring");
 
 const connectDB = async () => {
   try {
@@ -12,6 +13,7 @@ const connectDB = async () => {
     return mongoose.connection;
   } catch (error) {
     logEvent("database.connection_failed", { message: error.message }, "error");
+    captureError(error, { component: "mongo", event: "database.connection_failed" });
     throw error;
   }
 };

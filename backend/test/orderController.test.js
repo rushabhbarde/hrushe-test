@@ -1,15 +1,23 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 
 const auditLog = require("../src/utils/auditLog");
 auditLog.recordAuditLog = async () => {};
 
+const env = require("../src/config/env");
 const Order = require("../src/models/Order");
+const WebhookEvent = require("../src/models/WebhookEvent");
 const {
+  razorpayWebhook,
   reconcileOrderPayment,
+  verifyCheckout,
   __private: {
     RECONCILIATION_RESULT_CODES,
+    getPaymentConfirmationInventoryBlocker,
+    saveReconciledOrder,
     selectRazorpayPaymentForOrder,
+    setReconciliationResult,
     summarizeRazorpayPayment,
   },
 } = require("../src/controllers/orderController");
@@ -38,14 +46,28 @@ const callController = async (handler, req, res = buildResponse()) => {
 const installOrderStubs = (t) => {
   const originals = {
     findById: Order.findById,
+    findOne: Order.findOne,
     findOneAndUpdate: Order.findOneAndUpdate,
   };
 
   t.after(() => {
     Order.findById = originals.findById;
+    Order.findOne = originals.findOne;
     Order.findOneAndUpdate = originals.findOneAndUpdate;
   });
 };
+
+const signCheckoutPayment = ({ orderId, paymentId, secret }) =>
+  crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+const signWebhookPayload = ({ rawBody, secret }) =>
+  crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
 
 test("reconciliation selector accepts only matching captured Razorpay payments", () => {
   const order = {
@@ -199,6 +221,174 @@ test("Razorpay payment summaries exclude bulky provider payload details", () => 
   });
 });
 
+test("payment confirmation blocks tracked inventory with released reservations", async (t) => {
+  installOrderStubs(t);
+  const originalSecret = env.RAZORPAY_KEY_SECRET;
+  env.RAZORPAY_KEY_SECRET = "checkout-secret";
+  t.after(() => {
+    env.RAZORPAY_KEY_SECRET = originalSecret;
+  });
+
+  let saved = false;
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    checkoutProvider: "razorpay",
+    checkoutSessionId: "order_razorpay",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    inventoryReservationStatus: "released",
+    inventoryReservationExpiresAt: null,
+    paymentReconciliationResultCode: "",
+    checkoutLogs: [],
+    products: [
+      {
+        productId: "507f1f77bcf86cd799439012",
+        quantity: 1,
+        sku: "HRU-TEST-M-BLK",
+        inventoryTracked: true,
+      },
+    ],
+    save: async () => {
+      saved = true;
+    },
+  };
+
+  Order.findById = async () => order;
+
+  const paymentId = "pay_razorpay";
+  const { nextError } = await callController(verifyCheckout, {
+    body: {
+      appOrderId: order._id,
+      razorpay_order_id: order.checkoutSessionId,
+      razorpay_payment_id: paymentId,
+      razorpay_signature: signCheckoutPayment({
+        orderId: order.checkoutSessionId,
+        paymentId,
+        secret: env.RAZORPAY_KEY_SECRET,
+      }),
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /manual review/i);
+  assert.equal(saved, true);
+  assert.equal(order.paymentStatus, "initiated");
+  assert.equal(order.orderStatus, "Pending");
+  assert.equal(order.inventoryReservationStatus, "released");
+  assert.equal(
+    order.paymentReconciliationResultCode,
+    RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED
+  );
+  assert.equal(order.checkoutLogs.at(-1).event, "payment_confirmation_manual_review");
+  assert.equal(order.checkoutLogs.at(-1).payload.reason, "reservation-missing");
+});
+
+test("captured webhooks block expired tracked reservations instead of confirming paid", async (t) => {
+  installOrderStubs(t);
+  const originalWebhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
+  const originalCurrency = env.RAZORPAY_CURRENCY;
+  const originalWebhookCreate = WebhookEvent.create;
+  env.RAZORPAY_WEBHOOK_SECRET = "webhook-secret";
+  env.RAZORPAY_CURRENCY = "INR";
+  t.after(() => {
+    env.RAZORPAY_WEBHOOK_SECRET = originalWebhookSecret;
+    env.RAZORPAY_CURRENCY = originalCurrency;
+    WebhookEvent.create = originalWebhookCreate;
+  });
+
+  let orderSaved = false;
+  const webhookEvent = {
+    status: "processing",
+    processedAt: null,
+    save: async () => {},
+  };
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    checkoutProvider: "razorpay",
+    checkoutSessionId: "order_razorpay",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    totalPaise: 50000,
+    totalAmount: 500,
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(Date.now() - 1000),
+    paymentReconciliationResultCode: "",
+    checkoutLogs: [],
+    products: [
+      {
+        productId: "507f1f77bcf86cd799439012",
+        quantity: 1,
+        sku: "HRU-TEST-M-BLK",
+        inventoryTracked: true,
+      },
+    ],
+    save: async () => {
+      orderSaved = true;
+    },
+  };
+  const body = {
+    event: "payment.captured",
+    payload: {
+      payment: {
+        entity: {
+          id: "pay_razorpay",
+          order_id: order.checkoutSessionId,
+          status: "captured",
+          amount: 50000,
+          currency: "INR",
+        },
+      },
+    },
+  };
+  const rawBody = JSON.stringify(body);
+
+  WebhookEvent.create = async () => webhookEvent;
+  Order.findOne = async () => order;
+
+  const { res, nextError } = await callController(razorpayWebhook, {
+    body,
+    rawBody: Buffer.from(rawBody),
+    headers: {
+      "x-razorpay-signature": signWebhookPayload({
+        rawBody,
+        secret: env.RAZORPAY_WEBHOOK_SECRET,
+      }),
+      "x-razorpay-event-id": "evt_razorpay",
+    },
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.statusCode, 202);
+  assert.deepEqual(res.body, {
+    received: true,
+    manualReview: true,
+    reason: "reservation-expired",
+  });
+  assert.equal(orderSaved, true);
+  assert.equal(order.paymentStatus, "initiated");
+  assert.equal(order.orderStatus, "Pending");
+  assert.equal(order.inventoryReservationStatus, "reserved");
+  assert.equal(
+    order.paymentReconciliationResultCode,
+    RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED
+  );
+  assert.equal(webhookEvent.status, "completed");
+  assert.ok(webhookEvent.processedAt instanceof Date);
+});
+
+test("payment confirmation inventory blocker allows committed tracked inventory", () => {
+  assert.equal(
+    getPaymentConfirmationInventoryBlocker({
+      inventoryReservationStatus: "committed",
+      products: [{ inventoryTracked: true }],
+    }),
+    ""
+  );
+});
+
 test("reconciliation returns a stable already-running code while another attempt is in progress", async (t) => {
   installOrderStubs(t);
 
@@ -222,4 +412,61 @@ test("reconciliation returns a stable already-running code while another attempt
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.resultCode, RECONCILIATION_RESULT_CODES.RECONCILIATION_ALREADY_RUNNING);
   assert.equal(res.body.action, "retry-later");
+});
+
+test("reconciliation final save is conditional on current database lock owner", async (t) => {
+  installOrderStubs(t);
+
+  let capturedFilter;
+  let capturedUpdate;
+  Order.findOneAndUpdate = async (filter, update) => {
+    capturedFilter = filter;
+    capturedUpdate = update;
+    return { _id: filter._id, ...update.$set };
+  };
+
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    checkoutUrl: "",
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(),
+    paymentReconciliationLockId: "lock-1",
+    paymentReconciliationActorId: "507f1f77bcf86cd799439012",
+    checkoutLogs: [],
+  };
+
+  setReconciliationResult(order, RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT, "lock-1");
+  const saved = await saveReconciledOrder(order, "lock-1");
+
+  assert.equal(capturedFilter._id, order._id);
+  assert.equal(capturedFilter.paymentReconciliationLockId, "lock-1");
+  assert.equal(capturedUpdate.$set.paymentReconciliationLockId, "");
+  assert.equal(saved.paymentReconciliationResultCode, RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT);
+});
+
+test("reconciliation final save rejects expired-lock ownership takeover", async (t) => {
+  installOrderStubs(t);
+
+  Order.findOneAndUpdate = async () => null;
+
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    checkoutUrl: "",
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(),
+    paymentReconciliationLockId: "lock-1",
+    paymentReconciliationActorId: "507f1f77bcf86cd799439012",
+    checkoutLogs: [],
+  };
+
+  setReconciliationResult(order, RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT, "lock-1");
+
+  await assert.rejects(
+    () => saveReconciledOrder(order, "lock-1"),
+    /lock ownership changed/i
+  );
 });

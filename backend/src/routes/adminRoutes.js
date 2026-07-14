@@ -11,12 +11,14 @@ const {
   listStaffUsers,
   createStaffUser,
   updateStaffUserRole,
+  getOperationsSummary,
 } = require("../controllers/adminController");
 
 const router = express.Router();
 
 router.use(protect, adminOnly);
 
+router.get("/operations/summary", requireAdminPermission("operations.view"), getOperationsSummary);
 router.get("/customers", requireAdminPermission("customers.view"), listCustomers);
 router.get("/customers/:id", requireAdminPermission("customers.view"), getCustomerById);
 router.get("/staff", requireAdminPermission("roles.manage"), listStaffUsers);

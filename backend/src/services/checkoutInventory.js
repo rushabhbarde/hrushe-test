@@ -3,6 +3,8 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const AppError = require("../utils/AppError");
 const { getPaiseValue, paiseToRupees } = require("../utils/money");
+const { captureError } = require("../utils/errorMonitoring");
+const { recordMetric } = require("../utils/metrics");
 
 const MAX_CART_LINES = 25;
 const MAX_ITEM_QUANTITY = 10;
@@ -221,10 +223,22 @@ const transitionOrderInventory = async (order, operation, options = {}) => {
 
   if (results.some((updated) => !updated)) {
     const action = operation === "commit" ? "committed" : "released";
-    throw new AppError(
+    const error = new AppError(
       `Inventory reservation could not be ${action}. Please retry or reconcile the order.`,
       409
     );
+    recordMetric("inventory.transition.failed", {
+      operation,
+      orderId: order._id?.toString?.() || "",
+      trackedItems: trackedItems.length,
+    });
+    captureError(error, {
+      component: "inventory",
+      operation,
+      orderId: order._id?.toString?.() || "",
+      trackedItems: trackedItems.length,
+    });
+    throw error;
   }
 
   order.inventoryReservationStatus = operation === "commit" ? "committed" : "released";

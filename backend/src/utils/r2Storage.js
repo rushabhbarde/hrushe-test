@@ -1,5 +1,6 @@
 const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
 const env = require("../config/env");
+const { captureError } = require("./errorMonitoring");
 
 let client = null;
 
@@ -53,20 +54,29 @@ const uploadR2Object = async ({
     return null;
   }
 
-  await r2Client.send(
-    new PutObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
-      CacheControl: cacheControl,
-      Metadata: Object.fromEntries(
-        Object.entries(metadata)
-          .filter(([, value]) => value !== undefined && value !== null && value !== "")
-          .map(([metadataKey, value]) => [metadataKey, String(value)])
-      ),
-    })
-  );
+  try {
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: env.R2_BUCKET_NAME,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+        Metadata: Object.fromEntries(
+          Object.entries(metadata)
+            .filter(([, value]) => value !== undefined && value !== null && value !== "")
+            .map(([metadataKey, value]) => [metadataKey, String(value)])
+        ),
+      })
+    );
+  } catch (error) {
+    captureError(error, {
+      component: "r2",
+      operation: "putObject",
+      key,
+    });
+    throw error;
+  }
 
   return {
     bucket: env.R2_BUCKET_NAME,

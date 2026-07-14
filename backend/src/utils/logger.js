@@ -3,7 +3,7 @@ const crypto = require("crypto");
 
 const requestStorage = new AsyncLocalStorage();
 const SENSITIVE_KEY_PATTERN =
-  /(password|pass|token|secret|authorization|cookie|signature|otp|api[_-]?key|razorpay[_-]?key|card|cvv)/i;
+  /(password|pass|token|secret|authorization|cookie|signature|otp|csrf|api[_-]?key|razorpay[_-]?key|card|cvv|email|phone|mobile|address|pincode|house|area|landmark)/i;
 
 function createRequestId() {
   return typeof crypto.randomUUID === "function"

@@ -16,21 +16,25 @@ const adminRoutes = require("./src/routes/adminRoutes");
 const supportRoutes = require("./src/routes/supportRoutes");
 const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const mediaRoutes = require("./src/routes/mediaRoutes");
+const internalRoutes = require("./src/routes/internalRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { createRateLimiter } = require("./src/middleware/rateLimitMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
 const { logEvent, requestContextMiddleware } = require("./src/utils/logger");
 const { recordMetric } = require("./src/utils/metrics");
+const { installProcessErrorHandlers } = require("./src/utils/errorMonitoring");
 const {
   cleanupExpiredInventoryReservations,
 } = require("./src/services/checkoutInventory");
 
 const app = express();
+installProcessErrorHandlers();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(requestContextMiddleware);
 const shouldCaptureRawBody = (req) =>
-  req.originalUrl?.startsWith("/order/checkout/webhook/razorpay");
+  req.originalUrl?.startsWith("/order/checkout/webhook/razorpay") ||
+  req.originalUrl?.startsWith("/internal/reconciliation/scan");
 
 const isAllowedDevOrigin = (origin) => {
   if (env.NODE_ENV === "production") {
@@ -136,6 +140,11 @@ app.use("/admin", adminRoutes);
 app.use("/support", supportRoutes);
 app.use("/newsletter", newsletterRoutes);
 app.use("/media", mediaRoutes);
+app.use(
+  "/internal",
+  createRateLimiter({ name: "internal", max: 12, windowMs: 15 * 60 * 1000 }),
+  internalRoutes
+);
 
 app.use(notFound);
 app.use(errorHandler);

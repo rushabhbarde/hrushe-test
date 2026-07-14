@@ -12,8 +12,10 @@ const { buildInvoicePdf } = require("../utils/invoicePdf");
 const { hasAdminPermission } = require("../config/adminRoles");
 const WebhookEvent = require("../models/WebhookEvent");
 const { recordAuditLog } = require("../utils/auditLog");
+const { captureError } = require("../utils/errorMonitoring");
 const { logEvent } = require("../utils/logger");
 const { recordMetric } = require("../utils/metrics");
+const { markReconciliationScan } = require("../utils/operationsState");
 const {
   buildPaginationMeta,
   parsePaginationQuery,
@@ -119,7 +121,6 @@ const buildCustomerOrderProducts = (products = []) =>
 
 const buildPublicTrackingResponse = (order) => ({
   id: order.id || order._id.toString(),
-  orderNumber: order.orderNumber || null,
   orderNumber: order.orderNumber || null,
   customerName: order.customerName,
   customerEmail: order.customerEmail,
@@ -347,6 +348,57 @@ const isReservationExpired = (order) =>
   order.inventoryReservationExpiresAt &&
   order.inventoryReservationExpiresAt.getTime() < Date.now();
 
+const getPaymentConfirmationInventoryBlocker = (order) => {
+  if (!hasTrackedInventory(order)) {
+    return "";
+  }
+
+  if (order.inventoryReservationStatus === "committed") {
+    return "";
+  }
+
+  if (order.inventoryReservationStatus !== "reserved") {
+    return "reservation-missing";
+  }
+
+  if (isReservationExpired(order)) {
+    return "reservation-expired";
+  }
+
+  return "";
+};
+
+const markPaymentConfirmationManualReview = (order, source, reason, payload = {}) => {
+  const message =
+    reason === "reservation-expired"
+      ? "Captured payment requires manual review because the inventory reservation has expired."
+      : "Captured payment requires manual review because the inventory reservation is unavailable.";
+  const error = new AppError(message, 409);
+
+  order.paymentReconciliationResultCode =
+    RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+  recordCheckoutLog(order, "payment_confirmation_manual_review", source, {
+    reason,
+    resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+    ...payload,
+  });
+  recordMetric("payment.confirmation.manual_review", {
+    orderId: order._id?.toString?.() || "",
+    source,
+    reason,
+  });
+  captureError(error, {
+    component: "payment",
+    operation: "confirm-captured-payment",
+    orderId: order._id?.toString?.() || "",
+    checkoutSessionId: order.checkoutSessionId || "",
+    source,
+    reason,
+  });
+
+  return error;
+};
+
 const createReconciliationLockId = () =>
   typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -371,6 +423,44 @@ const setReconciliationResult = (order, resultCode, lockId) => {
   order.paymentReconciliationStartedAt = null;
   order.paymentReconciliationLockId = "";
   order.paymentReconciliationActorId = null;
+};
+
+const buildReconciliationSaveSet = (order) => ({
+  paymentStatus: order.paymentStatus,
+  orderStatus: order.orderStatus,
+  checkoutUrl: order.checkoutUrl,
+  inventoryReservationStatus: order.inventoryReservationStatus,
+  inventoryReservationExpiresAt: order.inventoryReservationExpiresAt,
+  paymentReconciliationResultCode: order.paymentReconciliationResultCode,
+  paymentReconciliationStartedAt: order.paymentReconciliationStartedAt,
+  paymentReconciliationLockId: order.paymentReconciliationLockId,
+  paymentReconciliationActorId: order.paymentReconciliationActorId,
+  checkoutLogs: order.checkoutLogs,
+});
+
+const saveReconciledOrder = async (order, lockId, options = {}) => {
+  if (order.paymentReconciliationLockId) {
+    assertReconciliationLockOwner(order, lockId);
+  }
+
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: order._id,
+      paymentReconciliationLockId: lockId,
+    },
+    { $set: buildReconciliationSaveSet(order) },
+    {
+      new: true,
+      runValidators: true,
+      ...(options.session ? { session: options.session } : {}),
+    }
+  );
+
+  if (!updatedOrder) {
+    throw new AppError("Payment reconciliation lock ownership changed. Please retry.", 409);
+  }
+
+  return updatedOrder;
 };
 
 const escapeRegExp = (value) =>
@@ -851,6 +941,11 @@ const createCheckout = asyncHandler(async (req, res) => {
       statusCode: error?.statusCode || error?.error?.statusCode,
       metadata: error?.error?.metadata,
     }, "error");
+    captureError(error, {
+      component: "razorpay",
+      operation: "orders.create",
+      amountPaise: totals.totalPaise,
+    });
 
     throw new AppError(
       error?.error?.description ||
@@ -979,6 +1074,16 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Invalid Razorpay payment signature", 400);
   }
 
+  const inventoryBlocker = getPaymentConfirmationInventoryBlocker(order);
+  if (inventoryBlocker) {
+    const error = markPaymentConfirmationManualReview(order, "backend", inventoryBlocker, {
+      razorpayOrderId,
+      razorpayPaymentId,
+    });
+    await order.save();
+    throw error;
+  }
+
   await commitOrderInventory(order);
   order.paymentStatus = "paid";
   order.orderStatus = "Confirmed";
@@ -1087,6 +1192,9 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
   }
 
   if (!signature) {
+    recordMetric("payment.webhook.invalid_signature", {
+      reason: "missing-signature",
+    });
     throw new AppError("Missing webhook signature", 401);
   }
 
@@ -1100,6 +1208,9 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
     .digest("hex");
 
   if (!safelyCompareSignatures(expectedSignature, signature)) {
+    recordMetric("payment.webhook.invalid_signature", {
+      reason: "signature-mismatch",
+    });
     throw new AppError("Invalid webhook signature", 401);
   }
 
@@ -1167,6 +1278,35 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
         String(paymentEntity?.currency || "").toUpperCase() !== env.RAZORPAY_CURRENCY
       ) {
         throw new AppError("Webhook payment amount or currency does not match the order", 409);
+      }
+      const inventoryBlocker = getPaymentConfirmationInventoryBlocker(order);
+      if (inventoryBlocker) {
+        markPaymentConfirmationManualReview(order, "webhook", inventoryBlocker, {
+          event,
+          providerEventId,
+          paymentId: paymentEntity?.id || "",
+        });
+        await order.save();
+        webhookEvent.status = "completed";
+        webhookEvent.processedAt = new Date();
+        await webhookEvent.save();
+        recordMetric("payment.webhook.manual_review", {
+          event,
+          orderId: order._id.toString(),
+          checkoutProvider: order.checkoutProvider,
+          reason: inventoryBlocker,
+        });
+        logEvent("payment.webhook.manual_review", {
+          event,
+          providerEventId,
+          orderId: order._id.toString(),
+          reason: inventoryBlocker,
+        }, "warn");
+        return res.status(202).json({
+          received: true,
+          manualReview: true,
+          reason: inventoryBlocker,
+        });
       }
       await commitOrderInventory(order);
       order.paymentStatus = "paid";
@@ -1318,12 +1458,18 @@ const reconcileOrderForAdmin = async (req, orderId) => {
       code: error?.error?.code || error?.code,
       statusCode: error?.statusCode || error?.error?.statusCode,
     }, "error");
+    captureError(error, {
+      component: "razorpay",
+      operation: "orders.fetchPayments",
+      orderId: order._id.toString(),
+      checkoutSessionId: order.checkoutSessionId,
+    });
     await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
       resultCode: RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE,
       checkoutSessionId: order.checkoutSessionId,
     });
     setReconciliationResult(order, RECONCILIATION_RESULT_CODES.PROVIDER_UNAVAILABLE, lockId);
-    await order.save();
+    order = await saveReconciledOrder(order, lockId);
     return {
       statusCode: 502,
       body: {
@@ -1355,7 +1501,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
       RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
       lockId
     );
-    await order.save();
+    order = await saveReconciledOrder(order, lockId);
     return {
       statusCode: 409,
       body: {
@@ -1379,7 +1525,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
       RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
       lockId
     );
-    await order.save();
+    order = await saveReconciledOrder(order, lockId);
     return {
       statusCode: 409,
       body: {
@@ -1408,7 +1554,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
         RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
         lockId
       );
-      await order.save();
+      order = await saveReconciledOrder(order, lockId);
       return {
         statusCode: 409,
         body: {
@@ -1433,7 +1579,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
         RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
         lockId
       );
-      await order.save();
+      order = await saveReconciledOrder(order, lockId);
       return {
         statusCode: 409,
         body: {
@@ -1466,7 +1612,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
         payment: summarizeRazorpayPayment(capturedPayment),
         paymentCount,
       });
-      await order.save(session ? { session } : undefined);
+      order = await saveReconciledOrder(order, lockId, { session });
       if (order.userId) {
         await Cart.findOneAndUpdate(
           { userId: order.userId },
@@ -1514,7 +1660,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
         payment: summarizeRazorpayPayment(failedPayment),
         paymentCount,
       });
-      await order.save(session ? { session } : undefined);
+      order = await saveReconciledOrder(order, lockId, { session });
     });
 
     await recordAuditLog(req, "payment.reconcile", { type: "order", id: order._id }, {
@@ -1542,7 +1688,7 @@ const reconcileOrderForAdmin = async (req, orderId) => {
     paymentCount,
   });
   setReconciliationResult(order, RECONCILIATION_RESULT_CODES.NO_PROVIDER_PAYMENT, lockId);
-  await order.save();
+  order = await saveReconciledOrder(order, lockId);
 
   return {
     statusCode: 200,
@@ -1600,6 +1746,23 @@ const getPaymentReconciliation = asyncHandler(async (req, res) => {
 
 const reconcileOrderPayment = asyncHandler(async (req, res) => {
   const result = await reconcileOrderForAdmin(req, req.params.id);
+  if (
+    [
+      RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+      RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH,
+      RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH,
+    ].includes(result.body.resultCode)
+  ) {
+    captureError(
+      new AppError(`Payment reconciliation requires operator review: ${result.body.resultCode}`, result.statusCode),
+      {
+        component: "reconciliation",
+        orderId: req.params.id,
+        resultCode: result.body.resultCode,
+        action: result.body.action,
+      }
+    );
+  }
   recordMetric("payment.reconciliation.result", {
     orderId: req.params.id,
     resultCode: result.body.resultCode,
@@ -1678,6 +1841,7 @@ const scanPaymentReconciliation = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
   const markManualReview = req.body?.markManualReview === true;
   const result = await scanStuckOrders({ limit, markManualReview });
+  markReconciliationScan(new Date());
 
   await recordAuditLog(req, "payment.reconciliation-scan", { type: "order" }, {
     limit,
@@ -1775,7 +1939,10 @@ module.exports = {
     RECONCILIATION_RESULT_CODES,
     assertReconciliationLockOwner,
     buildReconciliationFilter,
+    buildReconciliationSaveSet,
+    getPaymentConfirmationInventoryBlocker,
     reconcileOrderForAdmin,
+    saveReconciledOrder,
     selectRazorpayPaymentForOrder,
     setReconciliationResult,
     summarizeRazorpayPayment,
