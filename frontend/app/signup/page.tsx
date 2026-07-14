@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { AuthPanel } from "@/components/auth-panel";
@@ -12,20 +11,35 @@ function SignupPageContent() {
   const nextQuery = searchParams.get("next")
     ? `?next=${encodeURIComponent(searchParams.get("next") || "")}`
     : "";
+  const fallbackClosePath =
+    nextPath && nextPath !== "/account" && nextPath !== "/my-orders" ? nextPath : "/shop";
 
   useEffect(() => {
     router.prefetch(nextPath);
   }, [nextPath, router]);
 
+  const closeSignup = () => {
+    const historyIndex =
+      typeof window.history.state?.idx === "number" ? window.history.state.idx : null;
+
+    if ((historyIndex !== null && historyIndex > 0) || (historyIndex === null && window.history.length > 1)) {
+      router.back();
+      return;
+    }
+
+    router.push(fallbackClosePath);
+  };
+
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[radial-gradient(circle_at_18%_32%,rgba(255,255,255,0.12),transparent_20rem),linear-gradient(135deg,#242424,#0d0d0d_58%,#242424)] text-white">
-      <Link
-        href="/"
+      <button
+        type="button"
+        onClick={closeSignup}
         aria-label="Close create account"
         className="fixed right-5 top-5 z-20 flex h-11 w-11 items-center justify-center text-4xl font-light leading-none text-white/74 transition hover:text-white"
       >
         ×
-      </Link>
+      </button>
       <div className="pointer-events-none absolute inset-0 opacity-24 [background-image:radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:4px_4px]" />
       <div className="relative mx-auto grid min-h-dvh w-full max-w-[1480px] items-center gap-12 px-6 py-20 sm:px-10 lg:grid-cols-[0.92fr_1fr] lg:px-20">
         <section className="hidden justify-center lg:flex">
@@ -48,7 +62,7 @@ function SignupPageContent() {
             className="relative"
             onModeChange={(nextMode) => {
               if (nextMode === "login") {
-                router.push(`/login${nextQuery}`);
+                router.replace(`/login${nextQuery}`);
               }
             }}
             onSuccess={() => {
