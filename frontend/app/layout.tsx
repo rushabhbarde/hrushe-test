@@ -25,11 +25,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/brand/hrushe-sylogo-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/brand/hrushe-sylogo-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/NEW_LOGO_SYMB.png", sizes: "200x200", type: "image/png" },
     ],
-    shortcut: "/brand/hrushe-sylogo-192.png",
-    apple: "/brand/hrushe-sylogo-apple-touch-icon.png",
+    shortcut: "/NEW_LOGO_SYMB.png",
+    apple: "/NEW_LOGO_SYMB.png",
   },
   openGraph: {
     title: "HRUSHE | Defined Quietly",
@@ -76,7 +75,7 @@ export default function RootLayout({
       "@type": "Organization",
       name: "HRUSHE",
       url: "https://hrushe.in",
-      logo: "https://hrushe.in/brand/hrushe-sylogo-512.png",
+      logo: "https://hrushe.in/NEW_LOGO.png",
     },
     {
       "@context": "https://schema.org",

@@ -701,7 +701,7 @@ export const defaultAdminWorkspace: AdminWorkspace = {
   websiteSettings: {
     brandName: "HRUSHE",
     logoUrl: "/NEW_LOGO.png",
-    faviconUrl: "/brand/hrushe-sylogo-192.png",
+    faviconUrl: "/NEW_LOGO_SYMB.png",
     contactEmail: "team@hrushe.in",
     contactPhone: "+91 91128 54988",
     supportWhatsapp: "+91 91128 54988",

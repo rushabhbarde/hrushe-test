@@ -12,13 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#111111",
     icons: [
       {
-        src: "/brand/hrushe-sylogo-192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        src: "/brand/hrushe-sylogo-512.png",
-        sizes: "512x512",
+        src: "/NEW_LOGO_SYMB.png",
+        sizes: "200x200",
         type: "image/png",
       },
     ],

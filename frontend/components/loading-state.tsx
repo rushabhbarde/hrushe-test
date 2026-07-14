@@ -19,12 +19,11 @@ export function LoadingState({
       <div className="hrushe-symbol-loader" aria-hidden="true">
         <span className="hrushe-symbol-loader__mark">
           <Image
-            src="/brand/hrushe-loader-symbol.svg"
+            src="/NEW_LOGO_SYMB.png"
             alt=""
             width={96}
             height={96}
             priority
-            unoptimized
           />
         </span>
         <span className="hrushe-symbol-loader__rule" />
