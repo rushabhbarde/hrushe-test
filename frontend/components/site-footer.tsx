@@ -30,7 +30,6 @@ const footerGroups = [
     title: "Shop",
     links: [
       { href: "/shop", label: "All pieces" },
-      { href: "/new-in", label: "New In" },
       { href: "/collection/t-shirts", label: "T-Shirts" },
     ],
   },
@@ -48,7 +47,6 @@ const footerGroups = [
     links: [
       { href: "/story", label: "Our story" },
       { href: "/shop", label: "The collection" },
-      { href: "/new-in", label: "Latest release" },
     ],
   },
   {
@@ -99,9 +97,6 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
             </Link>
             <Link href="/men" className="hover:text-white">
               Men
-            </Link>
-            <Link href="/new-in" className="hover:text-white">
-              New In
             </Link>
             <Link href="/contact" className="hover:text-white">
               Contact

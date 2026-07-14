@@ -137,7 +137,7 @@ HRUSHE currently feels like a store with a good theme, not a fully formed brand.
 ### Recommended homepage structure
 
 1. **Single factual utility bar:** “Complimentary India delivery · Dispatches in 1–3 business days.” Remove CMS placeholders.
-2. **Header:** Shop, New In, Story, Search; account/wishlist/cart. Keep mobile cart visible.
+2. **Header:** Shop, Story, Search; account/wishlist/cart. Keep mobile cart visible.
 3. **Campaign hero:** One coherent image or short muted film, collection name, one sentence, one primary CTA. Include the starting price only if the price supports positioning.
 4. **Proof rail above the fold:** exact fabric composition, GSM, fit, made-in location, returns/exchanges.
 5. **Hero product chapter:** large front/back/model/fabric close-ups with “why it is different.”
@@ -355,7 +355,7 @@ INP cannot be responsibly inferred without real interaction data. The risk facto
 
 ### Rendering and caching
 
-- Convert homepage, shop, collections, new-in, story, policies, and PDP shells to Server Components.
+- Convert homepage, shop, collections, story, policies, and PDP shells to Server Components.
 - Fetch catalog data server-side with cache tags and 60–300 second revalidation.
 - Keep filters, quick-add, gallery, size selector, cart, and review form as small client islands.
 - Move providers into `(storefront)` and `(admin)` route groups and render them as deep as possible.
@@ -588,7 +588,7 @@ Three inventory tests are not enough for a commerce system. Add:
 | 38 | Medium | Product accordions lack `aria-expanded` and `aria-controls` |
 | 39 | Medium | Wishlist nests a button inside a link |
 | 40 | Medium | Trust badges avoid the restrictive return policy |
-| 41 | Medium | Search, collection, and new-in data load client-side |
+| 41 | Medium | Search and collection data load client-side |
 | 42 | Medium | Remote image configuration allows any host |
 | 43 | Medium | CSP still allows unsafe inline styles/scripts |
 | 44 | Medium | Product schema review rules can diverge from visible review rules |

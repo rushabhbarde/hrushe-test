@@ -446,8 +446,8 @@ export const defaultHomepageSections: HomepageSection[] = [
     title: "Summer: New & Now",
     subtitle: "",
     description: "",
-    ctaText: "Shop New Arrivals",
-    ctaLink: "/new-in",
+    ctaText: "Shop Women",
+    ctaLink: "/women",
     secondaryCtaText: "Shop All Womenswear",
     secondaryCtaLink: "/collection/women",
     image: "/uploads/banners/banner2.png",
@@ -560,8 +560,8 @@ export const defaultHomepageSections: HomepageSection[] = [
     title: "Defined Quietly",
     subtitle: "",
     description: "",
-    ctaText: "Shop New Arrivals",
-    ctaLink: "/new-in",
+    ctaText: "Shop Men",
+    ctaLink: "/men",
     secondaryCtaText: "Shop All Menswear",
     secondaryCtaLink: "/collection/men",
     image: "/uploads/banners/banner1.png",
@@ -781,7 +781,6 @@ export function resolveProductAdminMeta(workspace: AdminWorkspace, product: Prod
       product.collectionLabels ||
       current?.collectionLabels ||
       [
-        ...(product.newIn ? (["New In"] as ProductCollectionLabel[]) : []),
         ...(product.featured ? (["Featured"] as ProductCollectionLabel[]) : []),
         ...(product.bestSeller || product.newArrival ? (["Collection"] as ProductCollectionLabel[]) : []),
       ],

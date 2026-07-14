@@ -30,7 +30,7 @@ const sizeOptions = ["S", "M", "L", "XL", "XXL"] as const;
 const statusOptions: ProductStatus[] = ["Active", "Draft", "Hidden", "Sold Out"];
 const fitOptions: ProductFitType[] = ["Oversized", "Regular"];
 const genderOptions: ProductGender[] = ["Men", "Women", "Unisex"];
-const labelOptions: ProductCollectionLabel[] = ["New In", "Featured", "Collection"];
+const labelOptions: ProductCollectionLabel[] = ["Featured", "Collection"];
 
 type FormState = {
   name: string;
@@ -457,7 +457,7 @@ export function AdminProductForm({
         trackInventory: form.trackInventory,
         variants: inventoryRows,
         featured: collectionLabels.includes("Featured"),
-        newIn: collectionLabels.includes("New In"),
+        newIn: false,
         bestSeller: initialProduct?.bestSeller || false,
         newArrival: initialProduct?.newArrival || collectionLabels.includes("Collection"),
         imageLabel: initialProduct?.imageLabel || "HRUSHE admin upload",

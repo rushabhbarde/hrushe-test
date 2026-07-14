@@ -46,7 +46,7 @@ export type ProductStatus =
   | "sold_out";
 export type ProductFitType = "Oversized" | "Regular";
 export type ProductGender = "Men" | "Women" | "Unisex";
-export type ProductCollectionLabel = "New In" | "Featured" | "Collection";
+export type ProductCollectionLabel = "Featured" | "Collection";
 
 export type Product = {
   id: string;

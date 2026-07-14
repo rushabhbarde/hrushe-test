@@ -20,7 +20,6 @@ import {
 const navItems = [
   { href: "/women", label: "Women" },
   { href: "/men", label: "Men" },
-  { href: "/new-in", label: "New In" },
   { href: "/story", label: "Story" },
 ];
 
@@ -71,7 +70,6 @@ const defaultAudienceMenus: AudienceMenus = {
     ],
     featured: [
       { href: "/women", label: "Women Home" },
-      { href: "/new-in", label: "New Arrivals" },
       { href: "/collection/women", label: "All Womenswear" },
     ],
     categories: [
@@ -103,7 +101,6 @@ const defaultAudienceMenus: AudienceMenus = {
     ],
     featured: [
       { href: "/men", label: "Men Home" },
-      { href: "/new-in", label: "New Arrivals" },
       { href: "/collection/men", label: "All Menswear" },
     ],
     categories: [

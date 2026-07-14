@@ -142,7 +142,7 @@ const PRODUCT_STATUSES = [
 ];
 const PRODUCT_FIT_TYPES = ["Oversized", "Regular", ""];
 const PRODUCT_GENDERS = ["Men", "Women", "Unisex", ""];
-const PRODUCT_COLLECTION_LABELS = ["New In", "Featured", "Collection"];
+const PRODUCT_COLLECTION_LABELS = ["Featured", "Collection"];
 
 const normalizeOptionalText = (value) =>
   typeof value === "string" ? value.trim() : "";

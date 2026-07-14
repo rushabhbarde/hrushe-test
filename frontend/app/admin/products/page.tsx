@@ -197,7 +197,7 @@ export default function AdminProductsPage() {
           collectionLabels: entry.collectionLabels || [],
           status: entry.status || "Draft",
           featured: (entry.collectionLabels || []).includes("Featured"),
-          newIn: (entry.collectionLabels || []).includes("New In"),
+          newIn: false,
           bestSeller: false,
           newArrival: false,
           imageLabel: "Bulk upload",

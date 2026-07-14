@@ -171,7 +171,7 @@ function AudienceHeroSection({ section, audience }: { section: HomepageSection; 
           </h1>
           <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
             {section.ctaText ? (
-              <Link href={section.ctaLink || "/new-in"} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
+              <Link href={section.ctaLink || "/shop"} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
                 <span>{section.ctaText}</span>
                 <span aria-hidden="true" className="ml-0 max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-3 group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-3 group-focus-visible:opacity-100">
                   ›

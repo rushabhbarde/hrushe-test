@@ -10,7 +10,7 @@ import { isVisibleStorefrontProduct, sortProductsByStorefrontPriority } from "@/
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
-type AvailabilityFilter = "all" | "available" | "new";
+type AvailabilityFilter = "all" | "available";
 type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
 const swatchColors: Record<string, string> = {
@@ -59,8 +59,7 @@ export default function ShopPage() {
         product.colors.some((colour) => colour.toLowerCase() === selectedColour.toLowerCase());
       const matchesAvailability =
         availability === "all" ||
-        (availability === "available" && productIsAvailable(product)) ||
-        (availability === "new" && Boolean(product.newArrival || product.newIn));
+        (availability === "available" && productIsAvailable(product));
       return matchesColour && matchesAvailability;
     });
 
@@ -189,7 +188,6 @@ export default function ShopPage() {
                   {[
                     ["all", "All pieces"],
                     ["available", "Available now"],
-                    ["new", "New in"],
                   ].map(([value, label]) => (
                     <button key={value} type="button" onClick={() => setAvailability(value as AvailabilityFilter)} className={`min-h-12 border px-4 text-left text-xs font-medium uppercase tracking-[0.08em] ${availability === value ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)]"}`}>
                       {label}
