@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
@@ -53,6 +53,11 @@ export const metadata: Metadata = {
       "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     images: ["/opengraph-image"],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -112,6 +117,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={hrusheFont.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script
           type="application/ld+json"

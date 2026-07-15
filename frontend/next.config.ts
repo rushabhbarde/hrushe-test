@@ -32,6 +32,17 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/signup",
+        has: [{ type: "query", key: "next", value: "(?<next>.*)" }],
+        destination: "/login?mode=signup&next=:next",
+        permanent: false,
+      },
+      {
+        source: "/signup",
+        destination: "/login?mode=signup",
+        permanent: false,
+      },
+      {
         source: "/product/begie-solid-tee-oversize",
         destination: "/product/beige-solid-tee-oversize",
         permanent: true,

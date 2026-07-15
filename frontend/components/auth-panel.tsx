@@ -534,7 +534,7 @@ export function AuthPanel({
                 required
               />
             </label>
-            <div className="-mt-2 flex justify-end gap-4 text-xs font-semibold uppercase tracking-[0.16em] text-white/48">
+            <div className="-mt-2 grid justify-items-end gap-2 text-right text-xs font-semibold uppercase tracking-[0.16em] text-white/48 sm:flex sm:flex-wrap sm:justify-end sm:gap-x-4">
               <button type="button" onClick={() => setShowSignupPassword((current) => !current)} className="hover:text-white">
                 {showSignupPassword ? "Hide password" : "Show password"}
               </button>
