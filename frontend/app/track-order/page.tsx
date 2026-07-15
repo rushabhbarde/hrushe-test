@@ -67,7 +67,7 @@ export default function TrackOrderPage() {
                 aria-pressed={searchMode === "email"}
                 className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "email"
-                    ? "border-black bg-black text-white"
+                    ? "hrushe-inverse-action"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
                 }`}
               >
@@ -79,7 +79,7 @@ export default function TrackOrderPage() {
                 aria-pressed={searchMode === "phone"}
                 className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
                   searchMode === "phone"
-                    ? "border-black bg-black text-white"
+                    ? "hrushe-inverse-action"
                     : "border-[var(--border)] bg-white text-[var(--foreground)]"
                 }`}
               >
@@ -108,6 +108,7 @@ export default function TrackOrderPage() {
                   className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
                   placeholder={searchMode === "email" ? "you@example.com" : "+91 98765 43210"}
                   type={searchMode === "email" ? "email" : "tel"}
+                  inputMode={searchMode === "email" ? "email" : "tel"}
                   autoComplete={searchMode === "email" ? "email" : "tel"}
                   required
                 />

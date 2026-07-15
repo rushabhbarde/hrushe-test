@@ -271,7 +271,7 @@ export function SupportChatbot() {
                       onClick={() => setSelectedValue(option.value)}
                       className={`min-h-11 border px-3 text-left text-xs font-medium uppercase tracking-[0.12em] transition ${
                         selectedValue === option.value
-                          ? "border-black bg-black text-white"
+                          ? "hrushe-inverse-action"
                           : "border-black/10 bg-white hover:border-black/35"
                       }`}
                     >

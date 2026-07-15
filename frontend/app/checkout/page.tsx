@@ -426,12 +426,16 @@ export default function CheckoutPage() {
       <main className="lux-page py-8 sm:py-10 lg:py-14">
           <div className="lux-container">
             {!isReady ? (
-              <LoadingState
-                title="Preparing your checkout"
-                description="We are syncing your saved bag before payment details are shown."
-              />
+              <>
+                <h1 className="sr-only">Checkout</h1>
+                <LoadingState
+                  title="Preparing your checkout"
+                  description="We are syncing your saved bag before payment details are shown."
+                />
+              </>
             ) : items.length === 0 ? (
               <section className="mx-auto max-w-3xl py-10">
+                <h1 className="sr-only">Checkout</h1>
                 <EmptyState
                   title="Your checkout is waiting for products."
                   description="Add a few pieces to your cart first, then come back here to finish the order."
@@ -554,7 +558,7 @@ export default function CheckoutPage() {
                                   aria-pressed={selectedAddressId === address.id}
                                   className={`min-w-[230px] border p-4 text-left text-sm transition ${
                                     selectedAddressId === address.id
-                                      ? "border-black bg-black text-white"
+                                      ? "hrushe-inverse-action"
                                       : "border-[var(--border)] bg-white/60 text-[var(--foreground)]"
                                   }`}
                                 >

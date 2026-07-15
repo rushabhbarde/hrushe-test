@@ -466,7 +466,7 @@ function ProductInfoPanel({
                   aria-label={`${size}${available ? "" : " — unavailable"}`}
                   className={`inline-flex min-h-12 items-center justify-center px-3 text-[0.82rem] font-medium uppercase transition ${
                     active
-                      ? "bg-[var(--foreground)] text-[var(--background)]"
+                      ? "hrushe-inverse-action"
                       : available
                         ? "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[#ececec]"
                         : "cursor-not-allowed bg-[#f6f6f6] text-[var(--muted)] line-through opacity-45"
@@ -485,7 +485,7 @@ function ProductInfoPanel({
           type="button"
           onClick={onAddToCart}
           disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-          className="inline-flex min-h-[4.25rem] w-full items-center justify-center bg-[var(--foreground)] px-6 text-[0.86rem] font-bold uppercase tracking-[0.05em] text-[var(--background)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="hrushe-inverse-action inline-flex min-h-[4.25rem] w-full items-center justify-center px-6 text-[0.86rem] font-bold uppercase tracking-[0.05em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
           {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
@@ -831,7 +831,7 @@ export default function ProductDetailPage() {
         <div className="lg:grid lg:grid-cols-[minmax(0,50.5vw)_minmax(420px,1fr)] lg:items-start">
           <section aria-label="Product media gallery">
             <div
-              className="relative overflow-hidden border-b border-[var(--border)] bg-[#f7f7f7] lg:min-h-[calc(100vh-8rem)] lg:border-b-0"
+              className="relative overflow-hidden border-b border-[var(--border)] bg-[#f7f7f7] lg:h-[calc(100vh-7rem)] lg:min-h-[560px] lg:max-h-[760px] lg:border-b-0"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -839,7 +839,7 @@ export default function ProductDetailPage() {
               }}
               style={{ touchAction: "pan-y" }}
             >
-              <div className="relative aspect-[4/5] lg:min-h-[calc(100vh-8rem)] lg:aspect-auto">
+              <div className="relative aspect-[4/5] lg:h-full lg:aspect-auto">
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
@@ -885,7 +885,7 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={showNextMedia}
-                className="absolute bottom-5 right-5 flex h-10 w-10 items-center justify-center text-2xl leading-none text-[var(--foreground)]"
+                className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center text-2xl leading-none text-[var(--foreground)]"
                 aria-label="Expand product media"
               >
                 ⛶
@@ -927,10 +927,10 @@ export default function ProductDetailPage() {
             className="hide-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-[#f7f7f7]"
             aria-label="Product detail gallery"
           >
-            {mediaItems.slice(1).map((item, index) => (
+            {mediaItems.slice(1).map((item) => (
               <div
                 key={item.id}
-                className="relative min-h-[70svh] w-[86vw] flex-none snap-start sm:w-[70vw] lg:min-h-[calc(100vh-8rem)] lg:w-[42vw] xl:w-[34vw]"
+                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[42vw] xl:w-[34vw]"
               >
                 {item.type === "image" ? (
                   <Image
@@ -940,7 +940,7 @@ export default function ProductDetailPage() {
                     loading="lazy"
                     unoptimized={shouldBypassImageOptimization(item.src)}
                     sizes="(max-width: 640px) 86vw, (max-width: 1024px) 70vw, (max-width: 1280px) 42vw, 34vw"
-                    className={`object-cover object-center ${index === 2 ? "lg:object-left" : ""}`}
+                    className="object-contain object-center"
                   />
                 ) : (
                   <video
@@ -992,7 +992,7 @@ export default function ProductDetailPage() {
               type="button"
               onClick={handleAddToCart}
               disabled={productUnavailable || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-              className="inline-flex min-h-12 min-w-[176px] items-center justify-center bg-[var(--foreground)] px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--background)] transition disabled:cursor-not-allowed disabled:opacity-55"
+              className="hrushe-inverse-action inline-flex min-h-12 min-w-[176px] items-center justify-center px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] transition disabled:cursor-not-allowed disabled:opacity-55"
             >
               {productUnavailable ? "Unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
             </button>

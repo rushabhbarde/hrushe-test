@@ -540,7 +540,9 @@ body :where([class*="shadow-"]) {
 }
 
 .collection-plp__layout-controls button:focus-visible {
-  outline: none;
+  outline: 2px solid var(--foreground);
+  outline-color: color-mix(in srgb, var(--foreground) 64%, transparent);
+  outline-offset: 3px;
 }
 
 .collection-layout-icon {
@@ -831,6 +833,13 @@ body :where([class*="shadow-"]) {
   }
 }
 
+@media (max-width: 430px) {
+  .product-card-editorial-meta {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
 .mobile-drawer-enter {
   animation: mobile-drawer-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -887,6 +896,42 @@ body :where([class*="shadow-"]) {
   backdrop-filter: none;
   min-height: 48px;
   border-radius: 0 !important;
+}
+
+.hrushe-inverse-action {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.hrushe-inverse-action:hover,
+.hrushe-inverse-action:focus-visible {
+  color: var(--background);
+}
+
+.hrushe-inverse-hover:hover,
+.hrushe-inverse-hover:focus-visible {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.hrushe-light-action {
+  background: #ffffff;
+  color: #11110f;
+}
+
+.hrushe-light-action:hover,
+.hrushe-light-action:focus-visible {
+  background: rgba(255, 255, 255, 0.88);
+  color: #11110f;
+}
+
+.product-card-editorial-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
 }
 
 .lux-page {

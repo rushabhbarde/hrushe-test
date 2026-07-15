@@ -1402,7 +1402,7 @@ function AccountPageContent() {
                             }
                             className={`rounded-full border px-4 py-2.5 text-sm transition ${
                               preferences.preferredSize === size
-                                ? "border-black bg-black text-white"
+                                ? "hrushe-inverse-action"
                                 : "border-[var(--border)] bg-white"
                             }`}
                           >
@@ -1426,7 +1426,7 @@ function AccountPageContent() {
                             }
                             className={`rounded-full border px-4 py-2.5 text-sm transition ${
                               preferences.preferredFit === fit
-                                ? "border-black bg-black text-white"
+                                ? "hrushe-inverse-action"
                                 : "border-[var(--border)] bg-white"
                             }`}
                           >
@@ -1593,7 +1593,7 @@ function AccountPageContent() {
                         }
                         className={`w-full rounded-[1.5rem] border p-5 text-left transition ${
                           supportForm.category === option.value
-                            ? "border-black bg-black text-white"
+                            ? "hrushe-inverse-action"
                             : "border-[var(--border)] bg-white/70"
                         }`}
                       >

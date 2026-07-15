@@ -272,17 +272,17 @@ export function ProductCard({
       {showInfo ? (
       <Link
         href={productHref}
-        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-5 py-5" : "pt-3"}`}
+        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-3 py-4 sm:px-5 sm:py-5" : "pt-3"}`}
         aria-label={`View details for ${productName}`}
       >
         {isEditorial ? (
-          <div className="flex items-start justify-between gap-5">
+          <div className="product-card-editorial-meta">
             <div className="min-w-0">
-              <h3 className="line-clamp-2 text-[0.88rem] font-semibold leading-[1.18] text-[var(--foreground)]">
+              <h3 className="line-clamp-2 text-[0.82rem] font-semibold leading-[1.18] text-[var(--foreground)] sm:text-[0.88rem]">
                 {productName}
               </h3>
               {colour ? (
-                <p className="mt-1.5 text-[0.8rem] font-semibold leading-none text-[var(--muted)]">
+                <p className="mt-1.5 text-[0.76rem] font-semibold leading-none text-[var(--muted)] sm:text-[0.8rem]">
                   {colour.replace(/begie/gi, "Beige")}
                 </p>
               ) : null}
@@ -306,7 +306,7 @@ export function ProductCard({
                 </p>
               ) : null}
             </div>
-            <p className="flex shrink-0 items-center gap-1.5 text-[0.84rem] font-semibold leading-none">
+            <p className="flex shrink-0 items-center gap-1.5 text-[0.78rem] font-semibold leading-none sm:text-[0.84rem]">
               {compareAtPrice ? (
                 <span className="text-[var(--foreground)] line-through decoration-[1px]">
                   {formatPrice(compareAtPrice)}

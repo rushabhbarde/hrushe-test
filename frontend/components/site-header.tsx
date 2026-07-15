@@ -543,7 +543,7 @@ export function SiteHeader() {
               ))}
             </div>
             <div className="mt-auto space-y-4 text-[0.86rem]">
-              <Link href="/signup" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
+              <Link href="/login?mode=signup&next=%2Faccount" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
                 Sign up for first access
               </Link>
               <Link
@@ -652,7 +652,7 @@ export function SiteHeader() {
                     setIsMobileMenuOpen(false);
                     openCart();
                   }}
-                  className="min-h-11 border border-[var(--foreground)] bg-[var(--foreground)] text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[var(--background)]"
+                  className="hrushe-inverse-action min-h-11 border text-[0.68rem] font-medium uppercase tracking-[0.14em]"
                 >
                   Cart{itemCount > 0 ? ` ${itemCount}` : ""}
                 </button>

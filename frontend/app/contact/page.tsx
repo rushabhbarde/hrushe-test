@@ -47,7 +47,7 @@ export default function ContactPage() {
 
         <section className="mt-12 grid gap-px bg-[var(--border)] md:grid-cols-3 lg:mt-16">
           {contactDetails.map((item) => (
-            <a key={item.title} href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} className="group bg-[var(--surface)] p-6 transition hover:bg-[var(--foreground)] hover:text-[var(--background)] sm:p-8 lg:min-h-64">
+            <a key={item.title} href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} className="hrushe-inverse-hover group bg-[var(--surface)] p-6 transition sm:p-8 lg:min-h-64">
               <p className="eyebrow text-[var(--muted)] transition group-hover:text-white/55">{item.title}</p>
               <p className="mt-8 text-xl font-medium sm:text-2xl">{item.value}</p>
               <p className="mt-5 max-w-xs text-sm leading-7 text-[var(--muted)] transition group-hover:text-white/60">{item.note}</p>

@@ -320,7 +320,7 @@ export function AuthPanel({
     const prestigeButton =
       "min-h-12 w-full border border-white/26 px-5 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-55";
     const prestigeLightButton =
-      "min-h-12 w-full bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/88 disabled:cursor-not-allowed disabled:opacity-55";
+      "hrushe-light-action min-h-12 w-full px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55";
     const prestigeError = error ? (
       <p className="border border-white/16 bg-white/[0.06] px-4 py-3 text-sm leading-5 text-white/82" aria-live="polite">
         {error}
@@ -362,6 +362,7 @@ export function AuthPanel({
                     className={prestigeInput}
                     placeholder="Your email address"
                     type="email"
+                    autoComplete="email"
                     required
                   />
                 </label>
@@ -380,6 +381,7 @@ export function AuthPanel({
                     className={prestigeInput}
                     placeholder="Your email address"
                     type="email"
+                    autoComplete="email"
                     required
                   />
                 </label>
@@ -391,6 +393,7 @@ export function AuthPanel({
                     className={prestigeInput}
                     placeholder="6-digit OTP"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
                     required
                   />
                 </label>
@@ -402,6 +405,7 @@ export function AuthPanel({
                     className={prestigeInput}
                     placeholder="Choose password"
                     type={showForgotPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                   />
                 </label>
@@ -446,6 +450,7 @@ export function AuthPanel({
                   className={prestigeInput}
                   placeholder="Your email address"
                   type="email"
+                  autoComplete="email"
                   required
                 />
                 <button
@@ -465,6 +470,7 @@ export function AuthPanel({
                 onChange={(event) => setSignupFirstName(event.target.value)}
                 className={prestigeInput}
                 placeholder="Your first name"
+                autoComplete="given-name"
                 required
               />
             </label>
@@ -475,6 +481,7 @@ export function AuthPanel({
                 onChange={(event) => setSignupLastName(event.target.value)}
                 className={prestigeInput}
                 placeholder="Your last name"
+                autoComplete="family-name"
                 required
               />
             </label>
@@ -486,6 +493,8 @@ export function AuthPanel({
                 className={prestigeInput}
                 placeholder="10-digit phone number"
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 required
               />
             </label>
@@ -497,6 +506,7 @@ export function AuthPanel({
                 className={prestigeInput}
                 placeholder="Verification code"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 required
               />
             </label>
@@ -508,6 +518,7 @@ export function AuthPanel({
                 className={prestigeInput}
                 placeholder="Choose password"
                 type={showSignupPassword ? "text" : "password"}
+                autoComplete="new-password"
                 required
               />
             </label>
@@ -519,6 +530,7 @@ export function AuthPanel({
                 className={prestigeInput}
                 placeholder="Repeat password"
                 type={showSignupConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
                 required
               />
             </label>
@@ -563,6 +575,7 @@ export function AuthPanel({
                 onChange={(event) => setLoginIdentifier(event.target.value)}
                 className={prestigeInput}
                 placeholder="Email address or phone number"
+                autoComplete="username"
                 required
               />
             </label>
@@ -574,6 +587,7 @@ export function AuthPanel({
                 className={prestigeInput}
                 placeholder="Password"
                 type={showLoginPassword ? "text" : "password"}
+                autoComplete="current-password"
                 required
               />
             </label>
@@ -702,7 +716,7 @@ export function AuthPanel({
                 onClick={() => switchMode("login")}
                 className={`min-h-11 px-4 text-sm font-semibold transition ${
                   mode === "login"
-                    ? "bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+                    ? "hrushe-inverse-action shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
                     : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
                 }`}
               >
@@ -713,7 +727,7 @@ export function AuthPanel({
                 onClick={() => switchMode("signup")}
                 className={`min-h-11 px-4 text-sm font-semibold transition ${
                   mode === "signup"
-                    ? "bg-black text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
+                    ? "hrushe-inverse-action shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
                     : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
                 }`}
               >
@@ -738,8 +752,10 @@ export function AuthPanel({
                   value={forgotEmail}
                   onChange={(event) => setForgotEmail(event.target.value)}
                   className={inputClass}
+                  aria-label="Email address"
                   placeholder="Email address"
                   type="email"
+                  autoComplete="email"
                   required
                 />
                 {errorMessage}
@@ -757,16 +773,20 @@ export function AuthPanel({
                   value={forgotEmail}
                   onChange={(event) => setForgotEmail(event.target.value)}
                   className={inputClass}
+                  aria-label="Email address"
                   placeholder="Email address"
                   type="email"
+                  autoComplete="email"
                   required
                 />
                 <input
                   value={forgotOtp}
                   onChange={(event) => setForgotOtp(event.target.value)}
                   className={inputClass}
+                  aria-label="6-digit OTP"
                   placeholder="6-digit OTP"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   required
                 />
                 <div className="relative">
@@ -774,8 +794,10 @@ export function AuthPanel({
                     value={forgotPassword}
                     onChange={(event) => setForgotPassword(event.target.value)}
                     className={`${inputClass} pr-24`}
+                    aria-label="New password"
                     placeholder="New password"
                     type={showForgotPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                   />
                   <button
@@ -822,7 +844,9 @@ export function AuthPanel({
                 value={loginIdentifier}
                 onChange={(event) => setLoginIdentifier(event.target.value)}
                 className={inputClass}
+                aria-label="Email address or phone number"
                 placeholder="Email address or phone number"
+                autoComplete="username"
                 required
               />
               <div className="relative">
@@ -830,8 +854,10 @@ export function AuthPanel({
                   value={loginPassword}
                   onChange={(event) => setLoginPassword(event.target.value)}
                   className={`${inputClass} pr-24`}
+                  aria-label="Password"
                   placeholder="Password"
                   type={showLoginPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                 />
                 <button
@@ -866,7 +892,9 @@ export function AuthPanel({
                 value={signupName}
                 onChange={(event) => setSignupName(event.target.value)}
                 className={inputClass}
+                aria-label="Full name"
                 placeholder="Full name"
+                autoComplete="name"
                 required
               />
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_0.72fr]">
@@ -879,16 +907,21 @@ export function AuthPanel({
                     setSignupDevOtp("");
                   }}
                   className={inputClass}
+                  aria-label="Email address"
                   placeholder="Email address"
                   type="email"
+                  autoComplete="email"
                   required
                 />
                 <input
                   value={signupPhone}
                   onChange={(event) => setSignupPhone(event.target.value)}
                   className={inputClass}
+                  aria-label="Phone number"
                   placeholder="Phone number"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   required
                 />
               </div>
@@ -897,8 +930,10 @@ export function AuthPanel({
                   value={signupOtp}
                   onChange={(event) => setSignupOtp(event.target.value)}
                   className={inputClass}
+                  aria-label="Email OTP"
                   placeholder="Email OTP"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   required
                 />
                 <button
@@ -920,8 +955,10 @@ export function AuthPanel({
                     value={signupPassword}
                     onChange={(event) => setSignupPassword(event.target.value)}
                     className={`${inputClass} pr-24`}
+                    aria-label="Password"
                     placeholder="Password"
                     type={showSignupPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                   />
                   <button
@@ -937,8 +974,10 @@ export function AuthPanel({
                     value={signupConfirmPassword}
                     onChange={(event) => setSignupConfirmPassword(event.target.value)}
                     className={`${inputClass} pr-24`}
+                    aria-label="Confirm password"
                     placeholder="Confirm password"
                     type={showSignupConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                   />
                   <button

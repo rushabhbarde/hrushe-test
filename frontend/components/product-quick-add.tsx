@@ -136,7 +136,7 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? "absolute bottom-4 right-4 z-20 hidden h-6 w-6 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100 md:block"
+      ? "absolute bottom-2 right-2 z-20 hidden h-11 w-11 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100 md:block"
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
@@ -144,7 +144,7 @@ export function ProductQuickAdd({
       : "border border-black/15 bg-[var(--surface)] px-3 py-2.5";
   const buttonClassName =
     variant === "icon"
-      ? "flex h-6 w-6 items-center justify-center bg-transparent text-[var(--foreground)] transition duration-200 hover:text-[var(--muted)]"
+      ? "flex h-11 w-11 items-center justify-center bg-transparent text-[var(--foreground)] transition duration-200 hover:text-[var(--muted)]"
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
 
   return (
@@ -162,7 +162,7 @@ export function ProductQuickAdd({
                 key={size}
                 type="button"
                 onClick={() => addProduct(activeProduct, size)}
-                className="grid min-h-10 min-w-14 place-items-center border border-[var(--border)] bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase hover:border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                className="hrushe-inverse-hover grid min-h-11 min-w-14 place-items-center border border-[var(--border)] bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase"
               >
                 {size}
               </button>

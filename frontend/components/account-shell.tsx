@@ -239,7 +239,7 @@ export function AccountShell({
                 onClick={() => onSectionChange(item.id)}
                 className={`min-h-[122px] rounded-[1.4rem] border px-4 py-4 text-left transition lg:w-full lg:min-h-0 ${
                   isActive
-                    ? "border-black bg-black text-white shadow-[0_16px_30px_rgba(0,0,0,0.14)]"
+                    ? "hrushe-inverse-action shadow-[0_16px_30px_rgba(0,0,0,0.14)]"
                     : "border-[var(--border)] bg-white/70 text-[var(--foreground)] hover:border-black/30"
                 }`}
               >

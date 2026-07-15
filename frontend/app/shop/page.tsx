@@ -97,15 +97,15 @@ export default function ShopPage() {
           </p>
         </header>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] py-5">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-[var(--border)] py-5">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
             {filteredProducts.length} {filteredProducts.length === 1 ? "piece" : "pieces"}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3 sm:flex-none">
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-12 items-center border border-[var(--border)] px-5 text-[0.68rem] font-semibold uppercase tracking-[0.12em]"
+              className="inline-flex min-h-12 shrink-0 items-center border border-[var(--border)] px-5 text-[0.68rem] font-semibold uppercase tracking-[0.12em]"
             >
               Filter{activeFilterCount ? ` (${activeFilterCount})` : ""}
             </button>
@@ -114,7 +114,7 @@ export default function ShopPage() {
               id="shop-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as SortOption)}
-              className="min-h-12 border border-[var(--border)] bg-transparent px-4 text-[0.68rem] font-semibold uppercase tracking-[0.1em] outline-none"
+              className="min-h-12 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-4 text-[0.68rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
             >
               <option value="edit">Curated edit</option>
               <option value="newest">Newest</option>
@@ -189,7 +189,7 @@ export default function ShopPage() {
                     ["all", "All pieces"],
                     ["available", "Available now"],
                   ].map(([value, label]) => (
-                    <button key={value} type="button" onClick={() => setAvailability(value as AvailabilityFilter)} className={`min-h-12 border px-4 text-left text-xs font-medium uppercase tracking-[0.08em] ${availability === value ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--border)]"}`}>
+                    <button key={value} type="button" onClick={() => setAvailability(value as AvailabilityFilter)} className={`min-h-12 border px-4 text-left text-xs font-medium uppercase tracking-[0.08em] ${availability === value ? "hrushe-inverse-action" : "border-[var(--border)]"}`}>
                       {label}
                     </button>
                   ))}

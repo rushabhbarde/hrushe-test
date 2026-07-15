@@ -7,10 +7,8 @@ import { AuthPanel } from "@/components/auth-panel";
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const nextPath = searchParams.get("next") || "/my-orders";
-  const nextQuery = searchParams.get("next")
-    ? `?next=${encodeURIComponent(searchParams.get("next") || "")}`
-    : "";
   const fallbackClosePath =
     nextPath && nextPath !== "/account" && nextPath !== "/my-orders" ? nextPath : "/shop";
 
@@ -32,6 +30,7 @@ function LoginPageContent() {
 
   return (
     <main className="min-h-dvh bg-[#0b0b0b] text-white lg:grid lg:grid-cols-[1fr_minmax(430px,33vw)]">
+      <h1 className="sr-only">{initialMode === "signup" ? "Create a HRUSHE account" : "Login to HRUSHE"}</h1>
       <button
         type="button"
         onClick={closeLogin}
@@ -48,14 +47,9 @@ function LoginPageContent() {
       <aside className="auth-prestige-gradient relative flex min-h-dvh items-center overflow-hidden px-6 py-20 sm:px-10 lg:px-12">
         <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:4px_4px]" />
         <AuthPanel
-          initialMode="login"
+          initialMode={initialMode}
           variant="prestige"
           className="relative mx-auto w-full max-w-md"
-          onModeChange={(nextMode) => {
-            if (nextMode === "signup") {
-              router.replace(`/signup${nextQuery}`);
-            }
-          }}
           onSuccess={() => {
             router.push(nextPath);
           }}

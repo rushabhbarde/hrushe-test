@@ -207,9 +207,9 @@ function PoliciesPageContent() {
           <p className="mt-4 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">Last updated: 21 June 2026</p>
         </div>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-[300px_1fr]">
-          <aside aria-label="Policy sections">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-3 lg:overflow-visible lg:px-0 lg:pb-0" role="tablist">
+        <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-[300px_1fr]">
+          <aside className="min-w-0" aria-label="Policy sections">
+            <div className="-mx-4 flex max-w-full gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-3 lg:overflow-visible lg:px-0 lg:pb-0" role="tablist">
               {policyTabs.map((policy) => {
                 const isActive = currentPolicy.key === policy.key;
 
@@ -222,9 +222,9 @@ function PoliciesPageContent() {
                     role="tab"
                     aria-selected={isActive}
                     aria-controls="active-policy-panel"
-                    className={`block min-w-max shrink-0 border px-5 py-4 text-left transition lg:w-full ${
+                    className={`block min-h-12 min-w-max shrink-0 border px-5 py-4 text-left transition lg:w-full ${
                       isActive
-                        ? "border-black bg-black text-white"
+                        ? "hrushe-inverse-action"
                         : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-black/5"
                     }`}
                   >
@@ -242,7 +242,7 @@ function PoliciesPageContent() {
             </Link>
           </aside>
 
-          <section id="active-policy-panel" role="tabpanel" aria-labelledby={`policy-tab-${currentPolicy.key}`} className="border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
+          <section id="active-policy-panel" role="tabpanel" aria-labelledby={`policy-tab-${currentPolicy.key}`} className="min-w-0 overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
             <p className="eyebrow text-[var(--muted)]">{currentPolicy.label}</p>
             <h2 className="mt-5 text-3xl font-medium tracking-[-0.025em]">
               {currentPolicy.label}
@@ -251,7 +251,7 @@ function PoliciesPageContent() {
               {currentPolicy.sections.map((section) => (
                 <div key={section.title}>
                   <h3 className="text-lg font-medium">{section.title}</h3>
-                  <div className="mt-3 max-w-3xl space-y-3 text-[0.94rem] leading-7 text-[var(--muted)]">
+                  <div className="mt-3 max-w-3xl space-y-3 break-words text-[0.94rem] leading-7 text-[var(--muted)]">
                     {section.body.split("\n").map((paragraph) => (
                       <p key={`${section.title}-${paragraph}`}>{paragraph}</p>
                     ))}

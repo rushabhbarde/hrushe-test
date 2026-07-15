@@ -77,6 +77,7 @@ export default async function Home() {
 
   return (
     <main className="h-svh overflow-hidden bg-[var(--background)] text-[var(--foreground)] lg:h-auto lg:min-h-svh lg:overflow-visible">
+      <h1 className="sr-only">HRUSHE women and men collections</h1>
       <header className="fixed inset-x-0 top-0 z-30 flex h-[3.375rem] items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
         <Link href="/" aria-label="HRUSHE home" className="inline-flex items-center justify-center">
           <Image

@@ -159,6 +159,7 @@ export default function CartPage() {
         <div className="lux-container">
           {items.length === 0 && !hasSavedProducts ? (
             <section className="mx-auto max-w-3xl py-10">
+              <h1 className="sr-only">Shopping bag</h1>
               <EmptyState
                 title="Your shopping bag is empty."
                 description="Your bag is waiting. Add everyday pieces you will actually reach for."
@@ -244,7 +245,7 @@ export default function CartPage() {
                                   <button
                                     type="button"
                                     onClick={() => moveToWishlist(item)}
-                                    className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center border border-white/50 bg-white/92 text-lg text-[var(--muted)] shadow-[0_12px_28px_rgba(17,17,17,0.12)] transition hover:-translate-y-0.5 hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                                    className="hrushe-inverse-hover absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center border border-white/50 bg-white/92 text-lg text-[var(--muted)] shadow-[0_12px_28px_rgba(17,17,17,0.12)] transition hover:-translate-y-0.5"
                                     aria-label={`Save ${item.name} for later`}
                                   >
                                     ♡
