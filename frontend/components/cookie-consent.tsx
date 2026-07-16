@@ -212,9 +212,9 @@ export function CookieConsentBanner() {
   return (
     <aside
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-[110] border-t border-white/15 bg-[#11110f] text-[#f6f4ef]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] px-3 pb-3 sm:px-4 sm:pb-4"
     >
-      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 md:px-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:py-5">
+      <div className="pointer-events-auto mx-auto grid w-full max-w-[1120px] gap-4 border border-white/15 bg-[#11110f] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-[#f6f4ef] sm:px-5 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="max-w-3xl">
           <p className="eyebrow text-white/50">Your privacy</p>
           <p className="mt-2 text-sm leading-6 text-white/75">
@@ -223,7 +223,7 @@ export function CookieConsentBanner() {
             improve your experience. Read our{" "}
             <Link
               href="/policies?tab=privacy"
-              className="underline decoration-white/35 underline-offset-4 hover:text-white"
+              className="underline decoration-white/35 underline-offset-4 hover:text-white focus-visible:outline-white/70"
             >
               Privacy Policy
             </Link>
@@ -231,29 +231,35 @@ export function CookieConsentBanner() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+        <div className="grid gap-2 min-[560px]:grid-cols-3 lg:min-w-[34rem]">
           <button
             type="button"
             onClick={() => setView("preferences")}
-            className="min-h-12 border border-white/25 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-white/60 hover:text-white"
+            className="flex min-h-11 items-center justify-center border border-white/25 px-4 text-center hover:border-white/60 focus-visible:outline-white/70"
           >
-            Preferences
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85">
+              Preferences
+            </span>
           </button>
           <button
             type="button"
             onClick={() => commitConsent(defaultPreferences)}
-            className="min-h-12 border border-white/25 px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 hover:border-white/60 hover:text-white"
+            className="flex min-h-11 items-center justify-center border border-white/25 px-4 text-center hover:border-white/60 focus-visible:outline-white/70"
           >
-            Reject optional
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85">
+              Reject optional
+            </span>
           </button>
           <button
             type="button"
             onClick={() =>
               commitConsent({ analytics: true, marketing: true })
             }
-            className="col-span-2 min-h-12 bg-[#f6f4ef] px-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#11110f] hover:bg-white sm:col-span-1"
+            className="flex min-h-11 items-center justify-center bg-[#f6f4ef] px-5 text-center hover:bg-white focus-visible:outline-white/70"
           >
-            Accept all
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
+              Accept all
+            </span>
           </button>
         </div>
       </div>

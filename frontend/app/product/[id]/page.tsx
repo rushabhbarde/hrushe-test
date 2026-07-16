@@ -278,7 +278,7 @@ function ProductInfoPanel({
   actionRef,
 }: ProductInfoPanelProps) {
   const [openPanel, setOpenPanel] =
-    useState<(typeof productInfoSections)[number]["key"] | null>(null);
+    useState<(typeof productInfoSections)[number]["key"] | null>("details");
   const displayName = getProductDisplayName(product);
   const soldOut = product.status === "Sold Out" || product.availability === "sold-out";
   const fitLabel = getProductFit(product) || getProductFitLine(product) || "Regular fit";
@@ -300,43 +300,49 @@ function ProductInfoPanel({
   );
 
   return (
-    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(3rem,8vw,10rem)] lg:py-[clamp(3.5rem,7vw,8rem)]">
-      <div className="flex items-start justify-between gap-6 text-[0.95rem] font-semibold leading-tight text-[var(--foreground)]">
-        <h2 className="max-w-[28ch]">{displayName}</h2>
+    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 py-6 sm:px-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(2.5rem,6vw,7rem)] lg:py-[clamp(2.25rem,4.5vw,4.75rem)]">
+      <div className="flex items-start justify-between gap-6 border-b border-[var(--border)] pb-5 leading-tight text-[var(--foreground)]">
+        <h2 className="max-w-[24ch] text-[1.35rem] font-semibold tracking-[-0.03em] sm:text-[1.6rem]">
+          {displayName}
+        </h2>
         <div className="shrink-0 text-right">
           {hasDiscount ? (
             <p className="mb-1 text-[0.82rem] text-[var(--muted)] line-through decoration-[1.5px]">
               {compareAtPriceText}
             </p>
           ) : null}
-          <p className={hasDiscount ? "text-[var(--accent)]" : ""}>{priceText}</p>
+          <p className={`text-[1.15rem] font-semibold ${hasDiscount ? "text-[var(--accent)]" : ""}`}>
+            {priceText}
+          </p>
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 text-[0.82rem] leading-none">
-        <span aria-label="5 star rating" className="tracking-[0.08em] text-[var(--foreground)]">
-          ★★★★★
-        </span>
-        <span className="text-[var(--muted)] underline underline-offset-2">
-          {reviewCount > 0
-            ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
-            : "No reviews yet"}
-        </span>
+      <div className="mt-5 grid gap-3 border-b border-[var(--border)] pb-5 sm:grid-cols-2">
+        <div className="flex min-h-11 items-center gap-3 text-[0.82rem] leading-none">
+          <span aria-label="5 star rating" className="tracking-[0.08em] text-[var(--foreground)]">
+            ★★★★★
+          </span>
+          <span className="text-[var(--muted)] underline underline-offset-2">
+            {reviewCount > 0
+              ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
+              : "No reviews yet"}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenSizeGuide}
+          className="inline-flex min-h-11 items-center justify-start gap-2 border border-[var(--border)] px-3 text-left text-[0.86rem] font-semibold text-[var(--foreground)] sm:justify-center"
+        >
+          <span aria-hidden="true">ⓘ</span>
+          <span>Sizing &amp; Fit</span>
+          <span className="font-medium">{fitLabel}</span>
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={onOpenSizeGuide}
-        className="mt-8 inline-flex w-fit items-center gap-2 text-left text-[0.9rem] font-semibold text-[var(--foreground)]"
-      >
-        <span aria-hidden="true">ⓘ</span>
-        <span>Sizing &amp; Fit</span>
-        <span className="font-medium">{fitLabel}</span>
-      </button>
-
       {colorProducts.length > 0 ? (
-        <div className="mt-9">
-          <div className="flex items-center justify-between gap-5">
+        <div className="mt-6 border-b border-[var(--border)] pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
             <p className="flex items-baseline gap-3 text-[0.9rem] text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">
                 Colour
@@ -346,21 +352,21 @@ function ProductInfoPanel({
               </span>
               <span>{selectedColor || product.colors[0]}</span>
             </p>
-            <div className="flex items-center gap-2 text-[0.82rem] font-medium text-[var(--muted)]">
+            <div className="flex w-full items-center gap-2 text-[0.82rem] font-medium text-[var(--muted)] sm:w-auto sm:justify-end">
               <span>Save</span>
               <WishlistButton
                 productId={product.id}
                 label={`Save ${displayName}`}
-                className="inline-flex h-9 w-9 items-center justify-center text-[var(--foreground)]"
+                className="inline-flex h-10 w-10 items-center justify-center border border-[var(--border)] text-[var(--foreground)]"
                 iconClassName="h-4 w-4"
               />
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-6 gap-1.5">
+          <div className="mt-4 flex flex-wrap gap-2">
             {colorProducts.map((colorProduct) => {
               const color = colorProduct.colors[0];
               const active = colorProduct.id === product.id;
-              const swatchClassName = `relative inline-flex aspect-square w-full overflow-hidden bg-[var(--surface-strong)] transition ${
+              const swatchClassName = `relative inline-flex h-20 w-20 overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)] transition ${
                 active
                   ? "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--foreground)]"
                   : "hover:after:absolute hover:after:inset-x-0 hover:after:bottom-0 hover:after:h-0.5 hover:after:bg-[var(--foreground)]"
@@ -415,8 +421,8 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-9">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-6 border-b border-[var(--border)] pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <p className="flex items-center gap-3 text-[0.9rem] text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">Size</span>
               {selectedSize ? <span>{selectedSize}</span> : null}
@@ -424,7 +430,7 @@ function ProductInfoPanel({
                 {soldOut ? "Sold Out" : "In Stock"}
               </span>
             </p>
-            <div className="flex items-center gap-4 text-[0.82rem] font-medium">
+            <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-medium sm:w-auto sm:justify-end">
               <button
                 type="button"
                 onClick={onOpenSizeGuide}
@@ -443,7 +449,7 @@ function ProductInfoPanel({
               ) : null}
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+          <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
             {product.sizes.map((size) => {
               const active = selectedSize === size;
               const available =
@@ -464,12 +470,12 @@ function ProductInfoPanel({
                   disabled={!available}
                   aria-pressed={active}
                   aria-label={`${size}${available ? "" : " — unavailable"}`}
-                  className={`inline-flex min-h-12 items-center justify-center px-3 text-[0.82rem] font-medium uppercase transition ${
+                  className={`inline-flex min-h-12 items-center justify-center border px-3 text-[0.82rem] font-medium uppercase transition ${
                     active
                       ? "hrushe-inverse-action"
                       : available
-                        ? "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[#ececec]"
-                        : "cursor-not-allowed bg-[#f6f6f6] text-[var(--muted)] line-through opacity-45"
+                        ? "border-transparent bg-[#f6f6f6] text-[var(--foreground)] hover:border-[var(--foreground)]"
+                        : "cursor-not-allowed border-transparent bg-[#f6f6f6] text-[var(--muted)] line-through opacity-45"
                   }`}
                 >
                   {size}
@@ -480,84 +486,82 @@ function ProductInfoPanel({
         </div>
       ) : null}
 
-      <div ref={actionRef} className="mt-9 space-y-4">
+      <div ref={actionRef} className="mt-6 space-y-4">
         <button
           type="button"
           onClick={onAddToCart}
           disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-          className="hrushe-inverse-action inline-flex min-h-[4.25rem] w-full items-center justify-center px-6 text-[0.86rem] font-bold uppercase tracking-[0.05em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="hrushe-inverse-action inline-flex min-h-[3.75rem] w-full items-center justify-center px-6 text-[0.82rem] font-bold uppercase tracking-[0.08em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
         >
           {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
         {addError ? <p className="text-sm text-[var(--accent)]" role="alert">{addError}</p> : null}
-        <div className="divide-y divide-[var(--border)] text-[0.9rem] font-medium">
-          <div className="flex items-center justify-between py-4">
+        <div className="grid gap-2 text-[0.86rem] font-medium sm:grid-cols-2">
+          <div className="flex min-h-12 items-center justify-between border border-[var(--border)] px-4">
             <span>{product.returnEligible ? "Free size exchange" : "Free shipping on prepaid orders"}</span>
             <span aria-hidden="true">›</span>
           </div>
-          <div className="flex items-center justify-between py-4">
+          <div className="flex min-h-12 items-center justify-between border border-[var(--border)] px-4">
             <span>Dispatches in 1–3 business days</span>
             <span aria-hidden="true">›</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-auto border-t border-[var(--border)] pt-8">
-        <div className="grid gap-2 lg:grid-cols-3 lg:gap-4">
-          {productInfoSections.map((section) => {
-            const isOpen = openPanel === section.key;
+      <div className="mt-7 border-t border-[var(--border)]">
+        {productInfoSections.map((section) => {
+          const isOpen = openPanel === section.key;
 
-            return (
-              <div key={section.key} className="border-b border-[var(--border)] lg:border-b-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenPanel((current) => (current === section.key ? null : section.key))
-                  }
-                  className="flex w-full items-center gap-4 py-4 text-left text-[0.86rem] font-semibold"
-                  aria-expanded={isOpen}
-                >
-                  <span className="text-lg leading-none" aria-hidden="true">
-                    +
-                  </span>
-                  <span>{section.title}</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div key={section.key} className="border-b border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenPanel((current) => (current === section.key ? null : section.key))
+                }
+                className="flex w-full items-center justify-between gap-6 py-4 text-left text-[0.88rem] font-semibold"
+                aria-expanded={isOpen}
+              >
+                <span>{section.title}</span>
+                <span className="text-lg leading-none" aria-hidden="true">
+                  {isOpen ? "-" : "+"}
+                </span>
+              </button>
 
-        {openPanel ? (
-          <div className="mt-3 max-w-[42rem] text-[0.86rem] leading-7 text-[var(--muted)]">
-            {openPanel === "details" ? (
-              <div className="space-y-4">
-                {product.description ? <p>{product.description}</p> : null}
-                {modelNote ? <p>{modelNote}</p> : null}
-                {detailRows.length > 0 ? (
-                  <dl className="grid gap-2 sm:grid-cols-2">
-                    {detailRows.map((item) => (
-                      <div key={item.label} className="flex gap-2">
-                        <dt className="font-semibold text-[var(--foreground)]">{item.label}:</dt>
-                        <dd>{item.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : null}
-                {washCare ? <p>{washCare}</p> : null}
-              </div>
-            ) : null}
-            {openPanel === "faqs" ? (
-              <p>
-                Need help with fit or fabric? Message HRUSHE support and we will help you choose the right size before checkout.
-              </p>
-            ) : null}
-            {openPanel === "shipping" ? (
-              <p>
-                Orders dispatch within 1–3 business days. One size exchange is available when eligible, and returns follow the product return policy.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+              {isOpen ? (
+                <div className="pb-5 text-[0.86rem] leading-7 text-[var(--muted)]">
+                  {section.key === "details" ? (
+                    <div className="space-y-4">
+                      {product.description ? <p>{product.description}</p> : null}
+                      {modelNote ? <p>{modelNote}</p> : null}
+                      {detailRows.length > 0 ? (
+                        <dl className="grid gap-2 sm:grid-cols-2">
+                          {detailRows.map((item) => (
+                            <div key={item.label} className="flex gap-2">
+                              <dt className="font-semibold text-[var(--foreground)]">{item.label}:</dt>
+                              <dd>{item.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                      {washCare ? <p>{washCare}</p> : null}
+                    </div>
+                  ) : null}
+                  {section.key === "faqs" ? (
+                    <p>
+                      Need help with fit or fabric? Message HRUSHE support and we will help you choose the right size before checkout.
+                    </p>
+                  ) : null}
+                  {section.key === "shipping" ? (
+                    <p>
+                      Orders dispatch within 1–3 business days. One size exchange is available when eligible, and returns follow the product return policy.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
