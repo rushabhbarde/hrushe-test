@@ -186,6 +186,15 @@ function LayoutIcon({ variant, cells }: { variant: LayoutIconVariant; cells: num
   );
 }
 
+function FilterSlidersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M4 7h16M4 17h16" strokeLinecap="square" />
+      <path d="M8 4v6M16 14v6" strokeLinecap="square" />
+    </svg>
+  );
+}
+
 function CollectionSkeleton({ layout }: { layout: CollectionLayout }) {
   return (
     <div className={`collection-plp__grid collection-plp__grid--${layout}`} aria-hidden="true">
@@ -301,20 +310,6 @@ export default function CollectionPage() {
           </nav>
 
           <div className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
-            <div className="collection-plp__layout-controls" aria-label="Product grid density">
-              {layoutOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setLayout(option.value)}
-                  aria-label={option.label}
-                  aria-pressed={layout === option.value}
-                >
-                  <LayoutIcon variant={option.icon} cells={option.cells} />
-                </button>
-              ))}
-            </div>
-
             <div className="collection-plp__filter-actions">
               {activeControlCount > 0 ? (
                 <button type="button" onClick={resetControls} className="collection-plp__reset-button">
@@ -327,9 +322,24 @@ export default function CollectionPage() {
                 className="collection-plp__filter-button"
                 aria-haspopup="dialog"
               >
+                <FilterSlidersIcon />
                 <span>Filter &amp; Sort</span>
                 {activeControlCount > 0 ? <sup>{activeControlCount}</sup> : null}
               </button>
+            </div>
+
+            <div className="collection-plp__layout-controls" aria-label="Product grid density">
+              {layoutOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setLayout(option.value)}
+                  aria-label={option.label}
+                  aria-pressed={layout === option.value}
+                >
+                  <LayoutIcon variant={option.icon} cells={option.cells} />
+                </button>
+              ))}
             </div>
           </div>
 

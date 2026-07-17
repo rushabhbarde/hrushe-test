@@ -26,8 +26,9 @@ function getAvailableSizes(product: Product) {
 
 function QuickAddBagIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" strokeLinecap="square" />
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M7 8.5h10l1 10.5H6L7 8.5Z" strokeLinejoin="round" />
+      <path d="M9.5 8.5V7a2.5 2.5 0 0 1 5 0v1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -136,7 +137,7 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? "absolute bottom-2 right-2 z-20 hidden h-11 w-11 opacity-0 transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100 md:block"
+      ? "absolute bottom-2 right-2 z-20 h-11 w-11 opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover/card:opacity-100 md:group-focus-within/card:opacity-100"
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
@@ -144,7 +145,7 @@ export function ProductQuickAdd({
       : "border border-black/15 bg-[var(--surface)] px-3 py-2.5";
   const buttonClassName =
     variant === "icon"
-      ? "flex h-11 w-11 items-center justify-center bg-transparent text-[var(--foreground)] transition duration-200 hover:text-[var(--muted)]"
+      ? "flex h-11 w-11 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] transition duration-200 hover:bg-white hover:text-[var(--foreground)] disabled:opacity-60"
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
 
   return (

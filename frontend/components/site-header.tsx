@@ -357,37 +357,9 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-1.5 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
-          <div className="flex items-center gap-2 lg:gap-7">
-            <button
-              ref={mobileMenuToggleRef}
-              type="button"
-              onClick={() => setIsMobileMenuOpen((current) => !current)}
-              className="flex h-11 w-11 items-center justify-center lg:hidden"
-              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-site-navigation"
-            >
-              <span className="relative flex h-4 w-5 items-center justify-center">
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "rotate-45" : "-translate-y-[5px]"
-                  }`}
-                />
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "-rotate-45" : "translate-y-[5px]"
-                  }`}
-                />
-              </span>
-            </button>
-
+      <div className="mx-auto max-w-[1600px] px-3 py-1.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
+          <div className="hidden items-center gap-7 lg:flex">
             <nav className="hidden items-center gap-7 text-[0.74rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
               {navItems.map((item) => {
                 const audienceMenu = isAudienceMenuKey(item.label) ? item.label : null;
@@ -408,18 +380,18 @@ export function SiteHeader() {
             </nav>
           </div>
 
-          <Link href="/" className="flex items-center justify-center">
+          <Link href="/" className="flex shrink-0 items-center justify-start lg:justify-center">
             <Image
               src="/NEW_LOGO.png"
               alt="HRUSHE"
               width={220}
               height={72}
               priority
-              className="h-9 w-auto object-contain sm:h-10 lg:h-12"
+              className="h-[1.7rem] w-auto object-contain sm:h-10 lg:h-12"
             />
           </Link>
 
-          <div className="flex items-center justify-end gap-0.5 sm:gap-1">
+          <div className="site-header-mobile-actions flex min-w-max shrink-0 items-center justify-end gap-0 sm:gap-1">
             <div ref={accountMenuRef} className="relative hidden lg:block">
               {isAuthenticated ? (
                 <HeaderIcon
@@ -483,6 +455,21 @@ export function SiteHeader() {
               </svg>
             </HeaderIcon>
 
+            <div className="lg:hidden">
+              <HeaderIcon label="Account" onClick={() => router.push(isAuthenticated ? "/account" : loginHref)}>
+                {isAuthenticated ? (
+                  <span className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-[var(--accent)]/8 text-xs font-semibold text-[var(--accent)]">
+                    {accountInitial}
+                  </span>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
+                  </svg>
+                )}
+              </HeaderIcon>
+            </div>
+
             <HeaderIcon label="Cart" onClick={openCart}>
               <span className="relative inline-flex">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
@@ -502,13 +489,42 @@ export function SiteHeader() {
               </span>
             </HeaderIcon>
 
-            <HeaderIcon
-              label="Support"
-              onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
-            >
-              <SupportIcon />
-            </HeaderIcon>
+            <div className="hidden lg:block">
+              <HeaderIcon
+                label="Support"
+                onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
+              >
+                <SupportIcon />
+              </HeaderIcon>
+            </div>
 
+            <button
+              ref={mobileMenuToggleRef}
+              type="button"
+              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center lg:hidden"
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-site-navigation"
+            >
+              <span className="relative flex h-4 w-5 items-center justify-center">
+                <span
+                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
+                    isMobileMenuOpen ? "rotate-45" : "-translate-y-[5px]"
+                  }`}
+                />
+                <span
+                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
+                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+                <span
+                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
+                    isMobileMenuOpen ? "-rotate-45" : "translate-y-[5px]"
+                  }`}
+                />
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -587,7 +603,7 @@ export function SiteHeader() {
       ) : null}
 
       {isMobileMenuOpen ? (
-        <div id="mobile-site-navigation" className="border-t border-[var(--border)] lg:hidden">
+        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 max-h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-[var(--background)] shadow-[0_24px_60px_rgba(0,0,0,0.08)] lg:hidden">
           <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
             <div className="bg-[var(--background)]">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">

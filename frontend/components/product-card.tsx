@@ -227,11 +227,11 @@ export function ProductCard({
         </Link>
         {hasCardGallery ? (
           <>
-            <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-4 opacity-0 transition-opacity duration-200 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-1 opacity-100 transition-opacity duration-200 md:px-4 md:opacity-0 md:group-hover/card:opacity-100 md:group-focus-within/card:opacity-100">
               <button
                 type="button"
                 onClick={showPreviousImage}
-                className="pointer-events-auto grid h-8 w-8 place-items-center text-2xl font-light leading-none text-[var(--foreground)]"
+                className="pointer-events-auto grid h-11 w-11 place-items-center text-3xl font-light leading-none text-[var(--foreground)]"
                 aria-label={`Previous image for ${productName}`}
                 data-product-gallery-control="previous"
               >
@@ -240,7 +240,7 @@ export function ProductCard({
               <button
                 type="button"
                 onClick={showNextImage}
-                className="pointer-events-auto grid h-8 w-8 place-items-center text-2xl font-light leading-none text-[var(--foreground)]"
+                className="pointer-events-auto grid h-11 w-11 place-items-center text-3xl font-light leading-none text-[var(--foreground)]"
                 aria-label={`Next image for ${productName}`}
                 data-product-gallery-control="next"
               >
@@ -260,7 +260,14 @@ export function ProductCard({
           </>
         ) : null}
         <ProductQuickAdd product={product} variant={isEditorial ? "icon" : "bar"} />
-        {isEditorial ? null : (
+        {isEditorial ? (
+          <WishlistButton
+            productId={product.id}
+            label={`Save ${productName}`}
+            className="absolute bottom-[3.75rem] right-2 z-20 flex h-11 w-11 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] opacity-100 transition-opacity duration-150 hover:bg-white md:opacity-0 md:group-hover/card:opacity-100 md:group-focus-within/card:opacity-100"
+            iconClassName="h-5 w-5"
+          />
+        ) : (
           <WishlistButton
             productId={product.id}
             label={`Save ${productName}`}
@@ -272,22 +279,22 @@ export function ProductCard({
       {showInfo ? (
       <Link
         href={productHref}
-        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-3 py-4 sm:px-5 sm:py-5" : "pt-3"}`}
+        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-3 py-3.5 sm:px-5 sm:py-5" : "pt-3"}`}
         aria-label={`View details for ${productName}`}
       >
         {isEditorial ? (
           <div className="product-card-editorial-meta">
-            <div className="min-w-0">
-              <h3 className="line-clamp-2 text-[0.82rem] font-semibold leading-[1.18] text-[var(--foreground)] sm:text-[0.88rem]">
+            <div className="product-card-editorial-copy min-w-0">
+              <h3 className="product-card-editorial-title line-clamp-2 text-[0.9rem] font-medium leading-[1.18] text-[var(--foreground)] sm:text-[0.88rem] sm:font-semibold">
                 {productName}
               </h3>
               {colour ? (
-                <p className="mt-1.5 text-[0.76rem] font-semibold leading-none text-[var(--muted)] sm:text-[0.8rem]">
+                <p className="product-card-editorial-colour mt-1.5 text-[0.76rem] font-semibold leading-none text-[var(--muted)] sm:text-[0.8rem]">
                   {colour.replace(/begie/gi, "Beige")}
                 </p>
               ) : null}
               {visibleColourOptions.length > 0 ? (
-                <div className="mt-4 flex items-center gap-2 text-[0.78rem] font-medium leading-none text-[var(--muted)]" aria-label={`${colourOptions.length} colour options`}>
+                <div className="product-card-editorial-swatches mt-4 flex items-center gap-2 text-[0.78rem] font-medium leading-none text-[var(--muted)]" aria-label={`${colourOptions.length} colour options`}>
                   {visibleColourOptions.map((colourOption) => (
                     <span
                       key={colourOption}
@@ -301,12 +308,12 @@ export function ProductCard({
                 </div>
               ) : null}
               {product.availability === "sold-out" || product.status === "Sold Out" ? (
-                <p className="mt-2 text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                <p className="product-card-editorial-unavailable mt-2 text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
                   Currently unavailable
                 </p>
               ) : null}
             </div>
-            <p className="flex shrink-0 items-center gap-1.5 text-[0.78rem] font-semibold leading-none sm:text-[0.84rem]">
+            <p className="product-card-editorial-price flex shrink-0 items-center gap-1.5 text-[0.9rem] font-medium leading-none sm:text-[0.84rem] sm:font-semibold">
               {compareAtPrice ? (
                 <span className="text-[var(--foreground)] line-through decoration-[1px]">
                   {formatPrice(compareAtPrice)}

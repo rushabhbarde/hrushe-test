@@ -431,9 +431,18 @@ export function AuthPanel({
     if (mode === "signup") {
       return (
         <section className={`w-full text-white ${className}`.trim()}>
-          <div className="mb-8 flex items-center gap-8 text-sm font-semibold text-white">
-            <span>1 / 2</span>
-            <span>Details</span>
+          <div className="mb-8">
+            <Image
+              src="/NEW_LOGO.png"
+              alt="HRUSHE"
+              width={260}
+              height={60}
+              priority
+              className="h-auto w-40 brightness-0 invert sm:w-44"
+            />
+            <h1 className="mt-5 text-xl font-semibold uppercase tracking-[0.08em] text-white">
+              Create account
+            </h1>
           </div>
           <form className="grid gap-5" onSubmit={(event) => void onSignupSubmit(event)}>
             <label className={prestigeField}>
