@@ -928,13 +928,13 @@ export default function ProductDetailPage() {
 
         {mediaItems.length > 1 ? (
           <section
-            className="hide-scrollbar flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain bg-[#f7f7f7]"
+            className="hide-scrollbar flex snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain bg-transparent"
             aria-label="Product detail gallery"
           >
             {mediaItems.slice(1).map((item) => (
               <div
                 key={item.id}
-                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[42vw] xl:w-[34vw]"
+                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start overflow-hidden bg-[#f7f7f7] sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[calc(100vw/3)]"
               >
                 {item.type === "image" ? (
                   <Image
