@@ -431,14 +431,14 @@ export function AuthPanel({
     if (mode === "signup") {
       return (
         <section className={`w-full text-white ${className}`.trim()}>
-          <div className="mb-8">
+          <div className="mb-8 text-center">
             <Image
               src="/NEW_LOGO.png"
               alt="HRUSHE"
               width={260}
               height={60}
               priority
-              className="h-auto w-40 brightness-0 invert sm:w-44"
+              className="mx-auto h-auto w-40 brightness-0 invert sm:w-44"
             />
             <h1 className="mt-5 text-xl font-semibold uppercase tracking-[0.08em] text-white">
               Create account
