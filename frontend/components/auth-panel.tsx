@@ -576,7 +576,10 @@ export function AuthPanel({
       <section className={`w-full text-white ${className}`.trim()}>
         <div className="mx-auto max-w-md">
           {prestigeLogo}
-          <form className="mt-28 grid gap-7 lg:mt-32" onSubmit={(event) => void onLoginSubmit(event)}>
+          <h1 className="mt-7 text-center text-xl font-semibold uppercase tracking-[0.08em] text-white">
+            Sign in
+          </h1>
+          <form className="mt-12 grid gap-7 lg:mt-14" onSubmit={(event) => void onLoginSubmit(event)}>
             <label className={prestigeField}>
               Your email address
               <input
