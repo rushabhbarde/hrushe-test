@@ -835,7 +835,7 @@ export default function ProductDetailPage() {
         <div className="lg:grid lg:grid-cols-[minmax(0,50.5vw)_minmax(420px,1fr)] lg:items-start">
           <section aria-label="Product media gallery">
             <div
-              className="relative overflow-hidden border-b border-[var(--border)] bg-[#f7f7f7] lg:h-[calc(100vh-7rem)] lg:min-h-[560px] lg:max-h-[760px] lg:border-b-0"
+              className="relative overflow-hidden bg-[#f7f7f7] lg:h-[calc(100vh-7rem)] lg:min-h-[560px] lg:max-h-[760px]"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -847,7 +847,7 @@ export default function ProductDetailPage() {
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
-                  imageClassName="object-contain object-center"
+                  imageClassName="object-contain object-center lg:object-cover"
                   onVideoEnded={showNextMedia}
                 />
               </div>
@@ -928,13 +928,13 @@ export default function ProductDetailPage() {
 
         {mediaItems.length > 1 ? (
           <section
-            className="hide-scrollbar flex snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain bg-transparent"
+            className="hide-scrollbar flex snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain bg-[#f7f7f7]"
             aria-label="Product detail gallery"
           >
             {mediaItems.slice(1).map((item) => (
               <div
                 key={item.id}
-                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start overflow-hidden bg-[#f7f7f7] sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[calc(100vw/3)]"
+                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start overflow-hidden bg-[#f7f7f7] sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[33.333333vw]"
               >
                 {item.type === "image" ? (
                   <Image
@@ -944,7 +944,7 @@ export default function ProductDetailPage() {
                     loading="lazy"
                     unoptimized={shouldBypassImageOptimization(item.src)}
                     sizes="(max-width: 640px) 86vw, (max-width: 1024px) 70vw, (max-width: 1280px) 42vw, 34vw"
-                    className="object-contain object-center"
+                    className="object-cover object-center"
                   />
                 ) : (
                   <video

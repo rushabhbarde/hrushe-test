@@ -62,6 +62,8 @@ const checkoutSteps: { key: CheckoutStep; label: string }[] = [
 ];
 
 const shipping = 0;
+const checkoutInputClass =
+  "lux-input !min-h-[3.75rem] !border-x-0 !border-t-0 !border-b !border-[var(--border)] !bg-transparent !px-0 focus:!border-[var(--foreground)]";
 
 function formatPrice(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
@@ -133,20 +135,29 @@ function OrderSummary({
   const total = subtotal + shipping;
 
   return (
-    <div className={compact ? "" : "border border-[var(--border)] bg-[var(--surface)]"}>
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4 sm:px-5">
-        <p className="text-sm font-semibold uppercase tracking-[0.1em]">Order details</p>
-        <span className="text-sm font-semibold text-[var(--accent)]">{itemCount}</span>
+    <div
+      className={
+        compact
+          ? "bg-[var(--foreground)] p-4 text-white"
+          : "bg-[var(--foreground)] p-5 text-white shadow-[0_28px_80px_rgba(17,17,17,0.12)] sm:p-6"
+      }
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="eyebrow text-white/54">Order</p>
+          <p className="mt-2 text-lg font-semibold uppercase tracking-normal">Details</p>
+        </div>
+        <span className="text-sm font-semibold text-white/72">{itemCount}</span>
       </div>
 
-      <div className="divide-y divide-[var(--border)]">
+      <div className="mt-6 grid gap-5">
         {items.map((item) => (
           <div
             key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-            className="grid grid-cols-[5.25rem_minmax(0,1fr)_auto] items-start gap-3 px-4 py-4 sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:px-5"
+            className="grid grid-cols-[4.75rem_minmax(0,1fr)_auto] items-start gap-4 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto]"
           >
-            <div className="relative aspect-[0.84/1] overflow-visible bg-[#f4f4f4]">
-              <span className="absolute -right-2 -top-2 z-10 flex h-6 min-w-6 items-center justify-center bg-[var(--foreground)] px-1 text-xs font-semibold text-[var(--background)]">
+            <div className="relative aspect-[0.84/1] overflow-visible bg-white/10">
+              <span className="absolute -right-2 -top-2 z-10 flex h-6 min-w-6 items-center justify-center bg-white px-1 text-xs font-semibold text-[var(--foreground)]">
                 {item.quantity}
               </span>
               {item.image ? (
@@ -163,41 +174,42 @@ function OrderSummary({
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase leading-5">{item.name}</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
+              <p className="text-sm font-semibold uppercase leading-5 text-white">{item.name}</p>
+              <p className="mt-1 text-sm text-white/62">
                 {item.size || "OS"} / {item.color || "Default"}
               </p>
             </div>
-            <p className="whitespace-nowrap text-sm font-semibold">
+            <p className="whitespace-nowrap text-sm font-semibold text-white">
               {formatPrice(item.price * item.quantity)}
             </p>
           </div>
         ))}
       </div>
 
-      <div className="space-y-3 border-t border-[var(--border)] px-4 py-5 text-sm sm:px-5">
+      <div className="mt-7 space-y-3 text-sm text-white/72">
         <div className="flex items-center justify-between">
-          <span className="text-[var(--muted)]">Subtotal</span>
-          <span>{formatPrice(subtotal)}</span>
+          <span>Subtotal</span>
+          <span className="text-white">{formatPrice(subtotal)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[var(--muted)]">Shipping</span>
-          <span>{shipping ? formatPrice(shipping) : "Free"}</span>
+          <span>Shipping</span>
+          <span className="text-white">{shipping ? formatPrice(shipping) : "Free"}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[var(--muted)]">Estimated tax</span>
-          <span>Included</span>
+          <span>Estimated tax</span>
+          <span className="text-white">Included</span>
         </div>
-        <div className="border-t border-[var(--foreground)] pt-5">
+        <div className="pt-5">
+          <div className="mb-5 h-px bg-white/34" aria-hidden="true" />
           <div className="flex items-center justify-between text-lg font-semibold">
-            <span>Total</span>
-            <span>{formatPrice(total)}</span>
+            <span className="text-white">Total</span>
+            <span className="text-white">{formatPrice(total)}</span>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-[var(--border)] px-4 py-4 sm:px-5">
-        <p className="text-xs leading-6 text-[var(--muted)]">
+      <div className="mt-6 bg-white/8 px-4 py-4">
+        <p className="text-xs leading-6 text-white/62">
           Dispatch within 1–3 business days. Delivery time depends on the destination and courier.
         </p>
       </div>
@@ -452,11 +464,11 @@ export default function CheckoutPage() {
                 />
               </section>
             ) : (
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,0.96fr)_430px] lg:items-start xl:gap-16">
+              <div className="grid gap-10 lg:grid-cols-[minmax(0,0.98fr)_420px] lg:items-start xl:gap-16">
                 <section className="reveal-up min-w-0">
                   <Link
                     href="/cart"
-                    className="mb-8 inline-flex min-h-11 items-center gap-4 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--foreground)]"
+                    className="mb-8 inline-flex min-h-11 items-center gap-4 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
                   >
                     <span className="h-px w-14 bg-current" />
                     Back to bag
@@ -490,7 +502,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setSummaryOpen((current) => !current)}
-                    className="lux-action-muted mt-7 flex w-full justify-between lg:hidden"
+                    className="mt-7 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white lg:hidden"
                     aria-expanded={summaryOpen}
                     aria-controls="mobile-order-summary"
                   >
@@ -498,7 +510,7 @@ export default function CheckoutPage() {
                     <span>{summaryOpen ? "Close" : formatPrice(subtotal)}</span>
                   </button>
                   {summaryOpen ? (
-                    <div id="mobile-order-summary" className="mobile-drawer-enter mt-4 border border-[var(--border)] bg-white/62 p-4 lg:hidden">
+                    <div id="mobile-order-summary" className="mobile-drawer-enter mt-4 lg:hidden">
                       <OrderSummary items={items} itemCount={itemCount} subtotal={subtotal} compact />
                     </div>
                   ) : null}
@@ -508,15 +520,15 @@ export default function CheckoutPage() {
                     onSubmit={(event) => void onSubmit(event)}
                   >
                     {activeStep === "information" ? (
-                      <fieldset className="auth-switch-panel grid gap-4 border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Contact info</legend>
+                      <fieldset className="auth-switch-panel grid gap-5">
+                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact info</legend>
                         <label className="field-label">
                           Email
                           <input
                             name="email"
                             value={form.email}
                             onChange={onChange}
-                            className="lux-input"
+                            className={checkoutInputClass}
                             type="email"
                             autoComplete="email"
                             required
@@ -528,7 +540,7 @@ export default function CheckoutPage() {
                             name="phone"
                             value={form.phone}
                             onChange={onChange}
-                            className="lux-input"
+                            className={checkoutInputClass}
                             type="tel"
                             inputMode="tel"
                             autoComplete="tel"
@@ -541,7 +553,7 @@ export default function CheckoutPage() {
                     ) : null}
 
                     {activeStep === "shipping" ? (
-                      <div className="auth-switch-panel space-y-8 border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+                      <div className="auth-switch-panel space-y-9">
                         {user?.addresses && user.addresses.length > 0 ? (
                           <section aria-labelledby="saved-address-heading">
                             <div className="mb-4 flex items-center justify-between gap-3">
@@ -567,10 +579,10 @@ export default function CheckoutPage() {
                                     setForm(buildFormFromAddress(address, user));
                                   }}
                                   aria-pressed={selectedAddressId === address.id}
-                                  className={`min-w-[230px] border p-4 text-left text-sm transition ${
+                                  className={`min-w-[230px] p-4 text-left text-sm transition ${
                                     selectedAddressId === address.id
                                       ? "hrushe-inverse-action"
-                                      : "border-[var(--border)] bg-white/60 text-[var(--foreground)]"
+                                      : "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[var(--surface-strong)]"
                                   }`}
                                 >
                                   <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
@@ -584,23 +596,23 @@ export default function CheckoutPage() {
 
                         <fieldset className="grid gap-4">
                           <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Shipping address</legend>
-                          <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className="lux-input" autoComplete="name" required /></label>
-                          <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className="lux-input"><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
-                          <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className="lux-input" autoComplete="address-line1" required /></label>
-                          <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className="lux-input" autoComplete="address-line2" required /></label>
-                          <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className="lux-input" /></label>
+                          <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className={checkoutInputClass} autoComplete="name" required /></label>
+                          <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className={checkoutInputClass}><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
+                          <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className={checkoutInputClass} autoComplete="address-line1" required /></label>
+                          <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className={checkoutInputClass} autoComplete="address-line2" required /></label>
+                          <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className={checkoutInputClass} /></label>
                           <div className="grid gap-4 sm:grid-cols-2">
-                            <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className="lux-input" autoComplete="address-level2" required /></label>
-                            <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className="lux-input" autoComplete="address-level1" required /></label>
+                            <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className={checkoutInputClass} autoComplete="address-level2" required /></label>
+                            <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className={checkoutInputClass} autoComplete="address-level1" required /></label>
                           </div>
-                          <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className="lux-input" autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
+                          <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className={checkoutInputClass} autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
                         </fieldset>
                       </div>
                     ) : null}
 
                     {activeStep === "payment" ? (
-                      <div className="auth-switch-panel border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
-                        <div className="grid gap-4 border-b border-[var(--border)] pb-5 text-sm">
+                      <div className="auth-switch-panel bg-[#f6f6f6] p-5 sm:p-6">
+                        <div className="grid gap-4 pb-5 text-sm">
                           <div className="grid grid-cols-[92px_1fr_auto] gap-3">
                             <span className="text-[var(--muted)]">Contact</span>
                             <span className="min-w-0 break-words">{form.email} · {form.phone}</span>
@@ -612,7 +624,8 @@ export default function CheckoutPage() {
                             <button type="button" onClick={() => setActiveStep("shipping")} className="underline underline-offset-4">Edit</button>
                           </div>
                         </div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.1em]">
+                        <div className="h-px bg-[var(--border)]" aria-hidden="true" />
+                        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.1em]">
                           Payment
                         </p>
                         <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
@@ -644,7 +657,7 @@ export default function CheckoutPage() {
                       </div>
                     ) : null}
 
-                    <ServicePromise compact />
+                    <ServicePromise compact borderless />
 
                     {activeStep === "payment" ? (
                       <button
@@ -658,7 +671,7 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={goNextStep}
-                        className="lux-action-muted w-full justify-between sm:w-[230px]"
+                        className="inline-flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[var(--accent)] sm:w-[230px]"
                       >
                         {activeStep === "information" ? "Shipping" : "Payment"}
                         <span className="text-xl leading-none">Next</span>
