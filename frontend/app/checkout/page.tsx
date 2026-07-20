@@ -133,38 +133,40 @@ function OrderSummary({
   const total = subtotal + shipping;
 
   return (
-    <div className={compact ? "" : "lux-panel p-6 sm:p-7"}>
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.12em]">Your order</p>
-        <span className="text-sm font-semibold text-[var(--accent)]">({itemCount})</span>
+    <div className={compact ? "" : "border border-[var(--border)] bg-[var(--surface)]"}>
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-4 py-4 sm:px-5">
+        <p className="text-sm font-semibold uppercase tracking-[0.1em]">Order details</p>
+        <span className="text-sm font-semibold text-[var(--accent)]">{itemCount}</span>
       </div>
 
-      <div className="mt-6 space-y-5">
+      <div className="divide-y divide-[var(--border)]">
         {items.map((item) => (
           <div
             key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-            className="grid grid-cols-[5.5rem_1fr_auto] items-start gap-3"
+            className="grid grid-cols-[5.25rem_minmax(0,1fr)_auto] items-start gap-3 px-4 py-4 sm:grid-cols-[6rem_minmax(0,1fr)_auto] sm:px-5"
           >
-            <div className="relative aspect-[0.84/1] overflow-hidden border border-[var(--border)] bg-[#f4f4f4]">
+            <div className="relative aspect-[0.84/1] overflow-visible bg-[#f4f4f4]">
+              <span className="absolute -right-2 -top-2 z-10 flex h-6 min-w-6 items-center justify-center bg-[var(--foreground)] px-1 text-xs font-semibold text-[var(--background)]">
+                {item.quantity}
+              </span>
               {item.image ? (
                 <Image
                   src={item.image}
                   alt={item.name}
                   fill
                   unoptimized={shouldBypassImageOptimization(item.image)}
-                  sizes="88px"
-                  className="object-cover"
+                  sizes="96px"
+                  className="object-contain p-2"
                 />
               ) : (
                 <div className="h-full w-full" style={{ background: item.accent }} />
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold leading-5">{item.name}</p>
+              <p className="text-sm font-semibold uppercase leading-5">{item.name}</p>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                {item.color || "Default"}/{item.size || "OS"}
+                {item.size || "OS"} / {item.color || "Default"}
               </p>
-              <p className="mt-4 text-sm font-semibold text-[var(--accent)]">({item.quantity})</p>
             </div>
             <p className="whitespace-nowrap text-sm font-semibold">
               {formatPrice(item.price * item.quantity)}
@@ -173,23 +175,29 @@ function OrderSummary({
         ))}
       </div>
 
-      <div className="mt-6 space-y-3 border-t border-[var(--border)] pt-5 text-sm">
+      <div className="space-y-3 border-t border-[var(--border)] px-4 py-5 text-sm sm:px-5">
         <div className="flex items-center justify-between">
-          <span>Subtotal</span>
+          <span className="text-[var(--muted)]">Subtotal</span>
           <span>{formatPrice(subtotal)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Shipping</span>
+          <span className="text-[var(--muted)]">Shipping</span>
           <span>{shipping ? formatPrice(shipping) : "Free"}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[var(--muted)]">Estimated tax</span>
+          <span>Included</span>
+        </div>
+        <div className="border-t border-[var(--foreground)] pt-5">
+          <div className="flex items-center justify-between text-lg font-semibold">
+            <span>Total</span>
+            <span>{formatPrice(total)}</span>
+          </div>
         </div>
       </div>
 
-      <div className="mt-5 border-t border-[var(--border)] pt-5">
-        <div className="flex items-center justify-between text-lg font-semibold">
-          <span>Total</span>
-          <span>{formatPrice(total)}</span>
-        </div>
-        <p className="mt-4 text-xs leading-6 text-[var(--muted)]">
+      <div className="border-t border-[var(--border)] px-4 py-4 sm:px-5">
+        <p className="text-xs leading-6 text-[var(--muted)]">
           Dispatch within 1–3 business days. Delivery time depends on the destination and courier.
         </p>
       </div>
@@ -423,7 +431,7 @@ export default function CheckoutPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="lux-page py-8 sm:py-10 lg:py-14">
+      <main className="lux-page py-6 sm:py-10 lg:py-12">
           <div className="lux-container">
             {!isReady ? (
               <>
@@ -444,22 +452,25 @@ export default function CheckoutPage() {
                 />
               </section>
             ) : (
-              <div className="grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_405px] lg:items-start xl:gap-20">
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,0.96fr)_430px] lg:items-start xl:gap-16">
                 <section className="reveal-up min-w-0">
                   <Link
                     href="/cart"
-                    className="mb-8 inline-flex items-center gap-4 text-sm uppercase tracking-[0.16em] text-[var(--foreground)]"
+                    className="mb-8 inline-flex min-h-11 items-center gap-4 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--foreground)]"
                   >
                     <span className="h-px w-14 bg-current" />
-                    Back
+                    Back to bag
                   </Link>
 
-                  <h1 className="text-3xl font-medium uppercase tracking-[-0.035em] sm:text-4xl">
-                    Checkout
+                  <h1 className="text-3xl font-semibold uppercase tracking-normal sm:text-4xl">
+                    Secure checkout
                   </h1>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
+                    Confirm contact and delivery details before opening the Razorpay payment window.
+                  </p>
 
-                  <div className="mt-7 grid grid-cols-3 gap-2 text-sm uppercase tracking-[0.08em] sm:max-w-lg">
-                    {checkoutSteps.map((step) => (
+                  <div className="mt-8 grid grid-cols-3 gap-2 text-xs font-semibold uppercase tracking-[0.08em] sm:max-w-xl sm:text-sm">
+                    {checkoutSteps.map((step, index) => (
                       <button
                         key={step.key}
                         type="button"
@@ -471,7 +482,7 @@ export default function CheckoutPage() {
                         }`}
                         aria-current={activeStep === step.key ? "step" : undefined}
                       >
-                        {step.label}
+                        {index + 1}. {step.label}
                       </button>
                     ))}
                   </div>
@@ -493,11 +504,11 @@ export default function CheckoutPage() {
                   ) : null}
 
                   <form
-                    className="mt-8 max-w-[560px] space-y-8"
+                    className="mt-8 max-w-[640px] space-y-8"
                     onSubmit={(event) => void onSubmit(event)}
                   >
                     {activeStep === "information" ? (
-                      <fieldset className="auth-switch-panel grid gap-4">
+                      <fieldset className="auth-switch-panel grid gap-4 border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
                         <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Contact info</legend>
                         <label className="field-label">
                           Email
@@ -530,7 +541,7 @@ export default function CheckoutPage() {
                     ) : null}
 
                     {activeStep === "shipping" ? (
-                      <div className="auth-switch-panel space-y-8">
+                      <div className="auth-switch-panel space-y-8 border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
                         {user?.addresses && user.addresses.length > 0 ? (
                           <section aria-labelledby="saved-address-heading">
                             <div className="mb-4 flex items-center justify-between gap-3">
@@ -588,7 +599,7 @@ export default function CheckoutPage() {
                     ) : null}
 
                     {activeStep === "payment" ? (
-                      <div className="auth-switch-panel border border-[var(--border)] bg-white/50 p-5">
+                      <div className="auth-switch-panel border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
                         <div className="grid gap-4 border-b border-[var(--border)] pb-5 text-sm">
                           <div className="grid grid-cols-[92px_1fr_auto] gap-3">
                             <span className="text-[var(--muted)]">Contact</span>
@@ -618,7 +629,7 @@ export default function CheckoutPage() {
                                 setError("");
                               }
                             }}
-                            className="mt-0.5 h-4 w-4 rounded-none"
+                            className="mt-0.5 h-5 w-5 rounded-none"
                           />
                           <span>
                             I agree to the <Link href="/policies" className="underline underline-offset-4">Terms and Conditions</Link>.
