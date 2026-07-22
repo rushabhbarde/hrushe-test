@@ -10,7 +10,6 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { ServicePromise } from "@/components/service-promise";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -54,12 +53,6 @@ declare global {
     };
   }
 }
-
-const checkoutSteps: { key: CheckoutStep; label: string }[] = [
-  { key: "information", label: "Information" },
-  { key: "shipping", label: "Shipping" },
-  { key: "payment", label: "Payment" },
-];
 
 const shipping = 0;
 const checkoutInputClass =
@@ -302,29 +295,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const goToStep = (nextStep: CheckoutStep) => {
-    if (nextStep === activeStep) {
-      return;
-    }
-
-    if (nextStep === "information") {
-      setError("");
-      setActiveStep("information");
-      return;
-    }
-
-    if (nextStep === "shipping") {
-      if (validateContact()) {
-        setActiveStep("shipping");
-      }
-      return;
-    }
-
-    if (validateContact() && validateShipping()) {
-      setActiveStep("payment");
-    }
-  };
-
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -480,24 +450,9 @@ export default function CheckoutPage() {
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
                     Confirm contact and delivery details before opening the Razorpay payment window.
                   </p>
-
-                  <div className="mt-8 grid grid-cols-3 gap-2 text-xs font-semibold uppercase tracking-[0.08em] sm:max-w-xl sm:text-sm">
-                    {checkoutSteps.map((step, index) => (
-                      <button
-                        key={step.key}
-                        type="button"
-                        onClick={() => goToStep(step.key)}
-                        className={`border-b py-2 text-left transition ${
-                          activeStep === step.key
-                            ? "border-[var(--foreground)] text-[var(--foreground)]"
-                            : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-                        }`}
-                        aria-current={activeStep === step.key ? "step" : undefined}
-                      >
-                        {index + 1}. {step.label}
-                      </button>
-                    ))}
-                  </div>
+                  <p className="sr-only" aria-live="polite">
+                    Checkout step: {activeStep}
+                  </p>
 
                   <button
                     type="button"
@@ -516,7 +471,7 @@ export default function CheckoutPage() {
                   ) : null}
 
                   <form
-                    className="mt-8 max-w-[640px] space-y-8"
+                    className="mt-10 max-w-[640px] space-y-8"
                     onSubmit={(event) => void onSubmit(event)}
                   >
                     {activeStep === "information" ? (
@@ -657,8 +612,6 @@ export default function CheckoutPage() {
                       </div>
                     ) : null}
 
-                    <ServicePromise compact borderless />
-
                     {activeStep === "payment" ? (
                       <button
                         type="submit"
@@ -673,7 +626,7 @@ export default function CheckoutPage() {
                         onClick={goNextStep}
                         className="inline-flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[var(--accent)] sm:w-[230px]"
                       >
-                        {activeStep === "information" ? "Shipping" : "Payment"}
+                        Continue
                         <span className="text-xl leading-none">Next</span>
                       </button>
                     )}
