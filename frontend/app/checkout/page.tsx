@@ -44,8 +44,6 @@ type CheckoutForm = {
   pincode: string;
 };
 
-type CheckoutStep = "information" | "shipping" | "payment";
-
 declare global {
   interface Window {
     Razorpay?: new (options: Record<string, unknown>) => {
@@ -220,7 +218,6 @@ export default function CheckoutPage() {
       user?.addresses?.[0]?.id ||
       "manual"
   );
-  const [activeStep, setActiveStep] = useState<CheckoutStep>("information");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
@@ -284,17 +281,6 @@ export default function CheckoutPage() {
     return true;
   };
 
-  const goNextStep = () => {
-    if (activeStep === "information" && validateContact()) {
-      setActiveStep("shipping");
-      return;
-    }
-
-    if (activeStep === "shipping" && validateShipping()) {
-      setActiveStep("payment");
-    }
-  };
-
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -311,7 +297,6 @@ export default function CheckoutPage() {
     if (!acceptedTerms) {
       setError("Please accept the terms before payment.");
       pushToast("Please accept the terms before payment.", "error");
-      setActiveStep("payment");
       return;
     }
 
@@ -450,9 +435,6 @@ export default function CheckoutPage() {
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
                     Confirm contact and delivery details before opening the Razorpay payment window.
                   </p>
-                  <p className="sr-only" aria-live="polite">
-                    Checkout step: {activeStep}
-                  </p>
 
                   <button
                     type="button"
@@ -471,12 +453,12 @@ export default function CheckoutPage() {
                   ) : null}
 
                   <form
-                    className="mt-10 max-w-[640px] space-y-8"
+                    className="mt-10 max-w-[640px] space-y-10"
                     onSubmit={(event) => void onSubmit(event)}
                   >
-                    {activeStep === "information" ? (
-                      <fieldset className="auth-switch-panel grid gap-5">
-                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact info</legend>
+                    <div className="auth-switch-panel space-y-10">
+                      <fieldset className="grid gap-5">
+                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact details</legend>
                         <label className="field-label">
                           Email
                           <input
@@ -505,82 +487,63 @@ export default function CheckoutPage() {
                         </label>
                         <p className="text-xs leading-5 text-[var(--muted)]">Used only for delivery and order updates.</p>
                       </fieldset>
-                    ) : null}
 
-                    {activeStep === "shipping" ? (
-                      <div className="auth-switch-panel space-y-9">
-                        {user?.addresses && user.addresses.length > 0 ? (
-                          <section aria-labelledby="saved-address-heading">
-                            <div className="mb-4 flex items-center justify-between gap-3">
-                              <h2 id="saved-address-heading" className="text-sm font-semibold uppercase tracking-[0.08em]">Saved address</h2>
+                      {user?.addresses && user.addresses.length > 0 ? (
+                        <section aria-labelledby="saved-address-heading">
+                          <div className="mb-4 flex items-center justify-between gap-3">
+                            <h2 id="saved-address-heading" className="text-sm font-semibold uppercase tracking-[0.08em]">Saved address</h2>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedAddressId("manual");
+                                setForm(buildFormFromAddress(null, user));
+                              }}
+                              className="text-xs uppercase tracking-[0.12em] text-[var(--muted)] underline underline-offset-4"
+                            >
+                              Enter manually
+                            </button>
+                          </div>
+                          <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                            {user.addresses.map((address) => (
                               <button
+                                key={address.id}
                                 type="button"
                                 onClick={() => {
-                                  setSelectedAddressId("manual");
-                                  setForm(buildFormFromAddress(null, user));
+                                  setSelectedAddressId(address.id);
+                                  setForm(buildFormFromAddress(address, user));
                                 }}
-                                className="text-xs uppercase tracking-[0.12em] text-[var(--muted)] underline underline-offset-4"
+                                aria-pressed={selectedAddressId === address.id}
+                                className={`min-w-[230px] p-4 text-left text-sm transition ${
+                                  selectedAddressId === address.id
+                                    ? "hrushe-inverse-action"
+                                    : "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[var(--surface-strong)]"
+                                }`}
                               >
-                                Enter manually
+                                <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
+                                <p className="mt-2 font-semibold">{address.fullName}</p>
+                                <p className="mt-1 leading-6 opacity-75">{buildAddressPreview(address)}</p>
                               </button>
-                            </div>
-                            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                              {user.addresses.map((address) => (
-                                <button
-                                  key={address.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedAddressId(address.id);
-                                    setForm(buildFormFromAddress(address, user));
-                                  }}
-                                  aria-pressed={selectedAddressId === address.id}
-                                  className={`min-w-[230px] p-4 text-left text-sm transition ${
-                                    selectedAddressId === address.id
-                                      ? "hrushe-inverse-action"
-                                      : "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[var(--surface-strong)]"
-                                  }`}
-                                >
-                                  <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
-                                  <p className="mt-2 font-semibold">{address.fullName}</p>
-                                  <p className="mt-1 leading-6 opacity-75">{buildAddressPreview(address)}</p>
-                                </button>
-                              ))}
-                            </div>
-                          </section>
-                        ) : null}
+                            ))}
+                          </div>
+                        </section>
+                      ) : null}
 
-                        <fieldset className="grid gap-4">
-                          <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Shipping address</legend>
-                          <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className={checkoutInputClass} autoComplete="name" required /></label>
-                          <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className={checkoutInputClass}><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
-                          <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className={checkoutInputClass} autoComplete="address-line1" required /></label>
-                          <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className={checkoutInputClass} autoComplete="address-line2" required /></label>
-                          <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className={checkoutInputClass} /></label>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className={checkoutInputClass} autoComplete="address-level2" required /></label>
-                            <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className={checkoutInputClass} autoComplete="address-level1" required /></label>
-                          </div>
-                          <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className={checkoutInputClass} autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
-                        </fieldset>
-                      </div>
-                    ) : null}
-
-                    {activeStep === "payment" ? (
-                      <div className="auth-switch-panel bg-[#f6f6f6] p-5 sm:p-6">
-                        <div className="grid gap-4 pb-5 text-sm">
-                          <div className="grid grid-cols-[92px_1fr_auto] gap-3">
-                            <span className="text-[var(--muted)]">Contact</span>
-                            <span className="min-w-0 break-words">{form.email} · {form.phone}</span>
-                            <button type="button" onClick={() => setActiveStep("information")} className="underline underline-offset-4">Edit</button>
-                          </div>
-                          <div className="grid grid-cols-[92px_1fr_auto] gap-3">
-                            <span className="text-[var(--muted)]">Deliver to</span>
-                            <span className="min-w-0">{buildAddressPreview(form)}</span>
-                            <button type="button" onClick={() => setActiveStep("shipping")} className="underline underline-offset-4">Edit</button>
-                          </div>
+                      <fieldset className="grid gap-4">
+                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Delivery address</legend>
+                        <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className={checkoutInputClass} autoComplete="name" required /></label>
+                        <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className={checkoutInputClass}><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
+                        <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className={checkoutInputClass} autoComplete="address-line1" required /></label>
+                        <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className={checkoutInputClass} autoComplete="address-line2" required /></label>
+                        <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className={checkoutInputClass} /></label>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className={checkoutInputClass} autoComplete="address-level2" required /></label>
+                          <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className={checkoutInputClass} autoComplete="address-level1" required /></label>
                         </div>
-                        <div className="h-px bg-[var(--border)]" aria-hidden="true" />
-                        <p className="mt-5 text-sm font-semibold uppercase tracking-[0.1em]">
+                        <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className={checkoutInputClass} autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
+                      </fieldset>
+
+                      <div className="border-t border-[var(--border)] pt-6">
+                        <p className="text-sm font-semibold uppercase tracking-[0.1em]">
                           Payment
                         </p>
                         <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
@@ -604,7 +567,7 @@ export default function CheckoutPage() {
                           </span>
                         </label>
                       </div>
-                    ) : null}
+                    </div>
 
                     {error ? (
                       <div role="alert" className="border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
@@ -612,24 +575,13 @@ export default function CheckoutPage() {
                       </div>
                     ) : null}
 
-                    {activeStep === "payment" ? (
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {submitting ? "Opening..." : "Pay securely"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={goNextStep}
-                        className="inline-flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[var(--accent)] sm:w-[230px]"
-                      >
-                        Continue
-                        <span className="text-xl leading-none">Next</span>
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submitting ? "Opening..." : "Pay securely"}
+                    </button>
                   </form>
                 </section>
 
