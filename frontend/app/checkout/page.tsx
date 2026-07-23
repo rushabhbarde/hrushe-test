@@ -396,10 +396,10 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="page-shell">
+    <div className="page-shell lg:h-dvh lg:overflow-hidden">
       <SiteHeader />
-      <main className="lux-page py-6 sm:py-10 lg:py-12">
-          <div className="lux-container">
+      <main className="lux-page py-6 sm:py-10 lg:h-[calc(100dvh-6rem)] lg:min-h-0 lg:overflow-hidden lg:py-12">
+          <div className="lux-container lg:h-full">
             {!isReady ? (
               <>
                 <h1 className="sr-only">Checkout</h1>
@@ -419,8 +419,8 @@ export default function CheckoutPage() {
                 />
               </section>
             ) : (
-              <div className="grid gap-10 lg:grid-cols-[minmax(0,0.98fr)_420px] lg:items-start xl:gap-16">
-                <section className="reveal-up min-w-0">
+              <div className="grid gap-10 lg:h-full lg:grid-cols-[minmax(0,0.98fr)_420px] lg:items-stretch lg:overflow-hidden xl:gap-16">
+                <section className="reveal-up min-w-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pb-12 lg:pr-8">
                   <Link
                     href="/cart"
                     className="mb-8 inline-flex min-h-11 items-center gap-4 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
@@ -585,7 +585,7 @@ export default function CheckoutPage() {
                   </form>
                 </section>
 
-                <aside className="reveal-up-delayed hidden lg:block lg:sticky lg:top-28">
+                <aside className="reveal-up-delayed hidden lg:block lg:h-full lg:overflow-y-auto lg:overscroll-contain">
                   <OrderSummary items={items} itemCount={itemCount} subtotal={subtotal} />
                 </aside>
               </div>

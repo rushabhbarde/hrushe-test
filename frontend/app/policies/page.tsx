@@ -1,8 +1,5 @@
-"use client";
-
-import { Suspense, useMemo } from "react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { PolicyLayout } from "@/components/policy-layout";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { LoadingState } from "@/components/loading-state";
@@ -174,111 +171,25 @@ const policyTabs = [
   },
 ] as const;
 
-function PoliciesPageContent() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") || "terms";
-
-  const currentPolicy =
-    useMemo(
-      () => policyTabs.find((policy) => policy.key === activeTab) || policyTabs[0],
-      [activeTab]
-    );
-
-  const switchPolicy = (key: (typeof policyTabs)[number]["key"]) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", key);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
+export default function PoliciesPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        <div className="max-w-4xl">
-          <p className="eyebrow text-[var(--muted)]">Policies</p>
-          <h1 className="mt-5 max-w-[13ch] text-[2.5rem] font-medium uppercase leading-[0.95] tracking-[-0.04em] sm:text-[3.5rem] lg:text-[4.5rem]">
-            Clear information, before you order.
-          </h1>
-          <p className="mt-6 max-w-2xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
-            Shipping, returns, privacy, and purchase terms—kept in one place and written to be understood.
-          </p>
-          <p className="mt-4 text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">Last updated: 21 June 2026</p>
-        </div>
-
-        <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-[300px_1fr]">
-          <aside className="min-w-0" aria-label="Policy sections">
-            <div className="-mx-4 flex max-w-full gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-3 lg:overflow-visible lg:px-0 lg:pb-0" role="tablist">
-              {policyTabs.map((policy) => {
-                const isActive = currentPolicy.key === policy.key;
-
-                return (
-                  <button
-                    key={policy.key}
-                    id={`policy-tab-${policy.key}`}
-                    type="button"
-                    onClick={() => switchPolicy(policy.key)}
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-controls="active-policy-panel"
-                    className={`block min-h-12 min-w-max shrink-0 border px-5 py-4 text-left transition lg:w-full ${
-                      isActive
-                        ? "hrushe-inverse-action"
-                        : "border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-black/5"
-                    }`}
-                  >
-                    <span className="text-base font-semibold">{policy.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <Link
-              href="/contact"
-              className="button-secondary hidden px-5 py-3 transition lg:mt-4 lg:inline-flex"
-            >
-              Need support?
-            </Link>
-          </aside>
-
-          <section id="active-policy-panel" role="tabpanel" aria-labelledby={`policy-tab-${currentPolicy.key}`} className="min-w-0 overflow-hidden border border-[var(--border)] bg-[var(--surface)] p-6 sm:p-8 lg:p-12">
-            <p className="eyebrow text-[var(--muted)]">{currentPolicy.label}</p>
-            <h2 className="mt-5 text-3xl font-medium tracking-[-0.025em]">
-              {currentPolicy.label}
-            </h2>
-            <div className="mt-8 space-y-8">
-              {currentPolicy.sections.map((section) => (
-                <div key={section.title}>
-                  <h3 className="text-lg font-medium">{section.title}</h3>
-                  <div className="mt-3 max-w-3xl space-y-3 break-words text-[0.94rem] leading-7 text-[var(--muted)]">
-                    {section.body.split("\n").map((paragraph) => (
-                      <p key={`${section.title}-${paragraph}`}>{paragraph}</p>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
-
-export default function PoliciesPage() {
-  return (
-    <Suspense fallback={(
-      <div className="page-shell">
-        <SiteHeader />
+      <Suspense fallback={(
         <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 lg:px-8 lg:py-24">
           <LoadingState title="Preparing policies" description="Loading the requested policy section." />
         </main>
-        <SiteFooter />
-      </div>
-    )}>
-      <PoliciesPageContent />
-    </Suspense>
+      )}>
+        <PolicyLayout
+          policies={policyTabs}
+          defaultPolicyKey="terms"
+          label="Policies"
+          title="Clear information, before you order."
+          description="Shipping, returns, privacy, and purchase terms—kept in one place and written to be understood."
+          lastUpdated="Last updated: 21 June 2026"
+        />
+      </Suspense>
+      <SiteFooter />
+    </div>
   );
 }
