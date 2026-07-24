@@ -222,8 +222,8 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
           return null;
         })}
 
-        <section className="min-h-full snap-start bg-[var(--foreground)] text-[var(--background)]">
-          <SiteFooter />
+        <section className="flex min-h-full snap-start bg-[var(--foreground)] text-[var(--background)]">
+          <SiteFooter fillViewport />
         </section>
       </main>
     </div>

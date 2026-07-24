@@ -67,7 +67,12 @@ const serviceHighlights = [
   { label: "Support", value: "Monday-Saturday" },
 ];
 
-export function SiteFooter({ compact = false }: { compact?: boolean }) {
+type SiteFooterProps = {
+  compact?: boolean;
+  fillViewport?: boolean;
+};
+
+export function SiteFooter({ compact = false, fillViewport = false }: SiteFooterProps) {
   const [settings, setSettings] = useState(defaultSettings);
 
   useEffect(() => {
@@ -136,10 +141,13 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
     );
   }
 
+  const footerClassName = `border-t border-white/15 bg-black text-white${fillViewport ? " flex min-h-full flex-col" : ""}`;
+  const footerContentClassName = `mx-auto flex w-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12${fillViewport ? " flex-1 justify-center" : ""}`;
+
   return (
-    <footer className="border-t border-white/15 bg-black text-white">
-      <div className="mx-auto flex min-h-[34rem] w-full max-w-[1600px] flex-col px-4 sm:px-6 md:min-h-[clamp(34rem,72svh,48rem)] lg:px-8">
-        <div className="grid flex-1 gap-8 py-8 md:grid-cols-[0.92fr_1.08fr] md:py-10 lg:gap-14 lg:py-12">
+    <footer className={footerClassName}>
+      <div className={footerContentClassName}>
+        <div className="grid gap-8 md:grid-cols-[0.92fr_1.08fr] lg:gap-14">
           <section className="flex flex-col justify-between gap-8">
             <div className="max-w-xl">
               <p className="eyebrow text-white/55">{settings.brandName}</p>
@@ -186,7 +194,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
 
-        <div className="border-t border-white/15 py-5">
+        <div className="mt-8 border-t border-white/15 py-6 sm:mt-10">
           <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <p className="eyebrow text-white/45">Client services</p>
@@ -215,14 +223,11 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
 
-        <div className="border-t border-white/15 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-4">
+        <div className="border-t border-white/15 pt-5">
           <div className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.14em] text-white/45 md:flex-row md:items-center md:justify-between">
             <p>&copy; 2026 HRUSHE. All rights reserved.</p>
             <p>Designed in India / Defined quietly</p>
           </div>
-          <p aria-label="HRUSHE" className="mt-3 select-none overflow-hidden text-center text-[clamp(4.15rem,18vw,15.5rem)] font-semibold uppercase leading-[0.75] text-white">
-            HRUSHE
-          </p>
         </div>
       </div>
     </footer>
