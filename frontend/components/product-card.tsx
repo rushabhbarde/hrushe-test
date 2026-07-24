@@ -33,7 +33,7 @@ const swatchPalette: Record<string, string> = {
   oat: "#d4c2a3",
   olive: "#77765b",
   sand: "#caba9c",
-  white: "#f4f2ee",
+  white: "#ffffff",
 };
 
 function normaliseColourLabel(value: string) {

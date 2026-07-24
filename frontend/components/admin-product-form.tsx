@@ -94,7 +94,7 @@ function inferAccent(colors: string[]) {
   const first = colors[0]?.trim().toLowerCase() || "black";
   const accentMap: Record<string, string> = {
     black: "#111111",
-    white: "#f4f1eb",
+    white: "#ffffff",
     cream: "#e6d8c2",
     beige: "#cdb89c",
     brown: "#6c4e36",

@@ -77,6 +77,14 @@ function CardTitle({ card }: { card: HomepageCard }) {
 }
 
 function AudienceHeroSection({ section, audience }: { section: HomepageSection; audience: Audience }) {
+  const primaryCtaText = section.ctaText || "Shop New Arrivals";
+  const primaryCtaHref =
+    !section.ctaLink ||
+    section.ctaLink === `/${audience}` ||
+    primaryCtaText.toLowerCase().includes("new arrival")
+      ? audienceFallbackLinks[audience]
+      : section.ctaLink;
+
   return (
     <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
       <div className="absolute inset-0">
@@ -97,9 +105,9 @@ function AudienceHeroSection({ section, audience }: { section: HomepageSection; 
             {section.title}
           </h1>
           <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
-            {section.ctaText ? (
-              <Link href={section.ctaLink || "/shop"} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
-                <span>{section.ctaText}</span>
+            {primaryCtaText ? (
+              <Link href={primaryCtaHref} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
+                <span>{primaryCtaText}</span>
                 <span aria-hidden="true" className="ml-0 max-w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:ml-1.5 group-hover:max-w-3 group-hover:opacity-100 group-focus-visible:ml-1.5 group-focus-visible:max-w-3 group-focus-visible:opacity-100">
                   ›
                 </span>

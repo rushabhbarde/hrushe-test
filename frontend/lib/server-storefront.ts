@@ -48,7 +48,7 @@ function normalizeProductSummary(product: Product): Product {
     galleryImages: (product.galleryImages || []).filter(isPersistedMediaSource),
     videos: (product.videos || []).filter((video) => isPersistedMediaSource(video.url)),
     imageLabel: product.imageLabel || product.displayName || product.name || "Product",
-    accent: product.accent || "#eeece6",
+    accent: product.accent || "#f6f6f6",
     status: product.status || (product.availability === "sold-out" ? "Sold Out" : "Active"),
   };
 }

@@ -118,7 +118,7 @@ export default function OrderDetailPage() {
                         key={`${product.productId}-${index}`}
                         className="flex gap-4 rounded-[1.5rem] border border-[var(--border)] p-4"
                       >
-                        <div className="relative h-28 w-24 overflow-hidden rounded-[1.25rem] bg-[#f5f3ef]">
+                        <div className="relative h-28 w-24 overflow-hidden rounded-[1.25rem] bg-[var(--surface-strong)]">
                           {product.image ? (
                             <Image
                               src={product.image}

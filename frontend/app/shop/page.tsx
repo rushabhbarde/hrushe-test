@@ -15,7 +15,7 @@ type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
 const swatchColors: Record<string, string> = {
   black: "#11110f",
-  white: "#f8f7f2",
+  white: "#ffffff",
   beige: "#d8cbb6",
   begie: "#d8cbb6",
   cream: "#ede2d2",

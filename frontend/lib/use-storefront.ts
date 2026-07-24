@@ -55,7 +55,7 @@ function mergeProductsWithDefaults(products: Product[]) {
       : [],
     reviews: Array.isArray(product.reviews) ? product.reviews : [],
     imageLabel: product.imageLabel || product.displayName || product.name || "Product",
-    accent: product.accent || "#eeece6",
+    accent: product.accent || "#f6f6f6",
     status: product.status || (product.availability === "sold-out" ? "Sold Out" : "Active"),
     trackInventory: Boolean(product.trackInventory),
     variants: Array.isArray(product.variants) ? product.variants : [],

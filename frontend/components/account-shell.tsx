@@ -136,7 +136,7 @@ export function AccountShell({
       <div className="space-y-5 lg:hidden">
         {activeSection === "dashboard" ? (
           <>
-            <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(135deg,#111111_0%,#1d1d1d_38%,rgba(214,31,38,0.86)_140%)] px-5 py-6 text-white shadow-[0_18px_45px_rgba(17,17,17,0.16)]">
+            <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-black px-5 py-6 text-white shadow-[0_18px_45px_rgba(17,17,17,0.16)]">
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/70">My account</p>
               <h1 className="display-font mt-3 text-[2rem] leading-[1.05]">
                 Hello, {(userName || "member").split(" ")[0]}.

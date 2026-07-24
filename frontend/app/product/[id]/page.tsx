@@ -37,9 +37,9 @@ const productInfoSections = [
 
 const swatchColors: Record<string, string> = {
   black: "#111111",
-  white: "#f4f4f1",
-  offwhite: "#efeee7",
-  "off white": "#efeee7",
+  white: "#ffffff",
+  offwhite: "#ffffff",
+  "off white": "#ffffff",
   cream: "#ece3d6",
   grey: "#bdbdbd",
   gray: "#bdbdbd",
@@ -88,7 +88,7 @@ function normalizeProduct(product: Product): Product {
             photo: isPersistedMediaSource(review.photo) ? review.photo : "",
           }))
       : [],
-    accent: product.accent || "#f1eee8",
+    accent: product.accent || "#f6f6f6",
     imageLabel: product.imageLabel || product.name || "Product image",
   };
 }
@@ -204,7 +204,7 @@ function ProductMediaFrame({
     return (
       <div
         className="h-full w-full"
-        style={{ backgroundColor: product.accent || "#f3f3f0" }}
+        style={{ backgroundColor: product.accent || "#f6f6f6" }}
       />
     );
   }

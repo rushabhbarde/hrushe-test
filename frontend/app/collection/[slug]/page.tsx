@@ -270,20 +270,25 @@ export default function CollectionPage() {
 
   if (isGenderCollection) {
     const genderTitle = getGenderCollectionTitle(collectionSlug);
+    const audienceLabel = collectionSlug === "women" ? "Womenswear" : "Menswear";
 
     return (
       <div className="page-shell bg-[var(--background)]">
         <SiteHeader />
         <main className="collection-plp">
-          <header className="collection-plp__intro">
-            <div>
-              <p>Shop</p>
+          <header className="collection-plp__intro collection-plp__intro--editorial">
+            <div className="max-w-[1600px]">
+              <p>{audienceLabel}</p>
               <h1>
-                {genderTitle}
-                {!loading && visibleProducts.length > 0 ? <span>{visibleProducts.length}</span> : null}
+                Shop new arrivals.
+                {!loading && visibleProducts.length > 0 ? <span>{visibleProducts.length} pieces ready</span> : null}
               </h1>
               <div className="collection-plp__description">
-                A focused HRUSHE edit of available pieces, arranged for quick browsing.
+                The latest HRUSHE {audienceLabel.toLowerCase()} edit, arranged for quick browsing and everyday wear.
+              </div>
+              <div className="collection-plp__intro-actions">
+                <a href="#collection-products">View products</a>
+                <Link href={`/${collectionSlug}`}>Back to {collectionSlug}</Link>
               </div>
             </div>
           </header>
@@ -309,7 +314,7 @@ export default function CollectionPage() {
             ))}
           </nav>
 
-          <div className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
+          <div id="collection-products" className="collection-plp__toolbar" aria-label={`${genderTitle} controls`}>
             <div className="collection-plp__filter-actions">
               {activeControlCount > 0 ? (
                 <button type="button" onClick={resetControls} className="collection-plp__reset-button">
