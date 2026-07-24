@@ -418,49 +418,6 @@ body :where([class*="shadow-"]) {
   text-align: left;
 }
 
-.collection-plp__intro--editorial {
-  display: grid;
-  min-height: clamp(30rem, calc(100svh - 7.2rem), 44rem);
-  align-content: end;
-  border-bottom: 1px solid var(--border);
-  background: var(--foreground);
-  color: var(--background);
-  padding-block: clamp(5.5rem, 12vw, 10rem) clamp(2rem, 4vw, 3.25rem);
-}
-
-.collection-plp__intro--editorial p,
-.collection-plp__intro--editorial h1,
-.collection-plp__intro--editorial .collection-plp__description {
-  color: inherit;
-}
-
-.collection-plp__intro-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.collection-plp__intro-actions a {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--background) 32%, transparent);
-  padding-inline: 1.15rem;
-  color: var(--background);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.collection-plp__intro-actions a:first-child {
-  border-color: var(--background);
-  background: var(--background);
-  color: var(--foreground);
-}
-
 .collection-plp__intro p {
   font-size: 0.86rem;
   font-weight: 650;
@@ -489,28 +446,6 @@ body :where([class*="shadow-"]) {
   color: var(--foreground);
   font-size: clamp(0.9rem, 1vw, 1rem);
   line-height: 1.55;
-}
-
-.collection-plp__intro.collection-plp__intro--editorial h1 {
-  max-width: 12ch;
-  font-size: clamp(3.4rem, 9.5vw, 9rem);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 0.9;
-}
-
-.collection-plp__intro.collection-plp__intro--editorial h1 span {
-  display: block;
-  margin: 1.5rem 0 0;
-  color: color-mix(in srgb, var(--background) 48%, transparent);
-  font-size: 0.16em;
-  font-weight: 650;
-  letter-spacing: 0.16em;
-}
-
-.collection-plp__intro.collection-plp__intro--editorial .collection-plp__description {
-  max-width: 42rem;
-  color: color-mix(in srgb, var(--background) 68%, transparent);
 }
 
 .collection-plp__toolbar {
