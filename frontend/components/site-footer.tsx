@@ -67,12 +67,7 @@ const serviceHighlights = [
   { label: "Support", value: "Monday-Saturday" },
 ];
 
-type SiteFooterProps = {
-  compact?: boolean;
-  fillViewport?: boolean;
-};
-
-export function SiteFooter({ compact = false, fillViewport = false }: SiteFooterProps) {
+export function SiteFooter({ compact = false }: { compact?: boolean }) {
   const [settings, setSettings] = useState(defaultSettings);
 
   useEffect(() => {
@@ -141,12 +136,9 @@ export function SiteFooter({ compact = false, fillViewport = false }: SiteFooter
     );
   }
 
-  const footerClassName = `border-t border-white/15 bg-black text-white${fillViewport ? " flex min-h-full flex-col" : ""}`;
-  const footerContentClassName = `mx-auto flex w-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12${fillViewport ? " flex-1 justify-center" : ""}`;
-
   return (
-    <footer className={footerClassName}>
-      <div className={footerContentClassName}>
+    <footer className="border-t border-white/15 bg-black text-white">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         <div className="grid gap-8 md:grid-cols-[0.92fr_1.08fr] lg:gap-14">
           <section className="flex flex-col justify-between gap-8">
             <div className="max-w-xl">
