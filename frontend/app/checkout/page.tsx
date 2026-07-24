@@ -13,6 +13,7 @@ import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
+import { getRazorpayLaunchBlocker } from "@/lib/razorpay-readiness";
 
 type CheckoutResponse = {
   appOrderId: string;
@@ -222,26 +223,69 @@ export default function CheckoutPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [razorpayReady, setRazorpayReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.Razorpay)
+  );
+  const [razorpayLoadError, setRazorpayLoadError] = useState("");
 
   useEffect(() => {
-    if (document.getElementById("razorpay-checkout-js")) {
+    if (window.Razorpay) {
       return;
+    }
+
+    const onScriptLoad = () => {
+      setRazorpayReady(Boolean(window.Razorpay));
+      setRazorpayLoadError("");
+    };
+    const onScriptError = () => {
+      setRazorpayReady(false);
+      setRazorpayLoadError("Payment checkout could not load. Please refresh and try again.");
+    };
+    const existingScript = document.getElementById("razorpay-checkout-js") as HTMLScriptElement | null;
+
+    if (existingScript) {
+      existingScript.addEventListener("load", onScriptLoad);
+      existingScript.addEventListener("error", onScriptError);
+
+      return () => {
+        existingScript.removeEventListener("load", onScriptLoad);
+        existingScript.removeEventListener("error", onScriptError);
+      };
     }
 
     const script = document.createElement("script");
     script.id = "razorpay-checkout-js";
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.addEventListener("load", onScriptLoad);
+    script.addEventListener("error", onScriptError);
     document.body.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", onScriptLoad);
+      script.removeEventListener("error", onScriptError);
+    };
   }, []);
 
   useEffect(() => {
-    setForm(buildInitialForm(user));
-    setSelectedAddressId(
-      user?.addresses?.find((address) => address.isDefault)?.id ||
-        user?.addresses?.[0]?.id ||
-        "manual"
-    );
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) {
+        return;
+      }
+
+      setForm(buildInitialForm(user));
+      setSelectedAddressId(
+        user?.addresses?.find((address) => address.isDefault)?.id ||
+          user?.addresses?.[0]?.id ||
+          "manual"
+      );
+    });
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const onChange = (
@@ -300,6 +344,19 @@ export default function CheckoutPage() {
       return;
     }
 
+    const RazorpayCheckout = window.Razorpay;
+    const razorpayLaunchBlocker = getRazorpayLaunchBlocker({
+      scriptReady: razorpayReady,
+      hasConstructor: Boolean(RazorpayCheckout),
+      loadError: razorpayLoadError,
+    });
+    if (razorpayLaunchBlocker) {
+      const message = razorpayLaunchBlocker;
+      setError(message);
+      pushToast(message, "error");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -328,11 +385,7 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (!window.Razorpay) {
-        throw new Error("Razorpay checkout is still loading. Please try again.");
-      }
-
-      const razorpay = new window.Razorpay({
+      const razorpay = new RazorpayCheckout!({
         key: response.key,
         amount: response.amount,
         currency: response.currency,

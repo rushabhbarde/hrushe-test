@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   getHomepageSectionsForAudience,
@@ -12,17 +11,13 @@ import {
 import { getHomepageManagement } from "@/lib/server-storefront";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { HomepageMediaFrame } from "@/components/homepage-media";
 
 type Audience = "women" | "men";
 
 const audienceLabels: Record<Audience, string> = {
   women: "Women",
   men: "Men",
-};
-
-const audienceFallbackImages: Record<Audience, string> = {
-  women: "/uploads/banners/banner2.png",
-  men: "/uploads/banners/banner1.png",
 };
 
 const audienceFallbackLinks: Record<Audience, string> = {
@@ -62,71 +57,6 @@ const cardTitlePositionClasses: Record<HomepageTextPosition, string> = {
   "bottom-right": "absolute inset-x-0 bottom-0 flex justify-end px-5 pb-6 sm:px-7 sm:pb-8 lg:px-8 lg:pb-9",
 };
 
-function safeValue(value: string | undefined, fallback: string) {
-  return value?.trim() || fallback;
-}
-
-function ResponsiveFillImage({
-  src,
-  mobileSrc,
-  fallback,
-  alt,
-  sizes,
-  priority = false,
-  className,
-  objectPosition,
-}: {
-  src: string;
-  mobileSrc?: string;
-  fallback: string;
-  alt: string;
-  sizes: string;
-  priority?: boolean;
-  className: string;
-  objectPosition?: string;
-}) {
-  const desktopSrc = safeValue(src, fallback);
-  const resolvedMobileSrc = safeValue(mobileSrc, desktopSrc);
-  const style = { objectPosition: objectPosition || "center" };
-
-  if (resolvedMobileSrc !== desktopSrc) {
-    return (
-      <>
-        <Image
-          src={resolvedMobileSrc}
-          alt={alt}
-          fill
-          priority={priority}
-          sizes={sizes}
-          className={`${className} sm:hidden`}
-          style={style}
-        />
-        <Image
-          src={desktopSrc}
-          alt={alt}
-          fill
-          priority={priority}
-          sizes={sizes}
-          className={`${className} hidden sm:block`}
-          style={style}
-        />
-      </>
-    );
-  }
-
-  return (
-    <Image
-      src={desktopSrc}
-      alt={alt}
-      fill
-      priority={priority}
-      sizes={sizes}
-      className={className}
-      style={style}
-    />
-  );
-}
-
 function CardTitle({ card }: { card: HomepageCard }) {
   const titlePosition = card.titlePosition || "bottom-right";
   const textAlign = card.textAlign || "right";
@@ -147,15 +77,12 @@ function CardTitle({ card }: { card: HomepageCard }) {
 }
 
 function AudienceHeroSection({ section, audience }: { section: HomepageSection; audience: Audience }) {
-  const fallbackImage = audienceFallbackImages[audience];
-
   return (
     <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
       <div className="absolute inset-0">
-        <ResponsiveFillImage
+        <HomepageMediaFrame
           src={section.image}
           mobileSrc={section.mobileImage}
-          fallback={fallbackImage}
           alt={section.imageAlt || `HRUSHE ${audienceLabels[audience]} campaign`}
           priority
           sizes="100vw"
@@ -208,10 +135,9 @@ function CategoryCardsSection({ section, audience }: { section: HomepageSection;
           href={card.ctaLink || audienceFallbackLinks[audience]}
           className="group relative block h-full min-w-[50vw] snap-start overflow-hidden bg-[var(--foreground)] lg:min-w-[25vw]"
         >
-          <ResponsiveFillImage
+            <HomepageMediaFrame
             src={card.image}
             mobileSrc={card.mobileImage}
-            fallback={audienceFallbackImages[audience]}
             alt={card.imageAlt || card.title}
             sizes={categoryImageSizes}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
@@ -228,10 +154,9 @@ function CategoryCardsSection({ section, audience }: { section: HomepageSection;
 function SaleBannerSection({ section, audience }: { section: HomepageSection; audience: Audience }) {
   return (
     <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
-      <ResponsiveFillImage
+      <HomepageMediaFrame
         src={section.image}
         mobileSrc={section.mobileImage}
-        fallback={audienceFallbackImages[audience]}
         alt={section.imageAlt || section.title}
         sizes="100vw"
         className="h-full w-full object-cover"

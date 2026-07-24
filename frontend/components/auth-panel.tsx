@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
+import {
+  HRUSHE_LOGO_DIMENSIONS,
+  HRUSHE_LOGO_PATH,
+} from "@/lib/brand-assets";
 
 export type AuthMode = "login" | "signup";
 type AuthView = "auth" | "forgot-password";
@@ -328,10 +332,10 @@ export function AuthPanel({
     ) : null;
     const prestigeLogo = (
       <Image
-        src="/NEW_LOGO.png"
+        src={HRUSHE_LOGO_PATH}
         alt="HRUSHE"
-        width={260}
-        height={60}
+        width={HRUSHE_LOGO_DIMENSIONS.width}
+        height={HRUSHE_LOGO_DIMENSIONS.height}
         priority
         className="mx-auto h-auto w-48 brightness-0 invert sm:w-52"
       />
@@ -433,10 +437,10 @@ export function AuthPanel({
         <section className={`w-full text-white ${className}`.trim()}>
           <div className="mb-8 text-center">
             <Image
-              src="/NEW_LOGO.png"
+              src={HRUSHE_LOGO_PATH}
               alt="HRUSHE"
-              width={260}
-              height={60}
+              width={HRUSHE_LOGO_DIMENSIONS.width}
+              height={HRUSHE_LOGO_DIMENSIONS.height}
               priority
               className="mx-auto h-auto w-40 brightness-0 invert sm:w-44"
             />

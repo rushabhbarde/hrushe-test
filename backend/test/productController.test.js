@@ -6,6 +6,7 @@ auditLog.recordAuditLog = async () => {};
 
 const Product = require("../src/models/Product");
 const Order = require("../src/models/Order");
+const productRoutes = require("../src/routes/productRoutes");
 const {
   deleteProduct,
   restoreProduct,
@@ -45,6 +46,25 @@ const installModelStubs = (t) => {
     Order.exists = originals.orderExists;
   });
 };
+
+test("admin review moderation route requires CSRF protection", () => {
+  const reviewModerationRoute = productRoutes.stack.find(
+    (layer) =>
+      layer.route?.path === "/:id/reviews/:reviewId" &&
+      layer.route?.methods?.put
+  );
+  const middlewareNames = reviewModerationRoute?.route?.stack.map(
+    (layer) => layer.handle.name
+  );
+
+  assert.ok(reviewModerationRoute);
+  assert.deepEqual(middlewareNames, [
+    "protect",
+    "requireCsrf",
+    "",
+    "",
+  ]);
+});
 
 test("admin product updates preserve existing reserved inventory by SKU", () => {
   const payload = normalizeProductPayload(

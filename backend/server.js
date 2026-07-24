@@ -5,7 +5,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const connectDB = require("./src/config/db");
 const env = require("./src/config/env");
-env.assertProductionEnv();
+env.assertRuntimeEnv();
 const authRoutes = require("./src/routes/authRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const cartRoutes = require("./src/routes/cartRoutes");
@@ -34,7 +34,8 @@ app.disable("x-powered-by");
 app.use(requestContextMiddleware);
 const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/order/checkout/webhook/razorpay") ||
-  req.originalUrl?.startsWith("/internal/reconciliation/scan");
+  req.originalUrl?.startsWith("/internal/reconciliation/scan") ||
+  req.originalUrl?.startsWith("/internal/inventory/cleanup");
 
 const isAllowedDevOrigin = (origin) => {
   if (env.NODE_ENV === "production") {
@@ -155,7 +156,15 @@ async function startDatabaseBackedTasks() {
   await connectDB();
   await ensureAdminUser();
   const cleanupInventory = () =>
-    cleanupExpiredInventoryReservations().catch((error) => {
+    cleanupExpiredInventoryReservations({ source: "interval" })
+      .then((result) => {
+        recordMetric("inventory.reservations.cleanup", {
+          releasedOrders: result.reservationsReleased,
+          inspectedOrders: result.ordersInspected,
+          lockContended: result.lockContended,
+        });
+      })
+      .catch((error) => {
       logEvent(
         "inventory.cleanup.failed",
         {
@@ -165,8 +174,12 @@ async function startDatabaseBackedTasks() {
         "error"
       );
     });
-  const cleanedUp = await cleanupExpiredInventoryReservations();
-  recordMetric("inventory.reservations.cleanup", { releasedOrders: cleanedUp });
+  const cleanedUp = await cleanupExpiredInventoryReservations({ source: "startup" });
+  recordMetric("inventory.reservations.cleanup", {
+    releasedOrders: cleanedUp.reservationsReleased,
+    inspectedOrders: cleanedUp.ordersInspected,
+    lockContended: cleanedUp.lockContended,
+  });
   if (!cleanupInterval) {
     cleanupInterval = setInterval(cleanupInventory, 5 * 60 * 1000);
     cleanupInterval.unref();

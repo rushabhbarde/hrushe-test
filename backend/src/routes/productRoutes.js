@@ -33,6 +33,7 @@ router.get(
 router.put(
   "/:id/reviews/:reviewId",
   protect,
+  requireCsrf,
   requireAdminPermission("reviews.manage"),
   updateProductReviewStatus
 );

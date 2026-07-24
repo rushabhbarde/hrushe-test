@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
+import {
+  HRUSHE_BRAND_NAME,
+  HRUSHE_LOGO_PATH,
+  HRUSHE_ORIGIN,
+  HRUSHE_SYMBOL_LOGO_PATH,
+} from "@/lib/brand-assets";
 import "./globals.css";
 
 const hrusheFont = Geist({
@@ -11,8 +17,8 @@ const hrusheFont = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://hrushe.in"),
-  applicationName: "HRUSHE",
+  metadataBase: new URL(HRUSHE_ORIGIN),
+  applicationName: HRUSHE_BRAND_NAME,
   title: {
     default: "HRUSHE | Defined Quietly",
     template: "%s | HRUSHE",
@@ -20,22 +26,22 @@ export const metadata: Metadata = {
   description:
     "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
   alternates: {
-    canonical: "https://hrushe.in",
+    canonical: HRUSHE_ORIGIN,
   },
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/NEW_LOGO_SYMB.png", sizes: "200x200", type: "image/png" },
+      { url: HRUSHE_SYMBOL_LOGO_PATH, sizes: "300x300", type: "image/png" },
     ],
-    shortcut: "/NEW_LOGO_SYMB.png",
-    apple: "/NEW_LOGO_SYMB.png",
+    shortcut: HRUSHE_SYMBOL_LOGO_PATH,
+    apple: HRUSHE_SYMBOL_LOGO_PATH,
   },
   openGraph: {
     title: "HRUSHE | Defined Quietly",
     description:
       "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
-    url: "https://hrushe.in",
-    siteName: "HRUSHE",
+    url: HRUSHE_ORIGIN,
+    siteName: HRUSHE_BRAND_NAME,
     type: "website",
     images: [
       {
@@ -78,15 +84,15 @@ export default function RootLayout({
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "HRUSHE",
-      url: "https://hrushe.in",
-      logo: "https://hrushe.in/NEW_LOGO.png",
+      name: HRUSHE_BRAND_NAME,
+      url: HRUSHE_ORIGIN,
+      logo: `${HRUSHE_ORIGIN}${HRUSHE_LOGO_PATH}`,
     },
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "HRUSHE",
-      url: "https://hrushe.in",
+      name: HRUSHE_BRAND_NAME,
+      url: HRUSHE_ORIGIN,
       potentialAction: {
         "@type": "SearchAction",
         target: "https://hrushe.in/search?q={search_term_string}",

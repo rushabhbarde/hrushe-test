@@ -10,9 +10,11 @@
   --border: rgba(17, 17, 15, 0.14);
   --accent: #711e2a;
   --accent-dark: #4f111b;
-  --brand-highlight: linear-gradient(120deg, #8B1018 0%, #5A071B 48%, #2D0016 100%);
-  --brand-highlight-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.16) 0%, rgba(90, 7, 27, 0.13) 48%, rgba(45, 0, 22, 0.1) 100%);
-  --brand-highlight-shadow: rgba(90, 7, 27, 0.2);
+  --brand-highlight: #711e2a;
+  --brand-highlight-soft: rgba(113, 30, 42, 0.12);
+  --brand-highlight-shadow: rgba(113, 30, 42, 0.2);
+  --campaign-gradient: linear-gradient(120deg, #8b1018 0%, #5a071b 48%, #2d0016 100%);
+  --campaign-gradient-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.16) 0%, rgba(90, 7, 27, 0.13) 48%, rgba(45, 0, 22, 0.1) 100%);
   --success: #127a49;
   --danger: #c43a35;
   --shadow: none;
@@ -47,9 +49,11 @@
   --border: rgba(255, 255, 255, 0.1);
   --accent: #d2d2d2;
   --accent-dark: #ffffff;
-  --brand-highlight: linear-gradient(120deg, #8B1018 0%, #5A071B 48%, #2D0016 100%);
-  --brand-highlight-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.28) 0%, rgba(90, 7, 27, 0.24) 48%, rgba(45, 0, 22, 0.2) 100%);
-  --brand-highlight-shadow: rgba(139, 16, 24, 0.3);
+  --brand-highlight: #8b2a3a;
+  --brand-highlight-soft: rgba(139, 42, 58, 0.22);
+  --brand-highlight-shadow: rgba(139, 42, 58, 0.3);
+  --campaign-gradient: linear-gradient(120deg, #8b1018 0%, #5a071b 48%, #2d0016 100%);
+  --campaign-gradient-soft: linear-gradient(120deg, rgba(139, 16, 24, 0.28) 0%, rgba(90, 7, 27, 0.24) 48%, rgba(45, 0, 22, 0.2) 100%);
   --success: #75d69f;
   --danger: #ef6b65;
   --shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
@@ -951,7 +955,6 @@ body :where([class*="shadow-"]) {
 .button-primary {
   border: 1px solid transparent;
   background: var(--brand-highlight);
-  background-size: 140% 140%;
   color: #ffffff;
   box-shadow: none;
   min-height: 48px;
@@ -1116,7 +1119,6 @@ body :where([class*="shadow-"]) {
   gap: 0.8rem;
   border: 1px solid transparent;
   background: var(--brand-highlight);
-  background-size: 140% 140%;
   padding: 0.85rem 1.2rem;
   color: #ffffff;
   font-size: 0.82rem;
@@ -1181,23 +1183,17 @@ body :where([class*="shadow-"]) {
 }
 
 .auth-prestige-gradient {
-  background:
-    radial-gradient(circle at 52% 18%, rgba(255, 255, 255, 0.14), transparent 16rem),
-    var(--brand-highlight);
+  background: #11110f;
 }
 
 .nav-link-active {
   color: var(--accent);
-  background: var(--brand-highlight);
-  background-clip: text;
   font-weight: 600;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--brand-highlight-shadow), transparent);
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
 .editorial-card {
@@ -1393,7 +1389,7 @@ body :where([class*="shadow-"]) {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--brand-highlight);
+  background: color-mix(in srgb, var(--background) 12%, transparent);
   opacity: 0;
   transition: opacity 180ms ease;
 }
@@ -1483,7 +1479,6 @@ body :where([class*="shadow-"]) {
 
 @media (hover: hover) and (pointer: fine) {
   .button-primary:hover {
-    background-position: 100% 50%;
     box-shadow: 0 14px 30px var(--brand-highlight-shadow);
   }
 
@@ -1499,7 +1494,6 @@ body :where([class*="shadow-"]) {
   }
 
   .lux-action:hover {
-    background-position: 100% 50%;
     box-shadow: 0 14px 30px var(--brand-highlight-shadow);
   }
 

@@ -9,6 +9,10 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 import { apiRequest } from "@/lib/api";
 import {
+  HRUSHE_LOGO_DIMENSIONS,
+  HRUSHE_LOGO_PATH,
+} from "@/lib/brand-assets";
+import {
   defaultAdminWorkspace,
   getHomepageSectionsForAudience,
   normalizeAdminWorkspace,
@@ -16,6 +20,8 @@ import {
   type HomepageAudience,
   type HomepageSection,
 } from "@/lib/admin-workspace";
+import { HomepageMediaFrame } from "@/components/homepage-media";
+import { resolveHomepageMediaUrl } from "@/lib/homepage-media";
 
 const navItems = [
   { href: "/women", label: "Women" },
@@ -50,20 +56,20 @@ type HomepageManagementPayload = Partial<HomeManagement> & {
 
 const defaultAudienceMenus: AudienceMenus = {
   Women: {
-    image: "/uploads/banners/banner2.png",
+    image: "",
     imageAlt: "HRUSHE womenswear edit",
     cards: [
       {
         href: "/shop",
         label: "Sale: New Pieces Added",
-        image: "/uploads/banners/banner2.png",
+        image: "",
         imageAlt: "HRUSHE womenswear sale edit",
         objectPosition: "center",
       },
       {
         href: "/women",
         label: "Shop Women",
-        image: "/uploads/banners/banner2.png",
+        image: "",
         imageAlt: "HRUSHE womenswear campaign",
         objectPosition: "right center",
       },
@@ -81,20 +87,20 @@ const defaultAudienceMenus: AudienceMenus = {
     ],
   },
   Men: {
-    image: "/uploads/banners/banner1.png",
+    image: "",
     imageAlt: "HRUSHE menswear edit",
     cards: [
       {
         href: "/shop",
         label: "Sale: New Pieces Added",
-        image: "/uploads/banners/banner1.png",
+        image: "",
         imageAlt: "HRUSHE menswear sale edit",
         objectPosition: "center",
       },
       {
         href: "/men",
         label: "Shop Men",
-        image: "/uploads/banners/banner1.png",
+        image: "",
         imageAlt: "HRUSHE menswear campaign",
         objectPosition: "left center",
       },
@@ -151,7 +157,10 @@ function sectionToMenuCard(
   return {
     href: section.ctaLink || fallback.href,
     label: section.title || fallback.label,
-    image: section.image || section.mobileImage || fallback.image,
+    image:
+      resolveHomepageMediaUrl(section.image) ||
+      resolveHomepageMediaUrl(section.mobileImage) ||
+      fallback.image,
     imageAlt: section.imageAlt || fallback.imageAlt,
     objectPosition: section.objectPosition || fallback.objectPosition,
   };
@@ -166,7 +175,7 @@ function buildAudienceMenus(homeManagement: HomeManagement): AudienceMenus {
 
     menus[key] = {
       ...fallback,
-      image: heroSection?.image || fallback.image,
+      image: resolveHomepageMediaUrl(heroSection?.image) || fallback.image,
       imageAlt: heroSection?.imageAlt || fallback.imageAlt,
       cards: [
         sectionToMenuCard(saleSection, fallback.cards[0]),
@@ -382,10 +391,10 @@ export function SiteHeader() {
 
           <Link href="/" className="flex shrink-0 items-center justify-start lg:justify-center">
             <Image
-              src="/NEW_LOGO.png"
+              src={HRUSHE_LOGO_PATH}
               alt="HRUSHE"
-              width={220}
-              height={72}
+              width={HRUSHE_LOGO_DIMENSIONS.width}
+              height={HRUSHE_LOGO_DIMENSIONS.height}
               priority
               className="h-[1.7rem] w-auto object-contain sm:h-10 lg:h-12"
             />
@@ -582,13 +591,12 @@ export function SiteHeader() {
                 onClick={() => setActiveAudienceMenu(null)}
                 className="group relative block h-[34.25rem] min-h-[34.25rem] max-h-[34.25rem] overflow-hidden"
               >
-                <Image
+                <HomepageMediaFrame
                   src={card.image}
                   alt={card.imageAlt}
-                  fill
                   sizes="360px"
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  style={{ objectPosition: card.objectPosition }}
+                  objectPosition={card.objectPosition}
                 />
                 <span className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
                   <span>{card.label}</span>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, type ChangeEvent } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import {
@@ -19,6 +18,11 @@ import {
 import { useToast } from "@/components/toast-provider";
 import { uploadAdminMedia } from "@/lib/admin-media-upload";
 import { compressImageFile } from "@/lib/image-upload";
+import {
+  AdminMissingMediaWarning,
+  HomepageMediaFrame,
+} from "@/components/homepage-media";
+import { getHomepageRequiredMediaIssues } from "@/lib/homepage-media";
 import {
   defaultHomepageSections,
   getVisibleHomepageCards,
@@ -80,7 +84,7 @@ function createCard(section: HomepageSection): HomepageCard {
         ? "/collection/women"
         : "/collection/men";
   const fallbackImage =
-    section.audience === "women" ? "/uploads/banners/banner2.png" : "/uploads/banners/banner1.png";
+    "";
 
   return {
     id: createId("card"),
@@ -115,7 +119,6 @@ function createSection(sectionType: HomepageSectionType, audience: HomepageAudie
     };
   }
 
-  const image = safeAudience === "women" ? "/uploads/banners/banner2.png" : "/uploads/banners/banner1.png";
   const collectionLink = safeAudience === "women" ? "/collection/women" : "/collection/men";
 
   return {
@@ -130,7 +133,7 @@ function createSection(sectionType: HomepageSectionType, audience: HomepageAudie
     ctaLink: collectionLink,
     secondaryCtaText: "",
     secondaryCtaLink: "",
-    image,
+    image: "",
     mobileImage: "",
     imageAlt: "HRUSHE homepage campaign",
     objectPosition: "center",
@@ -155,7 +158,7 @@ function getSectionPreviewImage(section: HomepageSection) {
   return (
     section.image ||
     section.cards.find((card) => card.image)?.image ||
-    (section.audience === "women" ? "/uploads/banners/banner2.png" : "/uploads/banners/banner1.png")
+    ""
   );
 }
 
@@ -167,13 +170,13 @@ function HomepageSectionPreview({ section }: { section: HomepageSection }) {
       <div className="grid min-h-[260px] grid-cols-2 overflow-hidden bg-[var(--foreground)] text-white lg:grid-cols-4">
         {(visibleCards.length ? visibleCards : section.cards).slice(0, 4).map((card) => (
           <div key={card.id} className="relative min-h-[260px] overflow-hidden">
-            <Image
+            <HomepageMediaFrame
               src={card.image || getSectionPreviewImage(section)}
+              mobileSrc={card.mobileImage}
               alt={card.imageAlt || card.title}
-              fill
               sizes="220px"
               className="object-cover"
-              style={{ objectPosition: card.objectPosition || "center" }}
+              objectPosition={card.objectPosition}
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_35%,rgba(0,0,0,0.58)_100%)]" />
             <p className="absolute bottom-4 right-4 max-w-[10rem] text-right text-[0.72rem] font-medium uppercase tracking-[0.08em]">
@@ -187,13 +190,13 @@ function HomepageSectionPreview({ section }: { section: HomepageSection }) {
 
   return (
     <div className="relative min-h-[360px] overflow-hidden bg-[var(--foreground)] text-white">
-      <Image
+      <HomepageMediaFrame
         src={getSectionPreviewImage(section)}
+        mobileSrc={section.mobileImage}
         alt={section.imageAlt || section.title}
-        fill
         sizes="720px"
         className="object-cover"
-        style={{ objectPosition: section.objectPosition || "center" }}
+        objectPosition={section.objectPosition}
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_20%,rgba(0,0,0,0.54)_100%)]" />
       <div className="absolute inset-x-0 bottom-8 px-6 text-center">
@@ -233,6 +236,10 @@ export default function AdminHomepagePage() {
       selectedSection?.cards[0] ||
       null,
     [selectedCardId, selectedSection]
+  );
+  const mediaIssues = useMemo(
+    () => getHomepageRequiredMediaIssues(sections, { mediaLibrary: workspace.mediaLibrary }),
+    [sections, workspace.mediaLibrary]
   );
 
   function updateDraftSections(updater: (current: HomepageSection[]) => HomepageSection[]) {
@@ -463,6 +470,15 @@ export default function AdminHomepagePage() {
       return;
     }
 
+    const blockingMediaIssues = getHomepageRequiredMediaIssues(nextSections, {
+      mediaLibrary: workspace.mediaLibrary,
+    });
+    if (blockingMediaIssues.length > 0) {
+      pushToast("Add approved homepage media before publishing.", "error");
+      setPublishOpen(false);
+      return;
+    }
+
     try {
       await saveWorkspace({
         homeManagement: {
@@ -497,6 +513,8 @@ export default function AdminHomepagePage() {
             </button>
           }
         />
+
+        <AdminMissingMediaWarning issues={mediaIssues} />
 
         <div className="grid gap-5 xl:grid-cols-[minmax(300px,0.75fr)_minmax(0,1.25fr)]">
           <AdminPanel>

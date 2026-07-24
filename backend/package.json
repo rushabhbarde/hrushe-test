@@ -8,7 +8,9 @@
     "start": "node server.js",
     "test": "node --test",
     "media:audit": "node scripts/migrateBase64Media.js",
-    "media:migrate": "node scripts/migrateBase64Media.js --apply"
+    "media:migrate": "node scripts/migrateBase64Media.js --apply",
+    "scheduler:inventory-cleanup": "node scripts/run-internal-scheduler.js /internal/inventory/cleanup",
+    "scheduler:reconciliation-scan": "node scripts/run-internal-scheduler.js /internal/reconciliation/scan"
   },
   "keywords": [],
   "author": "",

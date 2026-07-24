@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,6 +9,10 @@ import { AdminBadge, AdminPanel, AdminSectionLabel } from "@/components/admin-ui
 import { useAdminAuth } from "@/components/admin-auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { adminNavigation, getAdminRoutePermission } from "@/lib/admin";
+import {
+  HRUSHE_SYMBOL_LOGO_DIMENSIONS,
+  HRUSHE_SYMBOL_LOGO_PATH,
+} from "@/lib/brand-assets";
 
 function groupNavigation(navigation: typeof adminNavigation) {
   const navigationMap = new Map<string, typeof navigation>();
@@ -142,7 +147,13 @@ export function AdminShell({
           <aside className="sticky top-0 hidden h-screen w-[310px] shrink-0 border-r border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)] px-5 py-6 backdrop-blur xl:block">
             <Link href="/admin" className="flex items-center gap-4 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] pb-5">
               <div className="flex h-12 w-12 items-center justify-center border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_5%,transparent)]">
-                <span className="display-font text-2xl leading-none">H</span>
+                <Image
+                  src={HRUSHE_SYMBOL_LOGO_PATH}
+                  alt=""
+                  width={HRUSHE_SYMBOL_LOGO_DIMENSIONS.width}
+                  height={HRUSHE_SYMBOL_LOGO_DIMENSIONS.height}
+                  className="h-8 w-8 object-contain"
+                />
               </div>
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-[var(--muted)]">

@@ -5,10 +5,13 @@ const AppError = require("../utils/AppError");
 const { getPaiseValue, paiseToRupees } = require("../utils/money");
 const { captureError } = require("../utils/errorMonitoring");
 const { recordMetric } = require("../utils/metrics");
+const { RECONCILIATION_RESULT_CODES } = require("../utils/reconciliation");
 
 const MAX_CART_LINES = 25;
 const MAX_ITEM_QUANTITY = 10;
 const RESERVATION_WINDOW_MS = 15 * 60 * 1000;
+const CLEANUP_PAYMENT_STATUSES = Object.freeze(["pending", "initiated", "failed", "cancelled"]);
+let expiredReservationCleanupInFlight = null;
 
 const cleanText = (value) => String(value || "").trim();
 const compareText = (left, right) =>
@@ -256,22 +259,81 @@ const releaseInventoryItems = async (items) => {
   );
 };
 
-const cleanupExpiredInventoryReservations = async () => {
-  const expiredOrders = await Order.find({
+async function runExpiredInventoryReservationCleanup(options = {}) {
+  const now = options.now instanceof Date ? options.now : new Date(options.now || Date.now());
+  const limit = Math.min(Math.max(Number(options.limit) || 50, 1), 100);
+  const query = {
     inventoryReservationStatus: "reserved",
-    inventoryReservationExpiresAt: { $lte: new Date() },
-    paymentStatus: { $in: ["pending", "initiated", "failed", "cancelled"] },
-  }).limit(50);
+    inventoryReservationExpiresAt: { $lte: now },
+    paymentStatus: { $in: CLEANUP_PAYMENT_STATUSES },
+  };
+  const [expiredOrders, reservationsPreserved, manualReviewCases] = await Promise.all([
+    Order.find(query).limit(limit),
+    Order.countDocuments({
+      inventoryReservationStatus: "reserved",
+      inventoryReservationExpiresAt: { $gt: now },
+    }),
+    Order.countDocuments({
+      inventoryReservationStatus: "reserved",
+      inventoryReservationExpiresAt: { $lte: now },
+      paymentStatus: { $nin: CLEANUP_PAYMENT_STATUSES },
+    }),
+  ]);
+
+  const result = {
+    status: "completed",
+    lockContended: false,
+    ordersInspected: expiredOrders.length,
+    reservationsReleased: 0,
+    reservationsPreserved,
+    manualReviewCases,
+    failedReleases: 0,
+    limit,
+  };
 
   for (const order of expiredOrders) {
-    await releaseOrderInventory(order);
-    if (order.paymentStatus === "initiated") {
-      order.paymentStatus = "cancelled";
+    try {
+      await releaseOrderInventory(order);
+      if (order.paymentStatus === "initiated") {
+        order.paymentStatus = "cancelled";
+      }
+      await order.save();
+      result.reservationsReleased += 1;
+    } catch (error) {
+      result.failedReleases += 1;
+      order.paymentReconciliationResultCode =
+        order.paymentReconciliationResultCode || RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+      await order.save().catch(() => undefined);
+      captureError(error, {
+        component: "inventory",
+        operation: "expired-reservation-cleanup",
+        orderId: order._id?.toString?.() || "",
+      });
     }
-    await order.save();
   }
 
-  return expiredOrders.length;
+  return result;
+}
+
+const cleanupExpiredInventoryReservations = async (options = {}) => {
+  if (expiredReservationCleanupInFlight) {
+    return {
+      status: "already-running",
+      lockContended: true,
+      ordersInspected: 0,
+      reservationsReleased: 0,
+      reservationsPreserved: 0,
+      manualReviewCases: 0,
+      failedReleases: 0,
+      limit: Math.min(Math.max(Number(options.limit) || 50, 1), 100),
+    };
+  }
+
+  expiredReservationCleanupInFlight = runExpiredInventoryReservationCleanup(options).finally(() => {
+    expiredReservationCleanupInFlight = null;
+  });
+
+  return expiredReservationCleanupInFlight;
 };
 
 module.exports = {

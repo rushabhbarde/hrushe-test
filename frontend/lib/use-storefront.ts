@@ -107,14 +107,23 @@ async function fetchHomepageBanner() {
 }
 
 export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
-  const initialCache = admin ? adminProductCache : productCache;
-  const [products, setProducts] = useState<Product[]>(
-    initialCache?.products || []
-  );
-  const [loading, setLoading] = useState(!initialCache);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+    const cachedProducts = admin ? adminProductCache : productCache;
+
+    if (cachedProducts) {
+      queueMicrotask(() => {
+        if (!active) {
+          return;
+        }
+
+        setProducts(cachedProducts.products);
+        setLoading(false);
+      });
+    }
 
     const load = async () => {
       try {
@@ -244,12 +253,23 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
 
 export function useHomepageBannerData() {
   const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
-    bannerCache?.homepageBanner || defaultHomepageBanner
+    defaultHomepageBanner
   );
-  const [loading, setLoading] = useState(!bannerCache);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+
+    if (bannerCache) {
+      queueMicrotask(() => {
+        if (!active || !bannerCache) {
+          return;
+        }
+
+        setHomepageBannerState(bannerCache.homepageBanner);
+        setLoading(false);
+      });
+    }
 
     fetchHomepageBanner()
       .then((data) => {

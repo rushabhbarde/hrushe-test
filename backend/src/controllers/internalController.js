@@ -6,6 +6,9 @@ const { logEvent } = require("../utils/logger");
 const { recordMetric } = require("../utils/metrics");
 const { markReconciliationScan } = require("../utils/operationsState");
 const { scanStuckOrders } = require("../services/reconciliationScanner");
+const {
+  cleanupExpiredInventoryReservations,
+} = require("../services/checkoutInventory");
 
 const SCHEDULER_REPLAY_WINDOW_MS = 5 * 60 * 1000;
 
@@ -61,7 +64,16 @@ function verifySchedulerRequest(req, now = Date.now()) {
 }
 
 const runInternalReconciliationScan = asyncHandler(async (req, res) => {
-  verifySchedulerRequest(req);
+  logEvent("internal.reconciliation_scan.requested", {});
+  try {
+    verifySchedulerRequest(req);
+  } catch (error) {
+    logEvent("internal.reconciliation_scan.authentication_rejected", {
+      message: error?.message,
+      statusCode: error?.statusCode || 500,
+    }, "warn");
+    throw error;
+  }
 
   const startedAt = Date.now();
   const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
@@ -93,9 +105,69 @@ const runInternalReconciliationScan = asyncHandler(async (req, res) => {
   });
 });
 
+const runInternalInventoryCleanup = asyncHandler(async (req, res) => {
+  logEvent("internal.inventory_cleanup.scan_requested", {});
+  try {
+    verifySchedulerRequest(req);
+  } catch (error) {
+    logEvent("internal.inventory_cleanup.authentication_rejected", {
+      message: error?.message,
+      statusCode: error?.statusCode || 500,
+    }, "warn");
+    throw error;
+  }
+
+  const startedAt = Date.now();
+  const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
+  logEvent("internal.inventory_cleanup.scan_started", { limit });
+
+  try {
+    const result = await cleanupExpiredInventoryReservations({
+      limit,
+      source: "internal-scheduler",
+    });
+    const durationMs = Date.now() - startedAt;
+
+    if (result.lockContended) {
+      logEvent("internal.inventory_cleanup.lock_contention", { limit }, "warn");
+    }
+
+    recordMetric("internal.inventory_cleanup.completed", {
+      ordersInspected: result.ordersInspected,
+      reservationsReleased: result.reservationsReleased,
+      reservationsPreserved: result.reservationsPreserved,
+      manualReviewCases: result.manualReviewCases,
+      failedReleases: result.failedReleases,
+      lockContended: result.lockContended,
+      durationMs,
+    });
+    logEvent("internal.inventory_cleanup.scan_completed", {
+      ordersInspected: result.ordersInspected,
+      reservationsReleased: result.reservationsReleased,
+      reservationsPreserved: result.reservationsPreserved,
+      manualReviewCases: result.manualReviewCases,
+      failedReleases: result.failedReleases,
+      lockContended: result.lockContended,
+      durationMs,
+    });
+
+    return res.status(result.lockContended ? 202 : 200).json({
+      ...result,
+      durationMs,
+    });
+  } catch (error) {
+    logEvent("internal.inventory_cleanup.scan_error", {
+      message: error?.message,
+      code: error?.code || "",
+    }, "error");
+    throw error;
+  }
+});
+
 module.exports = {
   SCHEDULER_REPLAY_WINDOW_MS,
   buildSchedulerSignature,
+  runInternalInventoryCleanup,
   runInternalReconciliationScan,
   safeCompareStrings,
   verifySchedulerRequest,

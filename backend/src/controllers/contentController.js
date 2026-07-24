@@ -212,6 +212,7 @@ const APPROVED_TEXT_POSITIONS = new Set([
 ]);
 const APPROVED_TEXT_ALIGNMENTS = new Set(["left", "center", "right"]);
 const APPROVED_FONT_SIZES = new Set(["small", "medium", "large"]);
+const LEGACY_MISSING_HOMEPAGE_MEDIA = /^\/uploads\/banners\/(?:banner1|banner2|shopwomen|shopmen)\.png(?:[?#].*)?$/i;
 
 function assertHomepageDateRange(record = {}, label = "section") {
   const startsAt = record.publishStart ? new Date(record.publishStart).getTime() : null;
@@ -232,6 +233,9 @@ function assertHomepageCardIsValid(card = {}) {
   ].filter(Boolean).forEach((url) => {
     if (hasEmbeddedMedia(url) || !isSafeContentUrl(url)) {
       throw new AppError("Homepage card images must use an HTTPS or site-relative URL.", 400);
+    }
+    if (LEGACY_MISSING_HOMEPAGE_MEDIA.test(String(url || "").trim())) {
+      throw new AppError("Homepage card images must use uploaded HRUSHE media, not missing default banner paths.", 400);
     }
   });
 
@@ -285,6 +289,9 @@ function assertHomepageSectionIsValid(section = {}) {
     if (hasEmbeddedMedia(url) || !isSafeContentUrl(url)) {
       throw new AppError("Homepage section images must use an HTTPS or site-relative URL.", 400);
     }
+    if (LEGACY_MISSING_HOMEPAGE_MEDIA.test(String(url || "").trim())) {
+      throw new AppError("Homepage section images must use uploaded HRUSHE media, not missing default banner paths.", 400);
+    }
   });
 
   [section.ctaLink, section.secondaryCtaLink].filter(Boolean).forEach((url) => {
@@ -325,6 +332,37 @@ function assertHomepageSectionsAreValid(sections = []) {
     throw new AppError("Homepage management can contain at most 40 sections.", 400);
   }
   sections.forEach(assertHomepageSectionIsValid);
+}
+
+function assertHomepagePublishedMediaIsComplete(sections = []) {
+  const missing = [];
+
+  sections.forEach((section = {}) => {
+    if (section.isVisible === false) {
+      return;
+    }
+
+    if (section.sectionType === "entry-cards" || section.sectionType === "category-cards") {
+      const visibleCards = Array.isArray(section.cards)
+        ? section.cards.filter((card = {}) => card.isVisible !== false)
+        : [];
+
+      visibleCards.forEach((card = {}) => {
+        if (!String(card.image || "").trim()) {
+          missing.push(card.title || section.label || section.title || "card");
+        }
+      });
+      return;
+    }
+
+    if (!String(section.image || "").trim()) {
+      missing.push(section.label || section.title || "section");
+    }
+  });
+
+  if (missing.length > 0) {
+    throw new AppError("Visible homepage sections require uploaded media before publishing.", 400);
+  }
 }
 
 function assertWebsiteSettingsAreValid(settings = {}) {
@@ -397,6 +435,9 @@ function assertWorkspaceMediaIsStorable(patch = {}) {
   banners.forEach(assertBannerIsValid);
   if (Object.prototype.hasOwnProperty.call(patch?.homeManagement || {}, "sections")) {
     assertHomepageSectionsAreValid(sections);
+    if (patch.homeManagement.lastPublishedAt) {
+      assertHomepagePublishedMediaIsComplete(sections);
+    }
   }
 }
 

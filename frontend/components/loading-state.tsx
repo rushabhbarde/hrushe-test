@@ -1,4 +1,8 @@
 import Image from "next/image";
+import {
+  HRUSHE_SYMBOL_LOGO_DIMENSIONS,
+  HRUSHE_SYMBOL_LOGO_PATH,
+} from "@/lib/brand-assets";
 
 export function LoadingState({
   title = "Loading HRUSHE",
@@ -19,10 +23,10 @@ export function LoadingState({
       <div className="hrushe-symbol-loader" aria-hidden="true">
         <span className="hrushe-symbol-loader__mark">
           <Image
-            src="/NEW_LOGO_SYMB.png"
+            src={HRUSHE_SYMBOL_LOGO_PATH}
             alt=""
-            width={96}
-            height={96}
+            width={HRUSHE_SYMBOL_LOGO_DIMENSIONS.width}
+            height={HRUSHE_SYMBOL_LOGO_DIMENSIONS.height}
             priority
           />
         </span>

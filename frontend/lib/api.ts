@@ -11,6 +11,26 @@ export function apiUrl(path: string) {
   return `${API_PROXY_PREFIX}${normalizedPath}`;
 }
 
+export function normalizeApiError(error: unknown, fallback = "Request failed") {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error.trim();
+  }
+
+  if (error && typeof error === "object") {
+    const record = error as { message?: unknown; error?: unknown };
+    const message = typeof record.message === "string" ? record.message.trim() : "";
+    const nestedError = typeof record.error === "string" ? record.error.trim() : "";
+
+    return message || nestedError || fallback;
+  }
+
+  return fallback;
+}
+
 function buildHeaders(init?: RequestInit) {
   const headers = new Headers(init?.headers || {});
   const customerAuthHeaders = getCustomerAuthHeaders();
@@ -70,7 +90,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.message || "Request failed");
+      throw new Error(normalizeApiError(data));
     }
 
     return data as T;
@@ -93,7 +113,7 @@ export async function downloadApiFile(path: string, filename = "download") {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.message || "Could not download file");
+    throw new Error(normalizeApiError(data, "Could not download file"));
   }
 
   const blob = await response.blob();

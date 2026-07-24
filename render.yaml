@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: APP_ENV
+        sync: false
       - key: PORT
         value: 10000
       - key: CLIENT_URL
@@ -42,6 +44,8 @@ services:
       - key: RAZORPAY_CURRENCY
         value: INR
       - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: INTERNAL_SCHEDULER_SECRET
         sync: false
       - key: R2_ACCOUNT_ID
         sync: false
