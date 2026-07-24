@@ -29,6 +29,7 @@ const footerGroups = [
   {
     title: "Shop",
     links: [
+      { href: "/shop?sort=newest", label: "New arrivals" },
       { href: "/shop", label: "All pieces" },
       { href: "/collection/t-shirts", label: "T-Shirts" },
     ],
@@ -57,6 +58,13 @@ const footerGroups = [
       { href: "/policies?tab=returns", label: "Return policy" },
     ],
   },
+];
+
+const serviceHighlights = [
+  { label: "Dispatch", value: "1-3 business days" },
+  { label: "Exchange", value: "One free size exchange" },
+  { label: "Returns", value: "7-day returns" },
+  { label: "Support", value: "Monday-Saturday" },
 ];
 
 export function SiteFooter({ compact = false }: { compact?: boolean }) {
@@ -130,73 +138,91 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
 
   return (
     <footer className="border-t border-white/15 bg-black text-white">
-      <div className="mx-auto grid w-full max-w-[1600px] gap-9 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,minmax(0,0.62fr))] lg:px-8 lg:py-12">
-        <section className="max-w-xl">
-          <p className="eyebrow text-white/55">{settings.brandName}</p>
-          <p className="mt-4 max-w-[12ch] text-[2rem] font-medium uppercase leading-[0.96] text-white sm:text-[3rem]">
-            Defined Quietly.
-          </p>
-          <p className="mt-5 max-w-md text-sm leading-6 text-white/60 sm:text-[0.95rem]">
-            Quiet everyday uniforms with clear proportions, honest materials, and repeat-wear construction.
-          </p>
-        </section>
-
-        {footerGroups.map((group) => (
-          <div key={group.title}>
-            <p className="eyebrow text-white/45">{group.title}</p>
-            <div className="mt-5 space-y-4 text-sm text-white/75">
-              {group.links.map((link) => (
-                <Link key={link.href} href={link.href} className="block hover:text-white">
-                  {link.label}
-                </Link>
-              ))}
-              {group.title === "Legal" ? (
-                <button
-                  type="button"
-                  onClick={openCookiePreferences}
-                  className="block text-left hover:text-white"
-                >
-                  Cookie preferences
-                </button>
-              ) : null}
+      <div className="mx-auto flex min-h-[34rem] w-full max-w-[1600px] flex-col px-4 sm:px-6 md:min-h-[clamp(34rem,72svh,48rem)] lg:px-8">
+        <div className="grid flex-1 gap-8 py-8 md:grid-cols-[0.92fr_1.08fr] md:py-10 lg:gap-14 lg:py-12">
+          <section className="flex flex-col justify-between gap-8">
+            <div className="max-w-xl">
+              <p className="eyebrow text-white/55">{settings.brandName}</p>
+              <p className="mt-4 max-w-[12ch] text-[2.25rem] font-medium uppercase leading-[0.96] text-white sm:text-[3.25rem]">
+                Defined Quietly.
+              </p>
+              <p className="mt-5 max-w-md text-sm leading-6 text-white/60 sm:text-[0.95rem]">
+                Quiet everyday uniforms with clear proportions, honest materials, and repeat-wear construction.
+              </p>
             </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="border-t border-white/15">
-        <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 py-5 sm:px-6 md:grid-cols-[1fr_auto] md:items-end lg:px-8">
-          <div>
-            <p className="eyebrow text-white/45">Client services</p>
-            <div className="mt-4 flex flex-col gap-3 text-sm text-white/75 sm:flex-row sm:flex-wrap sm:gap-x-8">
-              {contactLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noreferrer" : undefined}
-                  className="block hover:text-white"
-                >
-                  {link.label === "WhatsApp concierge" ? "WhatsApp support" : link.label}
-                </a>
-              ))}
-              {socialLinks.map((link) => (
-                <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className="block hover:text-white">
-                  {link.label}
-                </a>
+            <div className="grid grid-cols-2 gap-px border border-white/15 bg-white/15 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+              {serviceHighlights.map((item) => (
+                <div key={item.label} className="min-h-20 bg-black p-3 sm:min-h-24 sm:p-4">
+                  <p className="eyebrow text-white/38">{item.label}</p>
+                  <p className="mt-3 text-sm leading-5 text-white/78">{item.value}</p>
+                </div>
               ))}
             </div>
+          </section>
+
+          <div className="grid grid-cols-2 content-start gap-x-6 gap-y-8 lg:grid-cols-4">
+            {footerGroups.map((group) => (
+              <div key={group.title} className="border-t border-white/15 pt-5">
+                <p className="eyebrow text-white/45">{group.title}</p>
+                <div className="mt-5 space-y-3.5 text-sm text-white/75 md:space-y-4">
+                  {group.links.map((link) => (
+                    <Link key={link.href} href={link.href} className="block hover:text-white">
+                      {link.label}
+                    </Link>
+                  ))}
+                  {group.title === "Legal" ? (
+                    <button
+                      type="button"
+                      onClick={openCookiePreferences}
+                      className="block text-left hover:text-white"
+                    >
+                      Cookie preferences
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="max-w-sm text-xs leading-6 text-white/45 md:text-right">
-            Support is available Monday-Saturday. Include your order number for the quickest response.
-          </p>
         </div>
-      </div>
 
-      <div className="border-t border-white/15">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-[10px] uppercase tracking-[0.14em] text-white/45 sm:px-6 sm:pb-4 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>&copy; 2026 HRUSHE. All rights reserved.</p>
-          <p>Designed in India / Defined quietly</p>
+        <div className="border-t border-white/15 py-5">
+          <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <p className="eyebrow text-white/45">Client services</p>
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-white/75 sm:flex sm:flex-wrap sm:gap-x-8">
+                {contactLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noreferrer" : undefined}
+                    className="block hover:text-white"
+                  >
+                    {link.label === "WhatsApp concierge" ? "WhatsApp support" : link.label}
+                  </a>
+                ))}
+                {socialLinks.map((link) => (
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className="block hover:text-white">
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <p className="max-w-sm text-xs leading-6 text-white/45 md:text-right">
+              Support is available Monday-Saturday. Include your order number for the quickest response.
+            </p>
+          </div>
+        </div>
+
+        <div className="border-t border-white/15 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-4">
+          <div className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.14em] text-white/45 md:flex-row md:items-center md:justify-between">
+            <p>&copy; 2026 HRUSHE. All rights reserved.</p>
+            <p>Designed in India / Defined quietly</p>
+          </div>
+          <p aria-label="HRUSHE" className="mt-3 select-none overflow-hidden text-center text-[clamp(4.15rem,18vw,15.5rem)] font-semibold uppercase leading-[0.75] text-white">
+            HRUSHE
+          </p>
         </div>
       </div>
     </footer>
