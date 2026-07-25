@@ -91,20 +91,6 @@ function buildSubject(option: IssueOption | null) {
   return option ? `${option.label} support request` : "Support request";
 }
 
-function SupportBubbleIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <path
-        d="M7.5 8.5h17c1.66 0 3 1.34 3 3v7.2c0 1.66-1.34 3-3 3h-5.2L16 25.8l-3.3-4.1H7.5c-1.66 0-3-1.34-3-3v-7.2c0-1.66 1.34-3 3-3Z"
-        strokeLinejoin="round"
-      />
-      <text x="16" y="17.1" textAnchor="middle" fontSize="6.1" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
-        HELP
-      </text>
-    </svg>
-  );
-}
-
 export function SupportChatbot() {
   const pathname = usePathname();
   const { user, isChecking } = useCustomerAuth();
@@ -145,6 +131,10 @@ export function SupportChatbot() {
   }, []);
 
   if (shouldHide) {
+    return null;
+  }
+
+  if (!isOpen) {
     return null;
   }
 
@@ -211,19 +201,18 @@ export function SupportChatbot() {
 
   return (
     <div
-      className={`fixed right-4 z-[65] flex flex-col items-end sm:right-6 ${
+      className={`fixed right-4 z-[65] sm:bottom-6 sm:right-6 ${
         shouldClearStickyAction
           ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
       }`}
     >
-      {isOpen ? (
-        <div
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby="support-panel-title"
-          className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
-        >
+      <div
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="support-panel-title"
+        className="w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
+      >
             <div className="bg-[#111111] px-5 py-4 text-white">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -371,24 +360,7 @@ export function SupportChatbot() {
                 </>
               )}
             </div>
-        </div>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className={`group flex min-h-12 items-center gap-3 border px-4 text-[0.68rem] font-semibold uppercase tracking-[0.16em] shadow-[0_14px_34px_rgba(0,0,0,0.18)] transition ${
-          isOpen
-            ? "border-black bg-white text-black hover:bg-[#f4f4f1]"
-            : "border-white/12 bg-black text-white hover:bg-[#1a1a1a]"
-        }`}
-        aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
-        aria-expanded={isOpen}
-      >
-        <SupportBubbleIcon />
-        <span className="hidden sm:inline">{isOpen ? "Close support" : "HRUSHE support"}</span>
-        <span className="sm:hidden">Support</span>
-      </button>
+      </div>
     </div>
   );
 }

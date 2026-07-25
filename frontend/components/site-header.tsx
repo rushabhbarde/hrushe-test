@@ -247,6 +247,20 @@ function LogoutIcon() {
   );
 }
 
+function SupportIcon() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <path
+        d="M7.5 8.5h17c1.66 0 3 1.34 3 3v7.2c0 1.66-1.34 3-3 3h-5.2L16 25.8l-3.3-4.1H7.5c-1.66 0-3-1.34-3-3v-7.2c0-1.66 1.34-3 3-3Z"
+        strokeLinejoin="round"
+      />
+      <text x="16" y="17.1" textAnchor="middle" fontSize="6.1" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
+        HELP
+      </text>
+    </svg>
+  );
+}
+
 function SaveIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -476,6 +490,15 @@ export function SiteHeader() {
                 ) : null}
               </span>
             </HeaderIcon>
+
+            <div className="hidden lg:block">
+              <HeaderIcon
+                label="Support"
+                onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
+              >
+                <SupportIcon />
+              </HeaderIcon>
+            </div>
 
             <button
               ref={mobileMenuToggleRef}
