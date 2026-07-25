@@ -273,6 +273,7 @@ export default function CollectionPage() {
 
     return (
       <div className="page-shell bg-[var(--background)]">
+        <SiteHeader />
         <main className="collection-plp">
           <header className="collection-plp__intro">
             <div>
