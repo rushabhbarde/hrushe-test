@@ -91,6 +91,20 @@ function buildSubject(option: IssueOption | null) {
   return option ? `${option.label} support request` : "Support request";
 }
 
+function SupportBubbleIcon() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <path
+        d="M7.5 8.5h17c1.66 0 3 1.34 3 3v7.2c0 1.66-1.34 3-3 3h-5.2L16 25.8l-3.3-4.1H7.5c-1.66 0-3-1.34-3-3v-7.2c0-1.66 1.34-3 3-3Z"
+        strokeLinejoin="round"
+      />
+      <text x="16" y="17.1" textAnchor="middle" fontSize="6.1" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
+        HELP
+      </text>
+    </svg>
+  );
+}
+
 export function SupportChatbot() {
   const pathname = usePathname();
   const { user, isChecking } = useCustomerAuth();
@@ -131,10 +145,6 @@ export function SupportChatbot() {
   }, []);
 
   if (shouldHide) {
-    return null;
-  }
-
-  if (!isOpen) {
     return null;
   }
 
@@ -201,166 +211,184 @@ export function SupportChatbot() {
 
   return (
     <div
-      className={`fixed right-4 z-[65] sm:bottom-6 sm:right-6 ${
+      className={`fixed right-4 z-[65] flex flex-col items-end sm:right-6 ${
         shouldClearStickyAction
           ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"
       }`}
     >
-      <div
-        role="dialog"
-        aria-modal="false"
-        aria-labelledby="support-panel-title"
-        className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
-      >
-          <div className="bg-[#111111] px-5 py-4 text-white">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/60">
-                  HRUSHE Support
-                </p>
-                <h2 id="support-panel-title" className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                  How can we help?
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="flex h-9 w-9 items-center justify-center border border-white/20 text-xl"
-                aria-label="Close support chat"
-              >
-                ×
-              </button>
-            </div>
-            <p className="mt-3 text-xs leading-5 text-white/68">
-              No passwords, OTPs, or card details. We will create a ticket and reply by email.
-            </p>
-          </div>
-
-          <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
-            {ticketCode ? (
-              <div className="border border-[#12824a]/20 bg-[#12824a]/10 px-4 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#12824a]">
-                  Ticket created
-                </p>
-                <p className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
-                  {ticketCode}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-black/62">
-                  Our team has this in the support queue. Keep this code for follow-up.
-                </p>
+      {isOpen ? (
+        <div
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="support-panel-title"
+          className="mb-4 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden border border-black/10 bg-white text-black shadow-[0_20px_48px_rgba(0,0,0,0.16)]"
+        >
+            <div className="bg-[#111111] px-5 py-4 text-white">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/60">
+                    HRUSHE Support
+                  </p>
+                  <h2 id="support-panel-title" className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
+                    How can we help?
+                  </h2>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setTicketCode("")}
-                  className="mt-4 border border-black px-4 py-2 text-xs font-medium uppercase tracking-[0.16em]"
+                  onClick={() => setIsOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center border border-white/20 text-xl"
+                  aria-label="Close support chat"
                 >
-                  Create another
+                  ×
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="rounded-t-[1.2rem] rounded-br-[1.2rem] bg-[#f3f0ea] px-4 py-3 text-sm leading-6 text-black/72">
-                  Choose the issue type first. I’ll route it to the right HRUSHE team.
+              <p className="mt-3 text-xs leading-5 text-white/68">
+                No passwords, OTPs, or card details. We will create a ticket and reply by email.
+              </p>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
+              {ticketCode ? (
+                <div className="border border-[#12824a]/20 bg-[#12824a]/10 px-4 py-4">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#12824a]">
+                    Ticket created
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.05em]">
+                    {ticketCode}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-black/62">
+                    Our team has this in the support queue. Keep this code for follow-up.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setTicketCode("")}
+                    className="mt-4 border border-black px-4 py-2 text-xs font-medium uppercase tracking-[0.16em]"
+                  >
+                    Create another
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <div className="rounded-t-[1.2rem] rounded-br-[1.2rem] bg-[#f3f0ea] px-4 py-3 text-sm leading-6 text-black/72">
+                    Choose the issue type first. I’ll route it to the right HRUSHE team.
+                  </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {issueOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setSelectedValue(option.value)}
-                      className={`min-h-11 border px-3 text-left text-xs font-medium uppercase tracking-[0.12em] transition ${
-                        selectedValue === option.value
-                          ? "hrushe-inverse-action"
-                          : "border-black/10 bg-white hover:border-black/35"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {issueOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setSelectedValue(option.value)}
+                        className={`min-h-11 border px-3 text-left text-xs font-medium uppercase tracking-[0.12em] transition ${
+                          selectedValue === option.value
+                            ? "hrushe-inverse-action"
+                            : "border-black/10 bg-white hover:border-black/35"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
 
-                {selectedOption ? (
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-t-[1.2rem] rounded-br-[1.2rem] bg-[#f3f0ea] px-4 py-3 text-sm leading-6 text-black/72">
-                      {selectedOption.prompt}
-                    </div>
+                  {selectedOption ? (
+                    <div className="mt-5 space-y-3">
+                      <div className="rounded-t-[1.2rem] rounded-br-[1.2rem] bg-[#f3f0ea] px-4 py-3 text-sm leading-6 text-black/72">
+                        {selectedOption.prompt}
+                      </div>
 
-                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
-                      Name
-                      <input
-                        value={form.name}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, name: event.target.value }))
-                        }
-                        autoComplete="name"
-                        disabled={Boolean(user) || isChecking}
-                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
-                      />
-                    </label>
-                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
-                      Email for updates
-                      <input
-                        type="email"
-                        value={form.email}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, email: event.target.value }))
-                        }
-                        autoComplete="email"
-                        disabled={Boolean(user) || isChecking}
-                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
-                      />
-                    </label>
-                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
-                      Phone <span className="normal-case tracking-normal">(optional)</span>
-                      <input
-                        type="tel"
-                        inputMode="tel"
-                        value={form.phone}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, phone: event.target.value }))
-                        }
-                        autoComplete="tel"
-                        className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black"
-                      />
-                    </label>
-                    {selectedOption.needsOrder ? (
                       <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
-                        Order number or tracking ID
+                        Name
                         <input
-                          value={form.orderId}
+                          value={form.name}
                           onChange={(event) =>
-                            setForm((current) => ({ ...current, orderId: event.target.value }))
+                            setForm((current) => ({ ...current, name: event.target.value }))
                           }
+                          autoComplete="name"
+                          disabled={Boolean(user) || isChecking}
+                          className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                        Email for updates
+                        <input
+                          type="email"
+                          value={form.email}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, email: event.target.value }))
+                          }
+                          autoComplete="email"
+                          disabled={Boolean(user) || isChecking}
+                          className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black disabled:bg-black/[0.03]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                        Phone <span className="normal-case tracking-normal">(optional)</span>
+                        <input
+                          type="tel"
+                          inputMode="tel"
+                          value={form.phone}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, phone: event.target.value }))
+                          }
+                          autoComplete="tel"
                           className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black"
                         />
                       </label>
-                    ) : null}
-                    <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
-                      Issue details
-                      <textarea
-                        value={form.message}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, message: event.target.value }))
-                        }
-                        rows={4}
-                        className="w-full resize-none border border-black/12 px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none focus:border-black"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => void submitTicket()}
-                      disabled={isSubmitting}
-                      className="w-full bg-black px-4 py-3 text-sm font-medium uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-55"
-                    >
-                      {isSubmitting ? "Creating ticket..." : "Create support ticket"}
-                    </button>
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
-      </div>
+                      {selectedOption.needsOrder ? (
+                        <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                          Order number or tracking ID
+                          <input
+                            value={form.orderId}
+                            onChange={(event) =>
+                              setForm((current) => ({ ...current, orderId: event.target.value }))
+                            }
+                            className="min-h-11 w-full border border-black/12 px-3 text-sm font-normal normal-case tracking-normal text-black outline-none focus:border-black"
+                          />
+                        </label>
+                      ) : null}
+                      <label className="grid gap-1.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-black/55">
+                        Issue details
+                        <textarea
+                          value={form.message}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, message: event.target.value }))
+                          }
+                          rows={4}
+                          className="w-full resize-none border border-black/12 px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none focus:border-black"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void submitTicket()}
+                        disabled={isSubmitting}
+                        className="w-full bg-black px-4 py-3 text-sm font-medium uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-55"
+                      >
+                        {isSubmitting ? "Creating ticket..." : "Create support ticket"}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className={`group flex min-h-12 items-center gap-3 border px-4 text-[0.68rem] font-semibold uppercase tracking-[0.16em] shadow-[0_14px_34px_rgba(0,0,0,0.18)] transition ${
+          isOpen
+            ? "border-black bg-white text-black hover:bg-[#f4f4f1]"
+            : "border-white/12 bg-black text-white hover:bg-[#1a1a1a]"
+        }`}
+        aria-label={isOpen ? "Close HRUSHE support" : "Open HRUSHE support"}
+        aria-expanded={isOpen}
+      >
+        <SupportBubbleIcon />
+        <span className="hidden sm:inline">{isOpen ? "Close support" : "HRUSHE support"}</span>
+        <span className="sm:hidden">Support</span>
+      </button>
     </div>
   );
 }
