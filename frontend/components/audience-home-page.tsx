@@ -79,11 +79,11 @@ function CardTitle({ card }: { card: HomepageCard }) {
 function AudienceHeroSection({ section, audience }: { section: HomepageSection; audience: Audience }) {
   const primaryCtaText = section.ctaText || "Shop New Arrivals";
   const primaryCtaHref =
-    !section.ctaLink ||
-    section.ctaLink === `/${audience}` ||
     primaryCtaText.toLowerCase().includes("new arrival")
-      ? audienceFallbackLinks[audience]
-      : section.ctaLink;
+      ? "/shop?sort=newest"
+      : !section.ctaLink || section.ctaLink === `/${audience}`
+        ? audienceFallbackLinks[audience]
+        : section.ctaLink;
 
   return (
     <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">

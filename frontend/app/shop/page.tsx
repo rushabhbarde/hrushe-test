@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
@@ -35,12 +36,20 @@ function productIsAvailable(product: ReturnType<typeof useStorefrontData>["produ
   return !product.trackInventory || product.variants?.some((variant) => variant.active && variant.stock > 0);
 }
 
-export default function ShopPage() {
+function isSortOption(value: string | null): value is SortOption {
+  return value === "edit" || value === "newest" || value === "price-low" || value === "price-high";
+}
+
+function ShopContent() {
+  const searchParams = useSearchParams();
   const { products, loading } = useStorefrontData();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedColour, setSelectedColour] = useState("all");
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
-  const [sort, setSort] = useState<SortOption>("edit");
+  const [sort, setSort] = useState<SortOption>(() => {
+    const requestedSort = searchParams.get("sort");
+    return isSortOption(requestedSort) ? requestedSort : "edit";
+  });
   const closeFilters = useCallback(() => setFiltersOpen(false), []);
   const { dialogRef, initialFocusRef } = useDialogAccessibility(filtersOpen, closeFilters);
 
@@ -207,5 +216,13 @@ export default function ShopPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopContent />
+    </Suspense>
   );
 }
