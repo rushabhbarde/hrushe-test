@@ -359,13 +359,6 @@ export function SiteHeader() {
       className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]"
       onMouseLeave={() => setActiveAudienceMenu(null)}
     >
-      <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between">
-          <span>Dispatches in 1–3 business days · 7-day returns</span>
-          <span className="hidden sm:block">One free size exchange</span>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-[1600px] px-3 py-1.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
           <div className="hidden items-center gap-7 lg:flex">
