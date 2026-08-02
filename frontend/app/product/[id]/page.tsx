@@ -300,24 +300,24 @@ function ProductInfoPanel({
   );
 
   return (
-    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 py-6 sm:px-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(2.5rem,6vw,7rem)] lg:py-[clamp(2.25rem,4.5vw,4.75rem)]">
-      <div className="flex items-start justify-between gap-6 border-b border-[var(--border)] pb-5 leading-tight text-[var(--foreground)]">
-        <h2 className="max-w-[24ch] text-[1.35rem] font-semibold tracking-[-0.03em] sm:text-[1.6rem]">
+    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:py-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(2.5rem,6vw,7rem)] lg:py-[clamp(2.25rem,4.5vw,4.75rem)]">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-4 leading-tight text-[var(--foreground)] sm:gap-6 sm:pb-5">
+        <h2 className="max-w-[22ch] text-[1.18rem] font-semibold tracking-[-0.02em] sm:text-[1.6rem] sm:tracking-[-0.03em]">
           {displayName}
         </h2>
         <div className="shrink-0 text-right">
           {hasDiscount ? (
-            <p className="mb-1 text-[0.82rem] text-[var(--muted)] line-through decoration-[1.5px]">
+            <p className="mb-1 text-[0.76rem] text-[var(--muted)] line-through decoration-[1.5px] sm:text-[0.82rem]">
               {compareAtPriceText}
             </p>
           ) : null}
-          <p className={`text-[1.15rem] font-semibold ${hasDiscount ? "text-[var(--accent)]" : ""}`}>
+          <p className={`text-[1rem] font-semibold sm:text-[1.15rem] ${hasDiscount ? "text-[var(--accent)]" : ""}`}>
             {priceText}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 border-b border-[var(--border)] pb-5 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 border-b border-[var(--border)] pb-4 sm:mt-5 sm:grid-cols-2 sm:pb-5">
         <div className="flex min-h-11 items-center gap-3 text-[0.82rem] leading-none">
           <span aria-label="5 star rating" className="tracking-[0.08em] text-[var(--foreground)]">
             ★★★★★
@@ -341,7 +341,7 @@ function ProductInfoPanel({
       </div>
 
       {colorProducts.length > 0 ? (
-        <div className="mt-6 border-b border-[var(--border)] pb-6">
+        <div className="mt-5 border-b border-[var(--border)] pb-5 sm:mt-6 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
             <p className="flex items-baseline gap-3 text-[0.9rem] text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">
@@ -366,7 +366,7 @@ function ProductInfoPanel({
             {colorProducts.map((colorProduct) => {
               const color = colorProduct.colors[0];
               const active = colorProduct.id === product.id;
-              const swatchClassName = `relative inline-flex h-20 w-20 overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)] transition ${
+              const swatchClassName = `relative inline-flex h-16 w-16 overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)] transition sm:h-20 sm:w-20 ${
                 active
                   ? "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--foreground)]"
                   : "hover:after:absolute hover:after:inset-x-0 hover:after:bottom-0 hover:after:h-0.5 hover:after:bg-[var(--foreground)]"
@@ -421,7 +421,7 @@ function ProductInfoPanel({
       ) : null}
 
       {requiresSize ? (
-        <div className="mt-6 border-b border-[var(--border)] pb-6">
+        <div className="mt-5 border-b border-[var(--border)] pb-5 sm:mt-6 sm:pb-6">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <p className="flex items-center gap-3 text-[0.9rem] text-[var(--muted)]">
               <span className="font-semibold text-[var(--foreground)]">Size</span>
@@ -486,17 +486,17 @@ function ProductInfoPanel({
         </div>
       ) : null}
 
-      <div ref={actionRef} className="mt-6 space-y-4">
+      <div ref={actionRef} className="mt-5 space-y-4 sm:mt-6">
         <button
           type="button"
           onClick={onAddToCart}
           disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-          className="hrushe-inverse-action inline-flex min-h-[3.75rem] w-full items-center justify-center px-6 text-[0.82rem] font-bold uppercase tracking-[0.08em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
+          className="hrushe-inverse-action inline-flex min-h-[3.5rem] w-full items-center justify-center px-5 text-[0.74rem] font-bold uppercase tracking-[0.08em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55 sm:min-h-[3.75rem] sm:px-6 sm:text-[0.82rem]"
         >
           {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
         </button>
         {addError ? <p className="text-sm text-[var(--accent)]" role="alert">{addError}</p> : null}
-        <div className="grid gap-2 text-[0.86rem] font-medium sm:grid-cols-2">
+        <div className="grid gap-2 text-[0.8rem] font-medium sm:grid-cols-2 sm:text-[0.86rem]">
           <div className="flex min-h-12 items-center justify-between border border-[var(--border)] px-4">
             <span>{product.returnEligible ? "Free size exchange" : "Free shipping on prepaid orders"}</span>
             <span aria-hidden="true">›</span>
@@ -508,7 +508,7 @@ function ProductInfoPanel({
         </div>
       </div>
 
-      <div className="mt-7 border-t border-[var(--border)]">
+      <div className="mt-6 border-t border-[var(--border)] sm:mt-7">
         {productInfoSections.map((section) => {
           const isOpen = openPanel === section.key;
 
@@ -830,7 +830,7 @@ export default function ProductDetailPage() {
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="w-full pb-20 lg:pb-0">
+      <main className="w-full pb-28 lg:pb-0">
         <h1 className="sr-only">{product.name}</h1>
         <div className="lg:grid lg:grid-cols-[minmax(0,50.5vw)_minmax(420px,1fr)] lg:items-start">
           <section aria-label="Product media gallery">
@@ -843,7 +843,7 @@ export default function ProductDetailPage() {
               }}
               style={{ touchAction: "pan-y" }}
             >
-              <div className="relative aspect-[4/5] lg:h-full lg:aspect-auto">
+              <div className="relative aspect-[3.7/5] sm:aspect-[4/5] lg:h-full lg:aspect-auto">
                 <ProductMediaFrame
                   item={activeMedia}
                   product={product}
@@ -856,7 +856,7 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={showPreviousMedia}
-                    className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)]"
+                    className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)] sm:left-4"
                     aria-label="Previous product media"
                   >
                     ‹
@@ -864,14 +864,14 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={showNextMedia}
-                    className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)]"
+                    className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)] sm:right-4"
                     aria-label="Next product media"
                   >
                     ›
                   </button>
                 </>
               ) : null}
-              <div className="absolute bottom-5 left-5 flex max-w-[80%] items-center gap-2 text-[0.78rem] font-medium text-[var(--muted)]">
+              <div className="absolute bottom-3 left-3 flex max-w-[80%] items-center gap-2 text-[0.72rem] font-medium text-[var(--muted)] sm:bottom-5 sm:left-5 sm:text-[0.78rem]">
                 <span className="bg-white px-3 py-2 text-[var(--foreground)]">
                   {activeMediaIndex + 1} / {Math.max(mediaItems.length, 1)}
                 </span>
@@ -889,7 +889,7 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={showNextMedia}
-                className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center text-2xl leading-none text-[var(--foreground)]"
+                className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center text-2xl leading-none text-[var(--foreground)] sm:bottom-5 sm:right-5"
                 aria-label="Expand product media"
               >
                 ⛶
@@ -978,10 +978,10 @@ export default function ProductDetailPage() {
       </main>
 
       {showStickyAddToCart ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
-          <div className="mx-auto flex max-w-xl items-center gap-3">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[var(--background)] px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
+          <div className="mx-auto grid max-w-xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[0.92rem] font-semibold text-[var(--foreground)]">
+              <p className="text-[0.88rem] font-semibold text-[var(--foreground)]">
                 {priceText}
               </p>
               <p className="mt-0.5 truncate text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">
@@ -996,7 +996,7 @@ export default function ProductDetailPage() {
               type="button"
               onClick={handleAddToCart}
               disabled={productUnavailable || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-              className="hrushe-inverse-action inline-flex min-h-12 min-w-[176px] items-center justify-center px-5 text-[0.72rem] font-semibold uppercase tracking-[0.1em] transition disabled:cursor-not-allowed disabled:opacity-55"
+              className="hrushe-inverse-action inline-flex min-h-12 max-w-[11.75rem] items-center justify-center overflow-hidden whitespace-nowrap px-4 text-[0.68rem] font-semibold uppercase tracking-[0.08em] transition disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[176px] sm:max-w-none sm:px-5 sm:text-[0.72rem] sm:tracking-[0.1em]"
             >
               {productUnavailable ? "Unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
             </button>

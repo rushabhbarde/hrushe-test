@@ -116,7 +116,7 @@ function SearchPageContent() {
       <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
         <div className="max-w-3xl">
           <p className="eyebrow text-[var(--muted)]">Search</p>
-          <h1 className="mt-5 text-[2.75rem] font-medium uppercase leading-[0.94] tracking-[-0.04em] sm:text-[3.5rem]">Find a piece.</h1>
+          <h1 className="mt-5 text-[2.15rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[3.5rem] sm:tracking-[-0.04em]">Find a piece.</h1>
           <p className="mt-6 text-[0.94rem] leading-7 text-[var(--muted)]">
             Search by product, fabric, fit, or colour.
           </p>

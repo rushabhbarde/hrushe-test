@@ -482,7 +482,7 @@ export default function CheckoutPage() {
                     Back to bag
                   </Link>
 
-                  <h1 className="text-3xl font-semibold uppercase tracking-normal sm:text-4xl">
+                  <h1 className="text-2xl font-semibold uppercase tracking-normal sm:text-4xl">
                     Secure checkout
                   </h1>
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
@@ -492,7 +492,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setSummaryOpen((current) => !current)}
-                    className="mt-7 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white lg:hidden"
+                    className="mt-6 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:mt-7 lg:hidden"
                     aria-expanded={summaryOpen}
                     aria-controls="mobile-order-summary"
                   >
@@ -506,10 +506,10 @@ export default function CheckoutPage() {
                   ) : null}
 
                   <form
-                    className="mt-10 max-w-[640px] space-y-10"
+                    className="mt-8 max-w-[640px] space-y-8 sm:mt-10 sm:space-y-10"
                     onSubmit={(event) => void onSubmit(event)}
                   >
-                    <div className="auth-switch-panel space-y-10">
+                    <div className="auth-switch-panel space-y-8 sm:space-y-10">
                       <fieldset className="grid gap-5">
                         <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact details</legend>
                         <label className="field-label">

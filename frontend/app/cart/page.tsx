@@ -68,7 +68,7 @@ function CartPageSkeleton() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="lux-page py-8 sm:py-10 lg:py-14">
+      <main className="lux-page py-6 sm:py-10 lg:py-14">
         <div className="lux-container loading-pulse">
           <div className="h-3 w-24 bg-[var(--surface-strong)]" />
           <div className="mt-4 h-12 w-64 max-w-full bg-[var(--surface-strong)]" />
@@ -173,7 +173,7 @@ export default function CartPage() {
             <>
               <div className="reveal-up mx-auto max-w-3xl text-center">
                 <p className="eyebrow text-[var(--accent)]">Cart</p>
-                <h1 className="mt-4 text-3xl font-semibold uppercase leading-none tracking-normal sm:text-4xl">
+                <h1 className="mt-3 text-2xl font-semibold uppercase leading-none tracking-normal sm:mt-4 sm:text-4xl">
                   Shopping bag
                 </h1>
                 <div className="mt-8 inline-flex max-w-full flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-[var(--border)] pb-3 text-sm font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
@@ -200,7 +200,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start xl:gap-10">
+              <div className="mt-8 grid gap-7 sm:mt-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start xl:gap-10">
                 {activeCartTab === "bag" ? (
                   <section className="reveal-up min-w-0">
                     {items.length === 0 ? (
@@ -219,7 +219,7 @@ export default function CartPage() {
                           return (
                             <article
                               key={key}
-                              className={`grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] items-start border-b border-[var(--border)] bg-[var(--surface)] transition-all duration-300 sm:grid-cols-[11rem_minmax(0,1fr)] ${
+                              className={`grid min-w-0 grid-cols-[6.25rem_minmax(0,1fr)] items-start border-b border-[var(--border)] bg-[var(--surface)] transition-all duration-300 sm:grid-cols-[11rem_minmax(0,1fr)] ${
                                 removing ? "-translate-y-2 scale-[0.98] opacity-0" : "opacity-100"
                               }`}
                             >
@@ -246,7 +246,7 @@ export default function CartPage() {
                                   <div className="min-w-0">
                                     <Link
                                       href={`/product/${item.productId}`}
-                                      className="block text-sm font-semibold uppercase leading-5 transition hover:text-[var(--accent)] sm:text-base"
+                                      className="line-clamp-2 block text-sm font-semibold uppercase leading-5 transition hover:text-[var(--accent)] sm:text-base"
                                     >
                                       {item.name}
                                     </Link>

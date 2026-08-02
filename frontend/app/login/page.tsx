@@ -44,7 +44,7 @@ function LoginPageContent() {
         <div className="absolute left-[14%] top-[30%] h-[24rem] w-[24rem] rounded-full bg-black/24 blur-3xl" />
         <div className="absolute bottom-[10%] left-[6%] h-24 w-[42rem] bg-black/10 blur-3xl" />
       </section>
-      <aside className="auth-prestige-gradient relative flex min-h-dvh min-w-0 items-center overflow-hidden px-6 py-20 sm:px-10 lg:px-12">
+      <aside className="auth-prestige-gradient relative flex min-h-dvh min-w-0 items-center overflow-y-auto overflow-x-hidden px-5 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-16 sm:px-10 sm:py-20 lg:px-12">
         <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:4px_4px]" />
         <AuthPanel
           initialMode={initialMode}

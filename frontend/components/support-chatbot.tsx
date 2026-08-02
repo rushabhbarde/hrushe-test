@@ -146,7 +146,23 @@ export function SupportChatbot() {
   }
 
   if (!isOpen) {
-    return null;
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className={`fixed right-4 z-[112] grid h-14 w-14 place-items-center bg-black text-white lg:hidden ${
+          shouldClearStickyAction
+            ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
+            : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+        }`}
+        aria-label="Open HRUSHE support"
+      >
+        <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M6.5 8.5h13.5c1.4 0 2.5 1.1 2.5 2.5v7.5c0 1.4-1.1 2.5-2.5 2.5h-7.2L8.2 25v-4H6.5C5.1 21 4 19.9 4 18.5V11c0-1.4 1.1-2.5 2.5-2.5Z" />
+          <path d="M23 13h2.5c1.4 0 2.5 1.1 2.5 2.5V23c0 1.4-1.1 2.5-2.5 2.5h-1.7v3.2L20.2 25.5H16" />
+        </svg>
+      </button>
+    );
   }
 
   async function submitTicket() {

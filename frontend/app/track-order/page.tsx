@@ -53,7 +53,7 @@ export default function TrackOrderPage() {
         <section className="grid gap-px bg-[var(--border)] lg:grid-cols-[0.85fr_1.15fr]">
           <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12">
             <p className="eyebrow text-[var(--muted)]">Track order</p>
-            <h1 className="mt-5 max-w-[9ch] text-[2.75rem] font-medium uppercase leading-[0.94] tracking-[-0.04em] sm:text-[3.5rem]">Follow every delivery step.</h1>
+            <h1 className="mt-5 max-w-[9ch] text-[2.15rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[3.5rem] sm:tracking-[-0.04em]">Follow every delivery step.</h1>
             <p className="mt-6 max-w-md text-sm leading-7 text-[var(--muted)]">
               Search using your order ID with either the email or phone number used at checkout.
             </p>
@@ -130,7 +130,7 @@ export default function TrackOrderPage() {
                 <p className="eyebrow text-[var(--muted)]">
                   Delivery status updates
                 </p>
-                <h2 className="mt-5 max-w-[18ch] text-3xl font-medium tracking-[-0.025em]">
+                <h2 className="mt-5 max-w-[18ch] text-2xl font-medium tracking-[-0.025em] sm:text-3xl">
                   Your timeline, courier, and tracking details will appear here.
                 </h2>
                 <p className="mt-4 max-w-xl text-[var(--muted)]">
@@ -145,7 +145,7 @@ export default function TrackOrderPage() {
                     <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
                       Order #{order.orderNumber || order.id}
                     </p>
-                    <h2 className="mt-3 text-3xl font-semibold">{order.orderStatus}</h2>
+                    <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">{order.orderStatus}</h2>
                     <p className="mt-2 text-sm text-[var(--muted)]">
                       Placed on {formatOrderDate(order.createdAt)}
                     </p>

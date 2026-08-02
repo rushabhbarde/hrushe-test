@@ -279,26 +279,26 @@ export function ProductCard({
       {showInfo ? (
       <Link
         href={productHref}
-        className={`block ${isEditorial ? "min-h-[6.4rem] bg-[var(--background)] px-3 py-3.5 sm:px-5 sm:py-5" : "pt-3"}`}
+        className={`block ${isEditorial ? "min-h-[5.85rem] bg-[var(--background)] px-2.5 py-3 sm:min-h-[6.4rem] sm:px-5 sm:py-5" : "pt-2.5 sm:pt-3"}`}
         aria-label={`View details for ${productName}`}
       >
         {isEditorial ? (
           <div className="product-card-editorial-meta">
             <div className="product-card-editorial-copy min-w-0">
-              <h3 className="product-card-editorial-title line-clamp-2 text-[0.9rem] font-medium leading-[1.18] text-[var(--foreground)] sm:text-[0.88rem] sm:font-semibold">
+              <h3 className="product-card-editorial-title line-clamp-2 text-[0.82rem] font-medium leading-[1.18] text-[var(--foreground)] sm:text-[0.88rem] sm:font-semibold">
                 {productName}
               </h3>
               {colour ? (
-                <p className="product-card-editorial-colour mt-1.5 text-[0.76rem] font-semibold leading-none text-[var(--muted)] sm:text-[0.8rem]">
+                <p className="product-card-editorial-colour mt-1.5 text-[0.68rem] font-semibold leading-none text-[var(--muted)] sm:text-[0.8rem]">
                   {colour.replace(/begie/gi, "Beige")}
                 </p>
               ) : null}
               {visibleColourOptions.length > 0 ? (
-                <div className="product-card-editorial-swatches mt-4 flex items-center gap-2 text-[0.78rem] font-medium leading-none text-[var(--muted)]" aria-label={`${colourOptions.length} colour options`}>
+                <div className="product-card-editorial-swatches mt-3 flex items-center gap-1.5 text-[0.7rem] font-medium leading-none text-[var(--muted)] sm:mt-4 sm:gap-2 sm:text-[0.78rem]" aria-label={`${colourOptions.length} colour options`}>
                   {visibleColourOptions.map((colourOption) => (
                     <span
                       key={colourOption}
-                      className="product-swatch h-3.5 w-3.5 rounded-full border border-black/10"
+                      className="product-swatch h-3 w-3 rounded-full border border-black/10 sm:h-3.5 sm:w-3.5"
                       style={{ "--swatch": getSwatchColour(colourOption) } as CSSProperties}
                       title={colourOption}
                       aria-label={colourOption}
@@ -308,12 +308,12 @@ export function ProductCard({
                 </div>
               ) : null}
               {product.availability === "sold-out" || product.status === "Sold Out" ? (
-                <p className="product-card-editorial-unavailable mt-2 text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                <p className="product-card-editorial-unavailable mt-2 text-[0.58rem] uppercase tracking-[0.14em] text-[var(--muted)] sm:text-[0.62rem]">
                   Currently unavailable
                 </p>
               ) : null}
             </div>
-            <p className="product-card-editorial-price flex shrink-0 items-center gap-1.5 text-[0.9rem] font-medium leading-none sm:text-[0.84rem] sm:font-semibold">
+            <p className="product-card-editorial-price flex shrink-0 items-center gap-1.5 text-[0.8rem] font-medium leading-none sm:text-[0.84rem] sm:font-semibold">
               {compareAtPrice ? (
                 <span className="text-[var(--foreground)] line-through decoration-[1px]">
                   {formatPrice(compareAtPrice)}
@@ -326,11 +326,11 @@ export function ProductCard({
           </div>
         ) : (
           <div>
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-[0.8rem] font-medium leading-5 text-[var(--foreground)] sm:text-[0.88rem]">
+            <div className="grid gap-1.5 sm:flex sm:items-start sm:justify-between sm:gap-3">
+              <h3 className="line-clamp-2 text-[0.78rem] font-medium leading-5 text-[var(--foreground)] sm:text-[0.88rem]">
                 {productName}
               </h3>
-              <p className="shrink-0 text-[0.8rem] font-semibold text-[var(--foreground)] sm:text-[0.88rem]">
+              <p className="shrink-0 text-[0.78rem] font-semibold text-[var(--foreground)] sm:text-[0.88rem]">
                 {compareAtPrice ? (
                   <>
                     <span className="mr-1.5 line-through decoration-[1px]">{formatPrice(compareAtPrice)}</span>

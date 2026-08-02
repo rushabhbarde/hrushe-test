@@ -86,7 +86,7 @@ function AudienceHeroSection({ section, audience }: { section: HomepageSection; 
         : section.ctaLink;
 
   return (
-    <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
+    <section className="relative isolate min-h-[74svh] overflow-hidden bg-[var(--foreground)] text-white sm:min-h-[78svh] lg:h-full lg:min-h-0 lg:snap-start lg:snap-always">
       <div className="absolute inset-0">
         <HomepageMediaFrame
           src={section.image}
@@ -99,12 +99,12 @@ function AudienceHeroSection({ section, audience }: { section: HomepageSection; 
         />
       </div>
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.04)_48%,rgba(0,0,0,0.46)_100%)]" />
-      <div className="absolute inset-x-0 bottom-8 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-7 text-center sm:bottom-10 sm:px-6 sm:pb-8 lg:bottom-12 lg:px-8 lg:pb-9">
+      <div className="absolute inset-x-0 bottom-5 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-6 text-center sm:bottom-8 sm:px-6 sm:pb-8 lg:bottom-12 lg:px-8 lg:pb-9">
         <div className="max-w-[56rem]">
-          <h1 className="text-[1.6rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
+          <h1 className="text-[1.42rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
             {section.title}
           </h1>
-          <div className="mt-4 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.05em] text-white sm:flex-row sm:gap-8">
+          <div className="mt-3 flex flex-col items-center justify-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.06em] text-white sm:mt-4 sm:flex-row sm:gap-8">
             {primaryCtaText ? (
               <Link href={primaryCtaHref} className="group inline-flex min-h-6 items-center px-1 transition-colors hover:text-white/75">
                 <span>{primaryCtaText}</span>
@@ -136,12 +136,12 @@ function CategoryCardsSection({ section, audience }: { section: HomepageSection;
   }
 
   return (
-    <section className="flex h-full snap-start snap-always snap-x snap-mandatory overflow-x-auto overflow-y-hidden bg-[var(--foreground)] text-white overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <section className="flex min-h-[66svh] snap-x snap-mandatory overflow-x-auto overflow-y-hidden bg-[var(--foreground)] text-white overscroll-x-contain [scrollbar-width:none] sm:min-h-[70svh] lg:h-full lg:min-h-0 lg:snap-start lg:snap-always [&::-webkit-scrollbar]:hidden">
       {cards.map((card) => (
         <Link
           key={card.id}
           href={card.ctaLink || audienceFallbackLinks[audience]}
-          className="group relative block h-full min-w-[50vw] snap-start overflow-hidden bg-[var(--foreground)] lg:min-w-[25vw]"
+          className="group relative block h-full min-w-[74vw] snap-start overflow-hidden bg-[var(--foreground)] sm:min-w-[48vw] lg:min-w-[25vw]"
         >
             <HomepageMediaFrame
             src={card.image}
@@ -161,7 +161,7 @@ function CategoryCardsSection({ section, audience }: { section: HomepageSection;
 
 function SaleBannerSection({ section, audience }: { section: HomepageSection; audience: Audience }) {
   return (
-    <section className="relative isolate h-full snap-start snap-always overflow-hidden bg-[var(--foreground)] text-white">
+    <section className="relative isolate min-h-[70svh] overflow-hidden bg-[var(--foreground)] text-white sm:min-h-[76svh] lg:h-full lg:min-h-0 lg:snap-start lg:snap-always">
       <HomepageMediaFrame
         src={section.image}
         mobileSrc={section.mobileImage}
@@ -171,13 +171,13 @@ function SaleBannerSection({ section, audience }: { section: HomepageSection; au
         objectPosition={section.objectPosition}
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.06)_45%,rgba(0,0,0,0.5)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-10 text-center sm:px-6 sm:pb-12 lg:px-8 lg:pb-14">
+      <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-[1600px] justify-center px-4 pb-8 text-center sm:px-6 sm:pb-12 lg:px-8 lg:pb-14">
         <div>
-          <h2 className="text-[1.55rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
+          <h2 className="text-[1.38rem] font-bold uppercase leading-none tracking-tight sm:text-[1.95rem] lg:text-[2.25rem]">
             {section.title}
           </h2>
           {section.subtitle ? (
-            <p className="mt-5 text-[0.95rem] font-bold uppercase tracking-[0.08em] sm:text-[1.05rem]">
+            <p className="mt-4 text-[0.84rem] font-bold uppercase tracking-[0.08em] sm:mt-5 sm:text-[1.05rem]">
               {section.subtitle}
             </p>
           ) : null}
@@ -203,9 +203,9 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
   const sections = getHomepageSectionsForAudience(homeManagement, audience);
 
   return (
-    <div className="page-shell flex h-svh flex-col overflow-hidden bg-[var(--background)]">
+    <div className="page-shell flex flex-col bg-[var(--background)] lg:h-svh lg:overflow-hidden">
       <SiteHeader />
-      <main className="min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain scroll-smooth">
+      <main className="flex-1 overflow-visible scroll-smooth lg:min-h-0 lg:snap-y lg:snap-mandatory lg:overflow-y-auto lg:overscroll-contain">
         {sections.map((section) => {
           if (section.sectionType === "audience-hero") {
             return <AudienceHeroSection key={section.id} section={section} audience={audience} />;
@@ -222,7 +222,7 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
           return null;
         })}
 
-        <section className="snap-start bg-[var(--foreground)] text-[var(--background)]">
+        <section className="bg-[var(--foreground)] text-[var(--background)] lg:snap-start">
           <SiteFooter />
         </section>
       </main>

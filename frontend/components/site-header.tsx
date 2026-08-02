@@ -275,9 +275,14 @@ export function SiteHeader() {
   const { itemCount, openCart } = useCart();
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
+  const routeMobileAudience: AudienceMenuKey =
+    pathname.startsWith("/men") || pathname.startsWith("/collection/men")
+      ? "Men"
+      : "Women";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [activeAudienceMenu, setActiveAudienceMenu] = useState<AudienceMenuKey | null>(null);
+  const [activeMobileAudience, setActiveMobileAudience] = useState<AudienceMenuKey>(routeMobileAudience);
   const [audienceMenus, setAudienceMenus] = useState<AudienceMenus>(() =>
     buildAudienceMenus(defaultAdminWorkspace.homeManagement)
   );
@@ -356,7 +361,9 @@ export function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]"
+      className={`sticky top-0 border-b border-[var(--border)] bg-[var(--header-background)] ${
+        isMobileMenuOpen ? "z-[115]" : "z-30"
+      }`}
       onMouseLeave={() => setActiveAudienceMenu(null)}
     >
       <div className="mx-auto max-w-[1600px] px-3 py-1.5 sm:px-6 lg:px-8">
@@ -503,7 +510,13 @@ export function SiteHeader() {
             <button
               ref={mobileMenuToggleRef}
               type="button"
-              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              onClick={() => {
+                if (!isMobileMenuOpen) {
+                  setActiveMobileAudience(routeMobileAudience);
+                }
+
+                setIsMobileMenuOpen((current) => !current);
+              }}
               className="flex h-11 w-11 items-center justify-center lg:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
@@ -604,76 +617,150 @@ export function SiteHeader() {
       ) : null}
 
       {isMobileMenuOpen ? (
-        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 max-h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-[var(--background)] shadow-[0_24px_60px_rgba(0,0,0,0.08)] lg:hidden">
-          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
-            <div className="bg-[var(--background)]">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <p className="eyebrow text-[var(--muted)]">Menu</p>
-                <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                  HRUSHE
-                </p>
-              </div>
-              <nav className="mt-2 flex flex-col divide-y divide-[var(--border)] text-sm">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
-                    className={`flex items-center justify-between px-1 py-4 text-[0.78rem] font-medium uppercase tracking-[0.16em] ${
-                      routeIsActive(pathname, item.href) ? "text-[var(--accent)]" : "text-[var(--foreground)]"
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <span aria-hidden="true">↗</span>
-                  </Link>
-                ))}
-                {isAuthenticated ? (
-                  <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="px-1 py-4 text-[0.78rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                    Signed in as {user?.name}
-                  </Link>
-                ) : null}
-              </nav>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-4">
+        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-[var(--background)] lg:hidden">
+          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto flex min-h-full max-w-[1600px] flex-col px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:px-6">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
+              <p className="eyebrow text-[var(--muted)]">Menu</p>
+              <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                HRUSHE
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-[1fr_1fr_auto] items-center gap-4 text-[0.82rem] font-semibold uppercase tracking-[0.08em]">
+              {audienceMenuKeys.map((key) => (
                 <button
+                  key={key}
                   type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (isAuthenticated) {
-                      router.push("/account");
-                    } else {
-                      router.push(loginHref);
-                    }
-                  }}
-                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                  onClick={() => setActiveMobileAudience(key)}
+                  aria-pressed={activeMobileAudience === key}
+                  className={`min-h-11 border-b text-left transition ${
+                    activeMobileAudience === key
+                      ? "border-[var(--foreground)] text-[var(--foreground)]"
+                      : "border-transparent text-[var(--muted)]"
+                  }`}
                 >
-                  Account
+                  {key}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (isAuthenticated) {
-                      openWishlist();
-                    } else {
-                      router.push(loginHref);
-                    }
-                  }}
-                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+              ))}
+              <Link
+                href="/story"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`inline-flex min-h-11 items-center justify-end border-b ${
+                  routeIsActive(pathname, "/story")
+                    ? "border-[var(--foreground)] text-[var(--foreground)]"
+                    : "border-transparent text-[var(--muted)]"
+                }`}
+              >
+                Story
+              </Link>
+            </div>
+
+            <nav className="mt-8 grid gap-4 text-[1.35rem] font-semibold uppercase leading-none tracking-[-0.02em]" aria-label={`${activeMobileAudience} featured navigation`}>
+              {audienceMenus[activeMobileAudience].featured.map((item) => (
+                <Link
+                  key={`${activeMobileAudience}-mobile-featured-${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex min-h-11 items-center justify-between gap-4"
                 >
-                  Save{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    openCart();
-                  }}
-                  className="hrushe-inverse-action min-h-11 border text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                  <span>{item.label}</span>
+                  <span aria-hidden="true" className="text-[1.1rem] font-normal">›</span>
+                </Link>
+              ))}
+            </nav>
+
+            <div className="mt-9 grid grid-cols-2 gap-3">
+              {audienceMenus[activeMobileAudience].cards.map((card) => (
+                <Link
+                  key={`${activeMobileAudience}-mobile-card-${card.href}-${card.label}`}
+                  href={card.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="group relative block aspect-[3/4] overflow-hidden bg-[var(--surface-strong)]"
                 >
-                  Cart{itemCount > 0 ? ` ${itemCount}` : ""}
-                </button>
-              </div>
+                  <HomepageMediaFrame
+                    src={card.image}
+                    alt={card.imageAlt}
+                    sizes="50vw"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                    objectPosition={card.objectPosition}
+                  />
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/62 to-transparent px-3 pb-3 pt-16 text-[0.68rem] font-semibold uppercase leading-tight tracking-[0.08em] text-white">
+                    {card.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-9 grid grid-cols-2 gap-x-5 gap-y-3 text-[0.92rem]">
+              {audienceMenus[activeMobileAudience].categories.map((item) => (
+                <Link
+                  key={`${activeMobileAudience}-mobile-category-${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`min-h-10 ${
+                    "tone" in item && item.tone === "sale" ? "font-semibold text-[var(--accent)]" : ""
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            {isAuthenticated ? (
+              <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="mt-8 border-t border-[var(--border)] pt-5 text-[0.78rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Signed in as {user?.name}
+              </Link>
+            ) : null}
+
+            <div className="mt-auto grid grid-cols-2 gap-2 border-t border-[var(--border)] pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (isAuthenticated) {
+                    router.push("/account");
+                  } else {
+                    router.push(loginHref);
+                  }
+                }}
+                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+              >
+                Account
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (isAuthenticated) {
+                    openWishlist();
+                  } else {
+                    router.push(loginHref);
+                  }
+                }}
+                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+              >
+                Save{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent("hrushe:open-support"));
+                }}
+                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+              >
+                Support
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openCart();
+                }}
+                className="hrushe-inverse-action min-h-12 border text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+              >
+                Cart{itemCount > 0 ? ` ${itemCount}` : ""}
+              </button>
             </div>
           </div>
         </div>

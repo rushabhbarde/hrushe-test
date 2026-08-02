@@ -318,7 +318,7 @@ export function AuthPanel({
 
   if (variant === "prestige") {
     const prestigeField =
-      "group grid gap-2 border-b border-white/18 pb-3 text-[0.92rem] font-semibold text-white";
+      "group grid gap-2 border-b border-white/18 pb-3 text-[0.9rem] font-semibold text-white sm:text-[0.92rem]";
     const prestigeInput =
       "w-full bg-transparent text-[0.95rem] font-medium text-white outline-none placeholder:text-white/42";
     const prestigeButton =
@@ -337,7 +337,7 @@ export function AuthPanel({
         width={HRUSHE_LOGO_DIMENSIONS.width}
         height={HRUSHE_LOGO_DIMENSIONS.height}
         priority
-        className="mx-auto h-auto w-48 brightness-0 invert sm:w-52"
+            className="mx-auto h-auto w-40 brightness-0 invert sm:w-52"
       />
     );
 
@@ -448,7 +448,7 @@ export function AuthPanel({
               Create account
             </h1>
           </div>
-          <form className="grid gap-5" onSubmit={(event) => void onSignupSubmit(event)}>
+          <form className="grid gap-4 sm:gap-5" onSubmit={(event) => void onSignupSubmit(event)}>
             <label className={prestigeField}>
               Email
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.5rem] sm:items-end">
@@ -583,7 +583,7 @@ export function AuthPanel({
           <h1 className="mt-7 text-center text-xl font-semibold uppercase tracking-[0.08em] text-white">
             Sign in
           </h1>
-          <form className="mt-12 grid gap-7 lg:mt-14" onSubmit={(event) => void onLoginSubmit(event)}>
+          <form className="mt-10 grid gap-6 sm:mt-12 sm:gap-7 lg:mt-14" onSubmit={(event) => void onLoginSubmit(event)}>
             <label className={prestigeField}>
               Your email address
               <input
@@ -635,7 +635,7 @@ export function AuthPanel({
           </form>
           <a
             href="/story"
-            className="mt-28 block text-center text-sm font-semibold text-white/44 underline underline-offset-4 transition hover:text-white"
+            className="mt-16 block text-center text-sm font-semibold text-white/44 underline underline-offset-4 transition hover:text-white sm:mt-28"
           >
             Explore HRUSHE
           </a>

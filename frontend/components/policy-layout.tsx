@@ -116,7 +116,7 @@ export function PolicyLayout({
         <header className="grid gap-8 border-b border-[var(--border)] pb-9 sm:pb-12 lg:grid-cols-[minmax(0,0.78fr)_minmax(18rem,0.22fr)] lg:items-end">
           <div className="max-w-5xl">
             <p className="eyebrow text-[var(--muted)]">{label}</p>
-            <h1 className="mt-5 max-w-[13ch] text-[2.45rem] font-medium uppercase leading-[0.94] text-[var(--foreground)] sm:text-[3.6rem] lg:text-[4.7rem] xl:text-[5.15rem]">
+            <h1 className="mt-5 max-w-[13ch] text-[2.1rem] font-medium uppercase leading-[0.94] text-[var(--foreground)] sm:text-[3.6rem] lg:text-[4.7rem] xl:text-[5.15rem]">
               {title}
             </h1>
             <p className="mt-6 max-w-2xl text-[0.98rem] leading-7 text-[var(--muted)] sm:text-[1.04rem] sm:leading-8">
@@ -130,7 +130,7 @@ export function PolicyLayout({
           </div>
         </header>
 
-        <div className="sticky top-[5.35rem] z-20 mt-7 border-y border-[var(--border)] bg-[var(--background)] lg:hidden">
+        <div className="sticky top-[3.45rem] z-20 mt-7 border-y border-[var(--border)] bg-[var(--background)] lg:hidden">
           <button
             type="button"
             className="flex min-h-14 w-full items-center justify-between gap-4 py-4 text-left"

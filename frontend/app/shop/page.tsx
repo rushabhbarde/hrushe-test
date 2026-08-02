@@ -503,7 +503,7 @@ function ShopContent() {
         <header className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-14">
           <div>
             <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
-            <h1 className="mt-5 text-[2.75rem] font-medium uppercase leading-[0.92] tracking-[-0.045em] sm:text-[4rem] lg:text-[5.5rem]">
+            <h1 className="mt-5 text-[2.2rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[4rem] sm:leading-[0.92] sm:tracking-[-0.045em] lg:text-[5.5rem]">
               The collection.
             </h1>
           </div>
@@ -573,7 +573,7 @@ function ShopContent() {
       </main>
 
       {filtersOpen ? (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[115]">
           <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/35" onClick={closeFilters} />
           <aside ref={dialogRef} className="absolute right-0 top-0 flex h-full w-full max-w-[430px] flex-col bg-[var(--background)] px-5 py-6 sm:px-8 sm:py-8" role="dialog" aria-modal="true" aria-labelledby="filter-title">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-6">
