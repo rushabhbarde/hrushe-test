@@ -712,21 +712,7 @@ export function SiteHeader() {
               </Link>
             ) : null}
 
-            <div className="mt-auto grid grid-cols-2 gap-2 border-t border-[var(--border)] pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  if (isAuthenticated) {
-                    router.push("/account");
-                  } else {
-                    router.push(loginHref);
-                  }
-                }}
-                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
-              >
-                Account
-              </button>
+            <div className="mt-auto flex items-center justify-end gap-1 border-t border-[var(--border)] pt-4">
               <button
                 type="button"
                 onClick={() => {
@@ -737,9 +723,15 @@ export function SiteHeader() {
                     router.push(loginHref);
                   }
                 }}
-                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+                className="relative flex h-11 w-11 items-center justify-center border border-[var(--border)]"
+                aria-label="Saved pieces"
               >
-                Save{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
+                <SaveIcon />
+                {wishlistCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
+                    {wishlistCount}
+                  </span>
+                ) : null}
               </button>
               <button
                 type="button"
@@ -747,19 +739,10 @@ export function SiteHeader() {
                   setIsMobileMenuOpen(false);
                   window.dispatchEvent(new CustomEvent("hrushe:open-support"));
                 }}
-                className="min-h-12 border border-[var(--border)] text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+                className="flex h-11 w-11 items-center justify-center border border-[var(--border)]"
+                aria-label="Support"
               >
-                Support
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  openCart();
-                }}
-                className="hrushe-inverse-action min-h-12 border text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
-              >
-                Cart{itemCount > 0 ? ` ${itemCount}` : ""}
+                <SupportIcon />
               </button>
             </div>
           </div>
