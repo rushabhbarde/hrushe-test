@@ -291,6 +291,14 @@ export function SiteHeader() {
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
   const loginHref = `/login?next=${encodeURIComponent("/account")}`;
+  const activeMobileMenu = audienceMenus[activeMobileAudience];
+  const mobileFeaturedLinks = activeMobileMenu.featured.filter(
+    (item) => !item.label.toLowerCase().endsWith("home")
+  );
+  const mobilePrimaryLinks = [
+    ...(mobileFeaturedLinks.length > 0 ? mobileFeaturedLinks : activeMobileMenu.featured),
+    { href: "/shop?sort=newest", label: "New Arrivals" },
+  ];
 
   useEffect(() => {
     let active = true;
@@ -617,26 +625,19 @@ export function SiteHeader() {
       ) : null}
 
       {isMobileMenuOpen ? (
-        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-[var(--background)] lg:hidden">
-          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto flex min-h-full max-w-[1600px] flex-col px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:px-6">
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-              <p className="eyebrow text-[var(--muted)]">Menu</p>
-              <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                HRUSHE
-              </p>
-            </div>
-
-            <div className="mt-5 grid grid-cols-[1fr_1fr_auto] items-center gap-4 text-[0.82rem] font-semibold uppercase tracking-[0.08em]">
+        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-white/92 backdrop-blur-sm lg:hidden">
+          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] border-b border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(0.85rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_18px_36px_rgba(0,0,0,0.04)] sm:px-6">
+            <div className="flex items-center justify-start gap-7 border-b border-[var(--border)] pb-4 text-[0.74rem] font-medium uppercase tracking-[0.11em]">
               {audienceMenuKeys.map((key) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setActiveMobileAudience(key)}
                   aria-pressed={activeMobileAudience === key}
-                  className={`min-h-11 border-b text-left transition ${
+                  className={`min-h-7 text-left transition ${
                     activeMobileAudience === key
-                      ? "border-[var(--foreground)] text-[var(--foreground)]"
-                      : "border-transparent text-[var(--muted)]"
+                      ? "font-medium text-[var(--foreground)]"
+                      : "text-[var(--muted)]"
                   }`}
                 >
                   {key}
@@ -645,74 +646,52 @@ export function SiteHeader() {
               <Link
                 href="/story"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`inline-flex min-h-11 items-center justify-end border-b ${
+                className={`inline-flex min-h-7 items-center ${
                   routeIsActive(pathname, "/story")
-                    ? "border-[var(--foreground)] text-[var(--foreground)]"
-                    : "border-transparent text-[var(--muted)]"
+                    ? "font-medium text-[var(--foreground)]"
+                    : "text-[var(--muted)]"
                 }`}
               >
                 Story
               </Link>
             </div>
 
-            <nav className="mt-8 grid gap-4 text-[1.35rem] font-semibold uppercase leading-none tracking-[-0.02em]" aria-label={`${activeMobileAudience} featured navigation`}>
-              {audienceMenus[activeMobileAudience].featured.map((item) => (
+            <nav className="mt-5 grid gap-2.5 text-[0.86rem] font-medium uppercase leading-tight tracking-[0.08em]" aria-label={`${activeMobileAudience} featured navigation`}>
+              {mobilePrimaryLinks.map((item) => (
                 <Link
                   key={`${activeMobileAudience}-mobile-featured-${item.href}-${item.label}`}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex min-h-11 items-center justify-between gap-4"
+                  className="flex min-h-7 items-center justify-between gap-4"
                 >
                   <span>{item.label}</span>
-                  <span aria-hidden="true" className="text-[1.1rem] font-normal">›</span>
+                  <span aria-hidden="true" className="text-[0.82rem] font-normal">›</span>
                 </Link>
               ))}
             </nav>
 
-            <div className="mt-9 grid grid-cols-2 gap-3">
-              {audienceMenus[activeMobileAudience].cards.map((card) => (
-                <Link
-                  key={`${activeMobileAudience}-mobile-card-${card.href}-${card.label}`}
-                  href={card.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="group relative block aspect-[3/4] overflow-hidden bg-[var(--surface-strong)]"
-                >
-                  <HomepageMediaFrame
-                    src={card.image}
-                    alt={card.imageAlt}
-                    sizes="50vw"
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                    objectPosition={card.objectPosition}
-                  />
-                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/62 to-transparent px-3 pb-3 pt-16 text-[0.68rem] font-semibold uppercase leading-tight tracking-[0.08em] text-white">
-                    {card.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-9 grid grid-cols-2 gap-x-5 gap-y-3 text-[0.92rem]">
-              {audienceMenus[activeMobileAudience].categories.map((item) => (
-                <Link
-                  key={`${activeMobileAudience}-mobile-category-${item.href}-${item.label}`}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`min-h-10 ${
-                    "tone" in item && item.tone === "sale" ? "font-semibold text-[var(--accent)]" : ""
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <div className="mt-4 border-t border-[var(--border)] pt-3.5">
+              <div className="grid gap-2 text-[0.84rem] leading-snug">
+                {activeMobileMenu.categories.map((item) => (
+                  <Link
+                    key={`${activeMobileAudience}-mobile-category-${item.href}-${item.label}`}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="min-h-6"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {isAuthenticated ? (
-              <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="mt-8 border-t border-[var(--border)] pt-5 text-[0.78rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+              <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="mt-5 block border-t border-[var(--border)] pt-3.5 text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)]">
                 Signed in as {user?.name}
               </Link>
             ) : null}
 
-            <div className="mt-auto flex items-center justify-end gap-1 border-t border-[var(--border)] pt-4">
+            <div className="mt-4 flex items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
               <button
                 type="button"
                 onClick={() => {
@@ -723,7 +702,7 @@ export function SiteHeader() {
                     router.push(loginHref);
                   }
                 }}
-                className="relative flex h-11 w-11 items-center justify-center border border-[var(--border)]"
+                className="relative flex h-9 w-9 items-center justify-center border border-[var(--border)]"
                 aria-label="Saved pieces"
               >
                 <SaveIcon />
@@ -739,7 +718,7 @@ export function SiteHeader() {
                   setIsMobileMenuOpen(false);
                   window.dispatchEvent(new CustomEvent("hrushe:open-support"));
                 }}
-                className="flex h-11 w-11 items-center justify-center border border-[var(--border)]"
+                className="flex h-9 w-9 items-center justify-center border border-[var(--border)]"
                 aria-label="Support"
               >
                 <SupportIcon />
