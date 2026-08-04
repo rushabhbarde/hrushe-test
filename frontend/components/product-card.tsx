@@ -264,14 +264,14 @@ export function ProductCard({
           <WishlistButton
             productId={product.id}
             label={`Save ${productName}`}
-            className="absolute bottom-[3.75rem] right-2 z-20 flex h-11 w-11 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] opacity-100 transition-opacity duration-150 hover:bg-white md:opacity-0 md:group-hover/card:opacity-100 md:group-focus-within/card:opacity-100"
-            iconClassName="h-5 w-5"
+            className="absolute bottom-[3.35rem] right-3 z-20 flex h-9 w-9 items-center justify-center bg-transparent text-[var(--foreground)] opacity-100 drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)] transition duration-150 hover:bg-white/40 hover:backdrop-blur-md md:opacity-0 md:group-hover/card:opacity-100 md:group-focus-within/card:opacity-100"
+            iconClassName="h-[1.125rem] w-[1.125rem]"
           />
         ) : (
           <WishlistButton
             productId={product.id}
             label={`Save ${productName}`}
-            className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center border border-black/10 bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--foreground)] hover:bg-white"
+            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center bg-transparent text-[var(--foreground)] drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)] hover:bg-white/40 hover:backdrop-blur-md"
             iconClassName="h-4 w-4"
           />
         )}

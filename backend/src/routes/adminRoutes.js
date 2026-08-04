@@ -6,6 +6,7 @@ const {
 } = require("../middleware/authMiddleware");
 const { requireCsrf } = require("../middleware/csrfMiddleware");
 const {
+  getDashboardOverview,
   listCustomers,
   getCustomerById,
   listStaffUsers,
@@ -18,6 +19,7 @@ const router = express.Router();
 
 router.use(protect, adminOnly);
 
+router.get("/dashboard/overview", requireAdminPermission("dashboard.view"), getDashboardOverview);
 router.get("/operations/summary", requireAdminPermission("operations.view"), getOperationsSummary);
 router.get("/customers", requireAdminPermission("customers.view"), listCustomers);
 router.get("/customers/:id", requireAdminPermission("customers.view"), getCustomerById);

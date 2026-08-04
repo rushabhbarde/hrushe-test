@@ -496,31 +496,31 @@ function ShopContent() {
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pb-32 lg:pt-24">
-        <div className="mb-7">
+      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-8 sm:px-6 sm:pt-12 lg:px-8 lg:pb-28 lg:pt-16">
+        <div className="mb-5">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop" }]} />
         </div>
-        <header className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-14">
+        <header className="grid gap-5 border-b border-[var(--border)] pb-7 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-9">
           <div>
             <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
-            <h1 className="mt-5 text-[2.2rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[4rem] sm:leading-[0.92] sm:tracking-[-0.045em] lg:text-[5.5rem]">
+            <h1 className="mt-4 text-[1.55rem] font-medium uppercase leading-none tracking-normal sm:text-[2.75rem] sm:leading-[0.96] lg:text-[4rem]">
               The collection.
             </h1>
           </div>
-          <p className="max-w-xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
+          <p className="max-w-xl text-[0.84rem] leading-6 text-[var(--muted)] sm:text-[0.95rem] sm:leading-7">
             A quiet collection of essentials, built with intention and designed to be worn your way.
           </p>
         </header>
 
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-[var(--border)] py-5">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] py-3.5">
+          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
             {filteredProducts.length} {filteredProducts.length === 1 ? "piece" : "pieces"}
           </p>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3 sm:flex-none">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2.5 sm:flex-none">
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-12 shrink-0 items-center border border-[var(--border)] px-5 text-[0.68rem] font-semibold uppercase tracking-[0.12em]"
+              className="inline-flex min-h-10 shrink-0 items-center border border-[var(--border)] px-4 text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
             >
               Filter{activeFilterCount ? ` (${activeFilterCount})` : ""}
             </button>
@@ -529,7 +529,7 @@ function ShopContent() {
               id="shop-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as SortOption)}
-              className="min-h-12 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-4 text-[0.68rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
+              className="min-h-10 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
             >
               <option value="edit">Curated edit</option>
               <option value="newest">Newest</option>

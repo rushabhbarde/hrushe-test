@@ -137,11 +137,13 @@ test.describe("pre-launch storefront smoke", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: /women and men collections/i })).toBeAttached();
 
-    const brokenImages = await page.locator("img").evaluateAll((images) =>
-      images
+    const brokenImages = await page.locator("img").evaluateAll((images) => {
+      const imageElements = images as HTMLImageElement[];
+
+      return imageElements
         .filter((image) => image.complete && image.naturalWidth === 0)
-        .map((image) => image.getAttribute("src") || "")
-    );
+        .map((image) => image.getAttribute("src") || "");
+    });
     expect(brokenImages).toEqual([]);
   });
 
@@ -150,8 +152,9 @@ test.describe("pre-launch storefront smoke", () => {
     await mockStorefrontApi(page);
 
     await page.goto("/collection/women");
-    await expect(page.getByText("Quiet Tee").first()).toBeVisible();
-    await page.getByRole("link", { name: /view quiet tee/i }).first().click();
+    const productLink = page.getByRole("link", { name: /view quiet tee/i }).first();
+    await expect(productLink).toBeVisible();
+    await productLink.click();
     await expect(page.getByText("Quiet Tee").first()).toBeVisible();
     expect(runtimeErrors.filter((message) => /hydration failed|uncaught error/i.test(message))).toEqual([]);
   });

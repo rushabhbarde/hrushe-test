@@ -140,23 +140,23 @@ export function ProductQuickAdd({
 
   const wrapperClassName =
     variant === "icon"
-      ? `absolute bottom-2 right-2 z-20 flex min-h-11 max-w-[calc(100%-1rem)] items-end justify-end opacity-100 transition-opacity duration-150 md:pointer-events-none md:opacity-0 md:group-hover/card:pointer-events-auto md:group-hover/card:opacity-100 md:group-focus-within/card:pointer-events-auto md:group-focus-within/card:opacity-100 ${
-          showSizeSelector ? "md:left-2 md:max-w-none" : "h-11 w-11"
+      ? `absolute bottom-3 right-3 z-20 flex min-h-9 max-w-[calc(100%-1.5rem)] items-end justify-end opacity-100 transition-opacity duration-150 md:pointer-events-none md:opacity-0 md:group-hover/card:pointer-events-auto md:group-hover/card:opacity-100 md:group-focus-within/card:pointer-events-auto md:group-focus-within/card:opacity-100 ${
+          showSizeSelector ? "md:left-3 md:max-w-none" : "h-9 w-9"
         }`
       : "absolute inset-x-3 bottom-3 z-20 hidden md:block";
   const chooserClassName =
     variant === "icon"
-      ? "max-w-full bg-[var(--surface)] px-1.5 py-1.5 text-[var(--foreground)]"
+      ? "max-w-full bg-white/72 px-1.5 py-1.5 text-[var(--foreground)] shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md"
       : "border border-black/15 bg-[var(--surface)] px-3 py-2.5";
   const chooserVisibilityClassName =
     variant === "icon" && !selectingSize ? "hidden md:flex" : "flex";
   const buttonClassName =
     variant === "icon"
-      ? "flex h-11 w-11 items-center justify-center bg-[var(--surface)] text-[var(--foreground)] transition duration-200 hover:bg-white hover:text-[var(--foreground)] disabled:opacity-60"
+      ? "flex h-9 w-9 items-center justify-center bg-transparent text-[var(--foreground)] drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)] transition duration-200 hover:bg-white/40 hover:backdrop-blur-md disabled:opacity-60"
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
   const sizeButtonClassName =
     variant === "icon"
-      ? "hrushe-inverse-hover grid h-11 min-w-11 place-items-center bg-[var(--surface)] px-3 text-[0.68rem] font-semibold uppercase tracking-[0.08em]"
+      ? "hrushe-inverse-hover grid h-9 min-w-9 place-items-center bg-white/80 px-3 text-[0.64rem] font-semibold uppercase tracking-[0.08em] backdrop-blur-md"
       : "hrushe-inverse-hover grid min-h-11 min-w-14 place-items-center border border-[var(--border)] bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase";
 
   return (

@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
+  AdminFilterSelect,
   AdminPageHeader,
   AdminPanel,
   AdminSubhead,
 } from "@/components/admin-ui";
 import { useStorefrontData } from "@/lib/use-storefront";
 
+function getInitialSearchParam(name: string) {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return new URLSearchParams(window.location.search).get(name) || "";
+}
+
 export default function AdminInventoryPage() {
+  const [stockFilter, setStockFilter] = useState(() => getInitialSearchParam("stock") || "all");
   const { products, loading } = useStorefrontData({ admin: true });
   const trackedProducts = products.filter((product) => product.trackInventory);
   const variants = trackedProducts.flatMap((product) =>
@@ -22,6 +33,18 @@ export default function AdminInventoryPage() {
     (row) => row.variant.active && row.variant.stock > 0 && row.variant.stock <= 5
   );
   const soldOut = variants.filter((row) => row.variant.active && row.variant.stock === 0);
+  const visibleVariants = variants.filter((row) => {
+    if (stockFilter === "low") {
+      return row.variant.active && row.variant.stock > 0 && row.variant.stock <= 5;
+    }
+    if (stockFilter === "out") {
+      return row.variant.active && row.variant.stock === 0;
+    }
+    if (stockFilter === "reserved") {
+      return Number(row.variant.reserved || 0) > 0;
+    }
+    return true;
+  });
 
   return (
     <AdminShell>
@@ -49,6 +72,14 @@ export default function AdminInventoryPage() {
             title="Variant stock"
             description="Edit quantities and SKUs inside each product. This view keeps the operational picture concise."
           />
+          <div className="mb-5 max-w-xs">
+            <AdminFilterSelect value={stockFilter} onChange={(event) => setStockFilter(event.target.value)}>
+              <option value="all">All stock states</option>
+              <option value="low">Low stock</option>
+              <option value="out">Out of stock</option>
+              <option value="reserved">Reserved at checkout</option>
+            </AdminFilterSelect>
+          </div>
           {loading ? (
             <p className="text-sm text-[var(--muted)]">Loading inventory...</p>
           ) : variants.length === 0 ? (
@@ -56,6 +87,13 @@ export default function AdminInventoryPage() {
               <p className="font-semibold">No tracked inventory yet.</p>
               <p className="mt-2 text-sm text-[var(--muted)]">
                 Open a product, enable variant stock, then add an SKU and quantity for each size and color.
+              </p>
+            </div>
+          ) : visibleVariants.length === 0 ? (
+            <div className="border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] p-5">
+              <p className="font-semibold">No variants match this stock filter.</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Change the stock state filter to inspect a broader inventory list.
               </p>
             </div>
           ) : (
@@ -73,7 +111,7 @@ export default function AdminInventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {variants.map(({ product, variant }) => {
+                  {visibleVariants.map(({ product, variant }) => {
                     const state = !variant.active
                       ? "Paused"
                       : variant.stock === 0
