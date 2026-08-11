@@ -9,6 +9,7 @@ const Order = require("../src/models/Order");
 const productRoutes = require("../src/routes/productRoutes");
 const {
   deleteProduct,
+  getProducts,
   restoreProduct,
   permanentlyDeleteProduct,
   __private: { normalizeProductPayload, normalizeProductVariants },
@@ -17,6 +18,11 @@ const {
 const buildResponse = () => ({
   statusCode: 200,
   body: null,
+  headers: {},
+  set(key, value) {
+    this.headers[key.toLowerCase()] = value;
+    return this;
+  },
   status(statusCode) {
     this.statusCode = statusCode;
     return this;
@@ -38,11 +44,15 @@ const callController = async (handler, req, res = buildResponse()) => {
 const installModelStubs = (t) => {
   const originals = {
     productFindOne: Product.findOne,
+    productFind: Product.find,
+    productCountDocuments: Product.countDocuments,
     orderExists: Order.exists,
   };
 
   t.after(() => {
     Product.findOne = originals.productFindOne;
+    Product.find = originals.productFind;
+    Product.countDocuments = originals.productCountDocuments;
     Order.exists = originals.orderExists;
   });
 };
@@ -132,6 +142,31 @@ test("decimal stock values are rejected", () => {
   );
 });
 
+test("public product listing responses do not cache price or availability", async (t) => {
+  installModelStubs(t);
+
+  Product.find = () => ({
+    sort: () => ({
+      skip: () => ({
+        limit: () => ({
+          lean: async () => [],
+        }),
+      }),
+    }),
+  });
+  Product.countDocuments = async () => 0;
+
+  const { res, nextError } = await callController(getProducts, {
+    query: {},
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.headers["cache-control"], "private, no-store, max-age=0, must-revalidate");
+  assert.deepEqual(res.body, []);
+});
+
 test("variants with active reservations cannot be removed or renamed", () => {
   assert.throws(
     () =>
@@ -161,6 +196,40 @@ test("variants with active reservations cannot be removed or renamed", () => {
         }
       ),
     /active reserved inventory/i
+  );
+});
+
+test("variants with active reservations cannot be deactivated", () => {
+  assert.throws(
+    () =>
+      normalizeProductPayload(
+        {
+          variants: [
+            {
+              sku: "HRU-RESERVED-SKU",
+              size: "M",
+              color: "White",
+              stock: 5,
+              active: false,
+            },
+          ],
+        },
+        {
+          partial: true,
+          preserveReserved: true,
+          existingVariants: [
+            {
+              sku: "HRU-RESERVED-SKU",
+              size: "M",
+              color: "White",
+              stock: 0,
+              reserved: 1,
+              active: true,
+            },
+          ],
+        }
+      ),
+    /reserved inventory cannot be deactivated/i
   );
 });
 

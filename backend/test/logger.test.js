@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const {
   createRequestId,
   getRequestId,
+  logEvent,
   redactValue,
   requestContextMiddleware,
 } = require("../src/utils/logger");
@@ -85,5 +86,28 @@ test("metric fields cannot overwrite the structured log event name", () => {
   assert.equal(payload.event, "metric.recorded");
   assert.equal(payload.metric, "payment.webhook.processed");
   assert.equal(payload.metricEvent, "payment.captured");
+  assert.equal(payload.orderId, "order-test");
+});
+
+test("log fields cannot overwrite the structured log event name", () => {
+  const originalLog = console.log;
+  let capturedLine = "";
+
+  console.log = (line) => {
+    capturedLine = line;
+  };
+
+  try {
+    logEvent("payment.webhook.manual_review", {
+      event: "payment.captured",
+      orderId: "order-test",
+    });
+  } finally {
+    console.log = originalLog;
+  }
+
+  const payload = JSON.parse(capturedLine);
+  assert.equal(payload.event, "payment.webhook.manual_review");
+  assert.equal(payload.fieldEvent, "payment.captured");
   assert.equal(payload.orderId, "order-test");
 });

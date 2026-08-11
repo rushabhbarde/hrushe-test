@@ -1,90 +1,112 @@
 # HRUSHE Test Report
 
-Reviewed on: 2026-07-24  
-Phase: 4 external execution  
-Starting SHA: `7585b15b003983e2c7d66fe6239c5249142f682f`  
-Release branch: `release/hrushe-prelaunch`
+Reviewed on: 2026-08-11
+Phase: final release hardening
 
-## Summary
-
-Local regression checks were rerun in Phase 4. Backend audit, backend tests, frontend lint, frontend unit/component tests, frontend production build, and local Playwright smoke passed. Frontend production dependency audit still fails and blocks release-candidate resolution unless resolved or explicitly accepted by the release owner after risk review.
-
-## Backend Results
+## Backend
 
 Passed:
 
-- `cd backend && npm audit --omit=dev`: found 0 vulnerabilities.
-- `cd backend && npm test`: 116/116 passed.
+- `npm test`: 141/141 tests passed.
+- `npm audit --audit-level=high`: 0 vulnerabilities.
+- `node --check` on changed backend controllers/scripts: passed.
+- `npm run config:verify-production` with synthetic production-shaped non-secret env: PASS.
 
-Backend coverage includes:
+New backend coverage:
 
-- Staging configuration guardrails.
-- Scheduler authentication.
-- Inventory cleanup idempotency and lock contention.
-- Payment confirmation blockers.
-- Reconciliation locks.
-- Integer-paise money handling.
-- CSRF/product safety.
-- Homepage publish media validation.
-- Structured log redaction.
+- Current-price checkout resolution.
+- Removed option and insufficient stock rejection.
+- Wishlist item retained when cart save fails.
+- Generic public tracking lookup failure.
+- Conditional admin order status updates.
+- Payment confirmation lock contention.
+- Captured webhook amount mismatch manual review.
+- Expired/missing reservation manual review.
+- Variant deactivation blocked when reserved inventory exists.
+- Signed monitoring test-alert endpoint.
+- Structured logging prevents payload fields from overwriting the event name.
+- Production CORS rejects unapproved origins as an operational 403 instead of a server 500.
+- Retired COD route.
 
-## Frontend Results
+## Frontend
 
 Passed:
 
-- `cd frontend && npm run lint`: passed.
-- `cd frontend && npm test`: 31/31 passed.
-- `cd frontend && npm run build`: passed on Next `16.2.11`; 46 routes generated/validated.
-- `cd frontend && npm run test:e2e`: 8/8 passed across local Chromium desktop/mobile profiles.
+- `npm audit --audit-level=high`: 0 vulnerabilities.
+- `npm test`: 31/31 tests passed.
+- `npm run lint`: passed with 0 warnings/errors.
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed on Next 16.3.0; 46 routes generated.
 
-Failed:
+Note:
 
-- `cd frontend && npm audit --omit=dev`: 3 high-severity vulnerabilities.
+- Vitest still emits a non-failing Vite future-loader warning for `vitest.config.ts`.
 
-Audit detail:
+## E2E
 
-- `postcss <=8.5.17`: high severity through Next.
-- `sharp <0.35.0`: high severity through Next optional dependency.
-- Dependent `next` advisory chain.
-- Audit-proposed fix requires `npm audit fix --force` and would install `next@9.3.3`; it was not applied.
+Passed:
 
-## Playwright Result
+- `npm run test:e2e`: 8/8 Playwright smoke tests passed across desktop and mobile Chromium.
 
-Passed locally:
+Note:
 
-- Homepage loads without broken customer-facing images.
-- Collection page shows product cards.
-- Checkout blocks Razorpay launch before provider script readiness.
-- Login, account, tracking, and admin protection pages load.
-- Desktop and mobile Chromium profiles both passed.
+- The first sandboxed Playwright run failed because the local server could not bind `0.0.0.0:3200`. The escalated rerun passed.
 
-Not covered:
+## Dependency Audit
 
-- Deployed staging.
-- Safari desktop.
-- Edge desktop.
-- iPhone Safari.
-- Android Chrome.
-- Real Razorpay return/confirmation paths.
+- Backend: PASS.
+- Frontend: PASS.
 
-## External Tests
+## Inventory Concurrency
 
-Not executed:
+Passed against local isolated MongoDB `hrushe-concurrency-test`:
 
-- Staging smoke against deployed backend/frontend.
-- Razorpay real test-mode matrix.
-- MongoDB production-like transaction/concurrency tests.
-- Render Cron manual and scheduled runs.
-- Real media storage/CMS tests.
-- Lighthouse median samples.
-- Alert delivery tests.
-- Rollback drill.
+- Stock 1 / 20 simultaneous reservations: 1 success, 19 rejected, cleanup restored stock.
+- Stock 1 / 10 simultaneous reservations: 1 success, 9 rejected, cleanup restored stock.
+- Stock 5 / 20 simultaneous reservations: 5 successes, 15 rejected, cleanup restored stock.
 
-## Release-Candidate Impact
+## External Tests Not Executed
 
-No release-candidate commit or tag was created because:
+These still require staging/provider/dashboard access:
 
-- The frontend audit gate is failing.
-- Required external staging gates were not available or not executed.
-- The working tree is not clean and includes pre-existing user/brand changes that need release-owner classification before committing a release artifact.
+- Full Razorpay test-mode browser/provider matrix.
+- Hosted monitoring alert receipt.
+- Render/Vercel production env inspection.
+- DNS/SSL/CORS/cookie verification on real domain.
+- iPhone Safari and Android Chrome real-device checkout.
+- ZeptoMail real staging delivery.
+- R2 real staging upload/read.
+- MongoDB provider backup and actual isolated restore drill.
 
+## Launch Certification Evidence
+
+Reviewed on: 2026-08-11 20:54 IST
+
+Passed or partially evidenced:
+
+- Vercel project `hrushe-test` is visible through the connected Vercel app.
+- Latest Vercel production deployment `dpl_Gfu8fpJNeTsjotDkKQvHLYUdjNkG` is `READY`, targets production, and matches branch `release/hrushe-prelaunch` at commit `1cd4b57a0f17736ea7cb44e13ba3126b4e01694a`.
+- Vercel production build logs show build completed with no error lines.
+- Vercel runtime error clusters: none found in the last 2 hours after the smoke run.
+- DNS resolves for `hrushe.in`, `www.hrushe.in`, and `media.hrushe.in`.
+- TLS verifies OK for `hrushe.in` and `media.hrushe.in`.
+- `https://hrushe.in/` returns 200 with HSTS/security headers.
+- `https://www.hrushe.in/` redirects to `https://hrushe.in/`.
+- `http://hrushe.in/` and `http://www.hrushe.in/` redirect to HTTPS.
+- `https://hrushe.in/api/backend/healthz` returns 200 through the Vercel-to-Render proxy.
+- `https://hrushe.in/api/backend/products` returns 200 and no-store cache headers.
+- A real `media.hrushe.in` product image returns 200.
+- Unauthenticated `https://hrushe.in/api/backend/admin/orders` returns 401.
+- Invalid Razorpay webhook signature returns `Invalid webhook signature`.
+- Public bundle scan checked 17 JavaScript files and found no obvious server-secret patterns.
+- Public browser smoke loaded `/`, `/shop`, one PDP, `/cart`, `/login`, `/track-order`, and `/admin` with HTTP 200.
+
+Failed or not fully certifiable from this session:
+
+- Hosted production CORS currently returns 500 for an unapproved `Origin`; fixed locally with a 403 operational error and backend tests now pass, but hosted redeploy/retest is required.
+- Hosted browser smoke showed Cloudflare analytics beacon blocked by CSP; fixed locally by allowing Cloudflare analytics hosts, but hosted redeploy/retest is required.
+- Hosted `/api/backend/internal/inventory/cleanup` returned 404, indicating the running Render backend is not yet on the newer scheduler-route build; redeploy/retest is required.
+- Local `backend/.env` is development-shaped: `NODE_ENV=development`, HTTP local URLs, Razorpay test mode, `OTP_DEV_MODE=true`, insecure cookies, and missing staging/production scheduler/R2/ZeptoMail fields.
+- `npm run config:verify-production` fails against local `.env`, so no staging/production configuration PASS can be claimed from local env.
+- `npm run verify:razorpay-production-testmode` was not run because production test-order mutation requires explicit opt-in plus a valid production test payload and webhook secret.
+- `npm run test:final-item-concurrency` refused to run because `CONCURRENCY_TEST=true` was not set against an isolated staging/test database.

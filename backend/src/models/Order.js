@@ -264,6 +264,25 @@ const orderSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    paymentProviderPaymentId: {
+      type: String,
+      default: "",
+      trim: true,
+      index: true,
+    },
+    paymentCapturedAt: {
+      type: Date,
+      default: null,
+    },
+    paymentConfirmationStartedAt: {
+      type: Date,
+      default: null,
+    },
+    paymentConfirmationLockId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     checkoutUrl: {
       type: String,
       default: "",
@@ -398,6 +417,7 @@ orderSchema.index({ customerEmail: 1, createdAt: -1 });
 orderSchema.index({ inventoryReservationStatus: 1, inventoryReservationExpiresAt: 1 });
 orderSchema.index({ paymentReconciliationResultCode: 1, createdAt: -1 });
 orderSchema.index({ paymentReconciliationStartedAt: 1 });
+orderSchema.index({ paymentConfirmationStartedAt: 1 });
 orderSchema.index({ totalPaise: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

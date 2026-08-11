@@ -40,6 +40,17 @@ function getRequestId(req) {
   return req?.requestId || getRequestContext().requestId || "";
 }
 
+function normalizeLogFields(fields = {}) {
+  const normalized = { ...fields };
+
+  if (Object.prototype.hasOwnProperty.call(normalized, "event")) {
+    normalized.fieldEvent = normalized.event;
+    delete normalized.event;
+  }
+
+  return normalized;
+}
+
 function logEvent(event, fields = {}, level = "info") {
   const context = getRequestContext();
   const payload = redactValue({
@@ -47,7 +58,7 @@ function logEvent(event, fields = {}, level = "info") {
     level,
     event,
     requestId: fields.requestId || context.requestId || "",
-    ...fields,
+    ...normalizeLogFields(fields),
   });
   const line = JSON.stringify(payload);
 
@@ -89,6 +100,7 @@ module.exports = {
   getRequestContext,
   getRequestId,
   logEvent,
+  normalizeLogFields,
   redactValue,
   requestContextMiddleware,
 };

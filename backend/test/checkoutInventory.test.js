@@ -4,6 +4,7 @@ const {
   commitOrderInventory,
   cleanupExpiredInventoryReservations,
   normalizeCheckoutSelections,
+  resolveCheckoutItems,
   releaseOrderInventory,
 } = require("../src/services/checkoutInventory");
 const Product = require("../src/models/Product");
@@ -56,6 +57,96 @@ test("invalid cart identifiers and quantities are rejected", () => {
   assert.throws(
     () => normalizeCheckoutSelections([{ productId, quantity: 11 }]),
     /maximum of 10/i
+  );
+});
+
+test("checkout resolution uses current product pricing and canonical options", async (t) => {
+  const originalFind = Product.find;
+  t.after(() => {
+    Product.find = originalFind;
+  });
+
+  Product.find = async () => [
+    {
+      _id: { toString: () => productId },
+      name: "Current Price Tee",
+      status: "Active",
+      price: 1499,
+      pricePaise: 149900,
+      sizes: ["M"],
+      colors: ["Black"],
+      images: ["https://example.com/current.jpg"],
+      trackInventory: true,
+      variants: [
+        {
+          sku: "HRU-CURRENT-M-BLK",
+          size: "M",
+          color: "Black",
+          fit: "Regular",
+          stock: 3,
+          reserved: 0,
+          active: true,
+        },
+      ],
+    },
+  ];
+
+  const [item] = await resolveCheckoutItems([
+    {
+      productId,
+      quantity: 1,
+      size: "m",
+      color: "black",
+      fit: "Regular",
+      price: 1,
+    },
+  ]);
+
+  assert.equal(item.pricePaise, 149900);
+  assert.equal(item.price, 1499);
+  assert.equal(item.size, "M");
+  assert.equal(item.color, "Black");
+  assert.equal(item.sku, "HRU-CURRENT-M-BLK");
+});
+
+test("checkout resolution rejects removed options and insufficient current stock", async (t) => {
+  const originalFind = Product.find;
+  t.after(() => {
+    Product.find = originalFind;
+  });
+
+  Product.find = async () => [
+    {
+      _id: { toString: () => productId },
+      name: "Limited Tee",
+      status: "Active",
+      price: 999,
+      pricePaise: 99900,
+      sizes: ["S"],
+      colors: ["Black"],
+      images: ["https://example.com/limited.jpg"],
+      trackInventory: true,
+      variants: [
+        {
+          sku: "HRU-LIMITED-S-BLK",
+          size: "S",
+          color: "Black",
+          fit: "Regular",
+          stock: 1,
+          reserved: 0,
+          active: true,
+        },
+      ],
+    },
+  ];
+
+  await assert.rejects(
+    () => resolveCheckoutItems([{ productId, quantity: 1, size: "M", color: "Black" }]),
+    /available size/i
+  );
+  await assert.rejects(
+    () => resolveCheckoutItems([{ productId, quantity: 2, size: "S", color: "Black" }]),
+    /only 1 unit/i
   );
 });
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
@@ -210,6 +211,7 @@ function OrderSummary({
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { items, itemCount, subtotal, isReady } = useCart();
   const { user } = useCustomerAuth();
   const { pushToast } = useToast();
@@ -405,7 +407,7 @@ export default function CheckoutPage() {
                 checkoutState: response.checkoutState,
               }),
             }).catch(() => undefined);
-            window.location.href = `/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`;
+            router.push(`/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`);
           },
         },
         handler: async (paymentResponse: Record<string, string>) => {
@@ -422,7 +424,8 @@ export default function CheckoutPage() {
             );
 
             pushToast("Payment successful");
-            window.location.href = verification.redirectUrl;
+            const redirectUrl = new URL(verification.redirectUrl, window.location.origin);
+            router.push(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
           } catch (verificationError) {
             const message =
               verificationError instanceof Error

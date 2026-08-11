@@ -1,6 +1,5 @@
 const express = require("express");
 const {
-  placeOrder,
   getMyOrders,
   getOrderById,
   downloadInvoice,
@@ -8,6 +7,7 @@ const {
   getAllOrders,
   updateOrderStatus,
   createCheckout,
+  getCheckoutPaymentConfig,
   verifyCheckout,
   failCheckout,
   cancelCheckout,
@@ -25,10 +25,10 @@ const {
 } = require("../middleware/authMiddleware");
 const { createRateLimiter } = require("../middleware/rateLimitMiddleware");
 const { requireCsrf, requireCsrfIfAuthenticated } = require("../middleware/csrfMiddleware");
-const env = require("../config/env");
 
 const router = express.Router();
 
+router.get("/checkout/razorpay-mode", getCheckoutPaymentConfig);
 router.post("/checkout/verify", attachUserIfAuthenticated, requireCsrfIfAuthenticated, verifyCheckout);
 router.post("/checkout/failure", attachUserIfAuthenticated, requireCsrfIfAuthenticated, failCheckout);
 router.get("/checkout/failure", failCheckout);
@@ -46,9 +46,6 @@ router.post(
   createRateLimiter({ name: "order-track", max: 20, windowMs: 15 * 60 * 1000 }),
   trackOrder
 );
-if (env.ENABLE_COD) {
-  router.post("/place", protect, requireCsrf, placeOrder);
-}
 router.get("/myorders", protect, getMyOrders);
 router.get("/reconciliation", protect, requireAdminPermission("orders.manage"), getPaymentReconciliation);
 router.post("/reconciliation/bulk", protect, requireCsrf, requireAdminPermission("orders.manage"), bulkReconcileOrders);

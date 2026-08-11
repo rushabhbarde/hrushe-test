@@ -8,12 +8,20 @@ auditLog.recordAuditLog = async () => {};
 const env = require("../src/config/env");
 const Order = require("../src/models/Order");
 const WebhookEvent = require("../src/models/WebhookEvent");
+const Cart = require("../src/models/Cart");
+const Product = require("../src/models/Product");
+const orderRoutes = require("../src/routes/orderRoutes");
 const {
   razorpayWebhook,
   reconcileOrderPayment,
+  reorderOrder,
+  trackOrder,
+  updateOrderStatus,
+  getCheckoutPaymentConfig,
   verifyCheckout,
   __private: {
     RECONCILIATION_RESULT_CODES,
+    canTransitionOrderStatus,
     getPaymentConfirmationInventoryBlocker,
     saveReconciledOrder,
     selectRazorpayPaymentForOrder,
@@ -48,12 +56,14 @@ const installOrderStubs = (t) => {
     findById: Order.findById,
     findOne: Order.findOne,
     findOneAndUpdate: Order.findOneAndUpdate,
+    findByIdAndUpdate: Order.findByIdAndUpdate,
   };
 
   t.after(() => {
     Order.findById = originals.findById;
     Order.findOne = originals.findOne;
     Order.findOneAndUpdate = originals.findOneAndUpdate;
+    Order.findByIdAndUpdate = originals.findByIdAndUpdate;
   });
 };
 
@@ -98,6 +108,14 @@ test("reconciliation selector accepts only matching captured Razorpay payments",
   assert.equal(selected.capturedPayment.id, "pay_captured");
   assert.equal(selected.failedPayment.id, "pay_failed");
   assert.equal(selected.latestPayment.id, "pay_captured");
+});
+
+test("legacy COD order placement route is retired", () => {
+  const placeRoute = orderRoutes.stack.find(
+    (layer) => layer.route?.path === "/place" && layer.route?.methods?.post
+  );
+
+  assert.equal(placeRoute, undefined);
 });
 
 test("reconciliation selector exposes mismatched captured Razorpay payments", () => {
@@ -221,6 +239,36 @@ test("Razorpay payment summaries exclude bulky provider payload details", () => 
   });
 });
 
+test("checkout payment config exposes only Razorpay mode metadata", async (t) => {
+  const originalKeyId = env.RAZORPAY_KEY_ID;
+  const originalKeySecret = env.RAZORPAY_KEY_SECRET;
+  const originalCurrency = env.RAZORPAY_CURRENCY;
+  env.RAZORPAY_KEY_ID = "rzp_test_1234567890";
+  env.RAZORPAY_KEY_SECRET = "secret-value-not-returned";
+  env.RAZORPAY_CURRENCY = "INR";
+  t.after(() => {
+    env.RAZORPAY_KEY_ID = originalKeyId;
+    env.RAZORPAY_KEY_SECRET = originalKeySecret;
+    env.RAZORPAY_CURRENCY = originalCurrency;
+  });
+
+  const { res, nextError } = await callController(getCheckoutPaymentConfig, {
+    body: {},
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.deepEqual(res.body, {
+    provider: "razorpay",
+    configured: true,
+    keyPrefix: "rzp_test_",
+    mode: "test",
+    currency: "INR",
+  });
+  assert.equal(JSON.stringify(res.body).includes("secret-value-not-returned"), false);
+});
+
 test("payment confirmation blocks tracked inventory with released reservations", async (t) => {
   installOrderStubs(t);
   const originalSecret = env.RAZORPAY_KEY_SECRET;
@@ -229,7 +277,7 @@ test("payment confirmation blocks tracked inventory with released reservations",
     env.RAZORPAY_KEY_SECRET = originalSecret;
   });
 
-  let saved = false;
+  let lockSaveCalled = false;
   const order = {
     _id: "507f1f77bcf86cd799439011",
     checkoutProvider: "razorpay",
@@ -248,12 +296,19 @@ test("payment confirmation blocks tracked inventory with released reservations",
         inventoryTracked: true,
       },
     ],
-    save: async () => {
-      saved = true;
-    },
   };
 
   Order.findById = async () => order;
+  Order.findOneAndUpdate = async (filter, update) => {
+    if (filter.paymentConfirmationLockId) {
+      lockSaveCalled = true;
+      Object.assign(order, update.$set);
+      return order;
+    }
+    order.paymentConfirmationLockId = update.$set.paymentConfirmationLockId;
+    order.paymentConfirmationStartedAt = update.$set.paymentConfirmationStartedAt;
+    return order;
+  };
 
   const paymentId = "pay_razorpay";
   const { nextError } = await callController(verifyCheckout, {
@@ -273,7 +328,7 @@ test("payment confirmation blocks tracked inventory with released reservations",
 
   assert.equal(nextError?.statusCode, 409);
   assert.match(nextError?.message || "", /manual review/i);
-  assert.equal(saved, true);
+  assert.equal(lockSaveCalled, true);
   assert.equal(order.paymentStatus, "initiated");
   assert.equal(order.orderStatus, "Pending");
   assert.equal(order.inventoryReservationStatus, "released");
@@ -283,6 +338,46 @@ test("payment confirmation blocks tracked inventory with released reservations",
   );
   assert.equal(order.checkoutLogs.at(-1).event, "payment_confirmation_manual_review");
   assert.equal(order.checkoutLogs.at(-1).payload.reason, "reservation-missing");
+});
+
+test("payment confirmation rejects concurrent finalization attempts with a stable retry error", async (t) => {
+  installOrderStubs(t);
+  const originalSecret = env.RAZORPAY_KEY_SECRET;
+  env.RAZORPAY_KEY_SECRET = "checkout-secret";
+  t.after(() => {
+    env.RAZORPAY_KEY_SECRET = originalSecret;
+  });
+
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    checkoutSessionId: "order_razorpay",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(Date.now() + 60_000),
+    products: [{ inventoryTracked: true }],
+  };
+  Order.findById = async () => order;
+  Order.findOneAndUpdate = async () => null;
+
+  const paymentId = "pay_razorpay";
+  const { nextError } = await callController(verifyCheckout, {
+    body: {
+      appOrderId: order._id,
+      razorpay_order_id: order.checkoutSessionId,
+      razorpay_payment_id: paymentId,
+      razorpay_signature: signCheckoutPayment({
+        orderId: order.checkoutSessionId,
+        paymentId,
+        secret: env.RAZORPAY_KEY_SECRET,
+      }),
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /already in progress/i);
 });
 
 test("captured webhooks block expired tracked reservations instead of confirming paid", async (t) => {
@@ -298,10 +393,10 @@ test("captured webhooks block expired tracked reservations instead of confirming
     WebhookEvent.create = originalWebhookCreate;
   });
 
-  let orderSaved = false;
   const webhookEvent = {
     status: "processing",
     processedAt: null,
+    resultCode: "",
     save: async () => {},
   };
   const order = {
@@ -324,9 +419,6 @@ test("captured webhooks block expired tracked reservations instead of confirming
         inventoryTracked: true,
       },
     ],
-    save: async () => {
-      orderSaved = true;
-    },
   };
   const body = {
     event: "payment.captured",
@@ -346,6 +438,15 @@ test("captured webhooks block expired tracked reservations instead of confirming
 
   WebhookEvent.create = async () => webhookEvent;
   Order.findOne = async () => order;
+  Order.findOneAndUpdate = async (filter, update) => {
+    if (filter.paymentConfirmationLockId) {
+      Object.assign(order, update.$set);
+      return order;
+    }
+    order.paymentConfirmationLockId = update.$set.paymentConfirmationLockId;
+    order.paymentConfirmationStartedAt = update.$set.paymentConfirmationStartedAt;
+    return order;
+  };
 
   const { res, nextError } = await callController(razorpayWebhook, {
     body,
@@ -367,7 +468,6 @@ test("captured webhooks block expired tracked reservations instead of confirming
     manualReview: true,
     reason: "reservation-expired",
   });
-  assert.equal(orderSaved, true);
   assert.equal(order.paymentStatus, "initiated");
   assert.equal(order.orderStatus, "Pending");
   assert.equal(order.inventoryReservationStatus, "reserved");
@@ -379,6 +479,86 @@ test("captured webhooks block expired tracked reservations instead of confirming
   assert.ok(webhookEvent.processedAt instanceof Date);
 });
 
+test("captured webhook amount mismatch is durably routed to manual review", async (t) => {
+  installOrderStubs(t);
+  const originalWebhookSecret = env.RAZORPAY_WEBHOOK_SECRET;
+  const originalCurrency = env.RAZORPAY_CURRENCY;
+  const originalWebhookCreate = WebhookEvent.create;
+  env.RAZORPAY_WEBHOOK_SECRET = "webhook-secret";
+  env.RAZORPAY_CURRENCY = "INR";
+  t.after(() => {
+    env.RAZORPAY_WEBHOOK_SECRET = originalWebhookSecret;
+    env.RAZORPAY_CURRENCY = originalCurrency;
+    WebhookEvent.create = originalWebhookCreate;
+  });
+
+  const webhookEvent = {
+    status: "processing",
+    resultCode: "",
+    processedAt: null,
+    save: async () => {},
+  };
+  const order = {
+    _id: "507f1f77bcf86cd799439011",
+    checkoutProvider: "razorpay",
+    checkoutSessionId: "order_razorpay",
+    paymentStatus: "initiated",
+    orderStatus: "Pending",
+    totalPaise: 50000,
+    totalAmount: 500,
+    inventoryReservationStatus: "reserved",
+    inventoryReservationExpiresAt: new Date(Date.now() + 60_000),
+    paymentReconciliationResultCode: "",
+    checkoutLogs: [],
+    products: [{ inventoryTracked: true }],
+    save: async () => order,
+  };
+  const body = {
+    event: "payment.captured",
+    payload: {
+      payment: {
+        entity: {
+          id: "pay_mismatch",
+          order_id: order.checkoutSessionId,
+          status: "captured",
+          amount: 50001,
+          currency: "INR",
+        },
+      },
+    },
+  };
+  const rawBody = JSON.stringify(body);
+
+  WebhookEvent.create = async () => webhookEvent;
+  Order.findOne = async () => order;
+
+  const { res, nextError } = await callController(razorpayWebhook, {
+    body,
+    rawBody: Buffer.from(rawBody),
+    headers: {
+      "x-razorpay-signature": signWebhookPayload({
+        rawBody,
+        secret: env.RAZORPAY_WEBHOOK_SECRET,
+      }),
+      "x-razorpay-event-id": "evt_amount_mismatch",
+    },
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.statusCode, 202);
+  assert.equal(res.body.manualReview, true);
+  assert.equal(res.body.reason, RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH);
+  assert.equal(order.paymentStatus, "initiated");
+  assert.equal(
+    order.paymentReconciliationResultCode,
+    RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH
+  );
+  assert.equal(order.paymentProviderPaymentId, "pay_mismatch");
+  assert.equal(webhookEvent.status, "completed");
+  assert.equal(webhookEvent.resultCode, RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH);
+});
+
 test("payment confirmation inventory blocker allows committed tracked inventory", () => {
   assert.equal(
     getPaymentConfirmationInventoryBlocker({
@@ -387,6 +567,195 @@ test("payment confirmation inventory blocker allows committed tracked inventory"
     }),
     ""
   );
+});
+
+test("public order tracking redacts contact and precise address details", async (t) => {
+  installOrderStubs(t);
+
+  Order.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    id: "507f1f77bcf86cd799439011",
+    orderNumber: 42,
+    customerName: "Asha Customer",
+    customerEmail: "asha.customer@example.com",
+    customerPhone: "9876543210",
+    paymentStatus: "paid",
+    orderStatus: "Confirmed",
+    shippingAddress: "Flat 12, Pearl Heights, Bandra West, Mumbai, Maharashtra, 400050",
+    shippingAddressDetails: {
+      house: "Flat 12, Pearl Heights",
+      area: "Bandra West",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400050",
+    },
+    paymentMethod: "Razorpay",
+    courierName: "",
+    trackingId: "",
+    trackingUrl: "",
+    totalAmount: 999,
+    totalPaise: 99900,
+    products: [],
+    createdAt: new Date("2026-08-01T10:00:00.000Z"),
+    updatedAt: new Date("2026-08-01T10:00:00.000Z"),
+  });
+
+  const { res, nextError } = await callController(trackOrder, {
+    body: {
+      orderId: "507f1f77bcf86cd799439011",
+      email: "asha.customer@example.com",
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.customerName, "A***");
+  assert.equal(res.body.customerEmail, "as***@example.com");
+  assert.equal(res.body.customerPhone, "******3210");
+  assert.equal(res.body.shippingAddress, "Mumbai, Maharashtra, 400050");
+  assert.equal("shippingAddressDetails" in res.body, false);
+});
+
+test("public order tracking uses a generic lookup failure to reduce enumeration", async (t) => {
+  installOrderStubs(t);
+
+  Order.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    customerEmail: "owner@example.com",
+    customerPhone: "9876543210",
+  });
+
+  const { nextError } = await callController(trackOrder, {
+    body: {
+      orderId: "507f1f77bcf86cd799439011",
+      email: "attacker@example.com",
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 404);
+  assert.match(nextError?.message || "", /not found or lookup details/i);
+});
+
+test("order status transition guard blocks terminal and backward fulfillment moves", () => {
+  assert.equal(canTransitionOrderStatus("Delivered", "Confirmed"), false);
+  assert.equal(canTransitionOrderStatus("Cancelled", "Shipped"), false);
+  assert.equal(canTransitionOrderStatus("Confirmed", "Packed"), true);
+  assert.equal(canTransitionOrderStatus("Delivered", "Returned"), true);
+});
+
+test("admin order status updates reject invalid lifecycle transitions", async (t) => {
+  installOrderStubs(t);
+  let updateCalled = false;
+
+  Order.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    paymentStatus: "paid",
+    orderStatus: "Delivered",
+  });
+  Order.findOneAndUpdate = async () => {
+    updateCalled = true;
+    return null;
+  };
+
+  const { nextError } = await callController(updateOrderStatus, {
+    params: { id: "507f1f77bcf86cd799439011" },
+    body: { orderStatus: "Confirmed" },
+    user: { _id: "admin-id", email: "admin@example.com" },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /invalid order status transition/i);
+  assert.equal(updateCalled, false);
+});
+
+test("admin order status updates are conditional on the previously read status", async (t) => {
+  installOrderStubs(t);
+  let capturedFilter;
+
+  Order.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    paymentStatus: "paid",
+    orderStatus: "Confirmed",
+  });
+  Order.findOneAndUpdate = async (filter, update) => {
+    capturedFilter = filter;
+    return {
+      _id: filter._id,
+      paymentStatus: "paid",
+      orderStatus: update.$set?.orderStatus || update.orderStatus,
+      checkoutLogs: [],
+    };
+  };
+
+  const { res, nextError } = await callController(updateOrderStatus, {
+    params: { id: "507f1f77bcf86cd799439011" },
+    body: { orderStatus: "Packed" },
+    user: { _id: "admin-id", email: "admin@example.com" },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.orderStatus, "Packed");
+  assert.equal(capturedFilter.orderStatus, "Confirmed");
+  assert.equal(capturedFilter.paymentStatus, "paid");
+});
+
+test("reorders revalidate current product availability before rebuilding cart", async (t) => {
+  const originals = {
+    orderFindById: Order.findById,
+    cartFindOne: Cart.findOne,
+    cartCreate: Cart.create,
+    productFind: Product.find,
+  };
+  t.after(() => {
+    Order.findById = originals.orderFindById;
+    Cart.findOne = originals.cartFindOne;
+    Cart.create = originals.cartCreate;
+    Product.find = originals.productFind;
+  });
+
+  let cartSaved = false;
+  const productId = "507f1f77bcf86cd799439012";
+  Order.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    userId: { toString: () => "507f1f77bcf86cd799439010" },
+    products: [
+      {
+        productId,
+        quantity: 1,
+        size: "M",
+        color: "Black",
+        fit: "Oversize",
+      },
+    ],
+  });
+  Cart.findOne = () => ({
+    populate: async () => ({
+      items: [],
+      save: async () => {
+        cartSaved = true;
+      },
+      populate: async () => {},
+    }),
+  });
+  Product.find = async () => [];
+
+  const { nextError } = await callController(reorderOrder, {
+    params: { id: "507f1f77bcf86cd799439011" },
+    user: { _id: { toString: () => "507f1f77bcf86cd799439010" } },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /no longer available/i);
+  assert.equal(cartSaved, false);
 });
 
 test("reconciliation returns a stable already-running code while another attempt is in progress", async (t) => {

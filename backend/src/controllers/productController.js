@@ -12,8 +12,6 @@ const {
   sendListResponse,
 } = require("../utils/pagination");
 const { getPaiseValue, paiseToRupees, rupeesToPaise } = require("../utils/money");
-const productListCache = new Map();
-const PRODUCT_LIST_CACHE_TTL = 60 * 1000;
 
 const escapeRegex = (value = "") =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -244,10 +242,21 @@ const normalizeProductVariants = (value, { existingVariants = [], preserveReserv
     const removedReservedVariant = existingVariants.find(
       (variant) => normalizeSku(variant?.sku) && Number(variant?.reserved || 0) > 0 && !nextSkus.has(normalizeSku(variant.sku))
     );
+    const deactivatedReservedVariant = normalizedVariants.find((variant) => {
+      const existingVariant = existingBySku.get(normalizeSku(variant.sku));
+      return Number(existingVariant?.reserved || 0) > 0 && variant.active === false;
+    });
 
     if (removedReservedVariant) {
       throw new AppError(
         "Variants with active reserved inventory cannot be removed or have their SKU changed.",
+        409
+      );
+    }
+
+    if (deactivatedReservedVariant) {
+      throw new AppError(
+        "Variants with active reserved inventory cannot be deactivated.",
         409
       );
     }
@@ -500,7 +509,8 @@ const assertActiveProductIsComplete = (product) => {
 };
 
 const clearProductListCache = () => {
-  productListCache.clear();
+  // Product responses include price and inventory-derived availability, so
+  // public catalog reads intentionally stay uncached at the API layer.
 };
 
 const getProductDetailResponse = async (product, { includePrivate = false } = {}) => {
@@ -573,27 +583,6 @@ const getProducts = asyncHandler(async (req, res) => {
     defaultLimit: includePrivate ? 50 : 100,
     maxLimit: 100,
   });
-  const cacheKey = JSON.stringify({
-    category: category || "",
-    featured: featured || "",
-    bestSeller: bestSeller || "",
-    newIn: newIn || "",
-    newArrival: newArrival || "",
-    q: q || "",
-    includePrivate,
-    page: paginationParams.page,
-    limit: paginationParams.limit,
-  });
-  const cached = productListCache.get(cacheKey);
-
-  if (cached && Date.now() - cached.timestamp < PRODUCT_LIST_CACHE_TTL) {
-    res.set(
-      "Cache-Control",
-      includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
-    );
-    return sendListResponse(res, req.query, cached.data, cached.pagination);
-  }
-
   const query = {};
   const andConditions = [];
   const featuredFilter = parseBooleanQuery(featured);
@@ -675,16 +664,7 @@ const getProducts = asyncHandler(async (req, res) => {
     includePrivate ? mapAdminProductListItem(product) : mapPublicProductListItem(product)
   );
 
-  productListCache.set(cacheKey, {
-    timestamp: Date.now(),
-    data,
-    pagination,
-  });
-
-  res.set(
-    "Cache-Control",
-    includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
-  );
+  res.set("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   return sendListResponse(res, req.query, data, pagination);
 });
 
@@ -732,10 +712,7 @@ const getProductById = asyncHandler(async (req, res) => {
     throw new AppError("Product not found", 404);
   }
 
-  res.set(
-    "Cache-Control",
-    includePrivate ? "private, no-store" : "public, max-age=60, stale-while-revalidate=300"
-  );
+  res.set("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   return res.json(await getProductDetailResponse(product, { includePrivate }));
 });
 

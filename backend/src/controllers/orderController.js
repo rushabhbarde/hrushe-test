@@ -57,6 +57,44 @@ const allowedStatuses = [
   "Returned",
 ];
 
+const PAYMENT_CONFIRMATION_LOCK_WINDOW_MS = 2 * 60 * 1000;
+
+const activeFulfillmentStatuses = [
+  "Pending",
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Out for delivery",
+  "Delivered",
+];
+
+const PUBLIC_TRACKING_LOOKUP_ERROR = "Order not found or lookup details do not match";
+
+const cancellableStatuses = ["Pending", "Confirmed", "Packed"];
+
+const canTransitionOrderStatus = (currentStatus, nextStatus) => {
+  if (!nextStatus || currentStatus === nextStatus) {
+    return true;
+  }
+
+  if (nextStatus === "Cancelled") {
+    return cancellableStatuses.includes(currentStatus);
+  }
+
+  if (nextStatus === "Returned") {
+    return currentStatus === "Delivered";
+  }
+
+  if (["Cancelled", "Returned", "Delivered"].includes(currentStatus)) {
+    return false;
+  }
+
+  const currentIndex = activeFulfillmentStatuses.indexOf(currentStatus);
+  const nextIndex = activeFulfillmentStatuses.indexOf(nextStatus);
+
+  return currentIndex >= 0 && nextIndex > currentIndex;
+};
+
 const buildTrackingTimeline = (order) => {
   const baseSteps = [
     { key: "placed", label: "Order placed", status: "completed" },
@@ -119,7 +157,38 @@ const buildCustomerOrderProducts = (products = []) =>
     image: item.image || "",
   }));
 
-const buildPublicTrackingResponse = (order) => ({
+const maskEmail = (value = "") => {
+  const [localPart = "", domain = ""] = String(value || "").split("@");
+  if (!localPart || !domain) {
+    return "";
+  }
+  return `${localPart.slice(0, 2)}${localPart.length > 2 ? "***" : "*"}@${domain}`;
+};
+
+const maskPhone = (value = "") => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length < 4) {
+    return "";
+  }
+  return `******${digits.slice(-4)}`;
+};
+
+const maskName = (value = "") => {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return "";
+  }
+  return `${normalized.slice(0, 1)}${normalized.length > 1 ? "***" : ""}`;
+};
+
+const buildPublicShippingAddress = (order) => {
+  const details = order.shippingAddressDetails || {};
+  const locality = [details.city, details.state, details.pincode].filter(Boolean).join(", ");
+
+  return locality || "Delivery address verified for this order.";
+};
+
+const buildCustomerOrderResponse = (order) => ({
   id: order.id || order._id.toString(),
   orderNumber: order.orderNumber || null,
   customerName: order.customerName,
@@ -140,6 +209,19 @@ const buildPublicTrackingResponse = (order) => ({
   updatedAt: order.updatedAt,
   timeline: buildTrackingTimeline(order),
 });
+
+const buildPublicTrackingResponse = (order) => {
+  const response = buildCustomerOrderResponse(order);
+  delete response.shippingAddressDetails;
+
+  return {
+    ...response,
+    customerName: maskName(order.customerName),
+    customerEmail: maskEmail(order.customerEmail),
+    customerPhone: maskPhone(order.customerPhone),
+    shippingAddress: buildPublicShippingAddress(order),
+  };
+};
 
 const cleanShippingText = (value, maxLength = 160) =>
   String(value || "").trim().slice(0, maxLength);
@@ -377,6 +459,10 @@ const markPaymentConfirmationManualReview = (order, source, reason, payload = {}
 
   order.paymentReconciliationResultCode =
     RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+  if (payload.paymentId) {
+    order.paymentProviderPaymentId = payload.paymentId;
+    order.paymentCapturedAt = order.paymentCapturedAt || new Date();
+  }
   recordCheckoutLog(order, "payment_confirmation_manual_review", source, {
     reason,
     resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
@@ -400,6 +486,11 @@ const markPaymentConfirmationManualReview = (order, source, reason, payload = {}
 };
 
 const createReconciliationLockId = () =>
+  typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : crypto.randomBytes(16).toString("hex");
+
+const createPaymentConfirmationLockId = () =>
   typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : crypto.randomBytes(16).toString("hex");
@@ -437,6 +528,88 @@ const buildReconciliationSaveSet = (order) => ({
   paymentReconciliationActorId: order.paymentReconciliationActorId,
   checkoutLogs: order.checkoutLogs,
 });
+
+const buildPaymentConfirmationSaveSet = (order) => ({
+  paymentStatus: order.paymentStatus,
+  orderStatus: order.orderStatus,
+  checkoutUrl: order.checkoutUrl,
+  inventoryReservationStatus: order.inventoryReservationStatus,
+  inventoryReservationExpiresAt: order.inventoryReservationExpiresAt,
+  paymentReconciliationResultCode: order.paymentReconciliationResultCode,
+  paymentProviderPaymentId: order.paymentProviderPaymentId || "",
+  paymentCapturedAt: order.paymentCapturedAt || null,
+  paymentConfirmationStartedAt: null,
+  paymentConfirmationLockId: "",
+  checkoutLogs: order.checkoutLogs,
+});
+
+const acquirePaymentConfirmationLock = async (orderId) => {
+  const lockId = createPaymentConfirmationLockId();
+  const lockCutoff = new Date(Date.now() - PAYMENT_CONFIRMATION_LOCK_WINDOW_MS);
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      paymentStatus: { $ne: "paid" },
+      $or: [
+        { paymentConfirmationStartedAt: null },
+        { paymentConfirmationStartedAt: { $exists: false } },
+        { paymentConfirmationStartedAt: { $lte: lockCutoff } },
+      ],
+    },
+    {
+      $set: {
+        paymentConfirmationStartedAt: new Date(),
+        paymentConfirmationLockId: lockId,
+      },
+    },
+    { new: true }
+  );
+
+  return { order, lockId };
+};
+
+const savePaymentConfirmationResult = async (order, lockId, options = {}) => {
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: order._id,
+      paymentConfirmationLockId: lockId,
+    },
+    { $set: buildPaymentConfirmationSaveSet(order) },
+    {
+      new: true,
+      runValidators: true,
+      ...(options.session ? { session: options.session } : {}),
+    }
+  );
+
+  if (!updatedOrder) {
+    throw new AppError("Payment confirmation lock ownership changed. Please retry.", 409);
+  }
+
+  return updatedOrder;
+};
+
+const clearPaymentConfirmationLock = async (order, lockId) => {
+  if (!lockId) {
+    return order;
+  }
+
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: order._id,
+      paymentConfirmationLockId: lockId,
+    },
+    {
+      $set: {
+        paymentConfirmationStartedAt: null,
+        paymentConfirmationLockId: "",
+      },
+    },
+    { new: true }
+  );
+
+  return updatedOrder || order;
+};
 
 const saveReconciledOrder = async (order, lockId, options = {}) => {
   if (order.paymentReconciliationLockId) {
@@ -583,57 +756,6 @@ const safelySendOrderEmail = async (order, subject, summaryLine) => {
   }
 };
 
-const placeOrder = asyncHandler(async (req, res) => {
-  const { shippingAddress, paymentMethod } = req.body;
-
-  if (!shippingAddress || !paymentMethod) {
-    throw new AppError("Shipping address and payment method are required", 400);
-  }
-
-  const cart = await Cart.findOne({ userId: req.user._id }).populate(
-    "items.productId"
-  );
-
-  if (!cart || cart.items.length === 0) {
-    throw new AppError("Cart is empty", 400);
-  }
-
-  const products = cart.items.map((item) => ({
-    productId: item.productId._id,
-    quantity: item.quantity,
-    size: item.size,
-    color: item.color || "",
-    price: paiseToRupees(getPaiseValue(item.productId, "pricePaise", "price")),
-    pricePaise: getPaiseValue(item.productId, "pricePaise", "price"),
-    name: item.productId.name,
-    image: item.productId.images[0] || "",
-  }));
-
-  const totals = calculateOrderTotals({ items: products });
-  const totalAmount = paiseToRupees(totals.totalPaise);
-
-  const order = await Order.create({
-    userId: req.user._id,
-    products,
-    totalAmount,
-    subtotalPaise: totals.subtotalPaise,
-    discountPaise: totals.discountPaise,
-    shippingPaise: totals.shippingPaise,
-    taxPaise: totals.taxPaise,
-    totalPaise: totals.totalPaise,
-    shippingAddress,
-    customerName: req.user.name,
-    customerEmail: req.user.email,
-    customerPhone: req.user.phone,
-    paymentMethod,
-  });
-
-  cart.items = [];
-  await cart.save();
-
-  return res.status(201).json(order);
-});
-
 const getMyOrders = asyncHandler(async (req, res) => {
   const paginationParams = parsePaginationQuery(req.query, {
     defaultLimit: 50,
@@ -656,7 +778,7 @@ const getMyOrders = asyncHandler(async (req, res) => {
   return sendListResponse(
     res,
     req.query,
-    orders.map(buildPublicTrackingResponse),
+    orders.map(buildCustomerOrderResponse),
     pagination
   );
 });
@@ -681,7 +803,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     throw new AppError("Not authorized to view this order", 403);
   }
 
-  return res.json(isAdmin ? order : buildPublicTrackingResponse(order));
+  return res.json(isAdmin ? order : buildCustomerOrderResponse(order));
 });
 
 const downloadInvoice = asyncHandler(async (req, res) => {
@@ -731,7 +853,7 @@ const trackOrder = asyncHandler(async (req, res) => {
   const order = await findOrderByReference(orderId);
 
   if (!order) {
-    throw new AppError("Order not found", 404);
+    throw new AppError(PUBLIC_TRACKING_LOOKUP_ERROR, 404);
   }
 
   const normalizedEmail = String(email || "")
@@ -746,7 +868,7 @@ const trackOrder = asyncHandler(async (req, res) => {
     normalizedPhone && String(order.customerPhone || "").trim() === normalizedPhone;
 
   if (!matchesEmail && !matchesPhone) {
-    throw new AppError("Order lookup details do not match", 403);
+    throw new AppError(PUBLIC_TRACKING_LOOKUP_ERROR, 404);
   }
 
   return res.json(buildPublicTrackingResponse(order));
@@ -817,6 +939,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new AppError("Order not found", 404);
   }
 
+  if (orderStatus !== undefined && !canTransitionOrderStatus(existingOrder.orderStatus, orderStatus)) {
+    throw new AppError(
+      `Invalid order status transition from ${existingOrder.orderStatus} to ${orderStatus}`,
+      409
+    );
+  }
+
   const paidFulfillmentStatuses = ["Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
   if (
     orderStatus &&
@@ -826,12 +955,23 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new AppError("Unpaid orders cannot enter fulfillment", 409);
   }
 
-  const order = await Order.findByIdAndUpdate(req.params.id, update, {
+  const updateFilter = { _id: req.params.id };
+  if (orderStatus !== undefined) {
+    updateFilter.orderStatus = existingOrder.orderStatus;
+  }
+  if (orderStatus && paidFulfillmentStatuses.includes(orderStatus)) {
+    updateFilter.paymentStatus = "paid";
+  }
+
+  const order = await Order.findOneAndUpdate(updateFilter, update, {
     new: true,
     runValidators: true,
   });
 
   if (!order) {
+    if (orderStatus !== undefined) {
+      throw new AppError("Order status changed while this update was being processed. Please refresh and retry.", 409);
+    }
     throw new AppError("Order not found", 404);
   }
 
@@ -1032,6 +1172,30 @@ const createCheckout = asyncHandler(async (req, res) => {
   });
 });
 
+const getCheckoutPaymentConfig = asyncHandler(async (req, res) => {
+  const keyId = String(env.RAZORPAY_KEY_ID || "");
+  const keyPrefix = keyId.startsWith("rzp_test_")
+    ? "rzp_test_"
+    : keyId.startsWith("rzp_live_")
+      ? "rzp_live_"
+      : keyId
+        ? "unknown"
+        : "";
+  const mode = keyPrefix === "rzp_test_"
+    ? "test"
+    : keyPrefix === "rzp_live_"
+      ? "live"
+      : "unknown";
+
+  return res.json({
+    provider: "razorpay",
+    configured: Boolean(keyId && env.RAZORPAY_KEY_SECRET),
+    keyPrefix,
+    mode,
+    currency: env.RAZORPAY_CURRENCY,
+  });
+});
+
 const verifyCheckout = asyncHandler(async (req, res) => {
   const {
     appOrderId,
@@ -1074,50 +1238,96 @@ const verifyCheckout = asyncHandler(async (req, res) => {
     throw new AppError("Invalid Razorpay payment signature", 400);
   }
 
-  const inventoryBlocker = getPaymentConfirmationInventoryBlocker(order);
+  const { order: lockedOrder, lockId } = await acquirePaymentConfirmationLock(order._id);
+  if (!lockedOrder) {
+    const latestOrder = await Order.findById(order._id);
+    if (latestOrder?.paymentStatus === "paid") {
+      return res.json({
+        success: true,
+        redirectUrl: buildRedirectUrl(
+          "/checkout/success",
+          String(latestOrder.orderNumber || latestOrder._id.toString())
+        ),
+      });
+    }
+    throw new AppError("Payment confirmation is already in progress. Please retry shortly.", 409);
+  }
+
+  const inventoryBlocker = getPaymentConfirmationInventoryBlocker(lockedOrder);
   if (inventoryBlocker) {
-    const error = markPaymentConfirmationManualReview(order, "backend", inventoryBlocker, {
+    const error = markPaymentConfirmationManualReview(lockedOrder, "backend", inventoryBlocker, {
       razorpayOrderId,
       razorpayPaymentId,
+      paymentId: razorpayPaymentId,
     });
-    await order.save();
+    await savePaymentConfirmationResult(lockedOrder, lockId);
     throw error;
   }
 
-  await commitOrderInventory(order);
-  order.paymentStatus = "paid";
-  order.orderStatus = "Confirmed";
-  order.checkoutUrl = "";
-  recordCheckoutLog(order, "razorpay_payment_verified", "backend", {
-    razorpayOrderId,
-    razorpayPaymentId,
-  });
-  await order.save();
-  if (order.userId) {
-    await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+  let confirmedOrder = lockedOrder;
+  try {
+    await runWithOptionalTransaction(async (session) => {
+      await commitOrderInventory(lockedOrder, { session });
+      lockedOrder.paymentStatus = "paid";
+      lockedOrder.orderStatus = "Confirmed";
+      lockedOrder.checkoutUrl = "";
+      lockedOrder.paymentProviderPaymentId = razorpayPaymentId;
+      lockedOrder.paymentCapturedAt = lockedOrder.paymentCapturedAt || new Date();
+      recordCheckoutLog(lockedOrder, "razorpay_payment_verified", "backend", {
+        razorpayOrderId,
+        razorpayPaymentId,
+      });
+      confirmedOrder = await savePaymentConfirmationResult(lockedOrder, lockId, { session });
+    });
+  } catch (error) {
+    if (lockedOrder.paymentStatus === "paid") {
+      lockedOrder.paymentStatus = "initiated";
+    }
+    if (lockedOrder.orderStatus === "Confirmed") {
+      lockedOrder.orderStatus = "Pending";
+    }
+    const reviewError = markPaymentConfirmationManualReview(
+      lockedOrder,
+      "backend",
+      "inventory-commit-failed",
+      {
+        razorpayOrderId,
+        razorpayPaymentId,
+        paymentId: razorpayPaymentId,
+        message: error?.message || "Inventory commit failed",
+      }
+    );
+    await savePaymentConfirmationResult(lockedOrder, lockId).catch(() =>
+      clearPaymentConfirmationLock(lockedOrder, lockId)
+    );
+    throw reviewError;
+  }
+
+  if (confirmedOrder.userId) {
+    await Cart.findOneAndUpdate({ userId: confirmedOrder.userId }, { items: [] });
   }
   await safelySendOrderEmail(
-    order,
+    confirmedOrder,
     "Your HRUSHE order is confirmed",
     "Thank you for shopping with HRUSHE. Your order has been confirmed."
   );
   recordMetric("payment.verified", {
-    orderId: order._id.toString(),
-    checkoutProvider: order.checkoutProvider,
-    amountPaise: getPaiseValue(order, "totalPaise", "totalAmount"),
+    orderId: confirmedOrder._id.toString(),
+    checkoutProvider: confirmedOrder.checkoutProvider,
+    amountPaise: getPaiseValue(confirmedOrder, "totalPaise", "totalAmount"),
   });
   logEvent("payment.verified", {
-    orderId: order._id.toString(),
-    orderNumber: order.orderNumber || null,
-    checkoutProvider: order.checkoutProvider,
-    checkoutSessionId: order.checkoutSessionId,
+    orderId: confirmedOrder._id.toString(),
+    orderNumber: confirmedOrder.orderNumber || null,
+    checkoutProvider: confirmedOrder.checkoutProvider,
+    checkoutSessionId: confirmedOrder.checkoutSessionId,
   });
 
   return res.json({
     success: true,
     redirectUrl: buildRedirectUrl(
       "/checkout/success",
-      String(order.orderNumber || order._id.toString())
+      String(confirmedOrder.orderNumber || confirmedOrder._id.toString())
     ),
   });
 });
@@ -1228,6 +1438,8 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       provider: "razorpay",
       eventId: providerEventId,
       eventType: event,
+      providerOrderId: razorpayOrderId || "",
+      providerPaymentId: paymentEntity?.id || "",
       status: "processing",
     });
   } catch (error) {
@@ -1247,6 +1459,8 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       }
       existingEvent.status = "processing";
       existingEvent.error = "";
+      existingEvent.providerOrderId = razorpayOrderId || existingEvent.providerOrderId || "";
+      existingEvent.providerPaymentId = paymentEntity?.id || existingEvent.providerPaymentId || "";
       await existingEvent.save();
       webhookEvent = existingEvent;
     } else {
@@ -1264,42 +1478,120 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ checkoutSessionId: razorpayOrderId });
 
   if (!order) {
+    webhookEvent.resultCode = "UNKNOWN_RAZORPAY_ORDER";
+    webhookEvent.error = "No local order matched the Razorpay order id.";
     webhookEvent.status = "completed";
     webhookEvent.processedAt = new Date();
     await webhookEvent.save();
+    recordMetric("payment.webhook.unknown_order", {
+      event,
+      providerEventId,
+      providerOrderId: razorpayOrderId,
+      providerPaymentId: paymentEntity?.id || "",
+    });
     return res.json({ received: true });
   }
 
   try {
     if (event === "payment.captured") {
       const expectedAmount = getPaiseValue(order, "totalPaise", "totalAmount");
-      if (
-        Number(paymentEntity?.amount) !== expectedAmount ||
-        String(paymentEntity?.currency || "").toUpperCase() !== env.RAZORPAY_CURRENCY
-      ) {
-        throw new AppError("Webhook payment amount or currency does not match the order", 409);
-      }
-      const inventoryBlocker = getPaymentConfirmationInventoryBlocker(order);
-      if (inventoryBlocker) {
-        markPaymentConfirmationManualReview(order, "webhook", inventoryBlocker, {
+      const receivedAmount = Number(paymentEntity?.amount);
+      const receivedCurrency = String(paymentEntity?.currency || "").toUpperCase();
+      const mismatchResultCode =
+        receivedCurrency !== env.RAZORPAY_CURRENCY
+          ? RECONCILIATION_RESULT_CODES.PAYMENT_CURRENCY_MISMATCH
+          : receivedAmount !== expectedAmount
+            ? RECONCILIATION_RESULT_CODES.PAYMENT_AMOUNT_MISMATCH
+            : "";
+
+      if (mismatchResultCode) {
+        order.paymentProviderPaymentId = paymentEntity?.id || "";
+        order.paymentCapturedAt = order.paymentCapturedAt || new Date();
+        order.paymentReconciliationResultCode = mismatchResultCode;
+        recordCheckoutLog(order, "razorpay_webhook_mismatch", "webhook", {
           event,
           providerEventId,
           paymentId: paymentEntity?.id || "",
+          expectedAmount,
+          receivedAmount,
+          expectedCurrency: env.RAZORPAY_CURRENCY,
+          receivedCurrency,
+          resultCode: mismatchResultCode,
         });
         await order.save();
         webhookEvent.status = "completed";
+        webhookEvent.resultCode = mismatchResultCode;
         webhookEvent.processedAt = new Date();
         await webhookEvent.save();
         recordMetric("payment.webhook.manual_review", {
           event,
           orderId: order._id.toString(),
           checkoutProvider: order.checkoutProvider,
-          reason: inventoryBlocker,
+          reason: mismatchResultCode,
         });
         logEvent("payment.webhook.manual_review", {
           event,
           providerEventId,
           orderId: order._id.toString(),
+          reason: mismatchResultCode,
+        }, "warn");
+        return res.status(202).json({
+          received: true,
+          manualReview: true,
+          reason: mismatchResultCode,
+        });
+      }
+
+      if (order.paymentStatus === "paid") {
+        recordCheckoutLog(order, "razorpay_webhook_received", "webhook", {
+          event,
+          providerEventId,
+          paymentId: paymentEntity?.id || "",
+          paymentStatus: paymentEntity?.status || "",
+          duplicatePaidConfirmation: true,
+        });
+        await order.save();
+        webhookEvent.status = "completed";
+        webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.ALREADY_RECONCILED;
+        webhookEvent.processedAt = new Date();
+        await webhookEvent.save();
+        recordMetric("payment.webhook.processed", {
+          event,
+          status: "completed",
+          orderId: order._id.toString(),
+          checkoutProvider: order.checkoutProvider,
+          duplicatePaidConfirmation: true,
+        });
+        return res.json({ received: true, duplicatePaidConfirmation: true });
+      }
+
+      const { order: lockedOrder, lockId } = await acquirePaymentConfirmationLock(order._id);
+      if (!lockedOrder) {
+        throw new AppError("Payment confirmation is already in progress. Please retry shortly.", 409);
+      }
+
+      const inventoryBlocker = getPaymentConfirmationInventoryBlocker(lockedOrder);
+      if (inventoryBlocker) {
+        markPaymentConfirmationManualReview(lockedOrder, "webhook", inventoryBlocker, {
+          event,
+          providerEventId,
+          paymentId: paymentEntity?.id || "",
+        });
+        await savePaymentConfirmationResult(lockedOrder, lockId);
+        webhookEvent.status = "completed";
+        webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+        webhookEvent.processedAt = new Date();
+        await webhookEvent.save();
+        recordMetric("payment.webhook.manual_review", {
+          event,
+          orderId: lockedOrder._id.toString(),
+          checkoutProvider: lockedOrder.checkoutProvider,
+          reason: inventoryBlocker,
+        });
+        logEvent("payment.webhook.manual_review", {
+          event,
+          providerEventId,
+          orderId: lockedOrder._id.toString(),
           reason: inventoryBlocker,
         }, "warn");
         return res.status(202).json({
@@ -1308,12 +1600,84 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
           reason: inventoryBlocker,
         });
       }
-      await commitOrderInventory(order);
-      order.paymentStatus = "paid";
-      order.orderStatus = "Confirmed";
-      if (order.userId) {
-        await Cart.findOneAndUpdate({ userId: order.userId }, { items: [] });
+
+      let confirmedOrder = lockedOrder;
+      try {
+        await runWithOptionalTransaction(async (session) => {
+          await commitOrderInventory(lockedOrder, { session });
+          lockedOrder.paymentStatus = "paid";
+          lockedOrder.orderStatus = "Confirmed";
+          lockedOrder.checkoutUrl = "";
+          lockedOrder.paymentProviderPaymentId = paymentEntity?.id || "";
+          lockedOrder.paymentCapturedAt = lockedOrder.paymentCapturedAt || new Date();
+          recordCheckoutLog(lockedOrder, "razorpay_webhook_received", "webhook", {
+            event,
+            providerEventId,
+            paymentId: paymentEntity?.id || "",
+            paymentStatus: paymentEntity?.status || "",
+          });
+          confirmedOrder = await savePaymentConfirmationResult(lockedOrder, lockId, { session });
+        });
+      } catch (error) {
+        if (lockedOrder.paymentStatus === "paid") {
+          lockedOrder.paymentStatus = "initiated";
+        }
+        if (lockedOrder.orderStatus === "Confirmed") {
+          lockedOrder.orderStatus = "Pending";
+        }
+        markPaymentConfirmationManualReview(
+          lockedOrder,
+          "webhook",
+          "inventory-commit-failed",
+          {
+            event,
+            providerEventId,
+            paymentId: paymentEntity?.id || "",
+            message: error?.message || "Inventory commit failed",
+          }
+        );
+        await savePaymentConfirmationResult(lockedOrder, lockId).catch(() =>
+          clearPaymentConfirmationLock(lockedOrder, lockId)
+        );
+        webhookEvent.status = "completed";
+        webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+        webhookEvent.processedAt = new Date();
+        await webhookEvent.save();
+        recordMetric("payment.webhook.manual_review", {
+          event,
+          orderId: lockedOrder._id.toString(),
+          checkoutProvider: lockedOrder.checkoutProvider,
+          reason: "inventory-commit-failed",
+        });
+        return res.status(202).json({
+          received: true,
+          manualReview: true,
+          reason: "inventory-commit-failed",
+        });
       }
+
+      if (confirmedOrder.userId) {
+        await Cart.findOneAndUpdate({ userId: confirmedOrder.userId }, { items: [] });
+      }
+
+      webhookEvent.status = "completed";
+      webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED;
+      webhookEvent.processedAt = new Date();
+      await webhookEvent.save();
+      recordMetric("payment.webhook.processed", {
+        event,
+        status: "completed",
+        orderId: confirmedOrder._id.toString(),
+        checkoutProvider: confirmedOrder.checkoutProvider,
+      });
+      logEvent("payment.webhook.processed", {
+        event,
+        providerEventId,
+        orderId: confirmedOrder._id.toString(),
+        paymentStatus: confirmedOrder.paymentStatus,
+        orderStatus: confirmedOrder.orderStatus,
+      });
+      return res.json({ received: true });
     } else if (event === "payment.failed" && order.paymentStatus !== "paid") {
       await releaseOrderInventory(order);
       order.paymentStatus = "failed";
@@ -1327,6 +1691,9 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
     });
     await order.save();
     webhookEvent.status = "completed";
+    webhookEvent.resultCode = event === "payment.failed"
+      ? RECONCILIATION_RESULT_CODES.PAYMENT_FAILED_RESERVATION_RELEASED
+      : "";
     webhookEvent.processedAt = new Date();
     await webhookEvent.save();
     recordMetric("payment.webhook.processed", {
@@ -1876,27 +2243,32 @@ const reorderOrder = asyncHandler(async (req, res) => {
     cart = await Cart.create({ userId: req.user._id, items: [] });
   }
 
-  for (const product of order.products) {
-    const existingItem = cart.items.find(
-      (item) =>
-        getCartItemProductId(item) === product.productId.toString() &&
-        item.size === (product.size || "") &&
-        item.color === (product.color || "") &&
-        item.fit === (product.fit || "")
-    );
+  const currentItems = cart.items
+    .filter((item) => item.productId)
+    .map((item) => ({
+      productId: getCartItemProductId(item),
+      quantity: item.quantity,
+      size: item.size || "",
+      color: item.color || "",
+      fit: item.fit || "",
+    }));
+  // Reorders must use current catalog and inventory state, not stale order snapshots.
+  const reorderItems = order.products.map((product) => ({
+    productId: product.productId?.toString?.() || String(product.productId || ""),
+    quantity: product.quantity,
+    size: product.size || "",
+    color: product.color || "",
+    fit: product.fit || "",
+  }));
+  const resolvedItems = await resolveCheckoutItems([...currentItems, ...reorderItems]);
 
-    if (existingItem) {
-      existingItem.quantity += product.quantity;
-    } else {
-      cart.items.push({
-        productId: product.productId,
-        quantity: product.quantity,
-        size: product.size || "",
-        color: product.color || "",
-        fit: product.fit || "",
-      });
-    }
-  }
+  cart.items = resolvedItems.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    size: item.size,
+    color: item.color,
+    fit: item.fit,
+  }));
 
   await cart.save();
   await cart.populate("items.productId");
@@ -1918,7 +2290,6 @@ const reorderOrder = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  placeOrder,
   getMyOrders,
   getOrderById,
   downloadInvoice,
@@ -1926,6 +2297,7 @@ module.exports = {
   getAllOrders,
   updateOrderStatus,
   createCheckout,
+  getCheckoutPaymentConfig,
   verifyCheckout,
   failCheckout,
   cancelCheckout,
@@ -1939,10 +2311,15 @@ module.exports = {
     RECONCILIATION_RESULT_CODES,
     assertReconciliationLockOwner,
     buildReconciliationFilter,
+    buildPaymentConfirmationSaveSet,
     buildReconciliationSaveSet,
+    buildPublicTrackingResponse,
+    canTransitionOrderStatus,
+    clearPaymentConfirmationLock,
     getPaymentConfirmationInventoryBlocker,
     reconcileOrderForAdmin,
     saveReconciledOrder,
+    savePaymentConfirmationResult,
     selectRazorpayPaymentForOrder,
     setReconciliationResult,
     summarizeRazorpayPayment,

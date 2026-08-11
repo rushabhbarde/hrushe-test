@@ -147,6 +147,8 @@ function assertProductionEnv() {
 
   const required = {
     CLIENT_URL: process.env.CLIENT_URL,
+    BACKEND_PUBLIC_URL: process.env.BACKEND_PUBLIC_URL,
+    ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
     MONGODB_URI: process.env.MONGODB_URI,
     JWT_SECRET: process.env.JWT_SECRET,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
@@ -167,6 +169,27 @@ function assertProductionEnv() {
 
   if (missing.length > 0) {
     throw new Error(`Missing required production configuration: ${missing.join(", ")}`);
+  }
+
+  const hasPlaceholderValue = (value) =>
+    /(?:your-|choose-a-random|changeme|change-me|placeholder|example|development-secret|test-secret|redacted)/i.test(
+      String(value || "")
+    );
+  const placeholderKeys = Object.entries({
+    JWT_SECRET: env.JWT_SECRET,
+    ADMIN_PASSWORD: env.ADMIN_PASSWORD,
+    RAZORPAY_KEY_ID: env.RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET: env.RAZORPAY_KEY_SECRET,
+    RAZORPAY_WEBHOOK_SECRET: env.RAZORPAY_WEBHOOK_SECRET,
+    INTERNAL_SCHEDULER_SECRET: env.INTERNAL_SCHEDULER_SECRET,
+    R2_ACCESS_KEY_ID: env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: env.R2_SECRET_ACCESS_KEY,
+  })
+    .filter(([, value]) => hasPlaceholderValue(value))
+    .map(([key]) => key);
+
+  if (placeholderKeys.length > 0) {
+    throw new Error(`Production configuration contains placeholder values: ${placeholderKeys.join(", ")}`);
   }
 
   if (env.JWT_SECRET === "development-secret" || env.JWT_SECRET.length < 32) {
@@ -219,15 +242,51 @@ function assertProductionEnv() {
     throw new Error("OTP_DEV_MODE must be disabled in production.");
   }
 
-  let clientUrl;
-  try {
-    clientUrl = new URL(env.CLIENT_URL);
-  } catch {
-    throw new Error("CLIENT_URL must be a valid HTTPS URL in production.");
+  if (env.ENABLE_COD) {
+    throw new Error("ENABLE_COD must remain disabled in production. The legacy COD path has been retired.");
   }
 
-  if (clientUrl.protocol !== "https:") {
-    throw new Error("CLIENT_URL must use HTTPS in production.");
+  if (!env.RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
+    throw new Error("RAZORPAY_KEY_ID must use Razorpay live mode when APP_ENV=production.");
+  }
+
+  if (env.INTERNAL_SCHEDULER_SECRET.length < 32) {
+    throw new Error("INTERNAL_SCHEDULER_SECRET must be at least 32 characters in production.");
+  }
+
+  if (env.RAZORPAY_WEBHOOK_SECRET.length < 32) {
+    throw new Error("RAZORPAY_WEBHOOK_SECRET must be at least 32 characters in production.");
+  }
+
+  let clientUrl;
+  let backendUrl;
+  let mediaUrl;
+  try {
+    clientUrl = new URL(env.CLIENT_URL);
+    backendUrl = new URL(env.BACKEND_PUBLIC_URL);
+    mediaUrl = new URL(env.R2_PUBLIC_URL);
+  } catch {
+    throw new Error("CLIENT_URL, BACKEND_PUBLIC_URL, and R2_PUBLIC_URL must be valid URLs in production.");
+  }
+
+  if ([clientUrl, backendUrl, mediaUrl].some((url) => url.protocol !== "https:")) {
+    throw new Error("CLIENT_URL, BACKEND_PUBLIC_URL, and R2_PUBLIC_URL must use HTTPS in production.");
+  }
+
+  const unsafeOrigin = env.ALLOWED_ORIGINS.find((origin) => {
+    if (origin === "*") {
+      return true;
+    }
+    try {
+      const url = new URL(origin);
+      return url.protocol !== "https:" || ["localhost", "127.0.0.1", "0.0.0.0"].includes(url.hostname);
+    } catch {
+      return true;
+    }
+  });
+
+  if (unsafeOrigin) {
+    throw new Error("ALLOWED_ORIGINS must contain only explicit HTTPS production origins.");
   }
 }
 

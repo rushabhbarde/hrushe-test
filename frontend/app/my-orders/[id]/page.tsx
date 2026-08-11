@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AccountGuard } from "@/components/account-guard";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +14,7 @@ import { useToast } from "@/components/toast-provider";
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { refreshCart } = useCart();
   const { pushToast } = useToast();
   const [order, setOrder] = useState<OrderRecord | null>(null);
@@ -66,7 +67,7 @@ export default function OrderDetailPage() {
       });
       await refreshCart();
       pushToast("Items added to cart");
-      window.location.href = "/cart";
+      router.push("/cart");
     } catch (reorderError) {
       setError(
         reorderError instanceof Error ? reorderError.message : "Could not reorder this order."

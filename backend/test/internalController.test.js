@@ -7,6 +7,7 @@ const {
   SCHEDULER_REPLAY_WINDOW_MS,
   buildSchedulerSignature,
   runInternalInventoryCleanup,
+  runInternalMonitoringTestAlert,
   verifySchedulerRequest,
 } = require("../src/controllers/internalController");
 
@@ -124,4 +125,17 @@ test("internal inventory cleanup rejects invalid scheduler authentication", asyn
   const { nextError } = await callController(runInternalInventoryCleanup, req);
 
   assert.match(nextError?.message, /invalid scheduler signature/i);
+});
+
+test("internal monitoring test alert requires signed scheduler authentication", async () => {
+  env.INTERNAL_SCHEDULER_SECRET = "scheduler-secret";
+  const now = Date.now();
+  const req = buildSignedRequest({ now, body: { reason: "controlled-test" } });
+
+  const { res, nextError } = await callController(runInternalMonitoringTestAlert, req);
+
+  assert.ifError(nextError);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.status, "emitted");
+  assert.match(res.body.alertId, /.+/);
 });

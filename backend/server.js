@@ -17,6 +17,7 @@ const supportRoutes = require("./src/routes/supportRoutes");
 const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const mediaRoutes = require("./src/routes/mediaRoutes");
 const internalRoutes = require("./src/routes/internalRoutes");
+const { createCorsOptions } = require("./src/middleware/corsMiddleware");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { createRateLimiter } = require("./src/middleware/rateLimitMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
@@ -37,48 +38,7 @@ const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/internal/reconciliation/scan") ||
   req.originalUrl?.startsWith("/internal/inventory/cleanup");
 
-const isAllowedDevOrigin = (origin) => {
-  if (env.NODE_ENV === "production") {
-    return false;
-  }
-
-  try {
-    const { hostname, protocol } = new URL(origin);
-    return (
-      protocol.startsWith("http") &&
-      (
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        hostname === "::1" ||
-        hostname === "0.0.0.0" ||
-        hostname.endsWith(".local")
-      )
-    );
-  } catch {
-    return false;
-  }
-};
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (env.ALLOWED_ORIGINS.includes(origin) || isAllowedDevOrigin(origin)) {
-        return callback(null, true);
-      }
-
-      if (env.NODE_ENV !== "production") {
-        return callback(null, true);
-      }
-
-      return callback(new Error("CORS origin not allowed"));
-    },
-    credentials: true,
-  })
-);
+app.use(cors(createCorsOptions(env)));
 app.use((req, res, next) => {
   res.set("X-Content-Type-Options", "nosniff");
   res.set("X-Frame-Options", "DENY");
@@ -94,18 +54,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/healthz", (req, res) => {
+const sendHealthResponse = (req, res) => {
   res.json({ status: "ok" });
-});
+};
 
-app.get("/readyz", (req, res) => {
+const sendReadinessResponse = (req, res) => {
   const mongoReady = mongoose.connection.readyState === 1;
 
   res.status(mongoReady ? 200 : 503).json({
     status: mongoReady ? "ready" : "not-ready",
     mongo: mongoReady ? "connected" : "not-connected",
   });
-});
+};
+
+app.get("/health", sendHealthResponse);
+app.get("/healthz", sendHealthResponse);
+app.get("/ready", sendReadinessResponse);
+app.get("/readyz", sendReadinessResponse);
 
 app.use(createRateLimiter({ name: "api", max: 600, windowMs: 15 * 60 * 1000 }));
 app.use(
