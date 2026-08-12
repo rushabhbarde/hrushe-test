@@ -1,25 +1,27 @@
 # HRUSHE Launch Day Certification
 
 Date: 2026-08-12
-Time IST: 15:09:14 IST
+Time IST: 15:24:38 IST
 Primary URL: https://hrushe.in
 Branch verified locally: release/hrushe-prelaunch
-Release commit verified locally: 5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9
+Current branch commit verified locally: eff1e2276c576a1abb07462036001247729d5bdb
+Application release commit: 5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9
 
 ## Launch Status
 
 NO-GO
 
-The exact blocker preventing launch is: the actual production surface at `https://hrushe.in` is still serving an older frontend/backend deployment for launch-critical checkout infrastructure. The latest release commit is built as a Vercel preview, but it has not been promoted to the production domain, and the backend still lacks required deployed routes.
+The exact blocker preventing launch is now backend-only: the Vercel frontend production deployment was promoted and the live CSP is fixed, but the Render-backed API behind `https://hrushe.in/api/backend` is still serving older behavior for launch-critical checkout infrastructure. The live backend still lacks required deployed routes and still returns an uncontrolled 500 for a bad CORS origin.
 
 ## Release Identity
 
 | Item | Evidence |
 | --- | --- |
 | Local branch | `release/hrushe-prelaunch` |
-| Local release commit | `5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9` |
-| Vercel production deployment | `dpl_Gfu8fpJNeTsjotDkKQvHLYUdjNkG`, production target, commit `1cd4b57a0f17736ea7cb44e13ba3126b4e01694a`, created 2026-08-04 14:09:54 IST |
-| Latest Vercel release deployment | `dpl_DYNtUWbxQqJtY6jw9o54n8DMftWF`, READY preview, commit `5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9`, created 2026-08-12 15:04:26 IST |
+| Current local branch commit | `eff1e2276c576a1abb07462036001247729d5bdb` |
+| Application release commit | `5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9` |
+| Vercel production deployment | `dpl_2r3g1LjmfoRNJY6Sv4ipY9jFK3o7`, READY production target, commit `eff1e2276c576a1abb07462036001247729d5bdb`, promoted from preview `dpl_68bCgYcAXy2s1tsKAdrNGVFXjyBZ` |
+| Previous Vercel production deployment | `dpl_Gfu8fpJNeTsjotDkKQvHLYUdjNkG`, production target, commit `1cd4b57a0f17736ea7cb44e13ba3126b4e01694a` |
 | Production URL | `https://hrushe.in` |
 | Backend deployment/version | Not directly detectable from headers; live backend behavior matches older code. Render request headers were present on API responses. |
 
@@ -39,7 +41,7 @@ The exact blocker preventing launch is: the actual production surface at `https:
 
 | System | Status | Evidence |
 | --- | --- | --- |
-| Frontend | FAIL | Production domain still serves older CSP and older production Vercel deployment. Latest release exists only as protected preview. |
+| Frontend | PASS | Production domain now serves promoted Vercel deployment `dpl_2r3g1LjmfoRNJY6Sv4ipY9jFK3o7`; live CSP includes Razorpay CDN and Cloudflare analytics hosts. |
 | Backend | FAIL | Live routes `/order/checkout/razorpay-mode` and `/internal/inventory/cleanup` return 404. |
 | Database | NOT VERIFIED | `/readyz` returns `mongo: connected`; production data consistency audit was not available through hosted env. |
 | Auth | PARTIAL | Signup/login pages render; invalid login UI automation could not complete due selector mismatch, but unauth protected APIs return 401. |
@@ -53,7 +55,7 @@ The exact blocker preventing launch is: the actual production surface at `https:
 | Scheduler | FAIL | `/api/backend/internal/inventory/cleanup` returns 404 on production. |
 | Track Order privacy | PASS | Invalid lookup returns generic safe error; no private data observed. |
 | CORS | FAIL | Unapproved `Origin` against `/api/backend/healthz` returns 500, not controlled 403. Legitimate origin returns 200. |
-| CSP | FAIL | Production blocks Cloudflare analytics; browser smoke also showed Razorpay risk script blocked. Local fix committed for `cdn.razorpay.com`. |
+| CSP | PASS | Production header now includes `https://cdn.razorpay.com`, `https://static.cloudflareinsights.com`, and `https://cloudflareinsights.com`. |
 | Cookies | PARTIAL | Security headers observed; auth cookie attributes were not fully verified without safe account login. |
 | Email | NOT VERIFIED | No safe production/staging recipient/provider access used. |
 | Media/R2 | PASS | Product primary and gallery media objects return 200 image responses with immutable cache headers. |
@@ -68,18 +70,15 @@ Known browser findings:
 
 - Homepage `/shop` link click timed out in automation, though direct `/shop` loads and product links are present.
 - Invalid login automation did not complete due selector mismatch; login page itself renders.
-- CSP blocked `https://static.cloudflareinsights.com/...`.
-- CSP blocked Razorpay risk detection from `https://cdn.razorpay.com/...`; fixed locally in commit `5da6977`, but not live.
+- Earlier CSP blocks for Cloudflare analytics and Razorpay risk detection were addressed by the Vercel production promotion; browser console was not re-run after promotion.
 
 ## Issues Found Today
 
 | Severity | Issue | Evidence |
 | --- | --- | --- |
-| P1 | Production deployment mismatch | Vercel production target remains `dpl_Gfu8fpJNeTsjotDkKQvHLYUdjNkG` at commit `1cd4b57`; latest release `5da6977` is READY preview only. |
 | P1 | Hosted CORS regression still live | Bad origin to `/api/backend/healthz` returns 500 with generic internal error. |
 | P1 | Scheduler route unavailable live | `/api/backend/internal/inventory/cleanup` returns 404. |
 | P1 | Razorpay mode route unavailable live | `/api/backend/order/checkout/razorpay-mode` returns 404, so test/live mode cannot be certified. |
-| P1 | CSP still blocks required scripts live | Cloudflare analytics and Razorpay risk-detection script blocked by current production CSP. |
 | P1 | Payment integrity not proven live | No successful/failed/retry/cancel/duplicate webhook test could be safely run without verified test mode. |
 
 ## Fixes Made Today
@@ -88,6 +87,7 @@ Known browser findings:
 - Added `https://cdn.razorpay.com` to frontend `script-src`.
 - Added `frontend/lib/csp-headers.test.ts` to assert required trusted Razorpay and Cloudflare CSP hosts.
 - Committed and pushed fix `5da6977dcc1a44f8e79414e88278fd6fd5e0f7f9`.
+- Promoted Vercel preview `dpl_68bCgYcAXy2s1tsKAdrNGVFXjyBZ` to production as `dpl_2r3g1LjmfoRNJY6Sv4ipY9jFK3o7`.
 
 ## Final Launch Matrix
 
@@ -98,7 +98,7 @@ Known browser findings:
 | Frontend tests | PASS | 32/32 passed. |
 | Build | PASS | Next production build passed. |
 | Dependency audit | PASS | Backend/frontend high audit found 0 vulnerabilities. |
-| Production deployment | FAIL | Production domain still points at older Vercel production deployment and older backend behavior. |
+| Production deployment | FAIL | Frontend is promoted and current; backend behavior is still older and launch-blocking. |
 | Homepage | PASS | 200, renders, no broken images/overflow in browser smoke. |
 | Shop | PASS | 200, six products, product links present. |
 | PDP | PASS | Product detail renders with price, gallery, sizes, returns, size guide, add to bag. |
@@ -107,7 +107,7 @@ Known browser findings:
 | Admin auth | PASS | Admin UI/API gated unauthenticated. |
 | Track Order privacy | PASS | Invalid lookup generic and private-data-free. |
 | CORS | FAIL | Bad origin returns 500. |
-| CSP | FAIL | Live CSP blocks required scripts. |
+| CSP | PASS | Live CSP includes Razorpay CDN and Cloudflare analytics hosts. |
 | Backend health | PASS | `/healthz` 200; `/readyz` 200 with Mongo connected. |
 | Scheduler | FAIL | Hosted route 404. |
 | Razorpay mode | FAIL | Hosted mode route 404. |
@@ -136,4 +136,4 @@ Known browser findings:
 
 NO-GO
 
-The exact blocker preventing launch is: `https://hrushe.in` has not been promoted/deployed to the verified release commit, and the live backend still lacks launch-critical scheduler and Razorpay mode routes, leaving payment, inventory cleanup, CORS, and CSP unproven for real customers.
+The exact blocker preventing launch is: the Vercel frontend has been promoted, but the live Render-backed API still lacks launch-critical Razorpay mode and scheduler routes and still fails the bad-origin CORS probe. Payment mode, payment integrity, inventory cleanup, and hosted backend behavior therefore remain unproven for real customers.
