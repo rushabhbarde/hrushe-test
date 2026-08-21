@@ -453,18 +453,58 @@ const getValidCompareAtPrice = (product) =>
 
 const mapPublicProductListItem = (product) => ({
   id: product._id.toString(),
+  name: correctLegacyText(product.name),
   slug: correctLegacySlug(product.slug),
   displayName: correctLegacyText(product.name),
   colour: correctLegacyText(product.colors?.[0] || ""),
+  description: product.description || "",
+  category: product.category || "",
+  categories: Array.isArray(product.categories) ? product.categories : [],
+  colors: Array.isArray(product.colors) ? product.colors.map(correctLegacyText) : [],
+  sizes: Array.isArray(product.sizes) ? product.sizes : [],
   price: paiseToRupees(getPaiseValue(product, "pricePaise", "price")),
   pricePaise: getPaiseValue(product, "pricePaise", "price"),
   ...(getValidCompareAtPrice(product) ? { compareAtPrice: getValidCompareAtPrice(product) } : {}),
   thumbnailUrl: (product.images || []).find(isUsableMediaUrl) || "",
+  images: (product.images || []).filter(isUsableMediaUrl),
+  galleryImages: (product.galleryImages || []).filter(isUsableMediaUrl),
+  videos: (product.videos || [])
+    .filter((video) => isUsableMediaUrl(video?.url))
+    .map((video) => ({
+      ...video,
+      posterUrl: isUsableMediaUrl(video.posterUrl) ? video.posterUrl : "",
+    })),
   availability: getAvailability(product),
+  status: product.status || (getAvailability(product) === "sold-out" ? "Sold Out" : "Active"),
+  fitType: product.fitType || "",
+  gender: product.gender || "Unisex",
+  collectionLabels: Array.isArray(product.collectionLabels) ? product.collectionLabels : [],
+  trackInventory: Boolean(product.trackInventory),
+  variants: (product.variants || []).map((variant) => ({
+    size: variant.size,
+    color: variant.color,
+    fit: variant.fit || "",
+    stock: variant.active !== false && Number(variant.stock) > 0 ? 1 : 0,
+    active: variant.active !== false,
+  })),
+  fabric: product.fabric || "",
+  gsm: product.gsm || "",
+  cottonType: product.cottonType || "",
+  feel: product.feel || "",
+  weight: product.weight || "",
+  washCare: product.washCare || "",
+  qualityNote: product.qualityNote || "",
+  fitNote: product.fitNote || "",
+  modelHeight: product.modelHeight || "",
+  modelWornSize: product.modelWornSize || "",
+  returnEligible: product.returnEligible === true,
+  sizeGuide: Array.isArray(product.sizeGuide) ? product.sizeGuide : [],
   featured: Boolean(product.featured),
   bestSeller: Boolean(product.bestSeller),
   newIn: Boolean(product.newIn),
   newArrival: Boolean(product.newArrival),
+  createdAt: product.createdAt,
+  updatedAt: product.updatedAt,
 });
 
 const mapAdminProductListItem = (product) => ({
@@ -726,7 +766,7 @@ const createProduct = asyncHandler(async (req, res) => {
     type: "product",
     id: product._id,
   }, { price: product.price, status: product.status });
-  return res.status(201).json(product);
+  return res.status(201).json(await getProductDetailResponse(product, { includePrivate: true }));
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
@@ -765,7 +805,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  return res.json(product);
+  return res.json(await getProductDetailResponse(product, { includePrivate: true }));
 });
 
 const addProductReview = asyncHandler(async (req, res) => {

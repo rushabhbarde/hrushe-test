@@ -13,6 +13,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
+import { resolveCheckoutSuccessPath } from "@/lib/checkout-redirect";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getRazorpayLaunchBlocker } from "@/lib/razorpay-readiness";
 
@@ -225,6 +226,7 @@ export default function CheckoutPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [verifiedSuccessUrl, setVerifiedSuccessUrl] = useState("");
   const [razorpayReady, setRazorpayReady] = useState(
     () => typeof window !== "undefined" && Boolean(window.Razorpay)
   );
@@ -424,8 +426,13 @@ export default function CheckoutPage() {
             );
 
             pushToast("Payment successful");
-            const redirectUrl = new URL(verification.redirectUrl, window.location.origin);
-            router.push(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`);
+            const successPath = resolveCheckoutSuccessPath(
+              verification.redirectUrl,
+              window.location.origin,
+              response.orderId
+            );
+            setVerifiedSuccessUrl(successPath);
+            window.location.assign(successPath);
           } catch (verificationError) {
             const message =
               verificationError instanceof Error
@@ -631,13 +638,27 @@ export default function CheckoutPage() {
                       </div>
                     ) : null}
 
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {submitting ? "Opening..." : "Pay securely"}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {submitting
+                          ? verifiedSuccessUrl
+                            ? "Redirecting..."
+                            : "Opening..."
+                          : "Pay securely"}
+                      </button>
+                      {verifiedSuccessUrl ? (
+                        <Link
+                          href={verifiedSuccessUrl}
+                          className="button-secondary inline-flex min-h-12 items-center rounded-full px-5 text-xs font-semibold uppercase tracking-[0.12em]"
+                        >
+                          Continue to confirmation
+                        </Link>
+                      ) : null}
+                    </div>
                   </form>
                 </section>
 

@@ -152,7 +152,7 @@ export function ProductQuickAdd({
     variant === "icon" && !selectingSize ? "hidden md:flex" : "flex";
   const buttonClassName =
     variant === "icon"
-      ? "flex h-9 w-9 items-center justify-center bg-transparent text-[var(--foreground)] drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)] transition duration-200 hover:bg-white/40 hover:backdrop-blur-md disabled:opacity-60"
+      ? "flex h-9 w-9 items-center justify-center bg-transparent text-[var(--foreground)] drop-shadow-[0_1px_1px_rgba(255,255,255,0.95)] transition duration-200 hover:bg-transparent disabled:opacity-60"
       : "min-h-11 w-full translate-y-2 border border-black/10 bg-[var(--surface)] px-4 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100";
   const sizeButtonClassName =
     variant === "icon"

@@ -21,6 +21,10 @@ type BannerCache = {
   timestamp: number;
 };
 
+const PRODUCT_CACHE_TTL = 15_000;
+const STOREFRONT_PRODUCTS_CHANGED_EVENT = "hrushe_storefront_products_changed";
+const STOREFRONT_PRODUCTS_CHANGED_STORAGE_KEY = "hrushe_storefront_products_changed_at";
+
 let productCache: ProductCache | null = null;
 let productRequest: Promise<ProductCache> | null = null;
 let adminProductCache: ProductCache | null = null;
@@ -62,7 +66,62 @@ function mergeProductsWithDefaults(products: Product[]) {
   }));
 }
 
-async function fetchProducts(admin = false) {
+function getCachedProducts(admin: boolean) {
+  const cachedProducts = admin ? adminProductCache : productCache;
+
+  if (!cachedProducts) {
+    return null;
+  }
+
+  if (Date.now() - cachedProducts.timestamp > PRODUCT_CACHE_TTL) {
+    if (admin) {
+      adminProductCache = null;
+    } else {
+      productCache = null;
+    }
+    return null;
+  }
+
+  return cachedProducts;
+}
+
+function normalizeFetchedProduct(product: Product) {
+  return mergeProductsWithDefaults([product])[0];
+}
+
+function invalidateProductCaches() {
+  productCache = null;
+  productRequest = null;
+  adminProductCache = null;
+  adminProductRequest = null;
+}
+
+function notifyStorefrontProductsChanged() {
+  invalidateProductCaches();
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(STOREFRONT_PRODUCTS_CHANGED_EVENT));
+
+  try {
+    window.localStorage.setItem(
+      STOREFRONT_PRODUCTS_CHANGED_STORAGE_KEY,
+      String(Date.now())
+    );
+  } catch {
+    // Cross-tab refresh is best effort; the in-tab event already fired.
+  }
+}
+
+async function fetchProducts(admin = false, { force = false } = {}) {
+  const cachedProducts = force ? null : getCachedProducts(admin);
+
+  if (cachedProducts) {
+    return cachedProducts;
+  }
+
   const pendingRequest = admin ? adminProductRequest : productRequest;
 
   if (!pendingRequest) {
@@ -112,7 +171,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
 
   useEffect(() => {
     let active = true;
-    const cachedProducts = admin ? adminProductCache : productCache;
+    const cachedProducts = getCachedProducts(admin);
 
     if (cachedProducts) {
       queueMicrotask(() => {
@@ -127,7 +186,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
 
     const load = async () => {
       try {
-        const data = await fetchProducts(admin);
+        const data = await fetchProducts(admin, { force: true });
 
         if (!active) {
           return;
@@ -146,11 +205,23 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
         }
       }
     };
+    const handleProductsChanged = () => {
+      void load();
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STOREFRONT_PRODUCTS_CHANGED_STORAGE_KEY) {
+        void load();
+      }
+    };
 
     void load();
+    window.addEventListener(STOREFRONT_PRODUCTS_CHANGED_EVENT, handleProductsChanged);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
       active = false;
+      window.removeEventListener(STOREFRONT_PRODUCTS_CHANGED_EVENT, handleProductsChanged);
+      window.removeEventListener("storage", handleStorage);
     };
   }, [admin]);
 
@@ -160,11 +231,11 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
   );
 
   const addProduct = async (product: Product) => {
-    const created = await apiRequest<Product>("/products", {
+    const created = normalizeFetchedProduct(await apiRequest<Product>("/products", {
       method: "POST",
       body: JSON.stringify(product),
       headers: getAdminAuthHeaders(),
-    });
+    }));
 
     setProducts((current) => {
       const next = [created, ...current];
@@ -176,16 +247,16 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
-    productCache = null;
+    notifyStorefrontProductsChanged();
     return created;
   };
 
   const updateProduct = async (productId: string, product: Product) => {
-    const updated = await apiRequest<Product>(`/products/${productId}`, {
+    const updated = normalizeFetchedProduct(await apiRequest<Product>(`/products/${productId}`, {
       method: "PUT",
       body: JSON.stringify(product),
       headers: getAdminAuthHeaders(),
-    });
+    }));
 
     setProducts((current) => {
       const next = current.map((item) => (item.id === productId ? updated : item));
@@ -197,7 +268,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
-    productCache = null;
+    notifyStorefrontProductsChanged();
 
     return updated;
   };
@@ -218,17 +289,17 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
-    productCache = null;
+    notifyStorefrontProductsChanged();
   };
 
   const addProductReview = async (
     productId: string,
     review: ProductReviewPayload
   ) => {
-    const updated = await apiRequest<Product>(`/products/${productId}/reviews`, {
+    const updated = normalizeFetchedProduct(await apiRequest<Product>(`/products/${productId}/reviews`, {
       method: "POST",
       body: JSON.stringify(review),
-    });
+    }));
 
     setProducts((current) => {
       const next = current.map((item) => (item.id === productId ? updated : item));
@@ -237,6 +308,7 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
       else productCache = nextCache;
       return next;
     });
+    notifyStorefrontProductsChanged();
     return updated;
   };
 
