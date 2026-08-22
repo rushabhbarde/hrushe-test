@@ -18,15 +18,19 @@ export default function AddProductPage() {
 
   const handleSubmit = async ({ product, meta }: AdminProductFormSubmit) => {
     const created = await addProduct(product);
-    await saveWorkspace({
+    await saveWorkspace(() => ({
       productMeta: {
-        ...workspace.productMeta,
         [created.id]: {
           ...meta,
           productId: created.id,
+          status: created.status || meta.status,
+          fitType: created.fitType || meta.fitType,
+          gender: created.gender || meta.gender,
+          collectionLabels: created.collectionLabels || meta.collectionLabels,
+          galleryImages: created.galleryImages || meta.galleryImages,
         },
       },
-    });
+    }));
     router.push("/admin/products");
   };
 

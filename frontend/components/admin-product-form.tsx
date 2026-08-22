@@ -123,7 +123,7 @@ function buildInitialState(
     sizes: product?.sizes || [],
     fitType: meta?.fitType || product?.fitType || "Regular",
     gender: meta?.gender || product?.gender || "Unisex",
-    status: meta?.status || product?.status || "Draft",
+    status: meta?.status || product?.status || "Active",
     collectionLabels: meta?.collectionLabels || product?.collectionLabels || [],
     trackInventory: product?.trackInventory || false,
     variants: product?.variants || [],

@@ -119,15 +119,15 @@ export default function AdminProductsPage() {
       status: "Draft",
     });
 
-    await saveWorkspace({
+    await saveWorkspace(() => ({
       productMeta: {
-        ...workspace.productMeta,
         [duplicate.id]: {
           ...meta,
           productId: duplicate.id,
+          status: duplicate.status || "Draft",
         },
       },
-    });
+    }));
 
     pushToast("Product duplicated.");
   }
@@ -138,19 +138,35 @@ export default function AdminProductsPage() {
     }
 
     try {
-      const nextMeta = { ...workspace.productMeta };
+      const nextMeta: NonNullable<Parameters<typeof saveWorkspace>[0]> = (current) => ({
+        productMeta: Object.fromEntries(
+          selectedIds
+            .map((productId) => {
+              const product = products.find((item) => item.id === productId);
+              if (!product) {
+                return null;
+              }
+
+              return [
+                productId,
+                {
+                  ...resolveProductAdminMeta(current, product),
+                  productId,
+                  status: bulkStatus,
+                },
+              ] as const;
+            })
+            .filter((entry): entry is readonly [string, ReturnType<typeof resolveProductAdminMeta>] => Boolean(entry))
+        ),
+      });
+
       for (const productId of selectedIds) {
         const product = products.find((item) => item.id === productId);
         if (!product) continue;
         await updateProduct(productId, { ...product, status: bulkStatus });
-        nextMeta[productId] = {
-          ...resolveProductAdminMeta(workspace, product),
-          productId,
-          status: bulkStatus,
-        };
       }
 
-      await saveWorkspace({ productMeta: nextMeta });
+      await saveWorkspace(nextMeta);
       pushToast(`Updated ${selectedIds.length} product${selectedIds.length > 1 ? "s" : ""}.`);
       setSelectedIds([]);
     } catch (error) {
@@ -166,7 +182,7 @@ export default function AdminProductsPage() {
         throw new Error("Bulk upload expects a JSON array of product objects.");
       }
 
-      const nextMeta = { ...workspace.productMeta };
+      const nextProductMeta: Record<string, ReturnType<typeof resolveProductAdminMeta>> = {};
 
       for (const entry of parsed) {
         const created = await addProduct({
@@ -204,7 +220,7 @@ export default function AdminProductsPage() {
           accent: "#111111",
         });
 
-        nextMeta[created.id] = {
+        nextProductMeta[created.id] = {
           productId: created.id,
           status: entry.status || "Draft",
           fitType: entry.fitType || "Regular",
@@ -214,7 +230,7 @@ export default function AdminProductsPage() {
         };
       }
 
-      await saveWorkspace({ productMeta: nextMeta });
+      await saveWorkspace(() => ({ productMeta: nextProductMeta }));
       setBulkUploadOpen(false);
       setBulkUploadText("");
       pushToast("Bulk upload completed.");
@@ -414,9 +430,12 @@ export default function AdminProductsPage() {
             return;
           }
           void deleteProduct(deleteTarget.id).then(async () => {
-            const nextMeta = { ...workspace.productMeta };
-            delete nextMeta[deleteTarget.id];
-            await saveWorkspace({ productMeta: nextMeta });
+            await saveWorkspace((current) => {
+              const nextMeta = { ...current.productMeta };
+              delete nextMeta[deleteTarget.id];
+
+              return { productMeta: nextMeta };
+            });
             setDeleteTarget(null);
             pushToast("Product deleted.");
           });
