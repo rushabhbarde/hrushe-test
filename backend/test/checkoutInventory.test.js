@@ -69,7 +69,7 @@ test("checkout resolution uses current product pricing and canonical options", a
   Product.find = async () => [
     {
       _id: { toString: () => productId },
-      name: "Current Price Tee",
+      name: "test current price tee",
       status: "Active",
       price: 1499,
       pricePaise: 149900,
@@ -107,6 +107,33 @@ test("checkout resolution uses current product pricing and canonical options", a
   assert.equal(item.size, "M");
   assert.equal(item.color, "Black");
   assert.equal(item.sku, "HRU-CURRENT-M-BLK");
+});
+
+test("checkout resolution rejects non-active products from stale carts", async (t) => {
+  const originalFind = Product.find;
+  t.after(() => {
+    Product.find = originalFind;
+  });
+
+  Product.find = async () => [
+    {
+      _id: { toString: () => productId },
+      name: "test hidden tee",
+      status: "hidden",
+      price: 1499,
+      pricePaise: 149900,
+      sizes: ["M"],
+      colors: ["Black"],
+      images: ["https://example.com/current.jpg"],
+      trackInventory: false,
+      variants: [],
+    },
+  ];
+
+  await assert.rejects(
+    () => resolveCheckoutItems([{ productId, quantity: 1, size: "M", color: "Black" }]),
+    /no longer available/i
+  );
 });
 
 test("checkout resolution rejects removed options and insufficient current stock", async (t) => {

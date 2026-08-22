@@ -36,7 +36,7 @@ const callController = async (handler, req, res = buildResponse()) => {
   return { res, nextError };
 };
 
-function buildContent(version = 2) {
+function buildContent(version = 2, adminWorkspace = {}) {
   return {
     _id: "site-content-id",
     homepageBanner: { toObject: () => ({}) },
@@ -44,6 +44,7 @@ function buildContent(version = 2) {
       websiteSettings: {
         brandName: "HRUSHE",
       },
+      ...adminWorkspace,
     },
     adminWorkspaceVersion: version,
     save: async () => {},
@@ -144,6 +145,70 @@ test("stale admin workspace writes return a conflict response", async (t) => {
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.error, "CONTENT_VERSION_CONFLICT");
   assert.equal(res.body.currentVersion, 5);
+});
+
+test("stale product metadata writes merge into the latest workspace", async (t) => {
+  installSiteContentStubs(t);
+
+  let attempt = 0;
+  const latestWorkspace = {
+    productMeta: {
+      existing: {
+        productId: "existing",
+        status: "Active",
+        fitType: "Regular",
+        gender: "Unisex",
+        collectionLabels: [],
+        galleryImages: [],
+      },
+    },
+  };
+  SiteContent.findOne = async () => buildContent(5, latestWorkspace);
+  SiteContent.findOneAndUpdate = async (query, update) => {
+    attempt += 1;
+    assert.equal(query.key, "main");
+    if (attempt === 1) {
+      assert.equal(query.adminWorkspaceVersion, 4);
+      return null;
+    }
+
+    assert.equal(query.adminWorkspaceVersion, 5);
+    return {
+      _id: "site-content-id",
+      adminWorkspaceVersion: 6,
+      adminWorkspace: update.$set.adminWorkspace,
+    };
+  };
+
+  const { res, nextError } = await callController(updateAdminWorkspace, {
+    user: {
+      _id: "admin-id",
+      email: "admin@example.com",
+      role: "admin",
+      adminRole: "super-admin",
+    },
+    body: {
+      version: 4,
+      productMeta: {
+        created: {
+          productId: "created",
+          status: "Active",
+          fitType: "Regular",
+          gender: "Unisex",
+          collectionLabels: [],
+          galleryImages: [],
+        },
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.version, 6);
+  assert.equal(res.body.productMeta.existing.status, "Active");
+  assert.equal(res.body.productMeta.created.status, "Active");
 });
 
 test("homepage publish blocks visible sections with missing media", async (t) => {

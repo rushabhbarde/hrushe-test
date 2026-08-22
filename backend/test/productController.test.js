@@ -170,45 +170,49 @@ test("public product listing responses do not cache price or availability", asyn
 test("public product listing includes storefront fields updated by admin", async (t) => {
   installModelStubs(t);
 
-  Product.find = () => ({
-    sort: () => ({
-      skip: () => ({
-        limit: () => ({
-          lean: async () => [
-            {
-              _id: { toString: () => "507f1f77bcf86cd799439011" },
-              name: "Updated Tee",
-              slug: "updated-tee",
-              description: "Updated product detail copy",
-              price: 1299,
-              pricePaise: 129900,
-              category: "T-Shirts",
-              categories: ["T-Shirts"],
-              colors: ["Black"],
-              sizes: ["M"],
-              images: ["https://example.com/updated.jpg"],
-              galleryImages: ["https://example.com/gallery.jpg"],
-              videos: [{ id: "fit", title: "Fit", url: "https://example.com/fit.mp4" }],
-              status: "Active",
-              fitType: "Regular",
-              gender: "Unisex",
-              collectionLabels: ["Featured"],
-              trackInventory: true,
-              variants: [{ size: "M", color: "Black", fit: "Regular", stock: 8, reserved: 2, active: true }],
-              fabric: "Cotton",
-              gsm: "240 GSM",
-              washCare: "Cold wash",
-              returnEligible: true,
-              sizeGuide: [{ size: "M", chest: "40", length: "27", shoulder: "18", sleeve: "8" }],
-              featured: true,
-              createdAt: new Date("2026-08-20T00:00:00.000Z"),
-              updatedAt: new Date("2026-08-20T00:00:00.000Z"),
-            },
-          ],
+  let listingQuery;
+  Product.find = (query) => {
+    listingQuery = query;
+    return {
+      sort: () => ({
+        skip: () => ({
+          limit: () => ({
+            lean: async () => [
+              {
+                _id: { toString: () => "507f1f77bcf86cd799439011" },
+                name: "test test test",
+                slug: "updated-tee",
+                description: "Updated product detail copy",
+                price: 1299,
+                pricePaise: 129900,
+                category: "T-Shirts",
+                categories: ["T-Shirts"],
+                colors: ["Black"],
+                sizes: ["M"],
+                images: ["https://example.com/updated.jpg"],
+                galleryImages: ["https://example.com/gallery.jpg"],
+                videos: [{ id: "fit", title: "Fit", url: "https://example.com/fit.mp4" }],
+                status: "Active",
+                fitType: "Regular",
+                gender: "Unisex",
+                collectionLabels: ["Featured"],
+                trackInventory: true,
+                variants: [{ size: "M", color: "Black", fit: "Regular", stock: 8, reserved: 2, active: true }],
+                fabric: "Cotton",
+                gsm: "240 GSM",
+                washCare: "Cold wash",
+                returnEligible: true,
+                sizeGuide: [{ size: "M", chest: "40", length: "27", shoulder: "18", sleeve: "8" }],
+                featured: true,
+                createdAt: new Date("2026-08-20T00:00:00.000Z"),
+                updatedAt: new Date("2026-08-20T00:00:00.000Z"),
+              },
+            ],
+          }),
         }),
       }),
-    }),
-  });
+    };
+  };
   Product.countDocuments = async () => 1;
 
   const { res, nextError } = await callController(getProducts, {
@@ -218,7 +222,15 @@ test("public product listing includes storefront fields updated by admin", async
   });
 
   assert.ifError(nextError);
-  assert.equal(res.body[0].name, "Updated Tee");
+  const hasNameFilter = (value) => {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+    return Object.prototype.hasOwnProperty.call(value, "name") ||
+      Object.values(value).some(hasNameFilter);
+  };
+  assert.equal(hasNameFilter(listingQuery), false);
+  assert.equal(res.body[0].name, "test test test");
   assert.equal(res.body[0].description, "Updated product detail copy");
   assert.deepEqual(res.body[0].categories, ["T-Shirts"]);
   assert.deepEqual(res.body[0].colors, ["Black"]);

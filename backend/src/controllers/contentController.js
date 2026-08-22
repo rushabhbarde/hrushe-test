@@ -482,6 +482,13 @@ const adminWorkspacePermissionByKey = {
   shipping: "shipping.manage",
 };
 
+const staleVersionMergeableWorkspaceKeys = new Set([
+  "productMeta",
+  "orderMeta",
+  "customerMeta",
+  "reviewModeration",
+]);
+
 function assertCanUpdateAdminWorkspace(user, patch = {}) {
   Object.keys(patch).forEach((key) => {
     const permission = adminWorkspacePermissionByKey[key] || "settings.manage";
@@ -490,6 +497,15 @@ function assertCanUpdateAdminWorkspace(user, patch = {}) {
       throw new AppError(`Missing permission: ${permission}`, 403);
     }
   });
+}
+
+function canMergeStaleWorkspacePatch(patch = {}) {
+  const keys = Object.keys(patch);
+
+  return (
+    keys.length > 0 &&
+    keys.every((key) => staleVersionMergeableWorkspaceKeys.has(key))
+  );
 }
 
 function normalizeHomepageBanner(homepageBanner) {
@@ -725,15 +741,16 @@ const updateAdminWorkspace = asyncHandler(async (req, res) => {
     assertWebsiteSettingsAreValid(patch.websiteSettings);
   }
 
-  const content = await getSiteContent();
-  const currentWorkspace =
+  let content = await getSiteContent();
+  let previousVersion = content.adminWorkspaceVersion || 1;
+  let nextWorkspace = mergePlainObjects(
     content.adminWorkspace && typeof content.adminWorkspace === "object"
       ? content.adminWorkspace
-      : {};
-  const previousVersion = content.adminWorkspaceVersion || 1;
-  const nextWorkspace = mergePlainObjects(currentWorkspace, patch);
-  const nextVersion = previousVersion + 1;
-  const updatedContent = await SiteContent.findOneAndUpdate(
+      : {},
+    patch
+  );
+  let nextVersion = previousVersion + 1;
+  let updatedContent = await SiteContent.findOneAndUpdate(
     { key: "main", adminWorkspaceVersion: submittedVersion },
     {
       $set: { adminWorkspace: nextWorkspace },
@@ -741,6 +758,26 @@ const updateAdminWorkspace = asyncHandler(async (req, res) => {
     },
     { new: true, runValidators: true }
   );
+
+  if (!updatedContent && canMergeStaleWorkspacePatch(patch)) {
+    content = await getSiteContent();
+    previousVersion = content.adminWorkspaceVersion || 1;
+    nextWorkspace = mergePlainObjects(
+      content.adminWorkspace && typeof content.adminWorkspace === "object"
+        ? content.adminWorkspace
+        : {},
+      patch
+    );
+    nextVersion = previousVersion + 1;
+    updatedContent = await SiteContent.findOneAndUpdate(
+      { key: "main", adminWorkspaceVersion: previousVersion },
+      {
+        $set: { adminWorkspace: nextWorkspace },
+        $inc: { adminWorkspaceVersion: 1 },
+      },
+      { new: true, runValidators: true }
+    );
+  }
 
   if (!updatedContent) {
     const freshContent = await getSiteContent();

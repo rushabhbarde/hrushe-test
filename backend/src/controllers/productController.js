@@ -275,7 +275,6 @@ const canViewUnpublishedProducts = (req) =>
 
 const publicProductConditions = [
   { $or: [{ status: { $in: ["Active", "active"] } }, { status: { $exists: false } }] },
-  { name: { $not: /^test(?:\s|$)/i } },
 ];
 
 const normalizeProductPayload = (

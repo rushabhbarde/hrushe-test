@@ -88,9 +88,16 @@ const findCanonicalOption = (options, selected, label, productName) => {
   return matched;
 };
 
-const isPubliclyPurchasable = (product) =>
-  !["Draft", "Hidden", "Sold Out"].includes(product.status) &&
-  !/^test(?:\s|$)/i.test(product.name || "");
+const normalizePublicStatus = (status) =>
+  String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+const isPubliclyPurchasable = (product) => {
+  const status = normalizePublicStatus(product.status);
+  return !status || status === "active";
+};
 
 const findMatchingVariant = (product, selection) =>
   (product.variants || []).find(
