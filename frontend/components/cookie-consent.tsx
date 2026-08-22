@@ -214,7 +214,7 @@ export function CookieConsentBanner() {
       aria-label="Cookie consent"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] px-3 pb-3 sm:px-4 sm:pb-4"
     >
-      <div className="pointer-events-auto mx-auto grid w-full max-w-[1120px] gap-4 border border-white/15 bg-[#11110f] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-[#f6f4ef] sm:px-5 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+      <div className="pointer-events-auto mx-auto grid w-full max-w-[1120px] gap-4 border border-white/15 bg-black px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-white sm:px-5 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="max-w-3xl">
           <p className="eyebrow text-white/50">Your privacy</p>
           <p className="mt-2 text-sm leading-6 text-white/75">
@@ -255,7 +255,7 @@ export function CookieConsentBanner() {
             onClick={() =>
               commitConsent({ analytics: true, marketing: true })
             }
-            className="flex min-h-11 items-center justify-center bg-[#f6f4ef] px-5 text-center hover:bg-white focus-visible:outline-white/70"
+            className="flex min-h-11 items-center justify-center bg-white px-5 text-center hover:bg-white/90 focus-visible:outline-white/70"
           >
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
               Accept all

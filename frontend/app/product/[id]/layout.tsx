@@ -34,7 +34,7 @@ function getMetadataImage(product: Product) {
 
 const getProduct = cache(async (id: string) => {
   const response = await fetch(`${BACKEND_API_URL}/products/${encodeURIComponent(id)}`, {
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
 
   if (!response.ok) {

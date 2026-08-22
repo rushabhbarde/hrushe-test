@@ -74,16 +74,20 @@ export default function EditProductPage() {
       return;
     }
 
-    await updateProduct(product.id, nextProduct);
-    await saveWorkspace({
+    const updated = await updateProduct(product.id, nextProduct);
+    await saveWorkspace(() => ({
       productMeta: {
-        ...workspace.productMeta,
         [product.id]: {
           ...meta,
           productId: product.id,
+          status: updated.status || meta.status,
+          fitType: updated.fitType || meta.fitType,
+          gender: updated.gender || meta.gender,
+          collectionLabels: updated.collectionLabels || meta.collectionLabels,
+          galleryImages: updated.galleryImages || meta.galleryImages,
         },
       },
-    });
+    }));
     router.push("/admin/products");
   };
 

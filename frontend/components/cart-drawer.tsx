@@ -39,7 +39,7 @@ export function CartDrawer() {
   const total = subtotal;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[115]">
       <button
         type="button"
         aria-label="Close cart drawer"
@@ -51,9 +51,9 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className="absolute right-0 top-0 flex h-full w-full max-w-[34rem] flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-[0_0_50px_rgba(0,0,0,0.16)]"
+        className="absolute right-0 top-0 flex h-[100dvh] w-full max-w-[34rem] flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-[0_0_50px_rgba(0,0,0,0.16)]"
       >
-        <header className="shrink-0 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
+          <header className="shrink-0 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
@@ -129,7 +129,7 @@ export function CartDrawer() {
                 {items.map((item) => (
                   <article
                     key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-                    className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-4 py-5 sm:grid-cols-[7.5rem_minmax(0,1fr)]"
+                    className="grid grid-cols-[5.85rem_minmax(0,1fr)] items-start gap-3 py-5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4"
                   >
                     <Link
                       href={`/product/${item.productId}`}
@@ -154,7 +154,7 @@ export function CartDrawer() {
                         <div className="min-w-0">
                           <Link
                             href={`/product/${item.productId}`}
-                            className="block text-sm font-semibold uppercase leading-5 transition hover:text-[var(--accent)]"
+                            className="line-clamp-2 block text-sm font-semibold uppercase leading-5 transition hover:text-[var(--accent)]"
                           >
                             {item.name}
                           </Link>
@@ -236,7 +236,7 @@ export function CartDrawer() {
         </div>
 
         {isReady && items.length > 0 ? (
-          <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] px-4 py-4 sm:px-6 sm:py-5">
+          <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[var(--muted)]">Subtotal</span>

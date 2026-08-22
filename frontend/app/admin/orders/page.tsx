@@ -17,12 +17,20 @@ import { orderStatuses } from "@/lib/orders";
 import { useAdminData } from "@/lib/use-admin-data";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
+function getInitialSearchParam(name: string) {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return new URLSearchParams(window.location.search).get(name) || "";
+}
+
 export default function AdminOrdersPage() {
   const { orders } = useAdminData();
   const { workspace } = useAdminWorkspace();
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [query, setQuery] = useState(() => getInitialSearchParam("query"));
+  const [statusFilter, setStatusFilter] = useState(() => getInitialSearchParam("status") || "all");
+  const [paymentFilter, setPaymentFilter] = useState(() => getInitialSearchParam("payment") || "all");
 
   const filteredOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -171,4 +179,3 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
     </AdminPanel>
   );
 }
-

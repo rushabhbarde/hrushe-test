@@ -6,8 +6,10 @@ auditLog.recordAuditLog = async () => {};
 
 const Product = require("../src/models/Product");
 const Order = require("../src/models/Order");
+const productRoutes = require("../src/routes/productRoutes");
 const {
   deleteProduct,
+  getProducts,
   restoreProduct,
   permanentlyDeleteProduct,
   __private: { normalizeProductPayload, normalizeProductVariants },
@@ -16,6 +18,11 @@ const {
 const buildResponse = () => ({
   statusCode: 200,
   body: null,
+  headers: {},
+  set(key, value) {
+    this.headers[key.toLowerCase()] = value;
+    return this;
+  },
   status(statusCode) {
     this.statusCode = statusCode;
     return this;
@@ -37,14 +44,37 @@ const callController = async (handler, req, res = buildResponse()) => {
 const installModelStubs = (t) => {
   const originals = {
     productFindOne: Product.findOne,
+    productFind: Product.find,
+    productCountDocuments: Product.countDocuments,
     orderExists: Order.exists,
   };
 
   t.after(() => {
     Product.findOne = originals.productFindOne;
+    Product.find = originals.productFind;
+    Product.countDocuments = originals.productCountDocuments;
     Order.exists = originals.orderExists;
   });
 };
+
+test("admin review moderation route requires CSRF protection", () => {
+  const reviewModerationRoute = productRoutes.stack.find(
+    (layer) =>
+      layer.route?.path === "/:id/reviews/:reviewId" &&
+      layer.route?.methods?.put
+  );
+  const middlewareNames = reviewModerationRoute?.route?.stack.map(
+    (layer) => layer.handle.name
+  );
+
+  assert.ok(reviewModerationRoute);
+  assert.deepEqual(middlewareNames, [
+    "protect",
+    "requireCsrf",
+    "",
+    "",
+  ]);
+});
 
 test("admin product updates preserve existing reserved inventory by SKU", () => {
   const payload = normalizeProductPayload(
@@ -112,6 +142,106 @@ test("decimal stock values are rejected", () => {
   );
 });
 
+test("public product listing responses do not cache price or availability", async (t) => {
+  installModelStubs(t);
+
+  Product.find = () => ({
+    sort: () => ({
+      skip: () => ({
+        limit: () => ({
+          lean: async () => [],
+        }),
+      }),
+    }),
+  });
+  Product.countDocuments = async () => 0;
+
+  const { res, nextError } = await callController(getProducts, {
+    query: {},
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.headers["cache-control"], "private, no-store, max-age=0, must-revalidate");
+  assert.deepEqual(res.body, []);
+});
+
+test("public product listing includes storefront fields updated by admin", async (t) => {
+  installModelStubs(t);
+
+  let listingQuery;
+  Product.find = (query) => {
+    listingQuery = query;
+    return {
+      sort: () => ({
+        skip: () => ({
+          limit: () => ({
+            lean: async () => [
+              {
+                _id: { toString: () => "507f1f77bcf86cd799439011" },
+                name: "test test test",
+                slug: "updated-tee",
+                description: "Updated product detail copy",
+                price: 1299,
+                pricePaise: 129900,
+                category: "T-Shirts",
+                categories: ["T-Shirts"],
+                colors: ["Black"],
+                sizes: ["M"],
+                images: ["https://example.com/updated.jpg"],
+                galleryImages: ["https://example.com/gallery.jpg"],
+                videos: [{ id: "fit", title: "Fit", url: "https://example.com/fit.mp4" }],
+                status: "Active",
+                fitType: "Regular",
+                gender: "Unisex",
+                collectionLabels: ["Featured"],
+                trackInventory: true,
+                variants: [{ size: "M", color: "Black", fit: "Regular", stock: 8, reserved: 2, active: true }],
+                fabric: "Cotton",
+                gsm: "240 GSM",
+                washCare: "Cold wash",
+                returnEligible: true,
+                sizeGuide: [{ size: "M", chest: "40", length: "27", shoulder: "18", sleeve: "8" }],
+                featured: true,
+                createdAt: new Date("2026-08-20T00:00:00.000Z"),
+                updatedAt: new Date("2026-08-20T00:00:00.000Z"),
+              },
+            ],
+          }),
+        }),
+      }),
+    };
+  };
+  Product.countDocuments = async () => 1;
+
+  const { res, nextError } = await callController(getProducts, {
+    query: {},
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  const hasNameFilter = (value) => {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+    return Object.prototype.hasOwnProperty.call(value, "name") ||
+      Object.values(value).some(hasNameFilter);
+  };
+  assert.equal(hasNameFilter(listingQuery), false);
+  assert.equal(res.body[0].name, "test test test");
+  assert.equal(res.body[0].description, "Updated product detail copy");
+  assert.deepEqual(res.body[0].categories, ["T-Shirts"]);
+  assert.deepEqual(res.body[0].colors, ["Black"]);
+  assert.equal(res.body[0].images[0], "https://example.com/updated.jpg");
+  assert.equal(res.body[0].galleryImages[0], "https://example.com/gallery.jpg");
+  assert.equal(res.body[0].variants[0].stock, 1);
+  assert.equal(res.body[0].variants[0].reserved, undefined);
+  assert.equal(res.body[0].fabric, "Cotton");
+  assert.equal(res.body[0].returnEligible, true);
+});
+
 test("variants with active reservations cannot be removed or renamed", () => {
   assert.throws(
     () =>
@@ -141,6 +271,40 @@ test("variants with active reservations cannot be removed or renamed", () => {
         }
       ),
     /active reserved inventory/i
+  );
+});
+
+test("variants with active reservations cannot be deactivated", () => {
+  assert.throws(
+    () =>
+      normalizeProductPayload(
+        {
+          variants: [
+            {
+              sku: "HRU-RESERVED-SKU",
+              size: "M",
+              color: "White",
+              stock: 5,
+              active: false,
+            },
+          ],
+        },
+        {
+          partial: true,
+          preserveReserved: true,
+          existingVariants: [
+            {
+              sku: "HRU-RESERVED-SKU",
+              size: "M",
+              color: "White",
+              stock: 0,
+              reserved: 1,
+              active: true,
+            },
+          ],
+        }
+      ),
+    /reserved inventory cannot be deactivated/i
   );
 });
 

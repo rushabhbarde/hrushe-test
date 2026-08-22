@@ -216,7 +216,7 @@ export default function CollectionPage() {
   const { products, loading } = useStorefrontData();
   const [activeCategory, setActiveCategory] = useState("all");
   const [sort, setSort] = useState<SortOption>("edit");
-  const [layout, setLayout] = useState<CollectionLayout>("runway");
+  const [layout, setLayout] = useState<CollectionLayout>("matrix");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const collectionSlug = params.slug || "";
   const isGenderCollection = collectionSlug === "men" || collectionSlug === "women";

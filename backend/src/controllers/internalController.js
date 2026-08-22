@@ -4,8 +4,12 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { logEvent } = require("../utils/logger");
 const { recordMetric } = require("../utils/metrics");
+const { captureError } = require("../utils/errorMonitoring");
 const { markReconciliationScan } = require("../utils/operationsState");
 const { scanStuckOrders } = require("../services/reconciliationScanner");
+const {
+  cleanupExpiredInventoryReservations,
+} = require("../services/checkoutInventory");
 
 const SCHEDULER_REPLAY_WINDOW_MS = 5 * 60 * 1000;
 
@@ -61,7 +65,16 @@ function verifySchedulerRequest(req, now = Date.now()) {
 }
 
 const runInternalReconciliationScan = asyncHandler(async (req, res) => {
-  verifySchedulerRequest(req);
+  logEvent("internal.reconciliation_scan.requested", {});
+  try {
+    verifySchedulerRequest(req);
+  } catch (error) {
+    logEvent("internal.reconciliation_scan.authentication_rejected", {
+      message: error?.message,
+      statusCode: error?.statusCode || 500,
+    }, "warn");
+    throw error;
+  }
 
   const startedAt = Date.now();
   const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
@@ -93,9 +106,105 @@ const runInternalReconciliationScan = asyncHandler(async (req, res) => {
   });
 });
 
+const runInternalInventoryCleanup = asyncHandler(async (req, res) => {
+  logEvent("internal.inventory_cleanup.scan_requested", {});
+  try {
+    verifySchedulerRequest(req);
+  } catch (error) {
+    logEvent("internal.inventory_cleanup.authentication_rejected", {
+      message: error?.message,
+      statusCode: error?.statusCode || 500,
+    }, "warn");
+    throw error;
+  }
+
+  const startedAt = Date.now();
+  const limit = Math.min(Math.max(Number(req.body?.limit) || 50, 1), 100);
+  logEvent("internal.inventory_cleanup.scan_started", { limit });
+
+  try {
+    const result = await cleanupExpiredInventoryReservations({
+      limit,
+      source: "internal-scheduler",
+    });
+    const durationMs = Date.now() - startedAt;
+
+    if (result.lockContended) {
+      logEvent("internal.inventory_cleanup.lock_contention", { limit }, "warn");
+    }
+
+    recordMetric("internal.inventory_cleanup.completed", {
+      ordersInspected: result.ordersInspected,
+      reservationsReleased: result.reservationsReleased,
+      reservationsPreserved: result.reservationsPreserved,
+      manualReviewCases: result.manualReviewCases,
+      failedReleases: result.failedReleases,
+      lockContended: result.lockContended,
+      durationMs,
+    });
+    logEvent("internal.inventory_cleanup.scan_completed", {
+      ordersInspected: result.ordersInspected,
+      reservationsReleased: result.reservationsReleased,
+      reservationsPreserved: result.reservationsPreserved,
+      manualReviewCases: result.manualReviewCases,
+      failedReleases: result.failedReleases,
+      lockContended: result.lockContended,
+      durationMs,
+    });
+
+    return res.status(result.lockContended ? 202 : 200).json({
+      ...result,
+      durationMs,
+    });
+  } catch (error) {
+    logEvent("internal.inventory_cleanup.scan_error", {
+      message: error?.message,
+      code: error?.code || "",
+    }, "error");
+    throw error;
+  }
+});
+
+const runInternalMonitoringTestAlert = asyncHandler(async (req, res) => {
+  logEvent("internal.monitoring_test_alert.requested", {});
+  try {
+    verifySchedulerRequest(req);
+  } catch (error) {
+    logEvent("internal.monitoring_test_alert.authentication_rejected", {
+      message: error?.message,
+      statusCode: error?.statusCode || 500,
+    }, "warn");
+    throw error;
+  }
+
+  const alertId =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : crypto.randomBytes(16).toString("hex");
+  const error = new AppError("Controlled HRUSHE monitoring test alert", 500);
+
+  recordMetric("monitoring.test_alert", {
+    alertId,
+    source: "internal-scheduler",
+  });
+  captureError(error, {
+    component: "monitoring",
+    operation: "test-alert",
+    alertId,
+  });
+  logEvent("internal.monitoring_test_alert.emitted", { alertId }, "warn");
+
+  return res.json({
+    status: "emitted",
+    alertId,
+  });
+});
+
 module.exports = {
   SCHEDULER_REPLAY_WINDOW_MS,
   buildSchedulerSignature,
+  runInternalInventoryCleanup,
+  runInternalMonitoringTestAlert,
   runInternalReconciliationScan,
   safeCompareStrings,
   verifySchedulerRequest,

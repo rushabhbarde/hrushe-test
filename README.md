@@ -170,7 +170,11 @@ createdAt
 
 ### Orders
 
-- `POST /order/place`
+- `POST /order/checkout`
+- `GET /order/checkout/razorpay-mode`
+- `POST /order/checkout/verify`
+- `POST /order/checkout/webhook/razorpay`
+- `POST /order/track`
 - `GET /order/myorders`
 - `GET /order/all` admin only
 - `PUT /order/status/:id` admin only

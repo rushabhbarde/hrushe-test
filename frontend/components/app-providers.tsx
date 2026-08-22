@@ -41,7 +41,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
                 {children}
                 <CartDrawer />
                 <WishlistDrawer />
-                {pathname === "/" ? null : <SupportChatbot />}
+                <SupportChatbot />
                 <ConsentControlledTracking />
                 <CookieConsentBanner />
               </CartProvider>

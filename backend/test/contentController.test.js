@@ -36,7 +36,7 @@ const callController = async (handler, req, res = buildResponse()) => {
   return { res, nextError };
 };
 
-function buildContent(version = 2) {
+function buildContent(version = 2, adminWorkspace = {}) {
   return {
     _id: "site-content-id",
     homepageBanner: { toObject: () => ({}) },
@@ -44,6 +44,7 @@ function buildContent(version = 2) {
       websiteSettings: {
         brandName: "HRUSHE",
       },
+      ...adminWorkspace,
     },
     adminWorkspaceVersion: version,
     save: async () => {},
@@ -144,4 +145,188 @@ test("stale admin workspace writes return a conflict response", async (t) => {
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.error, "CONTENT_VERSION_CONFLICT");
   assert.equal(res.body.currentVersion, 5);
+});
+
+test("stale product metadata writes merge into the latest workspace", async (t) => {
+  installSiteContentStubs(t);
+
+  let attempt = 0;
+  const latestWorkspace = {
+    productMeta: {
+      existing: {
+        productId: "existing",
+        status: "Active",
+        fitType: "Regular",
+        gender: "Unisex",
+        collectionLabels: [],
+        galleryImages: [],
+      },
+    },
+  };
+  SiteContent.findOne = async () => buildContent(5, latestWorkspace);
+  SiteContent.findOneAndUpdate = async (query, update) => {
+    attempt += 1;
+    assert.equal(query.key, "main");
+    if (attempt === 1) {
+      assert.equal(query.adminWorkspaceVersion, 4);
+      return null;
+    }
+
+    assert.equal(query.adminWorkspaceVersion, 5);
+    return {
+      _id: "site-content-id",
+      adminWorkspaceVersion: 6,
+      adminWorkspace: update.$set.adminWorkspace,
+    };
+  };
+
+  const { res, nextError } = await callController(updateAdminWorkspace, {
+    user: {
+      _id: "admin-id",
+      email: "admin@example.com",
+      role: "admin",
+      adminRole: "super-admin",
+    },
+    body: {
+      version: 4,
+      productMeta: {
+        created: {
+          productId: "created",
+          status: "Active",
+          fitType: "Regular",
+          gender: "Unisex",
+          collectionLabels: [],
+          galleryImages: [],
+        },
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.version, 6);
+  assert.equal(res.body.productMeta.existing.status, "Active");
+  assert.equal(res.body.productMeta.created.status, "Active");
+});
+
+test("homepage publish blocks visible sections with missing media", async (t) => {
+  installSiteContentStubs(t);
+  SiteContent.findOne = async () => buildContent(2);
+  SiteContent.findOneAndUpdate = async () => {
+    throw new Error("publish should not reach persistence");
+  };
+
+  const { nextError } = await callController(updateAdminWorkspace, {
+    user: {
+      _id: "admin-id",
+      email: "admin@example.com",
+      role: "admin",
+      adminRole: "super-admin",
+    },
+    body: {
+      version: 2,
+      homeManagement: {
+        lastPublishedAt: new Date().toISOString(),
+        sections: [
+          {
+            id: "women-hero",
+            audience: "women",
+            sectionType: "audience-hero",
+            label: "Women hero",
+            title: "Women",
+            image: "",
+            isVisible: true,
+            cards: [],
+          },
+        ],
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.match(nextError?.message, /uploaded media before publishing/i);
+});
+
+test("homepage publish rejects missing legacy banner defaults", async (t) => {
+  installSiteContentStubs(t);
+  SiteContent.findOne = async () => buildContent(2);
+  SiteContent.findOneAndUpdate = async () => {
+    throw new Error("publish should not reach persistence");
+  };
+
+  const { nextError } = await callController(updateAdminWorkspace, {
+    user: {
+      _id: "admin-id",
+      email: "admin@example.com",
+      role: "admin",
+      adminRole: "super-admin",
+    },
+    body: {
+      version: 2,
+      homeManagement: {
+        lastPublishedAt: new Date().toISOString(),
+        sections: [
+          {
+            id: "women-hero",
+            audience: "women",
+            sectionType: "audience-hero",
+            label: "Women hero",
+            title: "Women",
+            image: "/uploads/banners/banner2.png",
+            isVisible: true,
+            cards: [],
+          },
+        ],
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.match(nextError?.message, /missing default banner paths/i);
+});
+
+test("homepage draft can keep incomplete media while hidden from publish", async (t) => {
+  installSiteContentStubs(t);
+
+  SiteContent.findOne = async () => buildContent(2);
+  SiteContent.findOneAndUpdate = async (query, update) => ({
+    _id: "site-content-id",
+    adminWorkspaceVersion: 3,
+    adminWorkspace: update.$set.adminWorkspace,
+  });
+
+  const { res, nextError } = await callController(updateAdminWorkspace, {
+    user: {
+      _id: "admin-id",
+      email: "admin@example.com",
+      role: "admin",
+      adminRole: "super-admin",
+    },
+    body: {
+      version: 2,
+      homeManagement: {
+        sections: [
+          {
+            id: "draft-hero",
+            audience: "women",
+            sectionType: "audience-hero",
+            label: "Draft hero",
+            title: "Draft",
+            image: "",
+            isVisible: true,
+            cards: [],
+          },
+        ],
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.version, 3);
 });

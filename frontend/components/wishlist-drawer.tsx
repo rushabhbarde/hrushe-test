@@ -45,7 +45,7 @@ export function WishlistDrawer() {
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[115]">
       <button
         type="button"
         aria-label="Close saved drawer"
@@ -57,12 +57,12 @@ export function WishlistDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="wishlist-drawer-title"
-        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-5 shadow-2xl sm:p-6"
+        className="absolute right-0 top-0 flex h-[100dvh] w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--background)] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:p-6"
       >
         <div className="flex items-center justify-between">
           <div>
             <p className="eyebrow text-[var(--muted)]">Saved</p>
-            <h2 id="wishlist-drawer-title" className="mt-2 text-2xl font-semibold">Saved pieces</h2>
+            <h2 id="wishlist-drawer-title" className="mt-2 text-xl font-semibold sm:text-2xl">Saved pieces</h2>
           </div>
           <button
             type="button"
@@ -152,7 +152,7 @@ export function WishlistDrawer() {
                   </p>
                   <Link
                     href={`/product/${product.slug || product.id}`}
-                    className="mt-2 block text-[0.98rem] font-medium uppercase leading-6 tracking-[-0.01em]"
+                    className="line-clamp-2 mt-2 block text-[0.9rem] font-medium uppercase leading-5 tracking-[-0.01em] sm:text-[0.98rem] sm:leading-6"
                   >
                     {product.name}
                   </Link>

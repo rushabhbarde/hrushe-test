@@ -60,6 +60,14 @@ const assignedRoleLabels: Record<AdminRoleId | "", string> = {
   "catalog-manager": "Catalog",
 };
 
+function getInitialSearchParam(name: string) {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return new URLSearchParams(window.location.search).get(name) || "";
+}
+
 function statusTone(status: AdminSupportRequest["status"]) {
   if (status === "resolved") {
     return "success";
@@ -114,9 +122,13 @@ function buildSupportQuery({
 export default function AdminSupportPage() {
   const { pushToast } = useToast();
   const [tickets, setTickets] = useState<AdminSupportRequest[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
-  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    () => (getInitialSearchParam("status") as StatusFilter) || "all"
+  );
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>(
+    () => (getInitialSearchParam("priority") as PriorityFilter) || "all"
+  );
+  const [query, setQuery] = useState(() => getInitialSearchParam("query"));
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [updatingTicketId, setUpdatingTicketId] = useState("");
   const [isLoading, setIsLoading] = useState(true);

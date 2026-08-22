@@ -1,21 +1,31 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { isVisibleStorefrontProduct, sortProductsByStorefrontPriority } from "@/lib/catalog";
+import type { Product } from "@/lib/catalog";
+import {
+  getNewInProducts,
+  isVisibleStorefrontProduct,
+  productCategoryList,
+  slugsMatch,
+  sortProductsByStorefrontPriority,
+} from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
 type AvailabilityFilter = "all" | "available";
+type CollectionLayout = "runway" | "editorial" | "matrix";
+type LayoutIconVariant = "three" | "four" | "six";
 type SortOption = "edit" | "newest" | "price-low" | "price-high";
 
 const swatchColors: Record<string, string> = {
   black: "#11110f",
-  white: "#f8f7f2",
+  white: "#ffffff",
   beige: "#d8cbb6",
   begie: "#d8cbb6",
   cream: "#ede2d2",
@@ -27,6 +37,36 @@ const swatchColors: Record<string, string> = {
   gray: "#777772",
 };
 
+const preferredCategoryOrder = [
+  "T-Shirts",
+  "Oversized",
+  "Polos",
+  "Shirts",
+  "Pants",
+  "Shorts",
+  "Hoodies",
+  "Knitwear",
+  "Sweaters",
+  "Denim",
+  "Footwear",
+  "Accessories",
+  "Outerwear",
+  "Bottomwear",
+];
+
+const sortOptions: Array<{ value: SortOption; label: string }> = [
+  { value: "edit", label: "Curated edit" },
+  { value: "newest", label: "Newest arrivals" },
+  { value: "price-low", label: "Price: low to high" },
+  { value: "price-high", label: "Price: high to low" },
+];
+
+const layoutOptions: Array<{ value: CollectionLayout; label: string; icon: LayoutIconVariant; cells: number }> = [
+  { value: "runway", label: "3 product view", icon: "three", cells: 1 },
+  { value: "editorial", label: "4 product view", icon: "four", cells: 4 },
+  { value: "matrix", label: "6 product view", icon: "six", cells: 9 },
+];
+
 function productIsAvailable(product: ReturnType<typeof useStorefrontData>["products"][number]) {
   if (product.availability) {
     return product.availability === "available";
@@ -35,14 +75,175 @@ function productIsAvailable(product: ReturnType<typeof useStorefrontData>["produ
   return !product.trackInventory || product.variants?.some((variant) => variant.active && variant.stock > 0);
 }
 
-export default function ShopPage() {
+function isSortOption(value: string | null): value is SortOption {
+  return value === "edit" || value === "newest" || value === "price-low" || value === "price-high";
+}
+
+function sortShopProducts(products: Product[], sort: SortOption) {
+  if (sort === "price-low") {
+    return [...products].sort((left, right) => left.price - right.price);
+  }
+
+  if (sort === "price-high") {
+    return [...products].sort((left, right) => right.price - left.price);
+  }
+
+  if (sort === "newest") {
+    return [...products].sort(
+      (left, right) =>
+        new Date(right.createdAt || right.updatedAt || 0).getTime() -
+        new Date(left.createdAt || left.updatedAt || 0).getTime()
+    );
+  }
+
+  return sortProductsByStorefrontPriority(products);
+}
+
+function normaliseCategoryLabel(category: string) {
+  return category.replace(/begie/gi, "Beige");
+}
+
+function getDerivedProductCategories(product: Product) {
+  const categories = new Set(productCategoryList(product).filter(Boolean));
+  const searchText = [
+    product.name,
+    product.displayName,
+    product.slug,
+    product.description,
+    product.category,
+    ...(product.categories || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (searchText.includes("tee") || searchText.includes("t-shirt") || searchText.includes("tshirt")) {
+    categories.add("T-Shirts");
+  }
+
+  if (searchText.includes("oversize")) {
+    categories.add("Oversized");
+  }
+
+  if (searchText.includes("polo")) {
+    categories.add("Polos");
+  }
+
+  if (searchText.includes("hoodie") || searchText.includes("sweatshirt")) {
+    categories.add("Hoodies");
+  }
+
+  if (searchText.includes("knit")) {
+    categories.add("Knitwear");
+  }
+
+  if (searchText.includes("sweater")) {
+    categories.add("Sweaters");
+  }
+
+  if (searchText.includes("denim") || searchText.includes("jean")) {
+    categories.add("Denim");
+  }
+
+  if (searchText.includes("shoe") || searchText.includes("sneaker") || searchText.includes("footwear")) {
+    categories.add("Footwear");
+  }
+
+  if (searchText.includes("shirt") && !searchText.includes("t-shirt") && !searchText.includes("tshirt")) {
+    categories.add("Shirts");
+  }
+
+  if (searchText.includes("pant") || searchText.includes("trouser")) {
+    categories.add("Pants");
+    categories.add("Bottomwear");
+  }
+
+  if (searchText.includes("short")) {
+    categories.add("Shorts");
+    categories.add("Bottomwear");
+  }
+
+  if (searchText.includes("jacket") || searchText.includes("outerwear") || searchText.includes("coat")) {
+    categories.add("Outerwear");
+  }
+
+  if (searchText.includes("accessor") || searchText.includes("cap") || searchText.includes("bag")) {
+    categories.add("Accessories");
+  }
+
+  return Array.from(categories);
+}
+
+function getShopCategoryTabs(products: Product[]) {
+  const presentCategories = Array.from(
+    new Set(products.flatMap((product) => getDerivedProductCategories(product)).filter(Boolean))
+  );
+  const orderedPreferred = preferredCategoryOrder.filter((preferredCategory) =>
+    presentCategories.some((category) => slugsMatch(category, preferredCategory))
+  );
+  const remaining = presentCategories
+    .filter(
+      (category) =>
+        !orderedPreferred.some((preferredCategory) => slugsMatch(category, preferredCategory))
+    )
+    .sort((left, right) => left.localeCompare(right));
+
+  return [...orderedPreferred, ...remaining].slice(0, 8);
+}
+
+function LayoutIcon({ variant, cells }: { variant: LayoutIconVariant; cells: number }) {
+  return (
+    <span className={`collection-layout-icon collection-layout-icon--${variant}`} aria-hidden="true">
+      {Array.from({ length: cells }, (_, index) => (
+        <span key={index} />
+      ))}
+    </span>
+  );
+}
+
+function FilterSlidersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M4 7h16M4 17h16" strokeLinecap="square" />
+      <path d="M8 4v6M16 14v6" strokeLinecap="square" />
+    </svg>
+  );
+}
+
+function ShopCollectionSkeleton({ layout }: { layout: CollectionLayout }) {
+  return (
+    <div className={`collection-plp__grid collection-plp__grid--${layout}`} aria-hidden="true">
+      {Array.from({ length: layout === "matrix" ? 18 : 8 }, (_, index) => (
+        <div key={index} className="bg-[var(--background)]">
+          <div className="loading-pulse aspect-[4/5] bg-[var(--surface-strong)]" />
+          <div className="px-3 pb-5 pt-3 sm:px-4">
+            <div className="h-3 w-4/5 bg-[var(--surface-strong)]" />
+            <div className="mt-2 h-3 w-2/5 bg-[var(--surface-strong)]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ShopContent() {
+  const searchParams = useSearchParams();
+  const requestedSort = searchParams.get("sort");
+  const routeSort = isSortOption(requestedSort) ? requestedSort : "edit";
+  const isNewArrivalsRoute = routeSort === "newest";
   const { products, loading } = useStorefrontData();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [layout, setLayout] = useState<CollectionLayout>("matrix");
   const [selectedColour, setSelectedColour] = useState("all");
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
-  const [sort, setSort] = useState<SortOption>("edit");
+  const [sort, setSort] = useState<SortOption>(routeSort);
   const closeFilters = useCallback(() => setFiltersOpen(false), []);
   const { dialogRef, initialFocusRef } = useDialogAccessibility(filtersOpen, closeFilters);
+
+  useEffect(() => {
+    setSort(routeSort);
+  }, [routeSort]);
 
   const visibleProducts = useMemo(() => products.filter(isVisibleStorefrontProduct), [products]);
   const colours = useMemo(
@@ -63,49 +264,263 @@ export default function ShopPage() {
       return matchesColour && matchesAvailability;
     });
 
-    if (sort === "price-low") return [...filtered].sort((a, b) => a.price - b.price);
-    if (sort === "price-high") return [...filtered].sort((a, b) => b.price - a.price);
-    if (sort === "newest") {
-      return [...filtered].sort(
-        (a, b) => new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()
-      );
-    }
-    return sortProductsByStorefrontPriority(filtered);
+    return sortShopProducts(filtered, sort);
   }, [availability, selectedColour, sort, visibleProducts]);
+
+  const newArrivalProducts = useMemo(() => getNewInProducts(products), [products]);
+  const newArrivalCategoryTabs = useMemo(
+    () => getShopCategoryTabs(newArrivalProducts),
+    [newArrivalProducts]
+  );
+  const newArrivalDisplayTabs =
+    newArrivalCategoryTabs.length > 0 ? newArrivalCategoryTabs : loading ? preferredCategoryOrder.slice(0, 6) : [];
+  const newArrivalProductsForCategory = useMemo(() => {
+    const productsForCategory =
+      activeCategory === "all"
+        ? newArrivalProducts
+        : newArrivalProducts.filter((product) =>
+            getDerivedProductCategories(product).some((category) => slugsMatch(category, activeCategory))
+          );
+
+    return sortShopProducts(productsForCategory, sort);
+  }, [activeCategory, newArrivalProducts, sort]);
+  const activeNewArrivalControlCount = Number(activeCategory !== "all") + Number(sort !== "newest");
+  const activeCategoryLabel = activeCategory === "all" ? "NEW ARRIVALS" : normaliseCategoryLabel(activeCategory);
 
   const clearFilters = () => {
     setSelectedColour("all");
     setAvailability("all");
   };
 
+  const resetNewArrivalControls = () => {
+    setActiveCategory("all");
+    setSort("newest");
+  };
+
+  if (isNewArrivalsRoute) {
+    return (
+      <div className="page-shell bg-[var(--background)]">
+        <SiteHeader />
+        <main className="collection-plp">
+          <header className="collection-plp__intro">
+            <div>
+              <p>Shop</p>
+              <h1>
+                NEW ARRIVALS
+                {!loading && newArrivalProducts.length > 0 ? <span>{newArrivalProducts.length}</span> : null}
+              </h1>
+              <div className="collection-plp__description">
+                A focused HRUSHE edit of newest available pieces, arranged for quick browsing.
+              </div>
+            </div>
+          </header>
+
+          <nav className="collection-plp__category-nav" aria-label="New arrivals categories">
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              aria-pressed={activeCategory === "all"}
+            >
+              View All
+            </button>
+            {newArrivalDisplayTabs.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setActiveCategory(category)}
+                aria-pressed={slugsMatch(activeCategory, category)}
+                disabled={loading}
+              >
+                {normaliseCategoryLabel(category)}
+              </button>
+            ))}
+          </nav>
+
+          <div className="collection-plp__toolbar" aria-label="New arrivals controls">
+            <div className="collection-plp__filter-actions">
+              {activeNewArrivalControlCount > 0 ? (
+                <button type="button" onClick={resetNewArrivalControls} className="collection-plp__reset-button">
+                  Reset
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="collection-plp__filter-button"
+                aria-haspopup="dialog"
+              >
+                <FilterSlidersIcon />
+                <span>Filter &amp; Sort</span>
+                {activeNewArrivalControlCount > 0 ? <sup>{activeNewArrivalControlCount}</sup> : null}
+              </button>
+            </div>
+
+            <div className="collection-plp__layout-controls" aria-label="Product grid density">
+              {layoutOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setLayout(option.value)}
+                  aria-label={option.label}
+                  aria-pressed={layout === option.value}
+                >
+                  <LayoutIcon variant={option.icon} cells={option.cells} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <ShopCollectionSkeleton layout={layout} />
+          ) : newArrivalProductsForCategory.length > 0 ? (
+            <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label="New arrivals products">
+              {newArrivalProductsForCategory.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="editorial"
+                  priority={index < 4}
+                  showInfo={layout !== "matrix"}
+                />
+              ))}
+            </section>
+          ) : (
+            <section className="mx-auto max-w-[760px] px-4 py-20 sm:px-6">
+              <EmptyState
+                title={`${activeCategoryLabel} is being prepared.`}
+                description="Reset the controls to return to the complete New Arrivals edit, or explore all available HRUSHE pieces."
+                ctaHref="/shop"
+                ctaLabel="Explore all products"
+              />
+              {activeNewArrivalControlCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={resetNewArrivalControls}
+                  className="button-primary mt-4 min-h-12 px-6 text-xs font-semibold uppercase tracking-[0.12em]"
+                >
+                  Reset controls
+                </button>
+              ) : null}
+            </section>
+          )}
+        </main>
+
+        {filtersOpen ? (
+          <div className="collection-filter-drawer">
+            <button
+              type="button"
+              className="collection-filter-drawer__overlay"
+              aria-label="Close filter and sort panel"
+              onClick={() => setFiltersOpen(false)}
+            />
+            <aside
+              ref={dialogRef}
+              className="collection-filter-drawer__panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="shop-new-arrivals-filter-title"
+            >
+              <div className="collection-filter-drawer__header">
+                <div>
+                  <p className="eyebrow text-[var(--muted)]">NEW ARRIVALS</p>
+                  <h2 id="shop-new-arrivals-filter-title">Filter &amp; sort</h2>
+                </div>
+                <button
+                  ref={initialFocusRef}
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  aria-label="Close filter and sort panel"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="collection-filter-drawer__body">
+                <fieldset>
+                  <legend>Category</legend>
+                  <div className="collection-filter-drawer__option-grid">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory("all")}
+                      aria-pressed={activeCategory === "all"}
+                    >
+                      NEW ARRIVALS
+                    </button>
+                    {newArrivalDisplayTabs.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setActiveCategory(category)}
+                        aria-pressed={slugsMatch(activeCategory, category)}
+                      >
+                        {normaliseCategoryLabel(category)}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Sort</legend>
+                  <div className="collection-filter-drawer__option-grid">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setSort(option.value)}
+                        aria-pressed={sort === option.value}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
+
+              <div className="collection-filter-drawer__footer">
+                <button type="button" onClick={resetNewArrivalControls}>
+                  Reset
+                </button>
+                <button type="button" onClick={() => setFiltersOpen(false)}>
+                  View {newArrivalProductsForCategory.length}
+                </button>
+              </div>
+            </aside>
+          </div>
+        ) : null}
+
+        <SiteFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pb-32 lg:pt-24">
-        <div className="mb-7">
+      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-8 sm:px-6 sm:pt-12 lg:px-8 lg:pb-28 lg:pt-16">
+        <div className="mb-5">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop" }]} />
         </div>
-        <header className="grid gap-8 border-b border-[var(--border)] pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-14">
+        <header className="grid gap-5 border-b border-[var(--border)] pb-7 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-9">
           <div>
             <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
-            <h1 className="mt-5 text-[2.75rem] font-medium uppercase leading-[0.92] tracking-[-0.045em] sm:text-[4rem] lg:text-[5.5rem]">
+            <h1 className="mt-4 text-[1.55rem] font-medium uppercase leading-none tracking-normal sm:text-[2.75rem] sm:leading-[0.96] lg:text-[4rem]">
               The collection.
             </h1>
           </div>
-          <p className="max-w-xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
+          <p className="max-w-xl text-[0.84rem] leading-6 text-[var(--muted)] sm:text-[0.95rem] sm:leading-7">
             A quiet collection of essentials, built with intention and designed to be worn your way.
           </p>
         </header>
 
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-[var(--border)] py-5">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] py-3.5">
+          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
             {filteredProducts.length} {filteredProducts.length === 1 ? "piece" : "pieces"}
           </p>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-3 sm:flex-none">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2.5 sm:flex-none">
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-12 shrink-0 items-center border border-[var(--border)] px-5 text-[0.68rem] font-semibold uppercase tracking-[0.12em]"
+              className="inline-flex min-h-10 shrink-0 items-center border border-[var(--border)] px-4 text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
             >
               Filter{activeFilterCount ? ` (${activeFilterCount})` : ""}
             </button>
@@ -114,7 +529,7 @@ export default function ShopPage() {
               id="shop-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as SortOption)}
-              className="min-h-12 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-4 text-[0.68rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
+              className="min-h-10 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
             >
               <option value="edit">Curated edit</option>
               <option value="newest">Newest</option>
@@ -158,7 +573,7 @@ export default function ShopPage() {
       </main>
 
       {filtersOpen ? (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[115]">
           <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/35" onClick={closeFilters} />
           <aside ref={dialogRef} className="absolute right-0 top-0 flex h-full w-full max-w-[430px] flex-col bg-[var(--background)] px-5 py-6 sm:px-8 sm:py-8" role="dialog" aria-modal="true" aria-labelledby="filter-title">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-6">
@@ -207,5 +622,13 @@ export default function ShopPage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopContent />
+    </Suspense>
   );
 }

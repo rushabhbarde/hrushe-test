@@ -1,9 +1,13 @@
 import type { MetadataRoute } from "next";
+import {
+  HRUSHE_BRAND_NAME,
+  HRUSHE_SYMBOL_LOGO_PATH,
+} from "@/lib/brand-assets";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "HRUSHE",
-    short_name: "HRUSHE",
+    name: HRUSHE_BRAND_NAME,
+    short_name: HRUSHE_BRAND_NAME,
     description:
       "Everyday uniforms with clear proportions, honest materials, and repeat-wear construction.",
     start_url: "/",
@@ -12,8 +16,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#111111",
     icons: [
       {
-        src: "/NEW_LOGO_SYMB.png",
-        sizes: "200x200",
+        src: HRUSHE_SYMBOL_LOGO_PATH,
+        sizes: "300x300",
         type: "image/png",
       },
     ],

@@ -5,7 +5,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const connectDB = require("./src/config/db");
 const env = require("./src/config/env");
-env.assertProductionEnv();
+env.assertRuntimeEnv();
 const authRoutes = require("./src/routes/authRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const cartRoutes = require("./src/routes/cartRoutes");
@@ -17,6 +17,7 @@ const supportRoutes = require("./src/routes/supportRoutes");
 const newsletterRoutes = require("./src/routes/newsletterRoutes");
 const mediaRoutes = require("./src/routes/mediaRoutes");
 const internalRoutes = require("./src/routes/internalRoutes");
+const { createCorsOptions } = require("./src/middleware/corsMiddleware");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const { createRateLimiter } = require("./src/middleware/rateLimitMiddleware");
 const { ensureAdminUser } = require("./src/utils/ensureAdminUser");
@@ -34,50 +35,10 @@ app.disable("x-powered-by");
 app.use(requestContextMiddleware);
 const shouldCaptureRawBody = (req) =>
   req.originalUrl?.startsWith("/order/checkout/webhook/razorpay") ||
-  req.originalUrl?.startsWith("/internal/reconciliation/scan");
+  req.originalUrl?.startsWith("/internal/reconciliation/scan") ||
+  req.originalUrl?.startsWith("/internal/inventory/cleanup");
 
-const isAllowedDevOrigin = (origin) => {
-  if (env.NODE_ENV === "production") {
-    return false;
-  }
-
-  try {
-    const { hostname, protocol } = new URL(origin);
-    return (
-      protocol.startsWith("http") &&
-      (
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        hostname === "::1" ||
-        hostname === "0.0.0.0" ||
-        hostname.endsWith(".local")
-      )
-    );
-  } catch {
-    return false;
-  }
-};
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (env.ALLOWED_ORIGINS.includes(origin) || isAllowedDevOrigin(origin)) {
-        return callback(null, true);
-      }
-
-      if (env.NODE_ENV !== "production") {
-        return callback(null, true);
-      }
-
-      return callback(new Error("CORS origin not allowed"));
-    },
-    credentials: true,
-  })
-);
+app.use(cors(createCorsOptions(env)));
 app.use((req, res, next) => {
   res.set("X-Content-Type-Options", "nosniff");
   res.set("X-Frame-Options", "DENY");
@@ -93,18 +54,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/healthz", (req, res) => {
+const sendHealthResponse = (req, res) => {
   res.json({ status: "ok" });
-});
+};
 
-app.get("/readyz", (req, res) => {
+const sendReadinessResponse = (req, res) => {
   const mongoReady = mongoose.connection.readyState === 1;
 
   res.status(mongoReady ? 200 : 503).json({
     status: mongoReady ? "ready" : "not-ready",
     mongo: mongoReady ? "connected" : "not-connected",
   });
-});
+};
+
+app.get("/health", sendHealthResponse);
+app.get("/healthz", sendHealthResponse);
+app.get("/ready", sendReadinessResponse);
+app.get("/readyz", sendReadinessResponse);
 
 app.use(createRateLimiter({ name: "api", max: 600, windowMs: 15 * 60 * 1000 }));
 app.use(
@@ -155,7 +121,15 @@ async function startDatabaseBackedTasks() {
   await connectDB();
   await ensureAdminUser();
   const cleanupInventory = () =>
-    cleanupExpiredInventoryReservations().catch((error) => {
+    cleanupExpiredInventoryReservations({ source: "interval" })
+      .then((result) => {
+        recordMetric("inventory.reservations.cleanup", {
+          releasedOrders: result.reservationsReleased,
+          inspectedOrders: result.ordersInspected,
+          lockContended: result.lockContended,
+        });
+      })
+      .catch((error) => {
       logEvent(
         "inventory.cleanup.failed",
         {
@@ -165,8 +139,12 @@ async function startDatabaseBackedTasks() {
         "error"
       );
     });
-  const cleanedUp = await cleanupExpiredInventoryReservations();
-  recordMetric("inventory.reservations.cleanup", { releasedOrders: cleanedUp });
+  const cleanedUp = await cleanupExpiredInventoryReservations({ source: "startup" });
+  recordMetric("inventory.reservations.cleanup", {
+    releasedOrders: cleanedUp.reservationsReleased,
+    inspectedOrders: cleanedUp.ordersInspected,
+    lockContended: cleanedUp.lockContended,
+  });
   if (!cleanupInterval) {
     cleanupInterval = setInterval(cleanupInventory, 5 * 60 * 1000);
     cleanupInterval.unref();

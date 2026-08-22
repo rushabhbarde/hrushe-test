@@ -4,6 +4,8 @@ const bcrypt = require("bcrypt");
 
 const User = require("../src/models/User");
 const VerificationCode = require("../src/models/VerificationCode");
+const Cart = require("../src/models/Cart");
+const Product = require("../src/models/Product");
 const mailer = require("../src/utils/mailer");
 const auditLog = require("../src/utils/auditLog");
 
@@ -19,6 +21,7 @@ auditLog.recordAuditLog = async (...args) => {
 };
 
 const {
+  moveWishlistItemToCart,
   updateProfile,
   requestEmailChangeOtp,
   verifyEmailChangeOtp,
@@ -62,6 +65,9 @@ const installModelStubs = (t) => {
     verificationFindOne: VerificationCode.findOne,
     verificationDeleteMany: VerificationCode.deleteMany,
     verificationCreate: VerificationCode.create,
+    cartFindOne: Cart.findOne,
+    cartCreate: Cart.create,
+    productFind: Product.find,
   };
 
   t.after(() => {
@@ -70,6 +76,9 @@ const installModelStubs = (t) => {
     VerificationCode.findOne = originals.verificationFindOne;
     VerificationCode.deleteMany = originals.verificationDeleteMany;
     VerificationCode.create = originals.verificationCreate;
+    Cart.findOne = originals.cartFindOne;
+    Cart.create = originals.cartCreate;
+    Product.find = originals.productFind;
     sentEmails.length = 0;
     recordedAudits.length = 0;
   });
@@ -206,4 +215,115 @@ test("email change OTP locks after too many failed attempts", async (t) => {
   assert.equal(verification.failedAttempts, 5);
   assert.ok(verification.lockedAt instanceof Date);
   assert.equal(saved, true);
+});
+
+test("moving a wishlist item to cart revalidates current product availability", async (t) => {
+  installModelStubs(t);
+
+  let cartSaved = false;
+  let userSaved = false;
+  User.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    wishlist: ["507f1f77bcf86cd799439012"],
+    save: async () => {
+      userSaved = true;
+    },
+  });
+  Cart.findOne = () => ({
+    populate: async () => ({
+      items: [],
+      save: async () => {
+        cartSaved = true;
+      },
+      populate: async () => {},
+    }),
+  });
+  Product.find = async () => [];
+
+  const { nextError } = await callController(moveWishlistItemToCart, {
+    user: {
+      _id: "507f1f77bcf86cd799439011",
+    },
+    params: {
+      productId: "507f1f77bcf86cd799439012",
+    },
+    body: {
+      quantity: 1,
+      size: "M",
+      color: "Black",
+      fit: "Oversize",
+    },
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /no longer available/i);
+  assert.equal(cartSaved, false);
+  assert.equal(userSaved, false);
+});
+
+test("moving a wishlist item keeps wishlist unchanged when cart save fails", async (t) => {
+  installModelStubs(t);
+
+  let userSaved = false;
+  const productId = "507f1f77bcf86cd799439012";
+  const user = {
+    _id: "507f1f77bcf86cd799439011",
+    wishlist: [productId],
+    save: async () => {
+      userSaved = true;
+    },
+  };
+  User.findById = async () => user;
+  Cart.findOne = () => ({
+    populate: async () => ({
+      items: [],
+      save: async () => {
+        throw new Error("cart write failed");
+      },
+      populate: async () => {},
+    }),
+  });
+  Product.find = async () => [
+    {
+      _id: { toString: () => productId },
+      name: "Wishlist Tee",
+      status: "Active",
+      price: 999,
+      pricePaise: 99900,
+      sizes: ["M"],
+      colors: ["Black"],
+      images: ["https://example.com/wishlist.jpg"],
+      trackInventory: true,
+      variants: [
+        {
+          sku: "HRU-WISHLIST-M-BLK",
+          size: "M",
+          color: "Black",
+          fit: "Oversize",
+          stock: 1,
+          reserved: 0,
+          active: true,
+        },
+      ],
+    },
+  ];
+
+  const { nextError } = await callController(moveWishlistItemToCart, {
+    user: {
+      _id: "507f1f77bcf86cd799439011",
+    },
+    params: {
+      productId,
+    },
+    body: {
+      quantity: 1,
+      size: "M",
+      color: "Black",
+      fit: "Oversize",
+    },
+  });
+
+  assert.match(nextError?.message || "", /cart write failed/i);
+  assert.equal(userSaved, false);
+  assert.deepEqual(user.wishlist, [productId]);
 });

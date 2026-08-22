@@ -111,12 +111,12 @@ export function PolicyLayout({
   };
 
   return (
-    <main className="bg-[#f8f7f2]">
+    <main className="bg-[var(--background)]">
       <div className="mx-auto max-w-[1600px] px-4 py-11 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
         <header className="grid gap-8 border-b border-[var(--border)] pb-9 sm:pb-12 lg:grid-cols-[minmax(0,0.78fr)_minmax(18rem,0.22fr)] lg:items-end">
           <div className="max-w-5xl">
             <p className="eyebrow text-[var(--muted)]">{label}</p>
-            <h1 className="mt-5 max-w-[13ch] text-[2.45rem] font-medium uppercase leading-[0.94] text-[var(--foreground)] sm:text-[3.6rem] lg:text-[4.7rem] xl:text-[5.15rem]">
+            <h1 className="mt-5 max-w-[13ch] text-[2.1rem] font-medium uppercase leading-[0.94] text-[var(--foreground)] sm:text-[3.6rem] lg:text-[4.7rem] xl:text-[5.15rem]">
               {title}
             </h1>
             <p className="mt-6 max-w-2xl text-[0.98rem] leading-7 text-[var(--muted)] sm:text-[1.04rem] sm:leading-8">
@@ -130,7 +130,7 @@ export function PolicyLayout({
           </div>
         </header>
 
-        <div className="sticky top-[5.35rem] z-20 mt-7 border-y border-[var(--border)] bg-[#f8f7f2] lg:hidden">
+        <div className="sticky top-[3.45rem] z-20 mt-7 border-y border-[var(--border)] bg-[var(--background)] lg:hidden">
           <button
             type="button"
             className="flex min-h-14 w-full items-center justify-between gap-4 py-4 text-left"
@@ -162,7 +162,7 @@ export function PolicyLayout({
                       onClick={() => switchPolicy(policy.key)}
                       className={`min-h-11 border px-4 py-3 text-left text-sm font-medium ${
                         isActive
-                          ? "border-[var(--foreground)] bg-[#f8f7f2] text-[var(--foreground)]"
+                          ? "border-[var(--foreground)] bg-[var(--background)] text-[var(--foreground)]"
                           : "border-[var(--border)] bg-transparent text-[var(--foreground)]"
                       }`}
                     >

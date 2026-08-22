@@ -3,8 +3,12 @@ const assert = require("node:assert/strict");
 
 const Order = require("../src/models/Order");
 const User = require("../src/models/User");
+const Product = require("../src/models/Product");
+const SiteContent = require("../src/models/SiteContent");
+const SupportRequest = require("../src/models/SupportRequest");
 const {
   createStaffUser,
+  getDashboardOverview,
   getOperationsSummary,
 } = require("../src/controllers/adminController");
 
@@ -63,6 +67,134 @@ test("operations summary returns payment, inventory, order, and system counts", 
   assert.equal(res.body.orders.initiatedOlderThan20Minutes, 10);
   assert.equal(typeof res.body.system.mongoReady, "boolean");
   assert.equal(seenQueries.length, 11);
+});
+
+test("dashboard overview returns server-side commerce and storefront action signals", async (t) => {
+  const originals = {
+    orderAggregate: Order.aggregate,
+    orderCountDocuments: Order.countDocuments,
+    orderFind: Order.find,
+    productAggregate: Product.aggregate,
+    siteContentFindOne: SiteContent.findOne,
+    supportCountDocuments: SupportRequest.countDocuments,
+  };
+  const counts = [4, 9, 2, 3, 1, 5, 6, 7, 8, 10, 11];
+
+  t.after(() => {
+    Order.aggregate = originals.orderAggregate;
+    Order.countDocuments = originals.orderCountDocuments;
+    Order.find = originals.orderFind;
+    Product.aggregate = originals.productAggregate;
+    SiteContent.findOne = originals.siteContentFindOne;
+    SupportRequest.countDocuments = originals.supportCountDocuments;
+  });
+
+  Order.aggregate = async (pipeline) => {
+    if (pipeline.some((stage) => stage.$unwind === "$products")) {
+      return [
+        {
+          productId: "product-1",
+          name: "Quiet Shirt",
+          quantity: 3,
+          revenuePaise: 360000,
+        },
+      ];
+    }
+
+    return [{ orders: 2, revenuePaise: 240000 }];
+  };
+  Order.countDocuments = async () => counts.shift();
+  Order.find = () => ({
+    select: () => ({
+      sort: () => ({
+        limit: () => ({
+          lean: async () => [
+            {
+              _id: { toString: () => "order-1" },
+              orderNumber: 24,
+              customerName: "Asha",
+              customerEmail: "asha@example.com",
+              paymentStatus: "paid",
+              orderStatus: "Confirmed",
+              totalAmount: 1200,
+              totalPaise: 120000,
+              createdAt: new Date("2026-08-03T08:00:00.000Z"),
+            },
+          ],
+        }),
+      }),
+    }),
+  });
+  Product.aggregate = async () => [
+    {
+      trackedVariants: 4,
+      physicalStock: 20,
+      reservedUnits: 5,
+      reservedVariants: 2,
+      lowStockVariants: 1,
+      outOfStockVariants: 1,
+    },
+  ];
+  SiteContent.findOne = () => ({
+    lean: async () => ({
+      adminWorkspaceVersion: 4,
+      adminWorkspace: {
+        homeManagement: {
+          lastPublishedAt: "2026-08-01T10:00:00.000Z",
+          banners: [
+            {
+              enabled: true,
+              scheduleStart: "2099-01-01T00:00:00.000Z",
+              desktopImage: "/media/drop.jpg",
+              mobileImage: "",
+              ctaLink: "/shop",
+            },
+          ],
+          sections: [
+            {
+              isVisible: true,
+              publishStart: "2099-01-02T00:00:00.000Z",
+              image: "/media/hero.jpg",
+              mobileImage: "",
+              ctaLink: "http://not-allowed.example",
+              cards: [
+                {
+                  isVisible: true,
+                  image: "/media/card.jpg",
+                  mobileImage: "",
+                  ctaLink: "/collection/men",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }),
+  });
+  SupportRequest.countDocuments = async () => 12;
+
+  const { res, nextError } = await callController(getDashboardOverview, {
+    query: { range: "last7" },
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.dateRange.preset, "last7");
+  assert.equal(res.body.revenue.todayPaise, 240000);
+  assert.equal(res.body.revenue.averageOrderValuePaise, 120000);
+  assert.equal(res.body.orders.today, 4);
+  assert.equal(res.body.orders.awaitingFulfillment, 3);
+  assert.equal(res.body.payments.manualReview, 6);
+  assert.equal(res.body.inventory.lowStockVariants, 1);
+  assert.equal(res.body.inventory.activeReservations, 10);
+  assert.equal(res.body.storefront.scheduledCampaigns, 2);
+  assert.equal(res.body.storefront.missingMobileMedia, 3);
+  assert.equal(res.body.storefront.brokenLinks, 1);
+  assert.equal(res.body.support.attention, 12);
+  assert.equal(res.body.actionCards.find((card) => card.id === "low-stock-products").count, 1);
+  assert.equal(res.body.recentOrders[0].orderNumber, 24);
+  assert.equal(res.body.topProducts[0].name, "Quiet Shirt");
 });
 
 test("staff creation rejects duplicate normalized phone numbers before index errors", async (t) => {

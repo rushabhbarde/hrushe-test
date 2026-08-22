@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
@@ -12,7 +13,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
+import { resolveCheckoutSuccessPath } from "@/lib/checkout-redirect";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
+import { getRazorpayLaunchBlocker } from "@/lib/razorpay-readiness";
 
 type CheckoutResponse = {
   appOrderId: string;
@@ -209,6 +212,7 @@ function OrderSummary({
 }
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { items, itemCount, subtotal, isReady } = useCart();
   const { user } = useCustomerAuth();
   const { pushToast } = useToast();
@@ -222,26 +226,70 @@ export default function CheckoutPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [verifiedSuccessUrl, setVerifiedSuccessUrl] = useState("");
+  const [razorpayReady, setRazorpayReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.Razorpay)
+  );
+  const [razorpayLoadError, setRazorpayLoadError] = useState("");
 
   useEffect(() => {
-    if (document.getElementById("razorpay-checkout-js")) {
+    if (window.Razorpay) {
       return;
+    }
+
+    const onScriptLoad = () => {
+      setRazorpayReady(Boolean(window.Razorpay));
+      setRazorpayLoadError("");
+    };
+    const onScriptError = () => {
+      setRazorpayReady(false);
+      setRazorpayLoadError("Payment checkout could not load. Please refresh and try again.");
+    };
+    const existingScript = document.getElementById("razorpay-checkout-js") as HTMLScriptElement | null;
+
+    if (existingScript) {
+      existingScript.addEventListener("load", onScriptLoad);
+      existingScript.addEventListener("error", onScriptError);
+
+      return () => {
+        existingScript.removeEventListener("load", onScriptLoad);
+        existingScript.removeEventListener("error", onScriptError);
+      };
     }
 
     const script = document.createElement("script");
     script.id = "razorpay-checkout-js";
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.addEventListener("load", onScriptLoad);
+    script.addEventListener("error", onScriptError);
     document.body.appendChild(script);
+
+    return () => {
+      script.removeEventListener("load", onScriptLoad);
+      script.removeEventListener("error", onScriptError);
+    };
   }, []);
 
   useEffect(() => {
-    setForm(buildInitialForm(user));
-    setSelectedAddressId(
-      user?.addresses?.find((address) => address.isDefault)?.id ||
-        user?.addresses?.[0]?.id ||
-        "manual"
-    );
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) {
+        return;
+      }
+
+      setForm(buildInitialForm(user));
+      setSelectedAddressId(
+        user?.addresses?.find((address) => address.isDefault)?.id ||
+          user?.addresses?.[0]?.id ||
+          "manual"
+      );
+    });
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const onChange = (
@@ -300,6 +348,19 @@ export default function CheckoutPage() {
       return;
     }
 
+    const RazorpayCheckout = window.Razorpay;
+    const razorpayLaunchBlocker = getRazorpayLaunchBlocker({
+      scriptReady: razorpayReady,
+      hasConstructor: Boolean(RazorpayCheckout),
+      loadError: razorpayLoadError,
+    });
+    if (razorpayLaunchBlocker) {
+      const message = razorpayLaunchBlocker;
+      setError(message);
+      pushToast(message, "error");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -328,11 +389,7 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (!window.Razorpay) {
-        throw new Error("Razorpay checkout is still loading. Please try again.");
-      }
-
-      const razorpay = new window.Razorpay({
+      const razorpay = new RazorpayCheckout!({
         key: response.key,
         amount: response.amount,
         currency: response.currency,
@@ -352,7 +409,7 @@ export default function CheckoutPage() {
                 checkoutState: response.checkoutState,
               }),
             }).catch(() => undefined);
-            window.location.href = `/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`;
+            router.push(`/checkout/failure?orderId=${encodeURIComponent(response.orderId)}`);
           },
         },
         handler: async (paymentResponse: Record<string, string>) => {
@@ -369,7 +426,13 @@ export default function CheckoutPage() {
             );
 
             pushToast("Payment successful");
-            window.location.href = verification.redirectUrl;
+            const successPath = resolveCheckoutSuccessPath(
+              verification.redirectUrl,
+              window.location.origin,
+              response.orderId
+            );
+            setVerifiedSuccessUrl(successPath);
+            window.location.assign(successPath);
           } catch (verificationError) {
             const message =
               verificationError instanceof Error
@@ -429,7 +492,7 @@ export default function CheckoutPage() {
                     Back to bag
                   </Link>
 
-                  <h1 className="text-3xl font-semibold uppercase tracking-normal sm:text-4xl">
+                  <h1 className="text-2xl font-semibold uppercase tracking-normal sm:text-4xl">
                     Secure checkout
                   </h1>
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
@@ -439,7 +502,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setSummaryOpen((current) => !current)}
-                    className="mt-7 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white lg:hidden"
+                    className="mt-6 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:mt-7 lg:hidden"
                     aria-expanded={summaryOpen}
                     aria-controls="mobile-order-summary"
                   >
@@ -453,10 +516,10 @@ export default function CheckoutPage() {
                   ) : null}
 
                   <form
-                    className="mt-10 max-w-[640px] space-y-10"
+                    className="mt-8 max-w-[640px] space-y-8 sm:mt-10 sm:space-y-10"
                     onSubmit={(event) => void onSubmit(event)}
                   >
-                    <div className="auth-switch-panel space-y-10">
+                    <div className="auth-switch-panel space-y-8 sm:space-y-10">
                       <fieldset className="grid gap-5">
                         <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact details</legend>
                         <label className="field-label">
@@ -575,13 +638,27 @@ export default function CheckoutPage() {
                       </div>
                     ) : null}
 
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {submitting ? "Opening..." : "Pay securely"}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {submitting
+                          ? verifiedSuccessUrl
+                            ? "Redirecting..."
+                            : "Opening..."
+                          : "Pay securely"}
+                      </button>
+                      {verifiedSuccessUrl ? (
+                        <Link
+                          href={verifiedSuccessUrl}
+                          className="button-secondary inline-flex min-h-12 items-center rounded-full px-5 text-xs font-semibold uppercase tracking-[0.12em]"
+                        >
+                          Continue to confirmation
+                        </Link>
+                      ) : null}
+                    </div>
                   </form>
                 </section>
 

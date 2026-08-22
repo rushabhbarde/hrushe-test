@@ -90,9 +90,9 @@ function StoryBlock({
 
 export default function StoryPage() {
   return (
-    <div className="page-shell bg-[#f8f7f2]">
+    <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="bg-[#f8f7f2]">
+      <main className="bg-[var(--background)]">
         <section className="overflow-hidden border-b border-[var(--border)]">
           <div className="mx-auto grid max-w-[1600px] min-w-0 gap-10 px-4 py-11 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,0.56fr)_minmax(22rem,0.44fr)] lg:items-end lg:gap-16 lg:px-8 lg:py-20">
             <div className="reveal-up min-w-0 max-w-5xl">

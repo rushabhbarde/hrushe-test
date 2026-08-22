@@ -19,6 +19,7 @@ const {
   verifyOtpCode,
 } = require("../utils/otpVerification");
 const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
+const { resolveCheckoutItems } = require("../services/checkoutInventory");
 
 const FAVORITE_COLOR_LIMIT = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -610,17 +611,13 @@ const removeWishlistItem = asyncHandler(async (req, res) => {
 
 const moveWishlistItemToCart = asyncHandler(async (req, res) => {
   const { size = "", color = "", fit = "", quantity = 1 } = req.body;
-  const normalizedVariant = {
+  const incomingItem = {
+    productId: req.params.productId,
     size: String(size || "").trim(),
     color: String(color || "").trim(),
     fit: ["Oversize", "Regular"].includes(fit) ? fit : "",
-    quantity: Number(quantity) || 1,
+    quantity,
   };
-  const product = await Product.findById(req.params.productId);
-
-  if (!product) {
-    throw new AppError("Product not found", 404);
-  }
 
   const user = await User.findById(req.user._id);
 
@@ -634,31 +631,32 @@ const moveWishlistItemToCart = asyncHandler(async (req, res) => {
     cart = await Cart.create({ userId: req.user._id, items: [] });
   }
 
-  const existingItem = cart.items.find(
-    (item) =>
-      getCartItemProductId(item) === req.params.productId &&
-      item.size === normalizedVariant.size &&
-      item.color === normalizedVariant.color &&
-      item.fit === normalizedVariant.fit
-  );
+  const currentItems = cart.items
+    .filter((item) => item.productId)
+    .map((item) => ({
+      productId: getCartItemProductId(item),
+      quantity: item.quantity,
+      size: item.size || "",
+      color: item.color || "",
+      fit: item.fit || "",
+    }));
+  const resolvedItems = await resolveCheckoutItems([...currentItems, incomingItem]);
 
-  if (existingItem) {
-    existingItem.quantity += normalizedVariant.quantity;
-  } else {
-    cart.items.push({
-      productId: product._id,
-      quantity: normalizedVariant.quantity,
-      size: normalizedVariant.size,
-      color: normalizedVariant.color,
-      fit: normalizedVariant.fit,
-    });
-  }
+  cart.items = resolvedItems.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+    size: item.size,
+    color: item.color,
+    fit: item.fit,
+  }));
+
+  await cart.save();
 
   user.wishlist = user.wishlist.filter(
     (wishlistId) => wishlistId.toString() !== req.params.productId
   );
 
-  await Promise.all([cart.save(), user.save()]);
+  await user.save();
   await cart.populate("items.productId");
 
   return res.json({

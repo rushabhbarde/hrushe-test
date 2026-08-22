@@ -15,6 +15,13 @@ const ADMIN_WORKSPACE_CACHE_TTL = 60_000;
 let adminWorkspaceCache: { value: AdminWorkspace; timestamp: number } | null = null;
 let adminWorkspaceRequest: Promise<AdminWorkspace> | null = null;
 
+function isWorkspaceVersionConflict(error: unknown) {
+  return (
+    error instanceof Error &&
+    /content was updated by another administrator|content_version_conflict/i.test(error.message)
+  );
+}
+
 function isCacheFresh() {
   return (
     adminWorkspaceCache &&
@@ -84,9 +91,44 @@ export function useAdminWorkspace() {
       | Partial<AdminWorkspace>
       | ((current: AdminWorkspace) => AdminWorkspace | Partial<AdminWorkspace>)
   ) {
-    const current = adminWorkspaceCache?.value || workspace;
-    const patch =
+    const buildPatch = (current: AdminWorkspace) =>
       typeof nextValue === "function" ? nextValue(current) : nextValue;
+    const persistPatch = async (
+      current: AdminWorkspace,
+      patch: AdminWorkspace | Partial<AdminWorkspace>
+    ) => {
+      const saved = await apiRequest<Partial<AdminWorkspace>>("/content/admin-workspace", {
+        method: "PUT",
+        body: JSON.stringify({
+          ...(patch as Partial<AdminWorkspace>),
+          version: current.version,
+        }),
+        headers: getAdminAuthHeaders(),
+      });
+      const normalizedSaved = normalizeAdminWorkspace(saved);
+      adminWorkspaceCache = {
+        value: normalizedSaved,
+        timestamp: Date.now(),
+      };
+      setWorkspace(normalizedSaved);
+      return normalizedSaved;
+    };
+    const applyOptimisticPatch = (
+      current: AdminWorkspace,
+      patch: AdminWorkspace | Partial<AdminWorkspace>
+    ) => {
+      const normalized = normalizeAdminWorkspace(
+        deepMergeWorkspace(current, patch as Partial<AdminWorkspace>)
+      );
+
+      setWorkspace(normalized);
+      adminWorkspaceCache = {
+        value: normalized,
+        timestamp: Date.now(),
+      };
+    };
+    const current = adminWorkspaceCache?.value || workspace;
+    const patch = buildPatch(current);
     const normalized = normalizeAdminWorkspace(
       deepMergeWorkspace(current, patch as Partial<AdminWorkspace>)
     );
@@ -97,21 +139,24 @@ export function useAdminWorkspace() {
       timestamp: Date.now(),
     };
 
-    const saved = await apiRequest<Partial<AdminWorkspace>>("/content/admin-workspace", {
-      method: "PUT",
-      body: JSON.stringify({
-        ...(patch as Partial<AdminWorkspace>),
-        version: current.version,
-      }),
-      headers: getAdminAuthHeaders(),
-    });
-    const normalizedSaved = normalizeAdminWorkspace(saved);
-    adminWorkspaceCache = {
-      value: normalizedSaved,
-      timestamp: Date.now(),
-    };
-    setWorkspace(normalizedSaved);
-    return normalizedSaved;
+    try {
+      return await persistPatch(current, patch);
+    } catch (error) {
+      if (!isWorkspaceVersionConflict(error)) {
+        adminWorkspaceCache = {
+          value: current,
+          timestamp: Date.now(),
+        };
+        setWorkspace(current);
+        throw error;
+      }
+
+      adminWorkspaceCache = null;
+      const fresh = await fetchAdminWorkspace();
+      const retryPatch = buildPatch(fresh);
+      applyOptimisticPatch(fresh, retryPatch);
+      return persistPatch(fresh, retryPatch);
+    }
   }
 
   async function refreshWorkspace() {

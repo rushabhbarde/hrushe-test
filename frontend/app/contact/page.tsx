@@ -31,7 +31,7 @@ export default function ContactPage() {
         <section className="grid gap-10 border-b border-[var(--border)] pb-12 lg:grid-cols-[1fr_0.72fr] lg:items-end lg:pb-16">
           <div>
             <p className="eyebrow text-[var(--muted)]">Contact</p>
-            <h1 className="mt-5 max-w-[9ch] text-[3rem] font-medium uppercase leading-[0.92] tracking-[-0.045em] sm:text-[4.5rem] lg:text-[5.5rem]">
+            <h1 className="mt-5 max-w-[9ch] text-[2.2rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[4.5rem] sm:leading-[0.92] sm:tracking-[-0.045em] lg:text-[5.5rem]">
               We’re here to help.
             </h1>
           </div>

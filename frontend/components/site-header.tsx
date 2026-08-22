@@ -9,6 +9,10 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useWishlist } from "@/components/wishlist-provider";
 import { apiRequest } from "@/lib/api";
 import {
+  HRUSHE_LOGO_DIMENSIONS,
+  HRUSHE_LOGO_PATH,
+} from "@/lib/brand-assets";
+import {
   defaultAdminWorkspace,
   getHomepageSectionsForAudience,
   normalizeAdminWorkspace,
@@ -16,6 +20,8 @@ import {
   type HomepageAudience,
   type HomepageSection,
 } from "@/lib/admin-workspace";
+import { HomepageMediaFrame } from "@/components/homepage-media";
+import { resolveHomepageMediaUrl } from "@/lib/homepage-media";
 
 const navItems = [
   { href: "/women", label: "Women" },
@@ -50,20 +56,20 @@ type HomepageManagementPayload = Partial<HomeManagement> & {
 
 const defaultAudienceMenus: AudienceMenus = {
   Women: {
-    image: "/uploads/banners/banner2.png",
+    image: "",
     imageAlt: "HRUSHE womenswear edit",
     cards: [
       {
         href: "/shop",
         label: "Sale: New Pieces Added",
-        image: "/uploads/banners/banner2.png",
+        image: "",
         imageAlt: "HRUSHE womenswear sale edit",
         objectPosition: "center",
       },
       {
         href: "/women",
         label: "Shop Women",
-        image: "/uploads/banners/banner2.png",
+        image: "",
         imageAlt: "HRUSHE womenswear campaign",
         objectPosition: "right center",
       },
@@ -81,20 +87,20 @@ const defaultAudienceMenus: AudienceMenus = {
     ],
   },
   Men: {
-    image: "/uploads/banners/banner1.png",
+    image: "",
     imageAlt: "HRUSHE menswear edit",
     cards: [
       {
         href: "/shop",
         label: "Sale: New Pieces Added",
-        image: "/uploads/banners/banner1.png",
+        image: "",
         imageAlt: "HRUSHE menswear sale edit",
         objectPosition: "center",
       },
       {
         href: "/men",
         label: "Shop Men",
-        image: "/uploads/banners/banner1.png",
+        image: "",
         imageAlt: "HRUSHE menswear campaign",
         objectPosition: "left center",
       },
@@ -151,7 +157,10 @@ function sectionToMenuCard(
   return {
     href: section.ctaLink || fallback.href,
     label: section.title || fallback.label,
-    image: section.image || section.mobileImage || fallback.image,
+    image:
+      resolveHomepageMediaUrl(section.image) ||
+      resolveHomepageMediaUrl(section.mobileImage) ||
+      fallback.image,
     imageAlt: section.imageAlt || fallback.imageAlt,
     objectPosition: section.objectPosition || fallback.objectPosition,
   };
@@ -166,7 +175,7 @@ function buildAudienceMenus(homeManagement: HomeManagement): AudienceMenus {
 
     menus[key] = {
       ...fallback,
-      image: heroSection?.image || fallback.image,
+      image: resolveHomepageMediaUrl(heroSection?.image) || fallback.image,
       imageAlt: heroSection?.imageAlt || fallback.imageAlt,
       cards: [
         sectionToMenuCard(saleSection, fallback.cards[0]),
@@ -266,9 +275,14 @@ export function SiteHeader() {
   const { itemCount, openCart } = useCart();
   const { itemCount: wishlistCount, openWishlist } = useWishlist();
   const { isAuthenticated, user, logout } = useCustomerAuth();
+  const routeMobileAudience: AudienceMenuKey =
+    pathname.startsWith("/men") || pathname.startsWith("/collection/men")
+      ? "Men"
+      : "Women";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [activeAudienceMenu, setActiveAudienceMenu] = useState<AudienceMenuKey | null>(null);
+  const [activeMobileAudience, setActiveMobileAudience] = useState<AudienceMenuKey>(routeMobileAudience);
   const [audienceMenus, setAudienceMenus] = useState<AudienceMenus>(() =>
     buildAudienceMenus(defaultAdminWorkspace.homeManagement)
   );
@@ -277,6 +291,14 @@ export function SiteHeader() {
   const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
   const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
   const loginHref = `/login?next=${encodeURIComponent("/account")}`;
+  const activeMobileMenu = audienceMenus[activeMobileAudience];
+  const mobileFeaturedLinks = activeMobileMenu.featured.filter(
+    (item) => !item.label.toLowerCase().endsWith("home")
+  );
+  const mobilePrimaryLinks = [
+    ...(mobileFeaturedLinks.length > 0 ? mobileFeaturedLinks : activeMobileMenu.featured),
+    { href: "/shop?sort=newest", label: "New Arrivals" },
+  ];
 
   useEffect(() => {
     let active = true;
@@ -347,16 +369,11 @@ export function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]"
+      className={`sticky top-0 border-b border-[var(--border)] bg-[var(--header-background)] ${
+        isMobileMenuOpen ? "z-[115]" : "z-30"
+      }`}
       onMouseLeave={() => setActiveAudienceMenu(null)}
     >
-      <div className="border-b border-[var(--border)] px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)] sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between">
-          <span>Dispatches in 1–3 business days · 7-day returns</span>
-          <span className="hidden sm:block">One free size exchange</span>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-[1600px] px-3 py-1.5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
           <div className="hidden items-center gap-7 lg:flex">
@@ -382,10 +399,10 @@ export function SiteHeader() {
 
           <Link href="/" className="flex shrink-0 items-center justify-start lg:justify-center">
             <Image
-              src="/NEW_LOGO.png"
+              src={HRUSHE_LOGO_PATH}
               alt="HRUSHE"
-              width={220}
-              height={72}
+              width={HRUSHE_LOGO_DIMENSIONS.width}
+              height={HRUSHE_LOGO_DIMENSIONS.height}
               priority
               className="h-[1.7rem] w-auto object-contain sm:h-10 lg:h-12"
             />
@@ -501,7 +518,13 @@ export function SiteHeader() {
             <button
               ref={mobileMenuToggleRef}
               type="button"
-              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              onClick={() => {
+                if (!isMobileMenuOpen) {
+                  setActiveMobileAudience(routeMobileAudience);
+                }
+
+                setIsMobileMenuOpen((current) => !current);
+              }}
               className="flex h-11 w-11 items-center justify-center lg:hidden"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
@@ -582,13 +605,12 @@ export function SiteHeader() {
                 onClick={() => setActiveAudienceMenu(null)}
                 className="group relative block h-[34.25rem] min-h-[34.25rem] max-h-[34.25rem] overflow-hidden"
               >
-                <Image
+                <HomepageMediaFrame
                   src={card.image}
                   alt={card.imageAlt}
-                  fill
                   sizes="360px"
                   className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  style={{ objectPosition: card.objectPosition }}
+                  objectPosition={card.objectPosition}
                 />
                 <span className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
                   <span>{card.label}</span>
@@ -603,76 +625,104 @@ export function SiteHeader() {
       ) : null}
 
       {isMobileMenuOpen ? (
-        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 max-h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-[var(--background)] shadow-[0_24px_60px_rgba(0,0,0,0.08)] lg:hidden">
-          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
-            <div className="bg-[var(--background)]">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-                <p className="eyebrow text-[var(--muted)]">Menu</p>
-                <p className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                  HRUSHE
-                </p>
-              </div>
-              <nav className="mt-2 flex flex-col divide-y divide-[var(--border)] text-sm">
-                {navItems.map((item) => (
+        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-white/92 backdrop-blur-sm lg:hidden">
+          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] border-b border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(0.85rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_18px_36px_rgba(0,0,0,0.04)] sm:px-6">
+            <div className="flex items-center justify-start gap-7 border-b border-[var(--border)] pb-4 text-[0.74rem] font-medium uppercase tracking-[0.11em]">
+              {audienceMenuKeys.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveMobileAudience(key)}
+                  aria-pressed={activeMobileAudience === key}
+                  className={`min-h-7 text-left transition ${
+                    activeMobileAudience === key
+                      ? "font-medium text-[var(--foreground)]"
+                      : "text-[var(--muted)]"
+                  }`}
+                >
+                  {key}
+                </button>
+              ))}
+              <Link
+                href="/story"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`inline-flex min-h-7 items-center ${
+                  routeIsActive(pathname, "/story")
+                    ? "font-medium text-[var(--foreground)]"
+                    : "text-[var(--muted)]"
+                }`}
+              >
+                Story
+              </Link>
+            </div>
+
+            <nav className="mt-5 grid gap-2.5 text-[0.86rem] font-medium uppercase leading-tight tracking-[0.08em]" aria-label={`${activeMobileAudience} featured navigation`}>
+              {mobilePrimaryLinks.map((item) => (
+                <Link
+                  key={`${activeMobileAudience}-mobile-featured-${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex min-h-7 items-center justify-between gap-4"
+                >
+                  <span>{item.label}</span>
+                  <span aria-hidden="true" className="text-[0.82rem] font-normal">›</span>
+                </Link>
+              ))}
+            </nav>
+
+            <div className="mt-4 border-t border-[var(--border)] pt-3.5">
+              <div className="grid gap-2 text-[0.84rem] leading-snug">
+                {activeMobileMenu.categories.map((item) => (
                   <Link
-                    key={item.href}
+                    key={`${activeMobileAudience}-mobile-category-${item.href}-${item.label}`}
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
-                    className={`flex items-center justify-between px-1 py-4 text-[0.78rem] font-medium uppercase tracking-[0.16em] ${
-                      routeIsActive(pathname, item.href) ? "text-[var(--accent)]" : "text-[var(--foreground)]"
-                    }`}
+                    className="min-h-6"
                   >
-                    <span>{item.label}</span>
-                    <span aria-hidden="true">↗</span>
+                    {item.label}
                   </Link>
                 ))}
-                {isAuthenticated ? (
-                  <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="px-1 py-4 text-[0.78rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                    Signed in as {user?.name}
-                  </Link>
-                ) : null}
-              </nav>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (isAuthenticated) {
-                      router.push("/account");
-                    } else {
-                      router.push(loginHref);
-                    }
-                  }}
-                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
-                >
-                  Account
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (isAuthenticated) {
-                      openWishlist();
-                    } else {
-                      router.push(loginHref);
-                    }
-                  }}
-                  className="min-h-11 border border-[var(--border)] text-[0.68rem] font-medium uppercase tracking-[0.14em]"
-                >
-                  Save{wishlistCount > 0 ? ` ${wishlistCount}` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    openCart();
-                  }}
-                  className="hrushe-inverse-action min-h-11 border text-[0.68rem] font-medium uppercase tracking-[0.14em]"
-                >
-                  Cart{itemCount > 0 ? ` ${itemCount}` : ""}
-                </button>
               </div>
+            </div>
+
+            {isAuthenticated ? (
+              <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="mt-5 block border-t border-[var(--border)] pt-3.5 text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Signed in as {user?.name}
+              </Link>
+            ) : null}
+
+            <div className="mt-4 flex items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (isAuthenticated) {
+                    openWishlist();
+                  } else {
+                    router.push(loginHref);
+                  }
+                }}
+                className="relative flex h-9 w-9 items-center justify-center border border-[var(--border)]"
+                aria-label="Saved pieces"
+              >
+                <SaveIcon />
+                {wishlistCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
+                    {wishlistCount}
+                  </span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  window.dispatchEvent(new CustomEvent("hrushe:open-support"));
+                }}
+                className="flex h-9 w-9 items-center justify-center border border-[var(--border)]"
+                aria-label="Support"
+              >
+                <SupportIcon />
+              </button>
             </div>
           </div>
         </div>

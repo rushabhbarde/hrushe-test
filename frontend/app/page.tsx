@@ -11,6 +11,11 @@ import {
 } from "@/lib/admin-workspace";
 import { getHomepageManagement } from "@/lib/server-storefront";
 import { SiteFooter } from "@/components/site-footer";
+import {
+  HRUSHE_LOGO_DIMENSIONS,
+  HRUSHE_LOGO_PATH,
+} from "@/lib/brand-assets";
+import { HomepageMediaFrame } from "@/components/homepage-media";
 
 export const metadata: Metadata = {
   title: "Shop Women & Men",
@@ -49,10 +54,6 @@ const entryPositionClasses: Record<HomepageTextPosition, string> = {
   "bottom-right": "absolute inset-x-0 bottom-0 z-10 hidden justify-end px-5 pb-11 sm:pb-14 lg:flex lg:pb-20",
 };
 
-function getCardImage(card: HomepageCard) {
-  return card.image || card.mobileImage || "/uploads/banners/shopwomen.png";
-}
-
 function EntryCardDesktopTitle({ card }: { card: HomepageCard }) {
   const position = card.titlePosition || "bottom-center";
   const fontSize = card.titleFontSize || "large";
@@ -81,10 +82,10 @@ export default async function Home() {
       <header className="fixed inset-x-0 top-0 z-30 flex h-[3.375rem] items-center justify-start border-b border-[var(--border)] bg-[var(--header-background)] px-6 sm:h-[4.5rem] sm:justify-center sm:px-4 lg:relative lg:inset-auto">
         <Link href="/" aria-label="HRUSHE home" className="inline-flex items-center justify-center">
           <Image
-            src="/NEW_LOGO.png"
+            src={HRUSHE_LOGO_PATH}
             alt="HRUSHE"
-            width={220}
-            height={72}
+            width={HRUSHE_LOGO_DIMENSIONS.width}
+            height={HRUSHE_LOGO_DIMENSIONS.height}
             priority
             className="h-7 w-auto object-contain sm:h-12"
           />
@@ -102,14 +103,14 @@ export default async function Home() {
               href={card.ctaLink || "/shop"}
               className="group relative block h-full w-full flex-none snap-start snap-always overflow-hidden lg:h-[calc(100svh-4.5rem)] lg:w-auto lg:snap-none"
             >
-              <Image
-                src={getCardImage(card)}
+              <HomepageMediaFrame
+                src={card.image}
+                mobileSrc={card.mobileImage}
                 alt={card.imageAlt || card.title}
-                fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.02]"
-                style={{ objectPosition: card.objectPosition || "center" }}
+                objectPosition={card.objectPosition}
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_40%,rgba(0,0,0,0.38)_100%)]" />
               <div className="absolute inset-x-0 top-[51%] z-10 flex -translate-y-1/2 justify-center px-5 font-sans lg:hidden">
