@@ -538,7 +538,7 @@ export function AdminProductForm({
                 <select
                   value={form.category}
                   onChange={(event) => updateForm("category", event.target.value)}
-                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                  className="min-h-12 w-full min-w-0 max-w-full border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
                 >
                   {categoryOptions.length ? null : (
                     <option value="">No categories added yet</option>
@@ -585,9 +585,9 @@ export function AdminProductForm({
                   {inventoryRows.map((variant) => (
                     <div
                       key={`${variant.size}-${variant.color}`}
-                      className="grid gap-3 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] p-4 md:grid-cols-[0.7fr_1.5fr_0.7fr_auto] md:items-end"
+                      className="grid min-w-0 gap-3 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] p-4 lg:grid-cols-[minmax(96px,0.7fr)_minmax(180px,1.4fr)_minmax(130px,0.7fr)_minmax(96px,auto)] lg:items-end"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">Option</p>
                         <p className="mt-2 text-sm font-semibold">{variant.color || "Default"} / {variant.size}</p>
                       </div>
@@ -647,7 +647,7 @@ export function AdminProductForm({
                 <select
                   value={form.gender}
                   onChange={(event) => updateForm("gender", event.target.value as ProductGender)}
-                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                  className="min-h-12 w-full min-w-0 max-w-full border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
                 >
                   {genderOptions.map((option) => (
                     <option key={option} value={option}>
@@ -668,7 +668,7 @@ export function AdminProductForm({
                       onClick={() => updateForm("fitType", option)}
                       className={`px-4 py-3 text-sm font-medium ${
                         form.fitType === option
-                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          ? "bg-[var(--foreground)] text-white"
                           : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
                       }`}
                     >
@@ -682,7 +682,7 @@ export function AdminProductForm({
                 <select
                   value={form.status}
                   onChange={(event) => updateForm("status", event.target.value as ProductStatus)}
-                  className="min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
+                  className="min-h-12 w-full min-w-0 max-w-full border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm"
                 >
                   {statusOptions.map((option) => (
                     <option key={option} value={option}>
@@ -712,7 +712,7 @@ export function AdminProductForm({
                       }
                       className={`px-4 py-2 text-sm ${
                         selected
-                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          ? "bg-[var(--foreground)] text-white"
                           : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
                       }`}
                     >
@@ -742,7 +742,7 @@ export function AdminProductForm({
                       }
                       className={`px-4 py-2 text-sm ${
                         selected
-                          ? "bg-[var(--foreground)] text-[var(--background)]"
+                          ? "bg-[var(--foreground)] text-white"
                           : "border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_82%,transparent)]"
                       }`}
                     >
@@ -835,7 +835,7 @@ export function AdminProductForm({
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]">
                         Size {row.size}
                       </p>
-                      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                         <AdminField label="Chest">
                           <AdminFilterInput
                             value={row.chest}
@@ -900,7 +900,7 @@ export function AdminProductForm({
                       input.value = "";
                     });
                   }}
-                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                  className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                 />
               </AdminField>
               <AdminField label="Gallery images" hint="Extra editorial frames for rich product storytelling.">
@@ -914,7 +914,7 @@ export function AdminProductForm({
                       input.value = "";
                     });
                   }}
-                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                  className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                 />
               </AdminField>
               <AdminField label="Product gallery videos" hint="Videos appear inside the storefront product media gallery with the product images.">
@@ -926,7 +926,7 @@ export function AdminProductForm({
                     void uploadProductVideos(event.target.files);
                     event.target.value = "";
                   }}
-                  className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                  className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                 />
               </AdminField>
               {mediaUploadsInFlight > 0 ? (

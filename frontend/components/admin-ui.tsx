@@ -17,7 +17,7 @@ const toneClasses: Record<Tone, string> = {
 };
 
 function fieldClassName(className = "") {
-  return `min-h-12 border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color:color-mix(in_srgb,var(--muted)_90%,transparent)] focus:border-[color:color-mix(in_srgb,var(--foreground)_28%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_5%,transparent)] ${className}`.trim();
+  return `min-h-12 w-full min-w-0 max-w-full border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color:color-mix(in_srgb,var(--muted)_90%,transparent)] focus:border-[color:color-mix(in_srgb,var(--foreground)_28%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_5%,transparent)] ${className}`.trim();
 }
 
 export function AdminBadge({
@@ -219,8 +219,8 @@ export function AdminField({
   children: ReactNode;
 }) {
   return (
-    <label className="grid gap-2">
-      <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
+    <label className="grid min-w-0 gap-2">
+      <span className="min-w-0 text-sm font-medium text-[var(--foreground)]">{label}</span>
       {children}
       {hint ? <span className="text-xs leading-5 text-[var(--muted)]">{hint}</span> : null}
     </label>
@@ -242,10 +242,10 @@ export function AdminSwitch({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4 text-left"
+      className="flex w-full min-w-0 items-center justify-between gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4 text-left"
       aria-pressed={checked}
     >
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-medium text-[var(--foreground)]">{label}</p>
         {description ? <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{description}</p> : null}
       </div>
@@ -336,4 +336,3 @@ export function AdminConfirmDialog({
     </div>
   );
 }
-

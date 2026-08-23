@@ -215,8 +215,8 @@ export default function AdminDashboardPage() {
               title="Recent orders"
               description="Newest storefront orders with payment and fulfilment state."
             />
-            <div className="overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
-              <div className="hidden grid-cols-[140px_minmax(0,1fr)_140px_140px_120px] gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)] lg:grid">
+            <div className="overflow-x-auto border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
+              <div className="hidden min-w-[760px] grid-cols-[120px_minmax(220px,1fr)_120px_130px_110px] gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)] lg:grid">
                 <span>Order</span>
                 <span>Customer</span>
                 <span>Payment</span>
@@ -358,27 +358,27 @@ function RecentOrderRow({ order }: { order: AdminDashboardRecentOrder }) {
   return (
     <Link
       href={`/admin/orders/${order.id}`}
-      className="grid gap-4 px-4 py-4 transition hover:bg-[color:color-mix(in_srgb,var(--foreground)_3%,transparent)] lg:grid-cols-[140px_minmax(0,1fr)_140px_140px_120px] lg:px-5"
+      className="grid gap-4 px-4 py-4 transition hover:bg-[color:color-mix(in_srgb,var(--foreground)_3%,transparent)] lg:min-w-[760px] lg:grid-cols-[120px_minmax(220px,1fr)_120px_130px_110px] lg:px-5"
     >
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-semibold">#{order.orderNumber || order.id.slice(-6)}</p>
         <p className="mt-1 text-xs text-[var(--muted)]">
           {new Date(order.createdAt).toLocaleDateString("en-IN")}
         </p>
       </div>
-      <div>
-        <p className="text-sm font-semibold">{order.customerName}</p>
-        <p className="mt-1 text-xs text-[var(--muted)]">{order.customerEmail}</p>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">{order.customerName}</p>
+        <p className="mt-1 truncate text-xs text-[var(--muted)]">{order.customerEmail}</p>
       </div>
-      <div>
+      <div className="min-w-0">
         <AdminBadge tone={order.paymentStatus === "paid" ? "success" : "default"}>
           {order.paymentStatus}
         </AdminBadge>
       </div>
-      <div>
+      <div className="min-w-0">
         <AdminBadge tone={orderStatusTone(order.orderStatus)}>{order.orderStatus}</AdminBadge>
       </div>
-      <div className="text-left lg:text-right">
+      <div className="min-w-0 text-left lg:text-right">
         <p className="text-sm font-semibold">{formatAdminPaise(order.totalPaise)}</p>
       </div>
     </Link>

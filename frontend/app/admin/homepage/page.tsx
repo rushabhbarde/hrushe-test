@@ -630,7 +630,7 @@ export default function AdminHomepagePage() {
 
               {selectedSection ? (
                 <div className="space-y-5">
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid min-w-0 gap-4 lg:grid-cols-3">
                     <AdminField label="Admin label">
                       <AdminFilterInput
                         value={selectedSection.label}
@@ -749,7 +749,7 @@ export default function AdminHomepagePage() {
                             type="file"
                             accept="image/*"
                             onChange={(event) => void handleSectionImageUpload(event, "image")}
-                            className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                            className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                           />
                         </AdminField>
                         <AdminField label="Desktop image URL">
@@ -766,7 +766,7 @@ export default function AdminHomepagePage() {
                             type="file"
                             accept="image/*"
                             onChange={(event) => void handleSectionImageUpload(event, "mobileImage")}
-                            className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                            className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                           />
                         </AdminField>
                         <AdminField label="Mobile image URL">
@@ -907,7 +907,7 @@ export default function AdminHomepagePage() {
                         </AdminField>
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid min-w-0 gap-4 md:grid-cols-2">
                         <AdminField label="Title font size">
                           <AdminFilterSelect
                             value={selectedCard.titleFontSize}
@@ -958,7 +958,7 @@ export default function AdminHomepagePage() {
                             type="file"
                             accept="image/*"
                             onChange={(event) => void handleCardImageUpload(event, "image")}
-                            className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                            className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                           />
                         </AdminField>
                         <AdminField label="Desktop card image URL">
@@ -975,7 +975,7 @@ export default function AdminHomepagePage() {
                             type="file"
                             accept="image/*"
                             onChange={(event) => void handleCardImageUpload(event, "mobileImage")}
-                            className="block w-full text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-[var(--background)]"
+                            className="block w-full min-w-0 max-w-full overflow-hidden text-sm text-[var(--muted)] file:mr-4 file:border-0 file:bg-[var(--foreground)] file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-white"
                           />
                         </AdminField>
                         <AdminField label="Mobile card image URL">
