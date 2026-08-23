@@ -12,6 +12,10 @@ const PRODUCTION_SITE_ORIGINS = [
 ];
 const APP_ENV_VALUE = process.env.APP_ENV || process.env.NODE_ENV || "development";
 const NORMALIZED_APP_ENV = APP_ENV_VALUE.trim().toLowerCase();
+const RAZORPAY_WEBHOOK_SECRET =
+  process.env.RAZORPAY_WEBHOOK_SECRET ||
+  process.env.HRUSHE_RZP_WEBHOOK_SECRET ||
+  "";
 
 const uniqueOrigins = (origins) => Array.from(new Set(origins));
 
@@ -71,7 +75,7 @@ const env = {
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || "",
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || "",
   RAZORPAY_CURRENCY: process.env.RAZORPAY_CURRENCY || "INR",
-  RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || "",
+  RAZORPAY_WEBHOOK_SECRET,
   INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET || "",
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "",
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "",
@@ -155,7 +159,7 @@ function assertProductionEnv() {
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
-    RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    RAZORPAY_WEBHOOK_SECRET,
     INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,

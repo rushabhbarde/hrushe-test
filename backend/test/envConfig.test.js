@@ -193,3 +193,38 @@ test("production config rejects unsafe origins and non-live Razorpay mode", () =
     /Razorpay live mode|ALLOWED_ORIGINS/i
   );
 });
+
+test("production config accepts HRUSHE Razorpay webhook secret alias", () => {
+  const env = loadEnv({
+    APP_ENV: "production",
+    NODE_ENV: "production",
+    CLIENT_URL: "https://hrushe.in",
+    BACKEND_PUBLIC_URL: "https://api.hrushe.in",
+    ALLOWED_ORIGINS: "https://hrushe.in,https://www.hrushe.in",
+    MONGODB_URI: "mongodb+srv://cluster.example/hrushe-production",
+    JWT_SECRET: "production-secret-with-more-than-32-characters",
+    ADMIN_EMAIL: "admin@hrushe.in",
+    ADMIN_PASSWORD: "StrongPassword1!",
+    RAZORPAY_KEY_ID: "rzp_live_1234567890",
+    RAZORPAY_KEY_SECRET: "live-secret-with-more-than-32-characters",
+    HRUSHE_RZP_WEBHOOK_SECRET: "webhook-secret-with-more-than-32-characters",
+    INTERNAL_SCHEDULER_SECRET: "scheduler-secret-with-more-than-32-characters",
+    R2_ACCOUNT_ID: "account",
+    R2_ACCESS_KEY_ID: "access-key",
+    R2_SECRET_ACCESS_KEY: "secret-key",
+    R2_BUCKET_NAME: "hrushe-production-media",
+    R2_PUBLIC_URL: "https://media.hrushe.in",
+    MAIL_FROM: "team@hrushe.in",
+    ZEPTOMAIL_API_KEY: "zepto-key",
+    OTP_DEV_MODE: "false",
+    COOKIE_SECURE: "true",
+    COOKIE_SAME_SITE: "lax",
+    ENABLE_COD: "false",
+  });
+
+  assert.equal(
+    env.RAZORPAY_WEBHOOK_SECRET,
+    "webhook-secret-with-more-than-32-characters"
+  );
+  assert.doesNotThrow(() => env.assertProductionEnv());
+});
