@@ -237,3 +237,7 @@ export function useWishlist() {
 
   return context;
 }
+
+export function useOptionalWishlist() {
+  return useContext(WishlistContext);
+}

@@ -100,6 +100,36 @@ test("staging config accepts redacted test-mode isolated settings", () => {
   assert.equal(env.ALLOWED_ORIGINS.includes("https://www.hrushe.in"), false);
 });
 
+test("staging config accepts HRUSHE Razorpay webhook secret alias", () => {
+  const env = loadEnv({
+    APP_ENV: "staging",
+    NODE_ENV: "production",
+    CLIENT_URL: "https://staging.hrushe.example",
+    BACKEND_PUBLIC_URL: "https://api-staging.hrushe.example",
+    MONGODB_URI: "mongodb+srv://cluster.example/hrushe-staging",
+    JWT_SECRET: "staging-secret-with-more-than-32-characters",
+    RAZORPAY_KEY_ID: "rzp_test_1234567890",
+    RAZORPAY_KEY_SECRET: "test-secret",
+    HRUSHE_RZP_WEBHOOK_SECRET: "webhook-secret-with-more-than-32-characters",
+    INTERNAL_SCHEDULER_SECRET: "scheduler-secret",
+    R2_BUCKET_NAME: "hrushe-staging-media",
+    R2_PUBLIC_URL: "https://media-staging.hrushe.example",
+    MAIL_FROM: "staging-mailbox@hrushe-test.example",
+    SMTP_HOST: "smtp.staging-mail.test",
+    SMTP_USER: "smtp-user",
+    SMTP_PASS: "smtp-password",
+    OTP_DEV_MODE: "false",
+    COOKIE_SECURE: "true",
+    COOKIE_SAME_SITE: "lax",
+  });
+
+  assert.equal(
+    env.RAZORPAY_WEBHOOK_SECRET,
+    "webhook-secret-with-more-than-32-characters"
+  );
+  assert.doesNotThrow(() => env.assertStagingEnv());
+});
+
 test("staging config requires isolated email test delivery", () => {
   const env = loadEnv({
     APP_ENV: "staging",

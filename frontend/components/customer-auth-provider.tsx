@@ -257,3 +257,7 @@ export function useCustomerAuth() {
 
   return context;
 }
+
+export function useOptionalCustomerAuth() {
+  return useContext(CustomerAuthContext);
+}

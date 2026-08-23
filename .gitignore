@@ -7,3 +7,4 @@
 # Frontend nested repo build artifacts
 /frontend/.next
 /frontend/node_modules
+/frontend/test-results

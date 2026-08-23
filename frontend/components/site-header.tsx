@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCart } from "@/components/cart-provider";
-import { useCustomerAuth } from "@/components/customer-auth-provider";
-import { useWishlist } from "@/components/wishlist-provider";
+import { useOptionalCart } from "@/components/cart-provider";
+import { useOptionalCustomerAuth } from "@/components/customer-auth-provider";
+import { useOptionalWishlist } from "@/components/wishlist-provider";
 import { apiRequest } from "@/lib/api";
 import {
   HRUSHE_LOGO_DIMENSIONS,
@@ -28,6 +28,8 @@ const navItems = [
   { href: "/men", label: "Men" },
   { href: "/story", label: "Story" },
 ];
+const noop = () => {};
+const noopAsync = async () => {};
 
 type AudienceMenuKey = "Women" | "Men";
 type AudienceMenuItem = {
@@ -272,9 +274,16 @@ function SaveIcon() {
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const { itemCount, openCart } = useCart();
-  const { itemCount: wishlistCount, openWishlist } = useWishlist();
-  const { isAuthenticated, user, logout } = useCustomerAuth();
+  const cart = useOptionalCart();
+  const wishlist = useOptionalWishlist();
+  const customerAuth = useOptionalCustomerAuth();
+  const itemCount = cart?.itemCount || 0;
+  const openCart = cart?.openCart || noop;
+  const wishlistCount = wishlist?.itemCount || 0;
+  const openWishlist = wishlist?.openWishlist || noop;
+  const isAuthenticated = customerAuth?.isAuthenticated || false;
+  const user = customerAuth?.user || null;
+  const logout = customerAuth?.logout || noopAsync;
   const routeMobileAudience: AudienceMenuKey =
     pathname.startsWith("/men") || pathname.startsWith("/collection/men")
       ? "Men"

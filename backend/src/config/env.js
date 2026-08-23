@@ -159,7 +159,7 @@ function assertProductionEnv() {
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
-    RAZORPAY_WEBHOOK_SECRET,
+    "RAZORPAY_WEBHOOK_SECRET or HRUSHE_RZP_WEBHOOK_SECRET": RAZORPAY_WEBHOOK_SECRET,
     INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
@@ -259,7 +259,9 @@ function assertProductionEnv() {
   }
 
   if (env.RAZORPAY_WEBHOOK_SECRET.length < 32) {
-    throw new Error("RAZORPAY_WEBHOOK_SECRET must be at least 32 characters in production.");
+    throw new Error(
+      "RAZORPAY_WEBHOOK_SECRET or HRUSHE_RZP_WEBHOOK_SECRET must be at least 32 characters in production."
+    );
   }
 
   let clientUrl;
@@ -324,7 +326,7 @@ function assertStagingEnv() {
     JWT_SECRET: process.env.JWT_SECRET,
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
-    RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    "RAZORPAY_WEBHOOK_SECRET or HRUSHE_RZP_WEBHOOK_SECRET": RAZORPAY_WEBHOOK_SECRET,
     INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,

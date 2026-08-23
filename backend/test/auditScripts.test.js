@@ -14,7 +14,21 @@ const {
   analyzeProducts: analyzeInventoryProducts,
 } = require("../scripts/audit-inventory-consistency");
 
+const originalEnv = { ...process.env };
+const razorpayVerificationScriptPath = require.resolve("../scripts/verify-razorpay-production-testmode");
+
 const id = (value) => ({ toString: () => value });
+
+function loadRazorpayVerificationScript(overrides = {}) {
+  delete require.cache[razorpayVerificationScriptPath];
+  process.env = { ...originalEnv, ...overrides };
+  return require(razorpayVerificationScriptPath);
+}
+
+test.afterEach(() => {
+  delete require.cache[razorpayVerificationScriptPath];
+  process.env = { ...originalEnv };
+});
 
 test("phone audit reports empty, invalid, duplicate, and normalizable users", () => {
   const report = buildReport([
@@ -161,4 +175,18 @@ test("inventory order audit detects expired and failed reserved orders", () => {
 
   assert.equal(findings.failedOrCancelledOrdersWithReservedInventory.length, 1);
   assert.equal(findings.expiredReservations.length, 1);
+});
+
+test("Razorpay production test verifier accepts HRUSHE webhook secret alias", () => {
+  const { assertSafeConfig } = loadRazorpayVerificationScript({
+    RAZORPAY_PRODUCTION_TEST_VERIFY: "true",
+    ALLOW_PRODUCTION_TEST_ORDER_MUTATION: "true",
+    BACKEND_PUBLIC_URL: "https://api-staging.hrushe.example",
+    RAZORPAY_KEY_ID: "rzp_test_1234567890",
+    RAZORPAY_WEBHOOK_SECRET: "",
+    HRUSHE_RZP_WEBHOOK_SECRET: "webhook-secret-with-more-than-32-characters",
+    RAZORPAY_TEST_CHECKOUT_PAYLOAD_JSON: JSON.stringify({ items: [] }),
+  });
+
+  assert.doesNotThrow(() => assertSafeConfig());
 });

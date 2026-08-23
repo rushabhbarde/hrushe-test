@@ -25,6 +25,19 @@ const defaultSettings: PublicWebsiteSettings = {
   pinterestUrl: "",
 };
 
+function mergeWebsiteSettings(settings: Partial<PublicWebsiteSettings> | null | undefined) {
+  const source = settings && typeof settings === "object" ? settings : {};
+
+  return (Object.keys(defaultSettings) as Array<keyof PublicWebsiteSettings>).reduce(
+    (next, key) => {
+      const value = source[key];
+      next[key] = typeof value === "string" ? value : defaultSettings[key];
+      return next;
+    },
+    {} as PublicWebsiteSettings
+  );
+}
+
 const footerGroups = [
   {
     title: "Shop",
@@ -72,9 +85,9 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     let active = true;
-    void apiRequest<PublicWebsiteSettings>("/content/settings")
+    void apiRequest<Partial<PublicWebsiteSettings>>("/content/settings")
       .then((response) => {
-        if (active) setSettings(response);
+        if (active) setSettings(mergeWebsiteSettings(response));
       })
       .catch(() => undefined);
     return () => {

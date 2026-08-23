@@ -53,7 +53,6 @@ const requiredKeys = [
   "ADMIN_PASSWORD",
   "RAZORPAY_KEY_ID",
   "RAZORPAY_KEY_SECRET",
-  "RAZORPAY_WEBHOOK_SECRET",
   "INTERNAL_SCHEDULER_SECRET",
   "R2_ACCOUNT_ID",
   "R2_ACCESS_KEY_ID",
@@ -61,11 +60,26 @@ const requiredKeys = [
   "R2_BUCKET_NAME",
   "R2_PUBLIC_URL",
 ];
+const missingRequiredKeys = requiredKeys.filter((key) => !hasValue(key));
+const hasWebhookSecret =
+  hasValue("RAZORPAY_WEBHOOK_SECRET") || hasValue("HRUSHE_RZP_WEBHOOK_SECRET");
 
-const placeholderKeys = requiredKeys.filter((key) => hasPlaceholderValue(process.env[key]));
+const placeholderKeys = [
+  ...requiredKeys.filter((key) => hasPlaceholderValue(process.env[key])),
+  ...(hasPlaceholderValue(env.RAZORPAY_WEBHOOK_SECRET)
+    ? ["RAZORPAY_WEBHOOK_SECRET/HRUSHE_RZP_WEBHOOK_SECRET"]
+    : []),
+];
 
 addCheck("APP_ENV is production", String(env.APP_ENV || "").toLowerCase() === "production");
-addCheck("Required production variables", requiredKeys.every(hasValue), "Missing: " + requiredKeys.filter((key) => !hasValue(key)).join(", "));
+addCheck(
+  "Required production variables",
+  missingRequiredKeys.length === 0 && hasWebhookSecret,
+  "Missing: " + [
+    ...missingRequiredKeys,
+    ...(hasWebhookSecret ? [] : ["RAZORPAY_WEBHOOK_SECRET or HRUSHE_RZP_WEBHOOK_SECRET"]),
+  ].join(", ")
+);
 addCheck("No placeholder secret values", placeholderKeys.length === 0, "Placeholder keys: " + placeholderKeys.join(", "));
 addCheck("MongoDB configuration", hasValue("MONGODB_URI") && !hasPlaceholderValue(process.env.MONGODB_URI));
 addCheck("JWT secret strength", hasValue("JWT_SECRET") && env.JWT_SECRET.length >= 32 && !hasPlaceholderValue(env.JWT_SECRET));
@@ -73,7 +87,7 @@ addCheck("Secure cookie mode", env.COOKIE_SECURE === true && ["lax", "strict"].i
 addCheck("Allowed origins", hasOnlySafeOrigins(env.ALLOWED_ORIGINS));
 addCheck("Customer/backend/media URLs use HTTPS", isHttpsUrl(env.CLIENT_URL) && isHttpsUrl(env.BACKEND_PUBLIC_URL) && isHttpsUrl(env.R2_PUBLIC_URL));
 addCheck("Razorpay live config", env.RAZORPAY_KEY_ID.startsWith("rzp_live_") && hasValue("RAZORPAY_KEY_SECRET"));
-addCheck("Webhook secret", hasValue("RAZORPAY_WEBHOOK_SECRET") && env.RAZORPAY_WEBHOOK_SECRET.length >= 32);
+addCheck("Webhook secret", hasWebhookSecret && env.RAZORPAY_WEBHOOK_SECRET.length >= 32);
 addCheck("OTP dev mode disabled", env.OTP_DEV_MODE === false);
 addCheck("COD disabled", env.ENABLE_COD === false);
 addCheck("R2 config", ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_PUBLIC_URL"].every(hasValue));

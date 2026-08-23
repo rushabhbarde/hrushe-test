@@ -15,7 +15,11 @@ const baseUrl = String(
 )
   .trim()
   .replace(/\/+$/, "");
-const webhookSecret = String(process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
+const webhookSecret = String(
+  process.env.RAZORPAY_WEBHOOK_SECRET ||
+    process.env.HRUSHE_RZP_WEBHOOK_SECRET ||
+    ""
+).trim();
 const keyId = String(process.env.RAZORPAY_KEY_ID || "").trim();
 const checkoutPayload = process.env.RAZORPAY_TEST_CHECKOUT_PAYLOAD_JSON
   ? JSON.parse(process.env.RAZORPAY_TEST_CHECKOUT_PAYLOAD_JSON)
@@ -44,7 +48,7 @@ function assertSafeConfig() {
   }
 
   if (!webhookSecret) {
-    throw new Error("RAZORPAY_WEBHOOK_SECRET is required for signed webhook verification.");
+    throw new Error("RAZORPAY_WEBHOOK_SECRET or HRUSHE_RZP_WEBHOOK_SECRET is required for signed webhook verification.");
   }
 
   if (!checkoutPayload) {
