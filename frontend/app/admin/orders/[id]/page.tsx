@@ -20,7 +20,13 @@ import { useToast } from "@/components/toast-provider";
 import { downloadApiFile, apiRequest } from "@/lib/api";
 import { formatAdminCurrency, orderStatusTone } from "@/lib/admin";
 import { resolveOrderAdminMeta, type OrderAdminMeta } from "@/lib/admin-workspace";
-import { orderStatuses, type OrderRecord } from "@/lib/orders";
+import {
+  canTransitionOrderStatus,
+  orderStatuses,
+  requiresPaidOrderStatus,
+  type OrderRecord,
+  type OrderStatus,
+} from "@/lib/orders";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 
 const shippingStates: OrderAdminMeta["shippingStatus"][] = [
@@ -60,6 +66,7 @@ export default function AdminOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [persistedOrderStatus, setPersistedOrderStatus] = useState<OrderStatus | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -70,6 +77,7 @@ export default function AdminOrderDetailPage() {
           return;
         }
         setOrder(response);
+        setPersistedOrderStatus(response.orderStatus);
         setOrderMeta(resolveOrderAdminMeta(workspace, response));
       })
       .catch(() => {
@@ -99,6 +107,22 @@ export default function AdminOrderDetailPage() {
       return;
     }
 
+    const currentStatus = persistedOrderStatus || order.orderStatus;
+
+    if (nextStatus && !canTransitionOrderStatus(currentStatus, nextStatus)) {
+      pushToast(`Cannot move this order from ${currentStatus} to ${nextStatus}.`, "error");
+      return;
+    }
+
+    if (
+      nextStatus &&
+      requiresPaidOrderStatus(nextStatus) &&
+      order.paymentStatus !== "paid"
+    ) {
+      pushToast("Unpaid orders cannot enter fulfillment.", "error");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -120,12 +144,27 @@ export default function AdminOrderDetailPage() {
       });
 
       setOrder(updatedOrder);
+      setPersistedOrderStatus(updatedOrder.orderStatus);
       pushToast("Order updates saved.");
     } catch (error) {
       pushToast(error instanceof Error ? error.message : "Could not update order.", "error");
     } finally {
       setSaving(false);
     }
+  }
+
+  function canSelectStatus(nextStatus: OrderStatus) {
+    const currentStatus = persistedOrderStatus || order?.orderStatus;
+
+    if (!order || !currentStatus) {
+      return false;
+    }
+
+    if (!canTransitionOrderStatus(currentStatus, nextStatus)) {
+      return false;
+    }
+
+    return !requiresPaidOrderStatus(nextStatus) || order.paymentStatus === "paid";
   }
 
   if (loading) {
@@ -244,7 +283,7 @@ export default function AdminOrderDetailPage() {
                     }
                   >
                     {orderStatuses.map((status) => (
-                      <option key={status} value={status}>
+                      <option key={status} value={status} disabled={!canSelectStatus(status)}>
                         {status}
                       </option>
                     ))}
@@ -380,7 +419,12 @@ export default function AdminOrderDetailPage() {
             <AdminPanel>
               <AdminSubhead title="Cancellation" description="Cancellation updates the live order status. Payment refunds must be completed in Razorpay." />
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setCancelOpen(true)} className="button-secondary px-5 py-3 text-sm font-medium">
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(true)}
+                  className="button-secondary px-5 py-3 text-sm font-medium"
+                  disabled={!canSelectStatus("Cancelled")}
+                >
                   Cancel order
                 </button>
               </div>

@@ -655,6 +655,87 @@ const parseDateFilter = (from, to) => {
   return Object.keys(createdAt).length > 0 ? createdAt : null;
 };
 
+const adminOrderPaymentStatuses = ["pending", "initiated", "paid", "failed", "cancelled"];
+
+const normalizeAllowedAdminFilter = (value, allowedValues) => {
+  const normalized = String(value || "").trim();
+
+  return allowedValues.includes(normalized) ? normalized : "";
+};
+
+const buildAdminOrderFilter = (query = {}) => {
+  const filter = {};
+  const clauses = [];
+  const orderStatus = normalizeAllowedAdminFilter(
+    query.orderStatus || query.status,
+    allowedStatuses
+  );
+  const paymentStatus = normalizeAllowedAdminFilter(
+    query.paymentStatus || query.payment,
+    adminOrderPaymentStatuses
+  );
+  const search = String(query.search || query.query || query.q || "").trim();
+  const createdAt = parseDateFilter(query.from, query.to);
+
+  if (orderStatus) {
+    filter.orderStatus = orderStatus;
+  }
+
+  if (paymentStatus) {
+    filter.paymentStatus = paymentStatus;
+  }
+
+  if (createdAt) {
+    filter.createdAt = createdAt;
+  }
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search.slice(0, 100)), "i");
+    const searchClauses = [
+      { customerName: searchRegex },
+      { customerEmail: searchRegex },
+      { customerPhone: searchRegex },
+      { courierName: searchRegex },
+      { trackingId: searchRegex },
+      { paymentProviderPaymentId: searchRegex },
+      { checkoutSessionId: searchRegex },
+      { "products.name": searchRegex },
+      { "products.sku": searchRegex },
+    ];
+
+    if (/^\d+$/.test(search)) {
+      searchClauses.push({ orderNumber: Number(search) });
+    }
+
+    if (mongoose.Types.ObjectId.isValid(search)) {
+      searchClauses.push({ _id: search });
+    }
+
+    clauses.push({ $or: searchClauses });
+  }
+
+  if (clauses.length > 0) {
+    filter.$and = clauses;
+  }
+
+  return filter;
+};
+
+const buildAdminOrderSort = (query = {}) => {
+  switch (String(query.sort || "").trim()) {
+    case "oldest":
+      return { createdAt: 1 };
+    case "value-desc":
+      return { totalPaise: -1, totalAmount: -1, createdAt: -1 };
+    case "value-asc":
+      return { totalPaise: 1, totalAmount: 1, createdAt: -1 };
+    case "status":
+      return { orderStatus: 1, createdAt: -1 };
+    default:
+      return { createdAt: -1 };
+  }
+};
+
 const buildReconciliationFilter = (query = {}, now = Date.now()) => {
   const filter = {};
   const clauses = [];
@@ -879,14 +960,16 @@ const getAllOrders = asyncHandler(async (req, res) => {
     defaultLimit: 100,
     maxLimit: 100,
   });
+  const filter = buildAdminOrderFilter(req.query);
+  const sort = buildAdminOrderSort(req.query);
   const [orders, total] = await Promise.all([
-    Order.find()
+    Order.find(filter)
       .select("-checkoutLogs -checkoutUrl")
       .populate("userId", "name email phone address")
-      .sort({ createdAt: -1 })
+      .sort(sort)
       .skip(paginationParams.skip)
       .limit(paginationParams.limit),
-    Order.countDocuments({}),
+    Order.countDocuments(filter),
   ]);
   const pagination = buildPaginationMeta({
     page: paginationParams.page,
@@ -2312,6 +2395,8 @@ module.exports = {
     assertReconciliationLockOwner,
     buildReconciliationFilter,
     buildPaymentConfirmationSaveSet,
+    buildAdminOrderFilter,
+    buildAdminOrderSort,
     buildReconciliationSaveSet,
     buildPublicTrackingResponse,
     canTransitionOrderStatus,

@@ -21,6 +21,8 @@ const {
   verifyCheckout,
   __private: {
     RECONCILIATION_RESULT_CODES,
+    buildAdminOrderFilter,
+    buildAdminOrderSort,
     canTransitionOrderStatus,
     getPaymentConfirmationInventoryBlocker,
     saveReconciledOrder,
@@ -644,6 +646,39 @@ test("order status transition guard blocks terminal and backward fulfillment mov
   assert.equal(canTransitionOrderStatus("Cancelled", "Shipped"), false);
   assert.equal(canTransitionOrderStatus("Confirmed", "Packed"), true);
   assert.equal(canTransitionOrderStatus("Delivered", "Returned"), true);
+});
+
+test("admin order list filter supports safe search, status, payment, and date filters", () => {
+  const filter = buildAdminOrderFilter({
+    search: "Asha (VIP)",
+    status: "Packed",
+    payment: "paid",
+    from: "2026-08-01T00:00:00.000Z",
+    to: "2026-08-23T23:59:59.000Z",
+  });
+
+  assert.equal(filter.orderStatus, "Packed");
+  assert.equal(filter.paymentStatus, "paid");
+  assert.ok(filter.createdAt.$gte instanceof Date);
+  assert.ok(filter.createdAt.$lte instanceof Date);
+  assert.equal(filter.$and.length, 1);
+  assert.ok(filter.$and[0].$or.some((branch) => branch.customerName));
+  assert.match(filter.$and[0].$or[0].customerName.source, /Asha/);
+});
+
+test("admin order list ignores unsupported filters and maps supported sort keys", () => {
+  const filter = buildAdminOrderFilter({
+    status: "Refunded",
+    payment: "captured",
+  });
+
+  assert.deepEqual(filter, {});
+  assert.deepEqual(buildAdminOrderSort({ sort: "value-desc" }), {
+    totalPaise: -1,
+    totalAmount: -1,
+    createdAt: -1,
+  });
+  assert.deepEqual(buildAdminOrderSort({ sort: "unknown" }), { createdAt: -1 });
 });
 
 test("admin order status updates reject invalid lifecycle transitions", async (t) => {

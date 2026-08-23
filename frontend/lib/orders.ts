@@ -11,6 +11,51 @@ export const orderStatuses = [
 
 export type OrderStatus = (typeof orderStatuses)[number];
 
+export const activeFulfillmentStatuses: OrderStatus[] = [
+  "Pending",
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Out for delivery",
+  "Delivered",
+];
+
+const cancellableStatuses: OrderStatus[] = ["Pending", "Confirmed", "Packed"];
+const paidFulfillmentStatuses: OrderStatus[] = [
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Out for delivery",
+  "Delivered",
+];
+
+export function canTransitionOrderStatus(currentStatus: OrderStatus, nextStatus: OrderStatus) {
+  if (!nextStatus || currentStatus === nextStatus) {
+    return true;
+  }
+
+  if (nextStatus === "Cancelled") {
+    return cancellableStatuses.includes(currentStatus);
+  }
+
+  if (nextStatus === "Returned") {
+    return currentStatus === "Delivered";
+  }
+
+  if (["Cancelled", "Returned", "Delivered"].includes(currentStatus)) {
+    return false;
+  }
+
+  const currentIndex = activeFulfillmentStatuses.indexOf(currentStatus);
+  const nextIndex = activeFulfillmentStatuses.indexOf(nextStatus);
+
+  return currentIndex >= 0 && nextIndex > currentIndex;
+}
+
+export function requiresPaidOrderStatus(status: OrderStatus) {
+  return paidFulfillmentStatuses.includes(status);
+}
+
 export type OrderProductSnapshot = {
   productId: string;
   name: string;

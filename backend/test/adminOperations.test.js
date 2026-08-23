@@ -10,6 +10,7 @@ const {
   createStaffUser,
   getDashboardOverview,
   getOperationsSummary,
+  __private: { buildCustomerListFilter },
 } = require("../src/controllers/adminController");
 
 const buildResponse = () => ({
@@ -224,4 +225,14 @@ test("staff creation rejects duplicate normalized phone numbers before index err
 
   assert.equal(nextError?.statusCode, 409);
   assert.match(nextError?.message || "", /phone number is already in use/i);
+});
+
+test("customer list filter searches safe public profile fields and excludes admins", () => {
+  const filter = buildCustomerListFilter({ search: "asha@example.com (vip)" });
+
+  assert.deepEqual(filter.role, { $ne: "admin" });
+  assert.equal(filter.$or.length, 3);
+  assert.ok(filter.$or.some((branch) => branch.email));
+  assert.match(filter.$or[0].name.source, /asha/);
+  assert.match(filter.$or[0].name.source, /\\\(vip\\\)/);
 });

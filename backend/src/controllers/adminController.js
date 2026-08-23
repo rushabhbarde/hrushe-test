@@ -40,6 +40,9 @@ let operationsSummaryCache = {
   value: null,
 };
 
+const escapeRegex = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 function toPaiseFromRupees(value) {
   return Math.round((Number(value) || 0) * 100);
 }
@@ -533,8 +536,24 @@ function serializeStaffUser(user) {
   };
 }
 
-const listCustomers = asyncHandler(async (req, res) => {
+function buildCustomerListFilter(query = {}) {
   const filter = { role: { $ne: "admin" } };
+  const search = String(query.search || query.query || query.q || "").trim();
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegex(search.slice(0, 100)), "i");
+    filter.$or = [
+      { name: searchRegex },
+      { email: searchRegex },
+      { phone: searchRegex },
+    ];
+  }
+
+  return filter;
+}
+
+const listCustomers = asyncHandler(async (req, res) => {
+  const filter = buildCustomerListFilter(req.query);
   const paginationParams = parsePaginationQuery(req.query, {
     defaultLimit: 50,
     maxLimit: 100,
@@ -1074,6 +1093,7 @@ module.exports = {
   updateStaffUserRole,
   __private: {
     buildDashboardDateRange,
+    buildCustomerListFilter,
     buildStorefrontSummary,
   },
 };
