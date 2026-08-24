@@ -103,6 +103,42 @@ test("profile updates reject direct email changes", async (t) => {
   assert.match(nextError?.message, /email changes require otp/i);
 });
 
+test("profile update returns friendly conflict when phone unique index wins a race", async (t) => {
+  installModelStubs(t);
+
+  User.findOne = async () => null;
+  User.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    email: "customer@example.com",
+    name: "Test Customer",
+    phone: "9876543210",
+    gender: "",
+    dateOfBirth: null,
+    profilePictureUrl: "",
+    save: async () => {
+      const error = new Error("E11000 duplicate key error collection: users index: users_phone_unique_non_empty dup key");
+      error.code = 11000;
+      error.keyPattern = { phone: 1 };
+      throw error;
+    },
+  });
+
+  const { nextError } = await callController(updateProfile, {
+    user: {
+      _id: "507f1f77bcf86cd799439011",
+      email: "customer@example.com",
+    },
+    body: {
+      name: "Test Customer",
+      email: "customer@example.com",
+      phone: "+91 98765 43210",
+    },
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /phone number is already in use/i);
+});
+
 test("requesting an email change OTP stores a hashed code and sends mail", async (t) => {
   installModelStubs(t);
 

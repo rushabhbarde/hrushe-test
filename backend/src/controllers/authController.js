@@ -27,6 +27,7 @@ const {
   verifyOtpCode,
 } = require("../utils/otpVerification");
 const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
+const { toUserConflictError } = require("../utils/userDuplicateKey");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,16 +129,21 @@ const signup = asyncHandler(async (req, res) => {
   });
 
   const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
-  const user = await User.create({
-    name: normalizedName,
-    email: normalizedEmail,
-    password: hashedPassword,
-    phone: normalizedPhone,
-    address,
-    isVerified: true,
-    emailVerifiedAt: new Date(),
-    lastLoginAt: new Date(),
-  });
+  let user;
+  try {
+    user = await User.create({
+      name: normalizedName,
+      email: normalizedEmail,
+      password: hashedPassword,
+      phone: normalizedPhone,
+      address,
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+      lastLoginAt: new Date(),
+    });
+  } catch (error) {
+    throw toUserConflictError(error) || error;
+  }
 
   await deleteOtpVerifications({ email: normalizedEmail, purpose: "signup" });
   await Cart.create({ userId: user._id, items: [] });
@@ -254,18 +260,23 @@ const updateMe = asyncHandler(async (req, res) => {
     throw new AppError("Phone number is already in use", 409);
   }
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      name: name.trim(),
-      phone: normalizedPhone,
-      address: (address || "").trim(),
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  ).select("-password");
+  let updatedUser;
+  try {
+    updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        name: name.trim(),
+        phone: normalizedPhone,
+        address: (address || "").trim(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+  } catch (error) {
+    throw toUserConflictError(error) || error;
+  }
 
   return res.json({
     message: "Profile updated successfully",

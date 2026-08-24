@@ -11,6 +11,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminAuthPanel } from "@/components/admin-auth-panel";
+import { sanitizeAdminRedirect } from "@/lib/redirects";
 
 type AdminAuthModalContextValue = {
   isOpen: boolean;
@@ -37,7 +38,7 @@ export function AdminAuthModalProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openAdminLogin = useCallback((targetPath?: string) => {
-    setNextPath(targetPath ?? pathname);
+    setNextPath(sanitizeAdminRedirect(targetPath ?? pathname, "/admin"));
     setIsOpen(true);
   }, [pathname]);
 

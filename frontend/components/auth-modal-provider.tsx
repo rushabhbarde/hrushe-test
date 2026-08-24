@@ -11,6 +11,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthPanel, type AuthMode } from "@/components/auth-panel";
+import { sanitizeCustomerRedirect } from "@/lib/redirects";
 
 type AuthModalContextValue = {
   isOpen: boolean;
@@ -59,13 +60,13 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
   const openLogin = useCallback((targetPath?: string) => {
     setMode("login");
-    setNextPath(targetPath ?? pathname);
+    setNextPath(sanitizeCustomerRedirect(targetPath ?? pathname, pathname || "/"));
     setIsOpen(true);
   }, [pathname]);
 
   const openSignup = useCallback((targetPath?: string) => {
     setMode("signup");
-    setNextPath(targetPath ?? pathname);
+    setNextPath(sanitizeCustomerRedirect(targetPath ?? pathname, pathname || "/"));
     setIsOpen(true);
   }, [pathname]);
 

@@ -95,6 +95,48 @@ test("public signup creates a verified user after matching OTP", async (t) => {
   assert.ok(res.cookies.some((cookie) => cookie.name === "token"));
 });
 
+test("public signup returns friendly conflict when phone unique index wins a race", async (t) => {
+  const originals = {
+    userFindOne: User.findOne,
+    userCreate: User.create,
+    verificationFindOne: VerificationCode.findOne,
+  };
+
+  t.after(() => {
+    User.findOne = originals.userFindOne;
+    User.create = originals.userCreate;
+    VerificationCode.findOne = originals.verificationFindOne;
+  });
+
+  User.findOne = async () => null;
+  User.create = async () => {
+    const error = new Error("E11000 duplicate key error collection: users index: users_phone_unique_non_empty dup key");
+    error.code = 11000;
+    error.keyPattern = { phone: 1 };
+    error.keyValue = { phone: "9876543210" };
+    throw error;
+  };
+  VerificationCode.findOne = () => ({
+    sort: async () => ({
+      codeHash: await bcrypt.hash("123456", 10),
+      expiresAt: new Date(Date.now() + 60_000),
+    }),
+  });
+
+  const { nextError } = await callController(signup, {
+    body: {
+      name: "Test Customer",
+      email: "customer@example.com",
+      phone: "+91 98765 43210",
+      password: "pass1234",
+      otp: "123456",
+    },
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /phone number is already in use/i);
+});
+
 test("legacy auth profile updates reject direct email changes", async (t) => {
   const { nextError } = await callController(updateMe, {
     user: {

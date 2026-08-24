@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import { formatOrderDate, type PublicTrackingRecord } from "@/lib/orders";
+import { isValidIndianPhone, normalizeIndianPhone } from "@/lib/phone";
 
 type SearchMode = "email" | "phone";
 
@@ -23,10 +24,17 @@ export default function TrackOrderPage() {
     setError("");
 
     try {
+      const normalizedContactValue = contactValue.trim();
+      if (searchMode === "phone" && !isValidIndianPhone(normalizedContactValue)) {
+        setError("Enter a valid 10-digit Indian phone number.");
+        setLoading(false);
+        return;
+      }
+
       const payload =
         searchMode === "email"
-          ? { orderId: orderId.trim(), email: contactValue.trim() }
-          : { orderId: orderId.trim(), phone: contactValue.trim() };
+          ? { orderId: orderId.trim(), email: normalizedContactValue }
+          : { orderId: orderId.trim(), phone: normalizeIndianPhone(normalizedContactValue) };
 
       const response = await apiRequest<PublicTrackingRecord>("/order/track", {
         method: "POST",

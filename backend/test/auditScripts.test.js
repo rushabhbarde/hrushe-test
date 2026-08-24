@@ -6,6 +6,11 @@ const {
   summarizeReport,
 } = require("../scripts/audit-user-phones");
 const {
+  assertPhoneDataIsIndexable,
+  INDEX_NAME,
+} = require("../scripts/create-user-phone-index");
+const User = require("../src/models/User");
+const {
   analyzeOrder: analyzeMoneyOrder,
   analyzeProduct: analyzeMoneyProduct,
 } = require("../scripts/audit-money-paise");
@@ -57,6 +62,54 @@ test("phone audit summary exposes production checklist field names", () => {
   assert.equal(summary.validNormalizedNumbers, 1);
   assert.equal(summary.usersThatWouldBeModified, 1);
   assert.equal(summary.usersRequiringManualReview, 0);
+});
+
+test("phone index dry-run aborts on normalized duplicates and non-canonical values", async (t) => {
+  const originalFind = User.find;
+  t.after(() => {
+    User.find = originalFind;
+  });
+
+  User.find = () => ({
+    select: () => ({
+      lean: async () => [
+        { _id: id("u1"), phone: "+91 98765 43210" },
+        { _id: id("u2"), phone: "9876543210" },
+      ],
+    }),
+  });
+
+  await assert.rejects(
+    () => assertPhoneDataIsIndexable(),
+    (error) => {
+      assert.match(error.message, /not ready for a unique index/i);
+      assert.equal(error.report.duplicateGroups.length, 1);
+      assert.equal(error.report.duplicateGroups[0].phone, "******3210");
+      assert.equal(error.report.normalizableUsers.length, 1);
+      assert.equal(error.report.normalizableUsers[0].from, "******3210");
+      assert.equal(error.report.normalizableUsers[0].to, "******3210");
+      return true;
+    }
+  );
+  assert.equal(INDEX_NAME, "users_phone_unique_non_empty");
+});
+
+test("phone index dry-run accepts canonical unique non-empty phones", async (t) => {
+  const originalFind = User.find;
+  t.after(() => {
+    User.find = originalFind;
+  });
+
+  User.find = () => ({
+    select: () => ({
+      lean: async () => [
+        { _id: id("u1"), phone: "9876543210" },
+        { _id: id("u2"), phone: "9876543211" },
+      ],
+    }),
+  });
+
+  await assert.doesNotReject(() => assertPhoneDataIsIndexable());
 });
 
 test("money product audit marks missing paise fields as safe backfills", () => {

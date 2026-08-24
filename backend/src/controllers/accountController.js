@@ -19,6 +19,7 @@ const {
   verifyOtpCode,
 } = require("../utils/otpVerification");
 const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
+const { toUserConflictError } = require("../utils/userDuplicateKey");
 const { resolveCheckoutItems } = require("../services/checkoutInventory");
 
 const FAVORITE_COLOR_LIMIT = 8;
@@ -209,7 +210,11 @@ const updateProfile = asyncHandler(async (req, res) => {
   user.gender = String(gender || "").trim();
   user.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
   user.profilePictureUrl = String(profilePictureUrl || "").trim();
-  await user.save();
+  try {
+    await user.save();
+  } catch (error) {
+    throw toUserConflictError(error) || error;
+  }
 
   return res.json({
     message: "Profile updated successfully",

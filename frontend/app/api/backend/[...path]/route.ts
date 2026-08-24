@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { buildBackendUnavailableResponseBody } from "@/lib/backend-proxy-error";
 
 export const dynamic = "force-dynamic";
 
@@ -132,11 +133,8 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
     });
   } catch {
     return Response.json(
-      {
-        message:
-          "Backend API is unavailable. Start the backend server on http://localhost:5001 and try again.",
-      },
-      { status: 502 }
+      buildBackendUnavailableResponseBody(),
+      { status: process.env.NODE_ENV === "development" ? 502 : 503 }
     );
   }
 }

@@ -27,6 +27,7 @@ const {
   sendListResponse,
 } = require("../utils/pagination");
 const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
+const { toUserConflictError } = require("../utils/userDuplicateKey");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1032,16 +1033,21 @@ const createStaffUser = asyncHandler(async (req, res) => {
     throw new AppError("Phone number is already in use", 409);
   }
 
-  const staffUser = await User.create({
-    name,
-    email,
-    phone,
-    password: await bcrypt.hash(password, PASSWORD_HASH_ROUNDS),
-    role: "admin",
-    adminRole,
-    isVerified: true,
-    emailVerifiedAt: new Date(),
-  });
+  let staffUser;
+  try {
+    staffUser = await User.create({
+      name,
+      email,
+      phone,
+      password: await bcrypt.hash(password, PASSWORD_HASH_ROUNDS),
+      role: "admin",
+      adminRole,
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+    });
+  } catch (error) {
+    throw toUserConflictError(error, "A user with this email already exists") || error;
+  }
 
   await Cart.create({ userId: staffUser._id, items: [] });
 

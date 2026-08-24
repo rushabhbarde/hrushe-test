@@ -15,6 +15,7 @@ const { recordAuditLog } = require("../utils/auditLog");
 const { captureError } = require("../utils/errorMonitoring");
 const { logEvent } = require("../utils/logger");
 const { recordMetric } = require("../utils/metrics");
+const { normalizeIndianPhone, isValidIndianPhone } = require("../utils/phone");
 const { markReconciliationScan } = require("../utils/operationsState");
 const {
   buildPaginationMeta,
@@ -45,6 +46,16 @@ const {
   commitOrderInventory,
   releaseOrderInventory,
 } = require("../services/checkoutInventory");
+const {
+  buildCheckoutCartHash,
+  buildCheckoutIdentityHash,
+  buildCheckoutRequestHash,
+  getCheckoutIdempotencyKey,
+  runCheckoutWithIdempotency,
+} = require("../services/checkoutIdempotency");
+const {
+  assertCheckoutAttemptIndexReady,
+} = require("../services/checkoutAttemptIndex");
 
 const allowedStatuses = [
   "Pending",
@@ -333,6 +344,12 @@ const findOrderByReference = async (orderReference) => {
   return Order.findById(normalized);
 };
 
+const isValidPublicOrderReference = (orderReference) => {
+  const normalized = String(orderReference || "").trim();
+
+  return /^\d+$/.test(normalized) || mongoose.Types.ObjectId.isValid(normalized);
+};
+
 const recordCheckoutLog = (order, event, source, payload = {}) => {
   order.checkoutLogs.push({
     event,
@@ -587,6 +604,85 @@ const savePaymentConfirmationResult = async (order, lockId, options = {}) => {
   }
 
   return updatedOrder;
+};
+
+const transitionUnpaidCheckoutToTerminal = async (
+  order,
+  { paymentStatus, orderStatus = "Cancelled", event, source, payload = {} }
+) => {
+  if (order.paymentStatus === "paid") {
+    recordCheckoutLog(order, `${event}_ignored_paid`, source, payload);
+    await order.save();
+    return { order, changed: false, paid: true };
+  }
+
+  const isAlreadyTerminal =
+    order.paymentStatus === paymentStatus &&
+    order.orderStatus === orderStatus &&
+    order.inventoryReservationStatus !== "reserved";
+  if (isAlreadyTerminal) {
+    recordCheckoutLog(order, `${event}_duplicate`, source, payload);
+    await order.save();
+    return { order, changed: false, paid: false };
+  }
+
+  const { order: lockedOrder, lockId } = await acquirePaymentConfirmationLock(order._id);
+  if (!lockedOrder) {
+    const latestOrder = await Order.findById(order._id);
+    if (latestOrder?.paymentStatus === "paid") {
+      recordCheckoutLog(latestOrder, `${event}_ignored_paid`, source, payload);
+      await latestOrder.save();
+      return { order: latestOrder, changed: false, paid: true };
+    }
+    if (
+      latestOrder?.paymentStatus === paymentStatus &&
+      latestOrder?.orderStatus === orderStatus &&
+      latestOrder?.inventoryReservationStatus !== "reserved"
+    ) {
+      recordCheckoutLog(latestOrder, `${event}_duplicate`, source, payload);
+      await latestOrder.save();
+      return { order: latestOrder, changed: false, paid: false };
+    }
+    throw new AppError("Payment status update is already in progress. Please retry shortly.", 409);
+  }
+
+  let transitionedOrder = lockedOrder;
+
+  try {
+    await runWithOptionalTransaction(async (session) => {
+      await releaseOrderInventory(lockedOrder, { session });
+      lockedOrder.paymentStatus = paymentStatus;
+      lockedOrder.orderStatus = orderStatus;
+      lockedOrder.checkoutUrl = "";
+      recordCheckoutLog(lockedOrder, event, source, {
+        ...payload,
+        paymentStatus,
+        orderStatus,
+      });
+      transitionedOrder = await savePaymentConfirmationResult(lockedOrder, lockId, { session });
+    });
+  } catch (error) {
+    lockedOrder.paymentReconciliationResultCode =
+      lockedOrder.paymentReconciliationResultCode || RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED;
+    recordCheckoutLog(lockedOrder, `${event}_release_failed`, source, {
+      ...payload,
+      message: error?.message || "Inventory release failed",
+      resultCode: RECONCILIATION_RESULT_CODES.MANUAL_REVIEW_REQUIRED,
+    });
+    await savePaymentConfirmationResult(lockedOrder, lockId).catch(() =>
+      clearPaymentConfirmationLock(lockedOrder, lockId)
+    );
+    throw error;
+  }
+
+  recordMetric("payment.terminal_transition", {
+    orderId: transitionedOrder._id?.toString?.() || "",
+    paymentStatus,
+    orderStatus,
+    source,
+  });
+
+  return { order: transitionedOrder, changed: true, paid: false };
 };
 
 const clearPaymentConfirmationLock = async (order, lockId) => {
@@ -922,8 +1018,13 @@ const downloadInvoice = asyncHandler(async (req, res) => {
 
 const trackOrder = asyncHandler(async (req, res) => {
   const { orderId, email, phone } = req.body;
+  const normalizedOrderId = String(orderId || "").trim();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const normalizedPhone = phone ? normalizeIndianPhone(phone) : "";
 
-  if (!orderId) {
+  if (!normalizedOrderId) {
     throw new AppError("Order id is required", 400);
   }
 
@@ -931,17 +1032,19 @@ const trackOrder = asyncHandler(async (req, res) => {
     throw new AppError("Email or phone is required", 400);
   }
 
-  const order = await findOrderByReference(orderId);
+  if (phone && !isValidIndianPhone(phone)) {
+    throw new AppError("Enter a valid 10-digit Indian phone number", 400);
+  }
+
+  if (!isValidPublicOrderReference(normalizedOrderId)) {
+    throw new AppError(PUBLIC_TRACKING_LOOKUP_ERROR, 404);
+  }
+
+  const order = await findOrderByReference(normalizedOrderId);
 
   if (!order) {
     throw new AppError(PUBLIC_TRACKING_LOOKUP_ERROR, 404);
   }
-
-  const normalizedEmail = String(email || "")
-    .trim()
-    .toLowerCase();
-  const normalizedPhone = String(phone || "")
-    .trim();
 
   const matchesEmail =
     normalizedEmail && order.customerEmail.toLowerCase() === normalizedEmail;
@@ -1081,6 +1184,8 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 });
 
 const createCheckout = asyncHandler(async (req, res) => {
+  assertCheckoutAttemptIndexReady();
+
   const { shippingInfo, items } = req.body;
 
   if (!shippingInfo) {
@@ -1129,130 +1234,164 @@ const createCheckout = asyncHandler(async (req, res) => {
 
   const totals = calculateOrderTotals({ items: normalizedItems });
   const totalAmount = paiseToRupees(totals.totalPaise);
+  const identityHash = buildCheckoutIdentityHash({
+    userId: req.user?._id || null,
+    email,
+    phone,
+  });
+  const cartHash = buildCheckoutCartHash(normalizedItems, totals);
+  const requestHash = buildCheckoutRequestHash({
+    identityHash,
+    cartHash,
+    shippingAddressDetails,
+  });
+  const idempotencyKey = getCheckoutIdempotencyKey(req, { identityHash, cartHash });
+  const reservationExpiresAt = new Date(Date.now() + RESERVATION_WINDOW_MS);
+  const customer = {
+    name: fullName,
+    email,
+    phone,
+  };
+  const buildReplayResponse = (snapshot) => ({
+    ...snapshot,
+    customer,
+  });
 
-  const hasInventoryReservation = await reserveInventory(normalizedItems);
+  const checkoutResult = await runCheckoutWithIdempotency({
+    idempotencyKey,
+    identityHash,
+    cartHash,
+    requestHash,
+    expiresAt: reservationExpiresAt,
+    buildReplayResponse,
+    createCheckoutSession: async () => {
+      const hasInventoryReservation = await reserveInventory(normalizedItems);
 
-  const razorpay = getRazorpayClient();
-  let razorpayOrder;
+      const razorpay = getRazorpayClient();
+      let razorpayOrder;
 
-  try {
-    razorpayOrder = await razorpay.orders.create({
-      amount: totals.totalPaise,
-      currency: env.RAZORPAY_CURRENCY,
-      receipt: `hrushe_${Date.now().toString(36)}`,
-      notes: {
-        customerName: fullName,
-        customerEmail: email,
-        customerPhone: phone,
-      },
-    });
-  } catch (error) {
-    if (hasInventoryReservation) {
-      await releaseInventoryItems(normalizedItems);
-    }
-    logEvent("payment.razorpay_order.creation_failed", {
-      message:
-        error?.error?.description ||
-        error?.description ||
-        error?.message ||
-        "Unknown Razorpay error",
-      code: error?.error?.code || error?.code,
-      field: error?.error?.field,
-      source: error?.error?.source,
-      step: error?.error?.step,
-      reason: error?.error?.reason,
-      statusCode: error?.statusCode || error?.error?.statusCode,
-      metadata: error?.error?.metadata,
-    }, "error");
-    captureError(error, {
-      component: "razorpay",
-      operation: "orders.create",
-      amountPaise: totals.totalPaise,
-    });
-
-    throw new AppError(
-      error?.error?.description ||
-        error?.description ||
-        "Could not create Razorpay order. Please verify Razorpay keys and account setup.",
-      502
-    );
-  }
-
-  let order;
-
-  try {
-    order = await Order.create({
-      userId: req.user?._id || null,
-      products: normalizedItems,
-      totalAmount,
-      subtotalPaise: totals.subtotalPaise,
-      discountPaise: totals.discountPaise,
-      shippingPaise: totals.shippingPaise,
-      taxPaise: totals.taxPaise,
-      totalPaise: totals.totalPaise,
-      shippingAddress,
-      shippingAddressDetails,
-      customerName: fullName,
-      customerEmail: email,
-      customerPhone: phone,
-      paymentMethod,
-      paymentStatus: "initiated",
-      checkoutProvider: "razorpay",
-      checkoutSessionId: razorpayOrder.id,
-      checkoutUrl: "",
-      inventoryReservationStatus: hasInventoryReservation ? "reserved" : "none",
-      inventoryReservationExpiresAt: hasInventoryReservation
-        ? new Date(Date.now() + RESERVATION_WINDOW_MS)
-        : null,
-      checkoutLogs: [
-        {
-          event: "checkout_created",
-          source: "backend",
-          payload: {
-            shippingInfo: { ...shippingInfo, shippingAddress, shippingAddressDetails },
-            items: normalizedItems,
-            razorpayOrderId: razorpayOrder.id,
+      try {
+        razorpayOrder = await razorpay.orders.create({
+          amount: totals.totalPaise,
+          currency: env.RAZORPAY_CURRENCY,
+          receipt: `hrushe_${Date.now().toString(36)}`,
+          notes: {
+            customerName: fullName,
+            customerEmail: email,
+            customerPhone: phone,
           },
-        },
-      ],
-    });
-  } catch (error) {
-    if (hasInventoryReservation) {
-      await releaseInventoryItems(normalizedItems);
-    }
-    throw error;
-  }
+        });
+      } catch (error) {
+        if (hasInventoryReservation) {
+          await releaseInventoryItems(normalizedItems);
+        }
+        logEvent("payment.razorpay_order.creation_failed", {
+          message:
+            error?.error?.description ||
+            error?.description ||
+            error?.message ||
+            "Unknown Razorpay error",
+          code: error?.error?.code || error?.code,
+          field: error?.error?.field,
+          source: error?.error?.source,
+          step: error?.error?.step,
+          reason: error?.error?.reason,
+          statusCode: error?.statusCode || error?.error?.statusCode,
+          metadata: error?.error?.metadata,
+        }, "error");
+        captureError(error, {
+          component: "razorpay",
+          operation: "orders.create",
+          amountPaise: totals.totalPaise,
+        });
 
-  recordMetric("checkout.created", {
-    orderId: order._id.toString(),
-    checkoutProvider: order.checkoutProvider,
-    amountPaise: totals.totalPaise,
-    inventoryReserved: hasInventoryReservation,
-  });
-  logEvent("checkout.created", {
-    orderId: order._id.toString(),
-    orderNumber: order.orderNumber || null,
-    checkoutProvider: order.checkoutProvider,
-    checkoutSessionId: order.checkoutSessionId,
-    amountPaise: totals.totalPaise,
-  });
+        throw new AppError(
+          error?.error?.description ||
+            error?.description ||
+            "Could not create Razorpay order. Please verify Razorpay keys and account setup.",
+          502
+        );
+      }
 
-  return res.status(201).json({
-    appOrderId: order.id,
-    orderId: order.orderNumber || order.id,
-    razorpayOrderId: razorpayOrder.id,
-    amount: razorpayOrder.amount,
-    currency: razorpayOrder.currency,
-    key: env.RAZORPAY_KEY_ID,
-    customer: {
-      name: fullName,
-      email,
-      phone,
+      let order;
+
+      try {
+        order = await Order.create({
+          userId: req.user?._id || null,
+          products: normalizedItems,
+          totalAmount,
+          subtotalPaise: totals.subtotalPaise,
+          discountPaise: totals.discountPaise,
+          shippingPaise: totals.shippingPaise,
+          taxPaise: totals.taxPaise,
+          totalPaise: totals.totalPaise,
+          shippingAddress,
+          shippingAddressDetails,
+          customerName: fullName,
+          customerEmail: email,
+          customerPhone: phone,
+          paymentMethod,
+          paymentStatus: "initiated",
+          checkoutProvider: "razorpay",
+          checkoutSessionId: razorpayOrder.id,
+          checkoutUrl: "",
+          inventoryReservationStatus: hasInventoryReservation ? "reserved" : "none",
+          inventoryReservationExpiresAt: hasInventoryReservation
+            ? reservationExpiresAt
+            : null,
+          checkoutLogs: [
+            {
+              event: "checkout_created",
+              source: "backend",
+              payload: {
+                shippingInfo: { ...shippingInfo, shippingAddress, shippingAddressDetails },
+                items: normalizedItems,
+                razorpayOrderId: razorpayOrder.id,
+              },
+            },
+          ],
+        });
+      } catch (error) {
+        if (hasInventoryReservation) {
+          await releaseInventoryItems(normalizedItems);
+        }
+        throw error;
+      }
+
+      recordMetric("checkout.created", {
+        orderId: order._id.toString(),
+        checkoutProvider: order.checkoutProvider,
+        amountPaise: totals.totalPaise,
+        inventoryReserved: hasInventoryReservation,
+      });
+      logEvent("checkout.created", {
+        orderId: order._id.toString(),
+        orderNumber: order.orderNumber || null,
+        checkoutProvider: order.checkoutProvider,
+        checkoutSessionId: order.checkoutSessionId,
+        amountPaise: totals.totalPaise,
+      });
+
+      const responseSnapshot = {
+        appOrderId: order.id,
+        orderId: order.orderNumber || order.id,
+        razorpayOrderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        key: env.RAZORPAY_KEY_ID,
+        paymentStatus: order.paymentStatus,
+        mode: "provider",
+        checkoutState: createCheckoutStateToken(order),
+      };
+
+      return {
+        responseSnapshot,
+        response: buildReplayResponse(responseSnapshot),
+      };
     },
-    paymentStatus: order.paymentStatus,
-    mode: "provider",
-    checkoutState: createCheckoutStateToken(order),
   });
+
+  return res.status(checkoutResult.replayed ? 200 : 201).json(checkoutResult.response);
 });
 
 const getCheckoutPaymentConfig = asyncHandler(async (req, res) => {
@@ -1431,15 +1570,16 @@ const failCheckout = asyncHandler(async (req, res) => {
 
   assertCheckoutStateToken(order, checkoutState);
 
-  if (order.paymentStatus !== "paid") {
-    // Browser failure callbacks are not authoritative; Razorpay can still send
-    // a captured webhook after a customer closes or fails the checkout window.
-    // Keep the reservation until provider failure or expiry so late captures can
-    // still safely commit inventory.
-    order.paymentStatus = req.method === "POST" ? "cancelled" : "failed";
-  }
-  recordCheckoutLog(order, "checkout_failure_return", "redirect", req.query);
-  await order.save();
+  await transitionUnpaidCheckoutToTerminal(order, {
+    paymentStatus: req.method === "POST" ? "cancelled" : "failed",
+    orderStatus: "Cancelled",
+    event: "checkout_failure_return",
+    source: "redirect",
+    payload: {
+      method: req.method,
+      query: req.query,
+    },
+  });
 
   if (req.method === "POST") {
     return res.json({ success: true });
@@ -1465,12 +1605,15 @@ const cancelCheckout = asyncHandler(async (req, res) => {
 
   assertCheckoutStateToken(order, checkoutState);
 
-  if (order.paymentStatus !== "paid") {
-    order.paymentStatus = "cancelled";
-    order.orderStatus = "Cancelled";
-  }
-  recordCheckoutLog(order, "checkout_cancel_return", "redirect", req.query);
-  await order.save();
+  await transitionUnpaidCheckoutToTerminal(order, {
+    paymentStatus: "cancelled",
+    orderStatus: "Cancelled",
+    event: "checkout_cancel_return",
+    source: "redirect",
+    payload: {
+      query: req.query,
+    },
+  });
 
   return res.redirect(
     buildRedirectUrl("/checkout/failure", String(order.orderNumber || order._id.toString()))
@@ -1558,7 +1701,7 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
     return res.json({ received: true });
   }
 
-  const order = await Order.findOne({ checkoutSessionId: razorpayOrderId });
+  let order = await Order.findOne({ checkoutSessionId: razorpayOrderId });
 
   if (!order) {
     webhookEvent.resultCode = "UNKNOWN_RAZORPAY_ORDER";
@@ -1762,8 +1905,19 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       });
       return res.json({ received: true });
     } else if (event === "payment.failed" && order.paymentStatus !== "paid") {
-      await releaseOrderInventory(order);
-      order.paymentStatus = "failed";
+      const transition = await transitionUnpaidCheckoutToTerminal(order, {
+        paymentStatus: "failed",
+        orderStatus: "Cancelled",
+        event: "razorpay_payment_failed",
+        source: "webhook",
+        payload: {
+          event,
+          providerEventId,
+          paymentId: paymentEntity?.id || "",
+          paymentStatus: paymentEntity?.status || "",
+        },
+      });
+      order = transition.order;
     }
 
     recordCheckoutLog(order, "razorpay_webhook_received", "webhook", {
@@ -2316,7 +2470,7 @@ const reorderOrder = asyncHandler(async (req, res) => {
     throw new AppError("Order not found", 404);
   }
 
-  if (order.userId.toString() !== req.user._id.toString()) {
+  if (!order.userId || order.userId.toString() !== req.user._id.toString()) {
     throw new AppError("Not authorized to reorder this order", 403);
   }
 

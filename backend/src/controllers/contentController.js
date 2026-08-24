@@ -457,6 +457,100 @@ function isBannerScheduledForNow(banner) {
   return true;
 }
 
+function isHomepageRecordPublic(record = {}, now = Date.now()) {
+  if (record.isVisible === false || record.adminOnly === true || record.isAdminOnly === true) {
+    return false;
+  }
+
+  if (record.draft === true || record.isDraft === true) {
+    return false;
+  }
+
+  const status = String(record.status || record.publishStatus || "")
+    .trim()
+    .toLowerCase();
+  if (["draft", "hidden", "archived", "expired", "unpublished", "admin-only"].includes(status)) {
+    return false;
+  }
+
+  const startsAt = record.publishStart ? new Date(record.publishStart).getTime() : null;
+  const endsAt = record.publishEnd ? new Date(record.publishEnd).getTime() : null;
+
+  if (Number.isFinite(startsAt) && startsAt > now) {
+    return false;
+  }
+
+  if (Number.isFinite(endsAt) && endsAt < now) {
+    return false;
+  }
+
+  return true;
+}
+
+const pickPublicHomepageCardFields = (card = {}) => ({
+  id: String(card.id || ""),
+  title: String(card.title || ""),
+  subtitle: String(card.subtitle || ""),
+  ctaText: String(card.ctaText || ""),
+  ctaLink: String(card.ctaLink || ""),
+  image: String(card.image || ""),
+  mobileImage: String(card.mobileImage || ""),
+  imageAlt: String(card.imageAlt || ""),
+  objectPosition: String(card.objectPosition || ""),
+  titleFontSize: APPROVED_FONT_SIZES.has(card.titleFontSize) ? card.titleFontSize : "large",
+  titlePosition: APPROVED_TEXT_POSITIONS.has(card.titlePosition) ? card.titlePosition : "bottom-center",
+  textAlign: APPROVED_TEXT_ALIGNMENTS.has(card.textAlign) ? card.textAlign : "center",
+  isVisible: true,
+});
+
+const pickPublicHomepageSectionFields = (section = {}, now = Date.now()) => ({
+  id: String(section.id || ""),
+  audience: APPROVED_HOMEPAGE_AUDIENCES.has(section.audience) ? section.audience : "home",
+  sectionType: APPROVED_HOMEPAGE_SECTION_TYPES.has(section.sectionType)
+    ? section.sectionType
+    : "entry-cards",
+  label: String(section.label || ""),
+  title: String(section.title || ""),
+  subtitle: String(section.subtitle || ""),
+  description: String(section.description || ""),
+  ctaText: String(section.ctaText || ""),
+  ctaLink: String(section.ctaLink || ""),
+  secondaryCtaText: String(section.secondaryCtaText || ""),
+  secondaryCtaLink: String(section.secondaryCtaLink || ""),
+  image: String(section.image || ""),
+  mobileImage: String(section.mobileImage || ""),
+  imageAlt: String(section.imageAlt || ""),
+  objectPosition: String(section.objectPosition || ""),
+  backgroundColor: ["default", "light", "dark"].includes(section.backgroundColor)
+    ? section.backgroundColor
+    : "default",
+  textColor: ["default", "light", "dark"].includes(section.textColor)
+    ? section.textColor
+    : "default",
+  titleFontSize: APPROVED_FONT_SIZES.has(section.titleFontSize) ? section.titleFontSize : "large",
+  titlePosition: APPROVED_TEXT_POSITIONS.has(section.titlePosition) ? section.titlePosition : "bottom-center",
+  textAlign: APPROVED_TEXT_ALIGNMENTS.has(section.textAlign) ? section.textAlign : "center",
+  cards: Array.isArray(section.cards)
+    ? section.cards
+        .filter((card) => isHomepageRecordPublic(card, now))
+        .map(pickPublicHomepageCardFields)
+    : [],
+  displayOrder: Number.isFinite(Number(section.displayOrder)) ? Number(section.displayOrder) : 0,
+  isVisible: true,
+  publishStart: section.publishStart || null,
+  publishEnd: section.publishEnd || null,
+});
+
+function getPublicHomepageSections(sections = [], now = Date.now()) {
+  if (!Array.isArray(sections)) {
+    return [];
+  }
+
+  return sections
+    .filter((section) => isHomepageRecordPublic(section, now))
+    .map((section) => pickPublicHomepageSectionFields(section, now));
+}
+
 function getPublishedWorkspaceBanners(adminWorkspace) {
   const rawBanners = Array.isArray(adminWorkspace?.homeManagement?.banners)
     ? adminWorkspace.homeManagement.banners
@@ -659,7 +753,9 @@ const getHomepageManagement = asyncHandler(async (req, res) => {
       ? content.adminWorkspace.homeManagement
       : {};
   const hasCustomSections = Array.isArray(homeManagement.sections);
-  const sections = hasCustomSections ? homeManagement.sections : [];
+  const sections = hasCustomSections
+    ? getPublicHomepageSections(homeManagement.sections)
+    : [];
 
   res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
   return res.json({
@@ -815,4 +911,8 @@ module.exports = {
   updateHomepageBanner,
   getAdminWorkspace,
   updateAdminWorkspace,
+  __private: {
+    getPublicHomepageSections,
+    isHomepageRecordPublic,
+  },
 };

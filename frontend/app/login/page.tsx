@@ -3,12 +3,13 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { AuthPanel } from "@/components/auth-panel";
+import { sanitizeCustomerRedirect } from "@/lib/redirects";
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
-  const nextPath = searchParams.get("next") || "/my-orders";
+  const nextPath = sanitizeCustomerRedirect(searchParams.get("next"), "/my-orders");
   const fallbackClosePath =
     nextPath && nextPath !== "/account" && nextPath !== "/my-orders" ? nextPath : "/shop";
 

@@ -311,6 +311,22 @@ test("expired inventory cleanup releases expired reservations and cancels initia
   assert.equal(order.saveCalls, 1);
 });
 
+test("expired inventory cleanup scans only active reserved inventory", async (t) => {
+  let capturedQuery;
+  installCleanupStubs(t);
+  Order.find = (query) => {
+    capturedQuery = query;
+    return {
+      limit: async () => [],
+    };
+  };
+
+  await cleanupExpiredInventoryReservations({ now: new Date(), limit: 5 });
+
+  assert.equal(capturedQuery.inventoryReservationStatus, "reserved");
+  assert.deepEqual(capturedQuery.paymentStatus.$in, ["pending", "initiated", "failed", "cancelled"]);
+});
+
 test("expired inventory cleanup is idempotent across duplicate scan calls", async (t) => {
   const order = buildReservedOrder();
   let findCalls = 0;

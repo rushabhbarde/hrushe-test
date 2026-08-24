@@ -4,12 +4,14 @@ import Link from "next/link";
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
+import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 function CheckoutSuccessPageContent() {
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
+  const { user } = useCustomerAuth();
   const orderId = searchParams.get("orderId");
   const trackingLookup = orderId ? `/track-order?orderId=${encodeURIComponent(orderId)}` : "/track-order";
 
@@ -34,8 +36,9 @@ function CheckoutSuccessPageContent() {
                 Your order is confirmed.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">
-                Payment was marked successful and your order has been added to your account.
-                We will now begin confirmation, packing, and dispatch updates.
+                {user
+                  ? "Payment was marked successful and your order is available in your account. We will now begin confirmation, packing, and dispatch updates."
+                  : "Payment was marked successful. Track this order using your order number and verified contact details while we begin confirmation, packing, and dispatch updates."}
               </p>
               {orderId ? (
                 <div className="mt-6 inline-flex rounded-full border border-[var(--border)] bg-white/65 px-5 py-3 text-sm font-medium text-[var(--foreground)] backdrop-blur-md">

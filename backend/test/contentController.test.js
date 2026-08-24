@@ -7,6 +7,7 @@ auditLog.recordAuditLog = async () => {};
 const SiteContent = require("../src/models/SiteContent");
 const {
   getAdminWorkspace,
+  getHomepageManagement,
   updateAdminWorkspace,
 } = require("../src/controllers/contentController");
 
@@ -76,6 +77,130 @@ test("admin workspace responses include the current version", async (t) => {
   assert.ifError(nextError);
   assert.equal(res.body.version, 7);
   assert.equal(res.body.websiteSettings.brandName, "HRUSHE");
+});
+
+test("public homepage management exposes only currently public-safe sections", async (t) => {
+  installSiteContentStubs(t);
+  const now = Date.now();
+  SiteContent.findOne = async () => buildContent(7, {
+    homeManagement: {
+      lastPublishedAt: new Date(now).toISOString(),
+      sections: [
+        {
+          id: "visible-home",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Visible",
+          isVisible: true,
+          displayOrder: 1,
+          internalNotes: "do not leak",
+          cards: [
+            {
+              id: "visible-card",
+              title: "Women",
+              image: "/media/women.jpg",
+              ctaLink: "/women",
+              isVisible: true,
+              internalNotes: "card secret",
+            },
+            {
+              id: "hidden-card",
+              title: "Hidden",
+              image: "/media/hidden.jpg",
+              isVisible: false,
+            },
+          ],
+        },
+        {
+          id: "hidden-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Hidden",
+          isVisible: false,
+          cards: [],
+        },
+        {
+          id: "future-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Future",
+          isVisible: true,
+          publishStart: new Date(now + 60_000).toISOString(),
+          cards: [],
+        },
+        {
+          id: "expired-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Expired",
+          isVisible: true,
+          publishEnd: new Date(now - 60_000).toISOString(),
+          cards: [],
+        },
+        {
+          id: "draft-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Draft",
+          isVisible: true,
+          status: "draft",
+          cards: [],
+        },
+        {
+          id: "admin-only-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Admin",
+          isVisible: true,
+          adminOnly: true,
+          cards: [],
+        },
+      ],
+    },
+  });
+
+  const { res, nextError } = await callController(getHomepageManagement, {
+    headers: {},
+    socket: {},
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.hasCustomSections, true);
+  assert.deepEqual(res.body.sections.map((section) => section.id), ["visible-home"]);
+  assert.deepEqual(res.body.sections[0].cards.map((card) => card.id), ["visible-card"]);
+  assert.equal("internalNotes" in res.body.sections[0], false);
+  assert.equal("internalNotes" in res.body.sections[0].cards[0], false);
+});
+
+test("protected admin workspace still returns complete homepage management data", async (t) => {
+  installSiteContentStubs(t);
+  SiteContent.findOne = async () => buildContent(4, {
+    homeManagement: {
+      lastPublishedAt: null,
+      sections: [
+        {
+          id: "hidden-section",
+          audience: "home",
+          sectionType: "entry-cards",
+          title: "Hidden",
+          isVisible: false,
+          adminOnly: true,
+          internalNotes: "admin can see this",
+          cards: [],
+        },
+      ],
+    },
+  });
+
+  const { res, nextError } = await callController(getAdminWorkspace, {
+    user: { role: "admin", adminRole: "super-admin" },
+  });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.homeManagement.sections.length, 1);
+  assert.equal(res.body.homeManagement.sections[0].id, "hidden-section");
+  assert.equal(res.body.homeManagement.sections[0].adminOnly, true);
+  assert.equal(res.body.homeManagement.sections[0].internalNotes, "admin can see this");
 });
 
 test("admin workspace updates require and increment the loaded version", async (t) => {

@@ -27,6 +27,10 @@ const { installProcessErrorHandlers } = require("./src/utils/errorMonitoring");
 const {
   cleanupExpiredInventoryReservations,
 } = require("./src/services/checkoutInventory");
+const {
+  getCheckoutAttemptIndexReadiness,
+  refreshCheckoutAttemptIndexReadiness,
+} = require("./src/services/checkoutAttemptIndex");
 
 const app = express();
 installProcessErrorHandlers();
@@ -60,10 +64,14 @@ const sendHealthResponse = (req, res) => {
 
 const sendReadinessResponse = (req, res) => {
   const mongoReady = mongoose.connection.readyState === 1;
+  const checkoutReadiness = getCheckoutAttemptIndexReadiness();
+  const checkoutReady = checkoutReadiness.ready;
+  const ready = mongoReady && checkoutReady;
 
-  res.status(mongoReady ? 200 : 503).json({
-    status: mongoReady ? "ready" : "not-ready",
+  res.status(ready ? 200 : 503).json({
+    status: ready ? "ready" : "not-ready",
     mongo: mongoReady ? "connected" : "not-connected",
+    checkout: checkoutReady ? "available" : "unavailable",
   });
 };
 
@@ -119,6 +127,7 @@ let cleanupInterval = null;
 
 async function startDatabaseBackedTasks() {
   await connectDB();
+  await refreshCheckoutAttemptIndexReadiness();
   await ensureAdminUser();
   const cleanupInventory = () =>
     cleanupExpiredInventoryReservations({ source: "interval" })

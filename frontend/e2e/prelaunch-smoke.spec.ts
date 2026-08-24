@@ -35,8 +35,19 @@ const product = {
 
 async function mockStorefrontApi(
   page: Page,
-  { onCheckoutCreate }: { onCheckoutCreate?: () => void } = {}
+  {
+    onCheckoutCreate,
+    enableCustomerLogin = false,
+    enableAdminLogin = false,
+  }: {
+    onCheckoutCreate?: () => void;
+    enableCustomerLogin?: boolean;
+    enableAdminLogin?: boolean;
+  } = {}
 ) {
+  let customerLoggedIn = false;
+  let adminLoggedIn = false;
+
   await page.route(/\/api\/backend(?:\/|$)/, (route) => {
     const { pathname } = new URL(route.request().url());
     const normalizedPath = pathname.replace(/\/+$/, "");
@@ -91,10 +102,78 @@ async function mockStorefrontApi(
     }
 
     if (normalizedPath === "/api/backend/auth/me") {
+      if (adminLoggedIn) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            user: {
+              role: "admin",
+              adminRole: "super-admin",
+              adminPermissions: ["dashboard.view"],
+              name: "Admin",
+              email: "admin@example.com",
+            },
+          }),
+        });
+      }
+
+      if (customerLoggedIn) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            user: {
+              id: "customer-1",
+              role: "customer",
+              name: "Aarav Mehta",
+              email: "customer@example.com",
+              phone: "9876543210",
+              addresses: [],
+            },
+          }),
+        });
+      }
+
       return route.fulfill({
         status: 401,
         contentType: "application/json",
         body: JSON.stringify({ message: "Not signed in" }),
+      });
+    }
+
+    if (normalizedPath === "/api/backend/auth/login" && enableCustomerLogin) {
+      customerLoggedIn = true;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "customer-1",
+            role: "customer",
+            name: "Aarav Mehta",
+            email: "customer@example.com",
+            phone: "9876543210",
+            addresses: [],
+          },
+        }),
+      });
+    }
+
+    if (normalizedPath === "/api/backend/auth/admin-login" && enableAdminLogin) {
+      adminLoggedIn = true;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            role: "admin",
+            adminRole: "super-admin",
+            adminPermissions: ["dashboard.view"],
+            name: "Admin",
+            email: "admin@example.com",
+          },
+        }),
       });
     }
 
@@ -128,6 +207,14 @@ function collectRuntimeErrors(page: Page) {
   });
 
   return messages;
+}
+
+async function dismissCookieBanner(page: Page) {
+  const rejectOptional = page.getByRole("button", { name: /reject optional/i });
+
+  if (await rejectOptional.isVisible().catch(() => false)) {
+    await rejectOptional.click();
+  }
 }
 
 test.describe("pre-launch storefront smoke", () => {
@@ -208,5 +295,39 @@ test.describe("pre-launch storefront smoke", () => {
     await expect(page.getByRole("heading", { name: /follow every delivery step/i })).toBeVisible();
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/login|\/admin/);
+  });
+
+  test("customer login sanitizes malicious and valid next redirects", async ({ page }) => {
+    await mockStorefrontApi(page, { enableCustomerLogin: true });
+
+    await page.goto("/login?next=%2F%2Fevil.example");
+    await dismissCookieBanner(page);
+    await page.getByLabel("Your email address").fill("customer@example.com");
+    await page.getByLabel("Enter your password").fill("pass1234");
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+    await expect(page).toHaveURL(/\/account\?section=orders$/);
+
+    await page.goto("/login?next=/shop");
+    await dismissCookieBanner(page);
+    await page.getByLabel("Your email address").fill("customer@example.com");
+    await page.getByLabel("Enter your password").fill("pass1234");
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+    await expect(page).toHaveURL(/\/shop$/);
+  });
+
+  test("admin login restricts next redirects to admin routes", async ({ page }) => {
+    await mockStorefrontApi(page, { enableAdminLogin: true });
+
+    await page.goto("/admin/login?next=/shop");
+    await page.getByPlaceholder("Admin email").fill("admin@example.com");
+    await page.getByPlaceholder("Password").fill("pass1234");
+    await page.getByRole("button", { name: /^login$/i }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+
+    await page.goto("/admin/login?next=/admin/orders");
+    await page.getByPlaceholder("Admin email").fill("admin@example.com");
+    await page.getByPlaceholder("Password").fill("pass1234");
+    await page.getByRole("button", { name: /^login$/i }).click();
+    await expect(page).toHaveURL(/\/admin\/orders$/);
   });
 });

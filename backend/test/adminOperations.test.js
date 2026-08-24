@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const Order = require("../src/models/Order");
 const User = require("../src/models/User");
+const Cart = require("../src/models/Cart");
 const Product = require("../src/models/Product");
 const SiteContent = require("../src/models/SiteContent");
 const SupportRequest = require("../src/models/SupportRequest");
@@ -225,6 +226,47 @@ test("staff creation rejects duplicate normalized phone numbers before index err
 
   assert.equal(nextError?.statusCode, 409);
   assert.match(nextError?.message || "", /phone number is already in use/i);
+});
+
+test("staff creation returns friendly conflict when phone unique index wins a race", async (t) => {
+  const originals = {
+    userFindOne: User.findOne,
+    userCreate: User.create,
+    cartCreate: Cart.create,
+  };
+  let cartCreated = false;
+  t.after(() => {
+    User.findOne = originals.userFindOne;
+    User.create = originals.userCreate;
+    Cart.create = originals.cartCreate;
+  });
+
+  User.findOne = async () => null;
+  User.create = async () => {
+    const error = new Error("E11000 duplicate key error collection: users index: users_phone_unique_non_empty dup key");
+    error.code = 11000;
+    error.keyPattern = { phone: 1 };
+    throw error;
+  };
+  Cart.create = async () => {
+    cartCreated = true;
+  };
+
+  const { nextError } = await callController(createStaffUser, {
+    body: {
+      name: "Ops Admin",
+      email: "ops-admin@example.com",
+      phone: "+91 98765 43210",
+      password: "StrongPass1!",
+      adminRole: "operations-manager",
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.equal(nextError?.statusCode, 409);
+  assert.match(nextError?.message || "", /phone number is already in use/i);
+  assert.equal(cartCreated, false);
 });
 
 test("customer list filter searches safe public profile fields and excludes admins", () => {

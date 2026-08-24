@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
 import { useCart, type CartLine } from "@/components/cart-provider";
@@ -13,6 +13,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
+import {
+  buildCheckoutAttemptSnapshot,
+  createCheckoutIdempotencyKey,
+} from "@/lib/checkout-idempotency";
 import { resolveCheckoutSuccessPath } from "@/lib/checkout-redirect";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getRazorpayLaunchBlocker } from "@/lib/razorpay-readiness";
@@ -227,6 +231,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [verifiedSuccessUrl, setVerifiedSuccessUrl] = useState("");
+  const checkoutAttemptRef = useRef({ snapshot: "", key: "" });
   const [razorpayReady, setRazorpayReady] = useState(
     () => typeof window !== "undefined" && Boolean(window.Razorpay)
   );
@@ -365,8 +370,38 @@ export default function CheckoutPage() {
     setError("");
 
     try {
+      const checkoutSnapshot = buildCheckoutAttemptSnapshot({
+        items,
+        shippingInfo: {
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          address: {
+            label: form.label,
+            fullName: form.fullName,
+            mobile: form.phone,
+            pincode: form.pincode,
+            city: form.city,
+            state: form.state,
+            house: form.house,
+            area: form.area,
+            landmark: form.landmark,
+          },
+        },
+      });
+
+      if (checkoutAttemptRef.current.snapshot !== checkoutSnapshot) {
+        checkoutAttemptRef.current = {
+          snapshot: checkoutSnapshot,
+          key: createCheckoutIdempotencyKey(),
+        };
+      }
+
       const response = await apiRequest<CheckoutResponse>("/order/checkout", {
         method: "POST",
+        headers: {
+          "Idempotency-Key": checkoutAttemptRef.current.key,
+        },
         body: JSON.stringify({
           shippingInfo: {
             fullName: form.fullName,
