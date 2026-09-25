@@ -1214,7 +1214,6 @@ body :where([class*="shadow-"]) {
 :where(
   .grain-card,
   .empty-shell,
-  .loading-shell,
   .theme-panel,
   .editorial-card,
   .hero-panel,
@@ -1302,72 +1301,55 @@ body :where([class*="shadow-"]) {
   animation: pulse-soft 1.4s ease-in-out infinite;
 }
 
-.loading-shell {
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(22px) saturate(120%);
-}
-
-.hrushe-symbol-loader {
+.quiet-loader {
   display: grid;
   min-height: 10rem;
   place-items: center;
-  gap: 1.15rem;
 }
 
-.hrushe-symbol-loader__mark {
+.quiet-loader__track {
   position: relative;
-  display: grid;
-  width: clamp(5rem, 13vw, 7.25rem);
-  aspect-ratio: 1;
-  place-items: center;
-  color: var(--accent);
-  isolation: isolate;
-}
-
-.hrushe-symbol-loader__mark::before,
-.hrushe-symbol-loader__mark::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
-  pointer-events: none;
-}
-
-.hrushe-symbol-loader__mark::before {
-  animation: hrushe-symbol-frame 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-}
-
-.hrushe-symbol-loader__mark::after {
-  inset: 0.55rem;
-  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
-  animation: hrushe-symbol-frame 2.8s 0.28s cubic-bezier(0.22, 1, 0.36, 1) infinite reverse;
-}
-
-.hrushe-symbol-loader__mark img {
-  position: relative;
-  z-index: 1;
-  width: 68%;
-  height: auto;
-  object-fit: contain;
-  animation: hrushe-symbol-breathe 1.75s ease-in-out infinite;
-}
-
-.hrushe-symbol-loader__rule {
-  position: relative;
-  width: min(10rem, 52vw);
+  display: block;
+  width: min(7.5rem, 40vw);
   height: 1px;
   overflow: hidden;
   background: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
-.hrushe-symbol-loader__rule::after {
+.quiet-loader__track::after {
   content: "";
   position: absolute;
   inset: 0;
-  width: 42%;
-  background: var(--brand-highlight);
-  animation: hrushe-symbol-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  width: 40%;
+  background: var(--foreground);
+  animation: quiet-loader-sweep 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* Page changes: a hairline across the top of the viewport instead of a boxed loader. */
+.page-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.page-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--foreground);
+  transform-origin: left center;
+  animation: page-progress 2.4s cubic-bezier(0.3, 0.7, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiet-loader__track::after {
+    animation: none;
+    transform: translateX(75%);
+  }
 }
 
 .loading-mark {
@@ -1473,22 +1455,24 @@ body :where([class*="shadow-"]) {
     background-color 180ms ease;
 }
 
-/* Gateway intro: JS fades it after the first-visit pause; this is the no-JS safety net. */
-.gateway-intro {
-  animation: gateway-intro-out 0.8s ease 2.4s forwards;
+/* Gateway: content eases in on load (no separate intro screen). */
+.gateway-fade {
+  animation: gateway-fade-in 0.7s ease-out both;
 }
 
-@keyframes gateway-intro-out {
-  to {
+.gateway-fade--late {
+  animation-delay: 0.12s;
+}
+
+@keyframes gateway-fade-in {
+  from {
     opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+    transform: translateY(6px);
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .gateway-intro {
-    display: none;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -1526,39 +1510,27 @@ body :where([class*="shadow-"]) {
   }
 }
 
-@keyframes hrushe-symbol-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(0.94);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes hrushe-symbol-frame {
-  0%,
-  100% {
-    opacity: 0.28;
-    transform: scale(0.94);
-  }
-
-  50% {
-    opacity: 0.9;
-    transform: scale(1.05);
-  }
-}
-
-@keyframes hrushe-symbol-sweep {
+@keyframes quiet-loader-sweep {
   0% {
-    transform: translateX(-120%);
+    transform: translateX(-110%);
   }
 
   100% {
     transform: translateX(260%);
+  }
+}
+
+@keyframes page-progress {
+  0% {
+    transform: scaleX(0);
+  }
+
+  40% {
+    transform: scaleX(0.6);
+  }
+
+  100% {
+    transform: scaleX(0.92);
   }
 }
 
