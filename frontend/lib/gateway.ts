@@ -13,11 +13,9 @@ export type GatewayOption = {
   objectPosition: string;
 };
 
-export const GATEWAY_INTRO_MS = 1500;
 export const GATEWAY_AUTO_SWAP_MS = 4200;
 export const GATEWAY_SIDE_COOKIE = "hrushe_side";
 const GATEWAY_SIDE_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
-const GATEWAY_INTRO_STORAGE_KEY = "hrushe:gateway-intro-seen";
 
 export function isGatewaySide(value: unknown): value is GatewaySide {
   return value === "women" || value === "men";
@@ -43,22 +41,6 @@ export function toGatewayOption(card: HomepageCard): GatewayOption {
     alt: card.imageAlt || card.title,
     objectPosition: card.objectPosition,
   };
-}
-
-export function hasSeenGatewayIntro() {
-  try {
-    return window.localStorage.getItem(GATEWAY_INTRO_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function markGatewayIntroSeen() {
-  try {
-    window.localStorage.setItem(GATEWAY_INTRO_STORAGE_KEY, "1");
-  } catch {
-    // Storage can be unavailable (private mode); the intro simply plays again.
-  }
 }
 
 export function rememberGatewaySide(side: GatewaySide | null) {
