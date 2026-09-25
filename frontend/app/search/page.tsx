@@ -2,8 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { EmptyState } from "@/components/empty-state";
-import { ProductListingGrid, ProductListingSkeleton } from "@/components/product-listing-grid";
+import { FrameIndex } from "@/components/frame-index";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { LoadingState } from "@/components/loading-state";
@@ -47,8 +46,10 @@ function SearchPageContent() {
     }
   }
 
+  const liveQuery = query.trim();
+
   const results = useMemo(() => {
-    const normalized = initialQuery.trim().toLowerCase();
+    const normalized = liveQuery.toLowerCase();
 
     if (!normalized) {
       return [];
@@ -73,14 +74,14 @@ function SearchPageContent() {
 
       return fields.includes(normalized);
     });
-  }, [initialQuery, products]);
+  }, [liveQuery, products]);
 
   const suggestedProducts = useMemo(() => {
-    if (!initialQuery) {
+    if (!liveQuery) {
       return products.slice(0, 4);
     }
 
-    const queryTerms = initialQuery
+    const queryTerms = liveQuery
       .toLowerCase()
       .split(/\s+/)
       .filter(Boolean);
@@ -102,7 +103,7 @@ function SearchPageContent() {
         )
       )
       .slice(0, 4);
-  }, [initialQuery, products]);
+  }, [liveQuery, products]);
 
   const submitSearch = (value: string) => {
     const normalized = value.trim();
@@ -110,101 +111,91 @@ function SearchPageContent() {
     router.push(normalized ? `/search?q=${encodeURIComponent(normalized)}` : "/search");
   };
 
+  const shown = liveQuery ? results : products;
+
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        <div className="max-w-3xl">
-          <p className="eyebrow text-[var(--muted)]">Search</p>
-          <h1 className="mt-5 text-[2.15rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[3.5rem] sm:tracking-[-0.04em]">Find a piece.</h1>
-          <p className="mt-6 text-[0.94rem] leading-7 text-[var(--muted)]">
-            Search by product, fabric, fit, or colour.
-          </p>
-        </div>
-
+      <main className="pb-16 pt-6 lg:pb-24 lg:pt-12">
         <form
-          className="mt-8 flex flex-col gap-3 sm:flex-row"
+          role="search"
+          className="flex flex-col gap-3 px-5 lg:px-10"
           onSubmit={(event) => {
             event.preventDefault();
             submitSearch(query);
           }}
         >
-          <label className="sr-only" htmlFor="storefront-search">Search products</label>
+          <label className="fr-mono fr-muted" htmlFor="storefront-search">
+            Search the edit
+          </label>
           <input
             id="storefront-search"
             name="q"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="min-h-12 min-w-0 flex-1 border border-[var(--border)] bg-[var(--surface)] px-5"
-            placeholder="Oversized tee, forest, cotton..."
+            onBlur={() => rememberSearch(query)}
+            className="fr-word fr-search w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_18%,transparent)] bg-transparent pb-3 text-[clamp(3rem,13vw,10rem)]! outline-none! placeholder:text-[#d6d2cb] focus:border-[var(--foreground)]"
+            placeholder="Type"
             autoComplete="off"
+            autoFocus
           />
-          <button
-            type="submit"
-            className="button-primary px-7 text-xs font-semibold uppercase tracking-[0.1em] transition"
-          >
-            Search
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <span className="fr-mono fr-muted" aria-live="polite">
+              {loading
+                ? "Loading the edit"
+                : liveQuery
+                  ? `${results.length} ${results.length === 1 ? "piece" : "pieces"} · “${liveQuery}”`
+                  : "Product, fabric, fit or colour"}
+            </span>
+            {liveQuery ? (
+              <button type="button" onClick={() => setQuery("")} className="fr-mono fr-choice fr-link is-active">
+                Clear
+              </button>
+            ) : null}
+            {!liveQuery && recentSearches.length > 0 ? (
+              <span className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="fr-mono fr-muted">Recent</span>
+                {recentSearches.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setQuery(item);
+                      submitSearch(item);
+                    }}
+                    className="fr-mono fr-choice fr-link is-active"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </span>
+            ) : null}
+          </div>
         </form>
 
-        {!initialQuery && recentSearches.length > 0 ? (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-              Recent
-            </span>
-            {recentSearches.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => {
-                  setQuery(item);
-                  submitSearch(item);
-                }}
-                className="border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs uppercase tracking-[0.12em] text-[var(--foreground)]"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        <section className="mt-10">
-          {loading && initialQuery ? (
-            <ProductListingSkeleton count={8} />
-          ) : !initialQuery ? (
-            <EmptyState
-              title="Start with a search term."
-              description="Try a product name, category, or color to narrow down the catalog."
-            />
-          ) : results.length === 0 ? (
-            <>
-              <EmptyState
-                title="No matching products found."
-                description="Try a broader term, remove color words, or browse the full collection."
-                ctaHref="/shop"
-                ctaLabel="Explore collection"
-              />
+        <section className="mt-10 lg:mt-14">
+          {loading && products.length === 0 ? (
+            <LoadingState title="Loading the edit" description="" />
+          ) : shown.length > 0 ? (
+            <FrameIndex key={liveQuery} products={shown} label={liveQuery ? "Results" : "The edit"} />
+          ) : (
+            <div className="flex flex-col gap-10 px-5 lg:px-10">
+              <div className="flex flex-col gap-4">
+                <p className="fr-word text-[clamp(2.5rem,7vw,5rem)]">Nothing by that name.</p>
+                <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+                  Try a broader word, drop the colour, or look through the whole edit.
+                </p>
+              </div>
               {suggestedProducts.length > 0 ? (
-                <div className="mt-10">
-                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                    Suggested pieces
-                  </p>
-                  <div className="mt-6">
-                    <ProductListingGrid products={suggestedProducts} />
+                <div className="flex flex-col gap-4">
+                  <span className="fr-mono fr-muted">You might mean</span>
+                  <div className="-mx-5 lg:-mx-10">
+                    <FrameIndex products={suggestedProducts} label="Suggested" />
                   </div>
                 </div>
               ) : null}
-            </>
-          ) : (
-            <>
-              <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]" aria-live="polite">
-                {results.length} results for &ldquo;{initialQuery}&rdquo;
-              </p>
-              <div className="mt-6">
-                <ProductListingGrid products={results} />
-              </div>
-            </>
+            </div>
           )}
         </section>
       </main>
@@ -218,8 +209,8 @@ export default function SearchPage() {
     <Suspense fallback={(
       <div className="page-shell">
         <SiteHeader />
-        <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 lg:px-8 lg:py-24">
-          <LoadingState title="Preparing search" description="Loading the latest available collection." />
+        <main className="px-5 py-12 lg:px-10">
+          <LoadingState title="Preparing search" description="" />
         </main>
         <SiteFooter />
       </div>
