@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/app-providers";
 import {
   HRUSHE_BRAND_NAME,
@@ -8,12 +8,20 @@ import {
   HRUSHE_SYMBOL_LOGO_PATH,
 } from "@/lib/brand-assets";
 import "./globals.css";
+import "./frame.css";
 
 const hrusheFont = Geist({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-hrushe",
   fallback: ["Arial", "sans-serif"],
+});
+
+const hrusheMonoFont = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-hrushe-mono",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -121,7 +129,7 @@ export default function RootLayout({
   ]);
 
   return (
-    <html lang="en" className={hrusheFont.variable} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${hrusheFont.variable} ${hrusheMonoFont.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
