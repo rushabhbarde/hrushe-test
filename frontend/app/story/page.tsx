@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -54,34 +55,24 @@ const values = [
   "Everyday comfort",
 ];
 
-function StoryBlock({
-  eyebrow,
-  title,
-  paragraphs,
-  index,
-}: {
-  eyebrow: string;
-  title: string;
-  paragraphs: string[];
-  index: string;
-}) {
-  return (
-    <article className="grid gap-8 border-t border-[var(--border)] py-10 sm:py-14 lg:grid-cols-[0.34fr_minmax(0,0.66fr)] lg:gap-16 lg:py-20">
-      <div className="reveal-up max-w-xl">
-        <div className="flex items-center gap-4">
-          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-            {index}
-          </span>
-          <p className="eyebrow text-[var(--muted)]">{eyebrow}</p>
-        </div>
-        <h2 className="mt-5 max-w-[13ch] text-[2.15rem] font-medium uppercase leading-[0.96] text-[var(--foreground)] sm:text-[3.05rem] lg:text-[3.75rem]">
-          {title}
-        </h2>
-      </div>
+const chapters = [
+  { index: "01", word: "Why", title: "A middle ground between disposable and impractical.", paragraphs: originStory },
+  { index: "02", word: "Care", title: "Care shows up in the details.", paragraphs: buildStory },
+  { index: "03", word: "Meaning", title: "Simplicity, authenticity, and modern everyday style.", paragraphs: meaningStory },
+];
 
-      <div className="max-w-[48rem] space-y-5 text-[1rem] leading-8 text-[var(--muted)] sm:text-[1.05rem] sm:leading-9">
-        {paragraphs.map((paragraph, index) => (
-          <p key={`${eyebrow}-${index}`}>{paragraph}</p>
+const refusals = ["Trends", "Noise", "Fast fashion", "Overpricing"];
+
+function Chapter({ index, word, title, paragraphs }: (typeof chapters)[number]) {
+  return (
+    <article className="grid gap-6 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-12 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:gap-16 lg:py-20">
+      <div className="flex flex-col gap-4">
+        <span className="fr-mono fr-muted">{index} · {title}</span>
+        <h2 className="fr-word text-[clamp(3.5rem,14vw,8rem)] lg:text-[clamp(4rem,7vw,8rem)]">{word}</h2>
+      </div>
+      <div className="flex max-w-[44rem] flex-col gap-4 text-[1.02rem] leading-8 text-[var(--muted)] lg:pt-10">
+        {paragraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
     </article>
@@ -92,205 +83,87 @@ export default function StoryPage() {
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="bg-[var(--background)]">
-        <section className="overflow-hidden border-b border-[var(--border)]">
-          <div className="mx-auto grid max-w-[1600px] min-w-0 gap-10 px-4 py-11 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,0.56fr)_minmax(22rem,0.44fr)] lg:items-end lg:gap-16 lg:px-8 lg:py-20">
-            <div className="reveal-up min-w-0 max-w-5xl">
-              <p className="eyebrow text-[var(--muted)]">Story</p>
-              <h1 className="mt-5 max-w-[11ch] break-words text-[2.55rem] font-medium uppercase leading-[0.96] text-[var(--foreground)] sm:max-w-[13ch] sm:text-[4.6rem] sm:leading-[0.92] lg:max-w-[920px] lg:text-[5.45rem] xl:text-[5.95rem]">
-                We built HRUSHE for everyday style that feels honest.
-              </h1>
-              <p className="mt-6 w-full max-w-[calc(100vw_-_2rem)] text-[1rem] leading-8 text-[var(--muted)] sm:max-w-2xl sm:text-[1.08rem]">
-                This page is not about trends or noise. It is about why the brand exists, what we
-                care about, and the people shaping it.
-              </p>
-            </div>
+      <main className="px-5 lg:px-10">
+        <section className="mx-auto grid max-w-[1320px] gap-6 pb-14 pt-6 lg:grid-cols-[minmax(0,1fr)_min(28vw,400px)_minmax(0,1fr)] lg:items-center lg:gap-x-14 lg:pb-24 lg:pt-12">
+          <div className="flex flex-col gap-4 lg:items-end lg:self-start lg:pt-10 lg:text-right">
+            <span className="fr-mono fr-muted">Our story</span>
+            <h1 aria-label="Defined quietly." className="fr-word text-[clamp(3.5rem,16vw,7rem)] lg:text-[clamp(3.5rem,5.6vw,7rem)]">
+              Defined
+              <span className="lg:hidden"> quietly.</span>
+            </h1>
+          </div>
+          <div aria-hidden="true" className="fr-frame h-[36svh] w-full lg:h-auto lg:aspect-[4/5]">
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Image src="/HRUSHESYLOGO.png" alt="" width={300} height={300} priority className="h-auto w-1/3 opacity-80" />
+            </span>
+          </div>
+          <div className="flex flex-col gap-6 lg:self-end lg:pb-4">
+            <p aria-hidden="true" className="fr-word hidden text-[clamp(3.5rem,5.6vw,7rem)] lg:block">
+              quietly.
+            </p>
+            <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+              HRUSHE was born from a belief that fashion should be simple, expressive, and built for real life.
+            </p>
+            <ul className="flex flex-wrap gap-x-5 gap-y-2">
+              {values.map((value) => (
+                <li key={value} className="fr-mono">
+                  {value}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
 
-            <div className="grid min-w-0 gap-3 sm:grid-cols-2 sm:gap-4 lg:gap-5" aria-hidden="true">
-              {founders.map((founder, index) => (
-                <div
-                  key={`hero-${founder.name}`}
-                  className={`relative overflow-hidden bg-[var(--surface-strong)] ${
-                    index === 0 ? "aspect-[4/5] sm:translate-y-8" : "aspect-[4/5]"
-                  }`}
+        <div className="mx-auto max-w-[1320px]">
+          <Chapter {...chapters[0]} />
+
+          <section className="border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-12 lg:py-20" aria-label="What we refuse">
+            <span className="fr-mono fr-muted">What we refuse</span>
+            <ul className="mt-6 flex flex-col gap-1">
+              {refusals.map((word) => (
+                <li
+                  key={word}
+                  className="fr-word fr-quiet text-[clamp(2.75rem,9vw,7rem)] line-through decoration-[3px]"
                 >
-                  <Image
-                    src={founder.image}
-                    alt=""
-                    fill
-                    priority
-                    loading="eager"
-                    className="object-cover object-center"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,17,15,0.02),rgba(17,17,15,0.12))]" />
-                </div>
+                  {word}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 max-w-md text-base leading-7">
+              Just clean, comfortable, premium everyday wear that lets people feel confident in their own skin.
+            </p>
+          </section>
+
+          <Chapter {...chapters[1]} />
+          <Chapter {...chapters[2]} />
+
+          <section className="border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-12 lg:py-20" aria-label="Founders">
+            <span className="fr-mono fr-muted">04 · The people shaping the brand</span>
+            <div className="mt-8 grid gap-12 sm:grid-cols-2 lg:gap-10">
+              {founders.map((founder) => (
+                <article key={founder.name} className="flex flex-col gap-4">
+                  <div className="fr-frame aspect-[4/5] w-full">
+                    <div className="fr-frame__layer is-active">
+                      <Image src={founder.image} alt={founder.name} fill unoptimized sizes="(min-width: 640px) 50vw, 100vw" />
+                    </div>
+                  </div>
+                  <h2 className="fr-word text-[clamp(2.25rem,5vw,3.75rem)]">{founder.name}</h2>
+                  <span className="fr-mono fr-muted">{founder.role}</span>
+                  <p className="max-w-md text-sm leading-7 text-[var(--muted)]">{founder.description}</p>
+                </article>
               ))}
             </div>
+          </section>
 
-            <div className="grid min-w-0 border-y border-[var(--border)] sm:col-span-2 sm:grid-cols-[0.62fr_0.38fr]">
-              <div className="grid grid-cols-2 border-[var(--border)] sm:border-r">
-                {values.map((value) => (
-                  <div
-                    key={value}
-                    className="border-b border-[var(--border)] px-4 py-4 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)] sm:px-5 sm:py-5"
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-              <div className="px-4 py-5 sm:px-6">
-                <p className="eyebrow text-[var(--muted)]">What we stand for</p>
-                <p className="mt-3 max-w-xl text-[1rem] leading-7 text-[var(--foreground)]">
-                  Less trend chasing. More pieces you actually want to keep wearing.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-          <StoryBlock
-            eyebrow="Why we started"
-            title="A middle ground between disposable and impractical."
-            paragraphs={originStory}
-            index="01"
-          />
-        </section>
-
-        <section className="bg-[var(--foreground)] text-[var(--background)]">
-          <div className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-            <div className="grid gap-8 lg:grid-cols-[0.72fr_0.28fr] lg:items-end lg:gap-14">
-              <div className="reveal-up max-w-5xl">
-                <p className="eyebrow text-white/54">What we refuse</p>
-                <div className="mt-5 space-y-2">
-                  <p className="text-[2.1rem] font-medium uppercase leading-[0.95] text-white sm:text-[3.85rem] lg:text-[5rem]">
-                    Not overloaded with trends.
-                  </p>
-                  <p className="text-[2.1rem] font-medium uppercase leading-[0.95] text-white sm:text-[3.85rem] lg:text-[5rem]">
-                    Not loud for the sake of attention.
-                  </p>
-                </div>
-              </div>
-              <p className="max-w-md text-[1rem] leading-8 text-white/68 sm:text-[1.08rem] sm:leading-9">
-                Just clean, comfortable, premium everyday wear that lets people feel confident in
-                their own skin.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-          <StoryBlock
-            eyebrow="Built with care"
-            title="Care shows up in the details."
-            paragraphs={buildStory}
-            index="02"
-          />
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="grid gap-10 lg:grid-cols-[0.38fr_0.62fr] lg:gap-16">
-            <div className="flex flex-col justify-between gap-8 border-y border-[var(--border)] py-8 lg:min-h-[32rem]">
-              <div>
-                <p className="eyebrow text-[var(--muted)]">The brand language</p>
-                <p className="mt-5 text-[2.2rem] font-medium uppercase leading-[0.96] text-[var(--foreground)] sm:text-[3.25rem]">
-                  Simplicity, authenticity, and modern everyday style.
-                </p>
-              </div>
-              <p className="max-w-md text-[0.98rem] leading-8 text-[var(--muted)]">
-                A quieter wardrobe built around pieces that feel easy, wearable, and worth coming back to.
-              </p>
-            </div>
-
-            <div className="border-y border-[var(--border)] py-8">
-              <p className="eyebrow text-[var(--muted)]">What HRUSHE means</p>
-              <div className="mt-6 max-w-[48rem] space-y-5 text-[1rem] leading-8 text-[var(--muted)] sm:text-[1.05rem] sm:leading-9">
-                {meaningStory.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-              <div className="mt-9 grid border-t border-l border-[var(--border)] sm:grid-cols-2">
-                {values.map((value) => (
-                  <div
-                    key={`detail-${value}`}
-                    className="border-b border-r border-[var(--border)] px-5 py-5 text-[0.75rem] font-medium uppercase tracking-[0.16em] text-[var(--foreground)]"
-                  >
-                    {value}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-          <div className="grid gap-6 border-t border-[var(--border)] py-8 sm:grid-cols-[minmax(0,0.58fr)_minmax(12rem,0.42fr)] sm:items-end lg:py-10">
-            <div className="max-w-2xl">
-              <p className="eyebrow text-[var(--muted)]">Founders</p>
-              <h2 className="mt-4 text-[2.25rem] font-medium uppercase leading-[0.96] text-[var(--foreground)] sm:text-[3.45rem] lg:text-[4.15rem]">
-                The people shaping the brand.
-              </h2>
-            </div>
-            <div className="hidden h-px bg-[var(--border)] sm:block" aria-hidden="true" />
-          </div>
-
-          <div className="grid gap-8 pt-2 lg:grid-cols-2 lg:gap-10">
-            {founders.map((founder, index) => (
-              <article key={founder.name} className="group">
-                <div className="relative aspect-[4/5] overflow-hidden bg-[var(--surface-strong)]">
-                  <Image
-                    src={founder.image}
-                    alt={founder.name}
-                    fill
-                    className="object-cover object-center transition duration-500 group-hover:scale-[1.015]"
-                    unoptimized
-                  />
-                </div>
-                <div className="grid gap-4 border-b border-[var(--border)] py-5 sm:grid-cols-[auto_1fr] sm:gap-8">
-                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                    0{index + 1}
-                  </span>
-                  <div>
-                    <p className="text-[1.25rem] font-medium uppercase leading-tight text-[var(--foreground)] sm:text-[1.55rem]">
-                      {founder.name}
-                    </p>
-                    <p className="mt-1 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                      {founder.role}
-                    </p>
-                    <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--muted)]">
-                      {founder.description}
-                    </p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 pb-14 pt-4 sm:px-6 lg:px-8 lg:pb-20">
-          <div className="border-y border-[var(--border)] py-10 sm:py-14 lg:py-20">
-            <div className="grid gap-8 lg:grid-cols-[0.36fr_0.64fr] lg:items-end lg:gap-16">
-              <div>
-                <p className="eyebrow text-[var(--muted)]">The beginning</p>
-                <p className="mt-5 text-[1rem] leading-8 text-[var(--muted)]">
-                  And this is only the beginning.
-                </p>
-              </div>
-              <div>
-                <p className="text-[2.35rem] font-medium uppercase leading-[0.95] text-[var(--foreground)] sm:text-[3.8rem] lg:text-[5rem]">
-                  This is where it all started.
-                </p>
-                <p className="mt-9 text-[0.98rem] font-medium uppercase tracking-[0.16em] text-[var(--accent)] sm:text-[1.08rem]">
-                  Welcome to HRUSHE
-                </p>
-                <p className="mt-4 max-w-2xl text-[1.05rem] leading-7 text-[var(--foreground)] sm:text-[1.15rem]">
-                  Where style is simple and comfort is everything.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+          <section className="flex flex-col gap-6 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-14 lg:py-24">
+            <span className="fr-mono fr-muted">And this is only the beginning</span>
+            <p className="fr-word text-[clamp(3rem,10vw,8rem)]">Welcome to HRUSHE.</p>
+            <p className="max-w-md text-base leading-7 text-[var(--muted)]">Where style is simple and comfort is everything.</p>
+            <Link href="/?choose" className="fr-button max-w-sm">
+              Enter the edit
+            </Link>
+          </section>
+        </div>
       </main>
       <SiteFooter />
     </div>
