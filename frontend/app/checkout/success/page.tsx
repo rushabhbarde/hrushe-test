@@ -28,8 +28,8 @@ function CheckoutSuccessPageContent() {
         frame="mark"
         body={
           user
-            ? "Your order is confirmed and waiting in your wardrobe. We will write when it is packed and again when it leaves."
-            : "Your order is confirmed. Keep the order number below: with your email or phone, it is all you need to follow it."
+            ? "Your order is available in your account. We will write when it is packed, and again when it leaves."
+            : "Your order is confirmed. Track this order using your order number below, with the email or phone you paid with."
         }
         reference={orderId}
         rows={[
