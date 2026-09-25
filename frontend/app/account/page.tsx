@@ -137,21 +137,75 @@ function buildProfileForm(user: AccountUser | null) {
   };
 }
 
-function AccountMetric({
-  label,
-  value,
-  note,
-}: {
-  label: string;
-  value: string;
-  note: string;
-}) {
+function formatRupees(value: number) {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function NothingYet({ line }: { line: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-5">
-      <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{note}</p>
+    <div className="flex flex-col gap-4">
+      <p className="fr-word text-[clamp(2rem,5vw,3.25rem)]">Nothing yet.</p>
+      <p className="max-w-md text-sm leading-7 text-[var(--muted)]">{line}</p>
+      <Link href="/?choose" className="fr-mono fr-link self-start">
+        See the edit →
+      </Link>
     </div>
+  );
+}
+
+function OrderRow({
+  order,
+  busy,
+  onReorder,
+  onInvoice,
+}: {
+  order: OrderRecord;
+  busy: boolean;
+  onReorder: () => void;
+  onInvoice?: () => void;
+}) {
+  const image = order.products.find((product) => product.image)?.image;
+  const names = order.products.map((product) => product.name).join(", ");
+
+  return (
+    <article className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-5 border-b border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] pb-6 sm:grid-cols-[minmax(0,1fr)_7rem]">
+      <div className="flex min-w-0 flex-col gap-3">
+        <span className="fr-mono fr-muted">
+          #{order.orderNumber || order.id} · {formatOrderDate(order.createdAt)}
+        </span>
+        <Link href={`/my-orders/${order.id}`} className="fr-word text-[clamp(2rem,5vw,3.25rem)]">
+          {order.orderStatus}.
+        </Link>
+        <span className="text-sm leading-6 text-[var(--muted)]">
+          {names} · {formatRupees(order.totalAmount)}
+        </span>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+          <Link href={`/my-orders/${order.id}`} className="fr-mono fr-link">
+            Details
+          </Link>
+          {order.trackingUrl ? (
+            <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="fr-mono fr-link">
+              Follow courier
+            </a>
+          ) : null}
+          {onInvoice ? (
+            <button type="button" onClick={onInvoice} className="fr-mono fr-choice fr-link is-active">
+              Invoice
+            </button>
+          ) : null}
+          <button type="button" onClick={onReorder} className="fr-mono fr-choice fr-link is-active">
+            {busy ? "Adding…" : "Order again"}
+          </button>
+        </div>
+      </div>
+      <Link href={`/my-orders/${order.id}`} aria-hidden="true" tabIndex={-1} className="fr-frame block aspect-[3/4] w-full">
+        {image ? (
+          <span className="fr-frame__layer is-active">
+            <Image src={image} alt="" fill unoptimized sizes="7rem" />
+          </span>
+        ) : null}
+      </Link>
+    </article>
   );
 }
 
@@ -619,11 +673,8 @@ function AccountPageContent() {
       <div className="page-shell">
         <SiteHeader />
         <AccountGuard>
-          <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-            <LoadingState
-              title="Preparing your account."
-              description="We are loading orders, saved pieces, addresses, and account preferences."
-            />
+          <main className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 lg:px-10 lg:pb-24 lg:pt-12">
+            <LoadingState title="Opening your wardrobe" description="" />
           </main>
         </AccountGuard>
         <SiteFooter />
@@ -635,9 +686,9 @@ function AccountPageContent() {
     <div className="page-shell">
       <SiteHeader />
       <AccountGuard>
-        <main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        <main className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 lg:px-10 lg:pb-24 lg:pt-12">
           {error ? (
-            <div className="mb-6 rounded-[1.5rem] border border-[var(--accent)]/15 bg-[var(--accent)]/6 px-5 py-4 text-sm text-[var(--accent)]">
+            <div role="alert" className="mb-6 border-b border-[var(--accent)] pb-3 text-sm text-[var(--accent)]">
               {error}
             </div>
           ) : null}
@@ -651,167 +702,69 @@ function AccountPageContent() {
             <div ref={contentStartRef} />
             {activeSection === "dashboard" ? (
               <>
+                <p className="fr-mono fr-muted">
+                  {[
+                    `${String(orders.length).padStart(2, "0")} orders`,
+                    `${String(wishlistProducts.length).padStart(2, "0")} saved`,
+                    `${String(addresses.length).padStart(2, "0")} addresses`,
+                    preferences.preferredFit ? `Fit · ${preferences.preferredFit}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join("  ·  ")}
+                </p>
+
                 <AccountSectionCard
-                  eyebrow="Dashboard"
-                  title={`Welcome back, ${(summary?.user.name || user?.name || "member").split(" ")[0]}.`}
-                  description="Scan your recent activity, jump back into repeat buying, and keep the essentials of your account within quick reach."
+                  eyebrow="Latest"
+                  title="Your orders"
+                  action={
+                    orders.length > 0 ? (
+                      <button type="button" onClick={() => changeSection("orders")} className="fr-mono fr-choice fr-link is-active">
+                        All orders →
+                      </button>
+                    ) : null
+                  }
                 >
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <AccountMetric
-                      label="Recent orders"
-                      value={`${orders.length}`}
-                      note="See every recent checkout and reorder in one tap."
-                    />
-                    <AccountMetric
-                      label="Saved addresses"
-                      value={`${addresses.length}`}
-                      note="Keep multiple shipping locations ready for faster checkout."
-                    />
-                    <AccountMetric
-                      label="Saved"
-                      value={`${wishlistProducts.length}`}
-                      note="Saved pieces stay ready for later when you want to convert quickly."
-                    />
-                    <AccountMetric
-                      label="Preferred fit"
-                      value={preferences.preferredFit || "Not set"}
-                      note="Use saved fit preferences to speed up repeat buying."
-                    />
-                  </div>
+                  {orders.length === 0 ? (
+                    <NothingYet line="Your first order will live here, with its journey from packed to at your door." />
+                  ) : (
+                    <div className="flex flex-col gap-6">
+                      {orders.slice(0, 3).map((order) => (
+                        <OrderRow
+                          key={order.id}
+                          order={order}
+                          busy={submitting === `reorder-${order.id}`}
+                          onReorder={() => void reorderOrder(order.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </AccountSectionCard>
 
-                <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                  <AccountSectionCard
-                    eyebrow="Recent orders"
-                    title="What happened lately."
-                    description="A compact view of your latest purchases with fast links to details and tracking."
-                    action={
-                      <button
-                        type="button"
-                        onClick={() => changeSection("orders")}
-                        className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
+                <AccountSectionCard
+                  eyebrow="You"
+                  title="Details"
+                  action={
+                    <button type="button" onClick={() => changeSection("profile")} className="fr-mono fr-choice fr-link is-active">
+                      Edit →
+                    </button>
+                  }
+                >
+                  <dl className="flex max-w-2xl flex-col">
+                    {[
+                      ["Email", summary?.user.email || user?.email || "Not added"],
+                      ["Phone", summary?.user.phone || user?.phone || "Not added"],
+                      ["Delivers to", summary?.user.address || "Add an address for a faster checkout"],
+                    ].map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="flex items-baseline justify-between gap-6 border-b border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] py-3"
                       >
-                        View all orders
-                      </button>
-                    }
-                  >
-                    {orders.length === 0 ? (
-                      <EmptyState
-                        title="No orders yet."
-                        description="Your first HRUSHE order will appear here with tracking, status, and support shortcuts."
-                        ctaHref="/shop"
-                        ctaLabel="Explore collection"
-                      />
-                    ) : (
-                      <div className="space-y-4">
-                        {orders.slice(0, 3).map((order) => (
-                          <div
-                            key={order.id}
-                            className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4"
-                          >
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                              <div>
-                                <p className="text-lg font-semibold">
-                                  Order #{order.orderNumber || order.id}
-                                </p>
-                                <p className="mt-1 text-sm text-[var(--muted)]">
-                                  {formatOrderDate(order.createdAt)} · {order.products.length} items
-                                </p>
-                              </div>
-                              <span className="text-sm font-medium text-[var(--accent)]">
-                                {order.orderStatus}
-                              </span>
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-2.5 sm:gap-3">
-                              <Link
-                                href={`/my-orders/${order.id}`}
-                                className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
-                              >
-                                View details
-                              </Link>
-                              {order.trackingUrl ? (
-                                <a
-                                  href={order.trackingUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="rounded-full px-4 py-2.5 text-sm font-medium text-[#1f7a39] transition hover:text-[#17622d]"
-                                >
-                                  Track shipment
-                                </a>
-                              ) : null}
-                              <button
-                                type="button"
-                                onClick={() => void reorderOrder(order.id)}
-                                className="button-primary rounded-full px-4 py-2.5 text-sm transition"
-                              >
-                                {submitting === `reorder-${order.id}` ? "Adding..." : "Reorder"}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                        <dt className="fr-mono fr-muted shrink-0">{label}</dt>
+                        <dd className="text-right text-sm leading-6">{value}</dd>
                       </div>
-                    )}
-                  </AccountSectionCard>
-
-                  <div className="space-y-6">
-                    <AccountSectionCard
-                      eyebrow="Account details"
-                      title="Identity and delivery at a glance."
-                      description="The essentials we use for checkout, support, and order updates."
-                    >
-                      <div className="grid gap-4">
-                        <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4">
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-                            Email
-                          </p>
-                          <p className="mt-2 text-lg font-semibold">
-                            {summary?.user.email || user?.email || "Not available"}
-                          </p>
-                        </div>
-                        <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4">
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-                            Phone
-                          </p>
-                          <p className="mt-2 text-lg font-semibold">
-                            {summary?.user.phone || user?.phone || "Not available"}
-                          </p>
-                        </div>
-                        <div className="rounded-[1.5rem] border border-[var(--border)] bg-white/70 p-4">
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-                            Default delivery address
-                          </p>
-                          <p className="mt-2 text-base leading-7">
-                            {summary?.user.address || "Add an address to keep checkout faster."}
-                          </p>
-                        </div>
-                      </div>
-                    </AccountSectionCard>
-
-                    <AccountSectionCard
-                      eyebrow="Quick links"
-                      title="Use the account like a repeat customer."
-                      description="The fastest actions for retention, repurchase, and post-purchase care."
-                    >
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {[
-                          { id: "wishlist", label: "Open saved" },
-                          { id: "addresses", label: "Manage addresses" },
-                          { id: "preferences", label: "Update preferences" },
-                          { id: "support", label: "Contact support" },
-                        ].map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => changeSection(item.id as AccountSectionId)}
-                            className="rounded-[1.3rem] border border-[var(--border)] bg-white/70 px-4 py-4 text-left transition hover:border-black/25"
-                          >
-                            <p className="font-semibold">{item.label}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </AccountSectionCard>
-                  </div>
-                </div>
+                    ))}
+                  </dl>
+                </AccountSectionCard>
               </>
             ) : null}
 
@@ -1182,123 +1135,21 @@ function AccountPageContent() {
             ) : null}
 
             {activeSection === "orders" ? (
-              <AccountSectionCard
-                eyebrow="Orders"
-                title="Your complete order history"
-                description="Track every purchase, jump to detail pages, download invoices later, and reorder in one click."
-              >
+              <AccountSectionCard eyebrow={`${String(orders.length).padStart(2, "0")} orders`} title="Every order">
                 {ordersLoading ? (
-                  <LoadingState
-                    title="Loading your orders."
-                    description="We are preparing your order history and status updates."
-                  />
+                  <LoadingState title="Loading your orders" description="" />
                 ) : orders.length === 0 ? (
-                  <EmptyState
-                    title="No orders yet."
-                    description="Your purchases will show up here once you complete checkout, with tracking and delivery updates."
-                    ctaHref="/shop"
-                    ctaLabel="Explore collection"
-                  />
+                  <NothingYet line="Your orders will appear here once you check out, with tracking as they travel." />
                 ) : (
-                  <div className="space-y-4">
+                  <div className="flex flex-col gap-6">
                     {orders.map((order) => (
-                      <div
+                      <OrderRow
                         key={order.id}
-                        className="rounded-[1.7rem] border border-[var(--border)] bg-white/70 p-5"
-                      >
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <p className="text-xl font-semibold">
-                              Order #{order.orderNumber || order.id}
-                            </p>
-                            <p className="mt-1 text-sm text-[var(--muted)]">
-                              {formatOrderDate(order.createdAt)} · {order.paymentMethod} ·{" "}
-                              {order.paymentStatus}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="rounded-full border border-[var(--border)] px-3 py-1 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-                              {order.orderStatus}
-                            </span>
-                            <span className="text-lg font-semibold">
-                              Rs. {order.totalAmount.toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                          {order.products.map((product, index) => (
-                            <div
-                              key={`${order.id}-${product.productId}-${index}`}
-                              className="flex gap-4 rounded-[1.4rem] border border-[var(--border)] bg-white/70 p-4"
-                            >
-                              <div className="relative h-24 w-20 overflow-hidden rounded-[1rem] bg-[#f4f4f4]">
-                                {product.image ? (
-                                  <Image
-                                    src={product.image}
-                                    alt={product.name}
-                                    fill
-                                    unoptimized
-                                    className="object-cover"
-                                  />
-                                ) : null}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold">{product.name}</p>
-                                <p className="mt-1 text-sm text-[var(--muted)]">
-                                  Size {product.size || "Standard"}
-                                  {product.color ? ` · ${product.color}` : ""}
-                                  {product.fit ? ` · ${product.fit}` : ""}
-                                </p>
-                                <p className="mt-1 text-sm text-[var(--muted)]">
-                                  Qty {product.quantity}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-5 flex flex-wrap gap-3">
-                          <Link
-                            href={`/my-orders/${order.id}`}
-                            className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
-                          >
-                            View details
-                          </Link>
-                          {order.trackingUrl ? (
-                            <a
-                              href={order.trackingUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-full px-4 py-2.5 text-sm font-medium text-[#1f7a39] transition hover:text-[#17622d]"
-                            >
-                              Track shipment
-                            </a>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => pushToast("Tracking link will appear after dispatch")}
-                              className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
-                            >
-                              Tracking pending
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => void downloadInvoice(order.id, order.orderNumber)}
-                            className="button-secondary rounded-full px-4 py-2.5 text-sm transition"
-                          >
-                            Download invoice
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void reorderOrder(order.id)}
-                            className="button-primary rounded-full px-4 py-2.5 text-sm transition"
-                          >
-                            {submitting === `reorder-${order.id}` ? "Adding..." : "Reorder"}
-                          </button>
-                        </div>
-                      </div>
+                        order={order}
+                        busy={submitting === `reorder-${order.id}`}
+                        onReorder={() => void reorderOrder(order.id)}
+                        onInvoice={() => void downloadInvoice(order.id, order.orderNumber)}
+                      />
                     ))}
                   </div>
                 )}
@@ -1306,73 +1157,34 @@ function AccountPageContent() {
             ) : null}
 
             {activeSection === "wishlist" ? (
-              <AccountSectionCard
-                eyebrow="Saved"
-                title="Saved for your next drop"
-                description="Keep shortlisted pieces together, remove them, or move them straight into cart when you are ready."
-              >
+              <AccountSectionCard eyebrow={`${String(wishlistProducts.length).padStart(2, "0")} saved`} title="Kept for later">
                 {wishlistProducts.length === 0 ? (
-                  <EmptyState
-                    title="No saved pieces yet."
-                    description="Save pieces you love and find them here later."
-                    ctaHref="/shop"
-                    ctaLabel="Explore collection"
-                  />
+                  <NothingYet line="Save a piece from its page and it will wait for you here." />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-10 xl:grid-cols-3">
                     {wishlistProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="lux-hover-lift border border-[var(--border)] bg-white/72 p-4"
-                      >
-                        <div className="relative aspect-[0.86/1] overflow-hidden bg-[#f4f4f4]">
+                      <article key={product.id} className="flex flex-col gap-3">
+                        <Link href={product.slug ? `/product/${product.slug}` : "/shop"} className="fr-frame block aspect-[3/4] w-full">
                           {product.images[0] ? (
-                            <Image
-                              src={product.images[0]}
-                              alt={product.name}
-                              fill
-                              unoptimized
-                              className="object-cover"
-                            />
-                          ) : null}
-                        </div>
-                        <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-                          {product.category}
-                        </p>
-                        <p className="mt-2 text-xl font-semibold leading-tight">{product.name}</p>
-                        <div className="mt-3 flex items-center gap-3">
-                          <span className="text-lg font-semibold">
-                            Rs. {product.price.toLocaleString("en-IN")}
-                          </span>
-                          {product.compareAtPrice ? (
-                            <span className="text-sm text-[var(--muted)] line-through">
-                              Rs. {product.compareAtPrice.toLocaleString("en-IN")}
+                            <span className="fr-frame__layer is-active">
+                              <Image src={product.images[0]} alt={product.name} fill unoptimized sizes="(min-width: 1280px) 25vw, 50vw" />
                             </span>
                           ) : null}
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Link
-                            href={product.slug ? `/product/${product.slug}` : "/shop"}
-                            className="lux-action-muted px-4 py-2.5 text-sm"
-                          >
-                            View product
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => void moveWishlistToCart(product.id)}
-                            className="lux-action px-4 py-2.5 text-sm"
-                          >
-                            {submitting === `wishlist-cart-${product.id}` ? "Moving..." : "Move to cart"}
+                        </Link>
+                        <span className="fr-word text-[clamp(1.4rem,3vw,2rem)]">{product.name}</span>
+                        <span className="fr-mono">
+                          {formatRupees(product.price)}
+                          {product.compareAtPrice ? <span className="fr-muted line-through"> {formatRupees(product.compareAtPrice)}</span> : null}
+                        </span>
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          <button type="button" onClick={() => void moveWishlistToCart(product.id)} className="fr-mono fr-choice fr-link is-active">
+                            {submitting === `wishlist-cart-${product.id}` ? "Moving…" : "Move to bag"}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => void removeWishlistItem(product.id)}
-                            className="rounded-full px-4 py-2.5 text-sm text-[var(--accent)] transition hover:bg-[var(--accent)]/6"
-                          >
-                            {submitting === `wishlist-remove-${product.id}` ? "Removing..." : "Remove"}
+                          <button type="button" onClick={() => void removeWishlistItem(product.id)} className="fr-mono fr-choice">
+                            {submitting === `wishlist-remove-${product.id}` ? "Removing…" : "Remove"}
                           </button>
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                 )}
