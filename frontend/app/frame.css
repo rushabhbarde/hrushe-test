@@ -179,3 +179,30 @@
     transition: none;
   }
 }
+
+/* Phone bottom bar: the gateway choice, always one tap away. */
+.fr-cap {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  min-height: calc(4rem + env(safe-area-inset-bottom));
+  padding: 0.5rem 1.25rem calc(0.5rem + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: var(--background);
+}
+
+@media (max-width: 1023.98px) {
+  body:has(.fr-cap) {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 1024px) {
+  .fr-cap {
+    display: none;
+  }
+}

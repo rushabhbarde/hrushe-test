@@ -65,7 +65,7 @@ export function HomepageMediaFrame({
           fill
           priority={priority}
           sizes={sizes}
-          className={`${className} sm:hidden`}
+          className={`${className} sm:hidden!`}
           style={style}
         />
         <Image
@@ -74,7 +74,7 @@ export function HomepageMediaFrame({
           fill
           priority={priority}
           sizes={sizes}
-          className={`${className} hidden sm:block`}
+          className={`${className} hidden! sm:block!`}
           style={style}
         />
       </>
