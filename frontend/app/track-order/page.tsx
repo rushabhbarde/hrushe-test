@@ -1,18 +1,20 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { OrderTrackingView } from "@/components/order-tracking-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
-import { formatOrderDate, type PublicTrackingRecord } from "@/lib/orders";
+import type { PublicTrackingRecord } from "@/lib/orders";
 import { isValidIndianPhone, normalizeIndianPhone } from "@/lib/phone";
 
 type SearchMode = "email" | "phone";
 
-export default function TrackOrderPage() {
+function TrackOrderPageContent() {
+  const searchParams = useSearchParams();
   const [searchMode, setSearchMode] = useState<SearchMode>("email");
-  const [orderId, setOrderId] = useState("");
+  const [orderId, setOrderId] = useState(searchParams.get("orderId") || "");
   const [contactValue, setContactValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,224 +59,92 @@ export default function TrackOrderPage() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-[1440px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        <section className="grid gap-px bg-[var(--border)] lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12">
-            <p className="eyebrow text-[var(--muted)]">Track order</p>
-            <h1 className="mt-5 max-w-[9ch] text-[2.15rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[3.5rem] sm:tracking-[-0.04em]">Follow every delivery step.</h1>
-            <p className="mt-6 max-w-md text-sm leading-7 text-[var(--muted)]">
-              Search using your order ID with either the email or phone number used at checkout.
-            </p>
-
-            <fieldset className="mt-6">
-              <legend className="sr-only">Choose how to verify your order</legend>
-              <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => setSearchMode("email")}
-                aria-pressed={searchMode === "email"}
-                className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
-                  searchMode === "email"
-                    ? "hrushe-inverse-action"
-                    : "border-[var(--border)] bg-white text-[var(--foreground)]"
-                }`}
-              >
-                Order ID + Email
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchMode("phone")}
-                aria-pressed={searchMode === "phone"}
-                className={`min-h-11 border px-4 text-xs font-medium uppercase tracking-[0.08em] transition ${
-                  searchMode === "phone"
-                    ? "hrushe-inverse-action"
-                    : "border-[var(--border)] bg-white text-[var(--foreground)]"
-                }`}
-              >
-                Order ID + Phone
-              </button>
-              </div>
-            </fieldset>
-
-            <form className="mt-6 grid gap-4" onSubmit={(event) => void onSubmit(event)} aria-busy={loading}>
-              <label className="field-label">
-                Order ID
-                <input
-                  value={orderId}
-                  onChange={(event) => setOrderId(event.target.value)}
-                  className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
-                  placeholder="e.g. HRU-1024"
-                  autoComplete="off"
-                  required
-                />
-              </label>
-              <label className="field-label">
-                {searchMode === "email" ? "Email address" : "Phone number"}
-                <input
-                  value={contactValue}
-                  onChange={(event) => setContactValue(event.target.value)}
-                  className="min-h-12 border border-[var(--border)] bg-[var(--background)] px-4"
-                  placeholder={searchMode === "email" ? "you@example.com" : "+91 98765 43210"}
-                  type={searchMode === "email" ? "email" : "tel"}
-                  inputMode={searchMode === "email" ? "email" : "tel"}
-                  autoComplete={searchMode === "email" ? "email" : "tel"}
-                  required
-                />
-              </label>
-              {error ? <p className="text-sm text-[var(--accent)]" role="alert">{error}</p> : null}
-              <button
-                type="submit"
-                disabled={loading}
-                className="button-primary px-5 py-3 text-xs font-semibold uppercase transition disabled:opacity-60"
-              >
-                {loading ? "Checking..." : "Track order"}
-              </button>
-            </form>
+      <main className="px-5 pb-16 pt-6 lg:px-10 lg:pb-24 lg:pt-12" aria-live="polite">
+        {order ? (
+          <div className="mx-auto flex max-w-[1320px] flex-col gap-8">
+            <h1 className="sr-only">Order tracking</h1>
+            <OrderTrackingView
+              order={order}
+              actions={
+                <button type="button" onClick={() => setOrder(null)} className="fr-mono fr-choice fr-link is-active self-start">
+                  Track another order
+                </button>
+              }
+            />
           </div>
+        ) : (
+          <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-20">
+            <div className="flex flex-col gap-4">
+              <span className="fr-mono fr-muted">Track an order</span>
+              <h1 className="fr-word text-[clamp(3.5rem,14vw,8rem)] lg:text-[clamp(4rem,7vw,8rem)]">Where is it?</h1>
+              <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+                Your order number, with the email or phone you used at checkout. No account needed.
+              </p>
+            </div>
 
-          <div className="bg-[var(--surface)] p-6 sm:p-10 lg:p-12" aria-live="polite">
-            {!order ? (
-              <div className="flex min-h-[420px] flex-col justify-center">
-                <p className="eyebrow text-[var(--muted)]">
-                  Delivery status updates
-                </p>
-                <h2 className="mt-5 max-w-[18ch] text-2xl font-medium tracking-[-0.025em] sm:text-3xl">
-                  Your timeline, courier, and tracking details will appear here.
-                </h2>
-                <p className="mt-4 max-w-xl text-[var(--muted)]">
-                  Once we find your order, you will see each delivery stage from order placed to
-                  delivered.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                      Order #{order.orderNumber || order.id}
-                    </p>
-                    <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">{order.orderStatus}</h2>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      Placed on {formatOrderDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-sm text-[var(--muted)]">Payment status</p>
-                    <p className="mt-1 font-semibold">{order.paymentStatus}</p>
-                  </div>
-                </div>
+            <div className="flex flex-col gap-8 lg:pt-10">
+              <fieldset className="flex gap-6">
+                <legend className="sr-only">Choose how to verify your order</legend>
+                {(["email", "phone"] as SearchMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setSearchMode(mode)}
+                    aria-pressed={searchMode === mode}
+                    className={`fr-mono fr-choice is-underlined min-h-11 ${searchMode === mode ? "is-active" : ""}`}
+                  >
+                    With {mode}
+                  </button>
+                ))}
+              </fieldset>
 
-                <div className="mt-8">
-                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                    Order timeline
+              <form className="flex flex-col gap-6" onSubmit={(event) => void onSubmit(event)} aria-busy={loading}>
+                <label className="fr-field">
+                  <span>Order number</span>
+                  <input
+                    value={orderId}
+                    onChange={(event) => setOrderId(event.target.value)}
+                    className="fr-input"
+                    placeholder="e.g. 1024"
+                    autoComplete="off"
+                    required
+                  />
+                </label>
+                <label className="fr-field">
+                  <span>{searchMode === "email" ? "Email address" : "Phone number"}</span>
+                  <input
+                    value={contactValue}
+                    onChange={(event) => setContactValue(event.target.value)}
+                    className="fr-input"
+                    placeholder={searchMode === "email" ? "you@example.com" : "98765 43210"}
+                    type={searchMode === "email" ? "email" : "tel"}
+                    inputMode={searchMode === "email" ? "email" : "tel"}
+                    autoComplete={searchMode === "email" ? "email" : "tel"}
+                    required
+                  />
+                </label>
+                {error ? (
+                  <p className="text-sm text-[var(--accent)]" role="alert">
+                    {error}
                   </p>
-                  <div className="mt-5 space-y-4">
-                    {order.timeline.map((step) => (
-                      <div key={step.key} className="flex items-start gap-4">
-                        <span
-                          className={`mt-1 h-3 w-3 rounded-full ${
-                            step.status === "completed"
-                              ? "bg-black"
-                              : step.status === "current"
-                                ? "bg-[var(--accent)]"
-                                : "bg-black/15"
-                          }`}
-                        />
-                        <div>
-                          <p className="font-medium">{step.label}</p>
-                          <p className="text-sm text-[var(--muted)]">
-                            {step.status === "completed"
-                              ? "Completed"
-                              : step.status === "current"
-                                ? "Current status"
-                                : "Upcoming"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                      Shipment details
-                    </p>
-                    <div className="mt-4 space-y-2 text-[var(--muted)]">
-                      <p>
-                        Courier:{" "}
-                        <span className="font-semibold text-[var(--foreground)]">
-                          {order.courierName || "Will be assigned after dispatch"}
-                        </span>
-                      </p>
-                      <p>
-                        Tracking number:{" "}
-                        <span className="font-semibold text-[var(--foreground)]">
-                          {order.trackingId || "Will be added after dispatch"}
-                        </span>
-                      </p>
-                      {order.trackingUrl ? (
-                        <a
-                          href={order.trackingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex text-sm underline"
-                        >
-                          Open courier tracking
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                      Shipping details
-                    </p>
-                    <p className="mt-4 leading-7 text-[var(--foreground)]">
-                      {order.shippingAddress}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
-                    Items in this order
-                  </p>
-                  <div className="mt-5 space-y-4">
-                    {order.products.map((product, index) => (
-                      <div
-                        key={`${product.productId}-${index}`}
-                        className="flex gap-4 border border-[var(--border)] p-4"
-                      >
-                        <div className="relative h-24 w-20 overflow-hidden bg-[var(--surface-strong)]">
-                          {product.image ? (
-                            <Image
-                              src={product.image}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                              sizes="80px"
-                            />
-                          ) : null}
-                        </div>
-                        <div>
-                          <p className="font-semibold">{product.name}</p>
-                          <p className="mt-1 text-sm text-[var(--muted)]">
-                            Qty {product.quantity} · Size {product.size || "Default"} · Color{" "}
-                            {product.color || "Default"}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold">₹{product.price}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+                ) : null}
+                <button type="submit" disabled={loading} className="fr-button">
+                  {loading ? "Looking…" : "Find my order"}
+                </button>
+              </form>
+            </div>
           </div>
-        </section>
+        )}
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={null}>
+      <TrackOrderPageContent />
+    </Suspense>
   );
 }
