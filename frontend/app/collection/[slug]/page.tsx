@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
+import { FrameIndex } from "@/components/frame-index";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
 import { ProductListingSkeleton } from "@/components/product-listing-grid";
@@ -217,6 +218,7 @@ export default function CollectionPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [sort, setSort] = useState<SortOption>("edit");
   const [layout, setLayout] = useState<CollectionLayout>("matrix");
+  const [view, setView] = useState<"index" | "grid">("index");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const collectionSlug = params.slug || "";
   const isGenderCollection = collectionSlug === "men" || collectionSlug === "women";
@@ -328,6 +330,21 @@ export default function CollectionPage() {
               </button>
             </div>
 
+            <div className="flex items-center gap-5">
+              <div className="fr-mono flex gap-4" role="group" aria-label="View">
+                {(["index", "grid"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setView(option)}
+                    aria-pressed={view === option}
+                    className={`fr-choice min-h-11 ${view === option ? "is-active fr-link" : ""}`}
+                  >
+                    {option === "index" ? "Index" : "Grid"}
+                  </button>
+                ))}
+              </div>
+            {view === "grid" ? (
             <div className="collection-plp__layout-controls" aria-label="Product grid density">
               {layoutOptions.map((option) => (
                 <button
@@ -341,10 +358,14 @@ export default function CollectionPage() {
                 </button>
               ))}
             </div>
+            ) : null}
+            </div>
           </div>
 
           {loading ? (
             <CollectionSkeleton layout={layout} />
+          ) : filteredProducts.length > 0 && view === "index" ? (
+            <FrameIndex products={filteredProducts} label={`${genderTitle} products`} />
           ) : filteredProducts.length > 0 ? (
             <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label={`${genderTitle} products`}>
               {filteredProducts.map((product, index) => (

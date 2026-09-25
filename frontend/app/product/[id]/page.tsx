@@ -17,43 +17,9 @@ import { isPersistedMediaSource, shouldBypassImageOptimization } from "@/lib/ima
 import { useStorefrontData } from "@/lib/use-storefront";
 import {
   getProductDisplayName,
+  getProductFabricLine,
   getProductFitLine,
 } from "@/lib/product-presentation";
-
-const productInfoSections = [
-  {
-    key: "details",
-    title: "Product Details",
-  },
-  {
-    key: "faqs",
-    title: "Product FAQs",
-  },
-  {
-    key: "shipping",
-    title: "Shipping & Returns",
-  },
-] as const;
-
-const swatchColors: Record<string, string> = {
-  black: "#111111",
-  white: "#ffffff",
-  offwhite: "#ffffff",
-  "off white": "#ffffff",
-  cream: "#ece3d6",
-  grey: "#bdbdbd",
-  gray: "#bdbdbd",
-  charcoal: "#3b3b3b",
-  stone: "#cbc7bd",
-  beige: "#dbcdb7",
-  green: "#9ccfbe",
-  sage: "#b2c4b0",
-  blue: "#b9c2ea",
-  navy: "#25344b",
-  red: "#b14b52",
-  maroon: "#6e2b3c",
-  brown: "#7a634a",
-};
 
 function normalizeProduct(product: Product): Product {
   return {
@@ -91,10 +57,6 @@ function normalizeProduct(product: Product): Product {
     accent: product.accent || "#f6f6f6",
     imageLabel: product.imageLabel || product.name || "Product image",
   };
-}
-
-function resolveSwatchColor(color: string, accent: string) {
-  return swatchColors[color.toLowerCase().trim()] || accent || "#d9d9d9";
 }
 
 function getProductFit(product: Product) {
@@ -240,332 +202,57 @@ function ProductMediaFrame({
   );
 }
 
-type ProductInfoPanelProps = {
-  product: Product;
-  siblingProducts: Product[];
-  priceText: string;
-  compareAtPriceText: string;
-  hasDiscount: boolean;
-  reviewCount: number;
-  selectedColor: string;
-  selectedSize: string;
-  addError: string;
-  requiresSize: boolean;
-  canAddToCart: boolean;
-  onColorSelect: (color: string) => void;
-  onSizeSelect: (size: string) => void;
-  onAddToCart: () => void;
-  onOpenSizeGuide: () => void;
-  actionRef?: React.Ref<HTMLDivElement>;
-};
-
-function ProductInfoPanel({
-  product,
-  siblingProducts,
-  priceText,
-  compareAtPriceText,
-  hasDiscount,
-  reviewCount,
-  selectedColor,
-  selectedSize,
-  addError,
-  requiresSize,
-  canAddToCart,
-  onColorSelect,
-  onSizeSelect,
-  onAddToCart,
-  onOpenSizeGuide,
-  actionRef,
-}: ProductInfoPanelProps) {
-  const [openPanel, setOpenPanel] =
-    useState<(typeof productInfoSections)[number]["key"] | null>("details");
-  const displayName = getProductDisplayName(product);
-  const soldOut = product.status === "Sold Out" || product.availability === "sold-out";
-  const fitLabel = getProductFit(product) || getProductFitLine(product) || "Regular fit";
-  const detailRows = getProductDetailRows(product);
-  const washCare = getWashCare(product);
-  const modelNote = [
-    product.modelHeight ? `Model is ${product.modelHeight}` : "",
-    product.modelWornSize ? `wearing size ${product.modelWornSize}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const colorProducts = [product, ...siblingProducts].filter(
+function getColourProducts(product: Product, siblingProducts: Product[]) {
+  return [product, ...siblingProducts].filter(
     (item, index, items) =>
       Boolean(item.colors[0]) &&
-      items.findIndex(
-        (candidate) =>
-          candidate.colors[0]?.toLowerCase() === item.colors[0]?.toLowerCase()
-      ) === index
-  );
-
-  return (
-    <div className="flex min-h-full flex-col bg-[var(--background)] px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:py-6 lg:min-h-[calc(100vh-8rem)] lg:px-[clamp(2.5rem,6vw,7rem)] lg:py-[clamp(2.25rem,4.5vw,4.75rem)]">
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-4 leading-tight text-[var(--foreground)] sm:gap-6 sm:pb-5">
-        <h2 className="max-w-[22ch] text-[1.18rem] font-semibold tracking-[-0.02em] sm:text-[1.6rem] sm:tracking-[-0.03em]">
-          {displayName}
-        </h2>
-        <div className="shrink-0 text-right">
-          {hasDiscount ? (
-            <p className="mb-1 text-[0.76rem] text-[var(--muted)] line-through decoration-[1.5px] sm:text-[0.82rem]">
-              {compareAtPriceText}
-            </p>
-          ) : null}
-          <p className={`text-[1rem] font-semibold sm:text-[1.15rem] ${hasDiscount ? "text-[var(--accent)]" : ""}`}>
-            {priceText}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 border-b border-[var(--border)] pb-4 sm:mt-5 sm:grid-cols-2 sm:pb-5">
-        <div className="flex min-h-11 items-center gap-3 text-[0.82rem] leading-none">
-          <span aria-label="5 star rating" className="tracking-[0.08em] text-[var(--foreground)]">
-            ★★★★★
-          </span>
-          <span className="text-[var(--muted)] underline underline-offset-2">
-            {reviewCount > 0
-              ? `${reviewCount} ${reviewCount === 1 ? "Review" : "Reviews"}`
-              : "No reviews yet"}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={onOpenSizeGuide}
-          className="inline-flex min-h-11 items-center justify-start gap-2 border border-[var(--border)] px-3 text-left text-[0.86rem] font-semibold text-[var(--foreground)] sm:justify-center"
-        >
-          <span aria-hidden="true">ⓘ</span>
-          <span>Sizing &amp; Fit</span>
-          <span className="font-medium">{fitLabel}</span>
-        </button>
-      </div>
-
-      {colorProducts.length > 0 ? (
-        <div className="mt-5 border-b border-[var(--border)] pb-5 sm:mt-6 sm:pb-6">
-          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
-            <p className="flex items-baseline gap-3 text-[0.9rem] text-[var(--muted)]">
-              <span className="font-semibold text-[var(--foreground)]">
-                Colour
-                <sup className="ml-1 text-[0.55rem] text-[var(--muted)]">
-                  {colorProducts.length}
-                </sup>
-              </span>
-              <span>{selectedColor || product.colors[0]}</span>
-            </p>
-            <div className="flex w-full items-center gap-2 text-[0.82rem] font-medium text-[var(--muted)] sm:w-auto sm:justify-end">
-              <span>Save</span>
-              <WishlistButton
-                productId={product.id}
-                label={`Save ${displayName}`}
-                className="inline-flex h-10 w-10 items-center justify-center border border-[var(--border)] text-[var(--foreground)]"
-                iconClassName="h-4 w-4"
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {colorProducts.map((colorProduct) => {
-              const color = colorProduct.colors[0];
-              const active = colorProduct.id === product.id;
-              const swatchClassName = `relative inline-flex h-16 w-16 overflow-hidden border border-[var(--border)] bg-[var(--surface-strong)] transition sm:h-20 sm:w-20 ${
-                active
-                  ? "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--foreground)]"
-                  : "hover:after:absolute hover:after:inset-x-0 hover:after:bottom-0 hover:after:h-0.5 hover:after:bg-[var(--foreground)]"
-              }`;
-              const colourImage = colorProduct.images[0];
-              const swatchStyle = colourImage
-                ? undefined
-                : { backgroundColor: resolveSwatchColor(color, colorProduct.accent) };
-              const swatchContent = colourImage ? (
-                <Image
-                  src={colourImage}
-                  alt=""
-                  fill
-                  priority={active}
-                  loading={active ? "eager" : "lazy"}
-                  unoptimized={shouldBypassImageOptimization(colourImage)}
-                  sizes="72px"
-                  className="object-cover"
-                />
-              ) : null;
-
-              if (active) {
-                return (
-                  <button
-                    key={colorProduct.id}
-                    type="button"
-                    onClick={() => onColorSelect(color)}
-                    aria-label={`${color} selected`}
-                    aria-pressed="true"
-                    className={swatchClassName}
-                    style={swatchStyle}
-                  >
-                    {swatchContent}
-                  </button>
-                );
-              }
-
-              return (
-                <Link
-                  key={colorProduct.id}
-                  href={`/product/${colorProduct.slug || colorProduct.id}`}
-                  aria-label={`View ${color}`}
-                  className={swatchClassName}
-                  style={swatchStyle}
-                >
-                  {swatchContent}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {requiresSize ? (
-        <div className="mt-5 border-b border-[var(--border)] pb-5 sm:mt-6 sm:pb-6">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <p className="flex items-center gap-3 text-[0.9rem] text-[var(--muted)]">
-              <span className="font-semibold text-[var(--foreground)]">Size</span>
-              {selectedSize ? <span>{selectedSize}</span> : null}
-              <span className={soldOut ? "text-[var(--accent)]" : "text-green-700"}>
-                {soldOut ? "Sold Out" : "In Stock"}
-              </span>
-            </p>
-            <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-medium sm:w-auto sm:justify-end">
-              <button
-                type="button"
-                onClick={onOpenSizeGuide}
-                className="underline underline-offset-4"
-              >
-                Find your size
-              </button>
-              {product.sizeGuide?.length ? (
-                <button
-                  type="button"
-                  onClick={onOpenSizeGuide}
-                  className="text-[var(--muted)] underline underline-offset-4"
-                >
-                  Size Chart
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {product.sizes.map((size) => {
-              const active = selectedSize === size;
-              const available =
-                !product.trackInventory ||
-                product.variants?.some(
-                  (variant) =>
-                    variant.active &&
-                    variant.stock > 0 &&
-                    variant.size.toLowerCase() === size.toLowerCase() &&
-                    (!selectedColor || variant.color.toLowerCase() === selectedColor.toLowerCase())
-                );
-
-              return (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => available && onSizeSelect(size)}
-                  disabled={!available}
-                  aria-pressed={active}
-                  aria-label={`${size}${available ? "" : " — unavailable"}`}
-                  className={`inline-flex min-h-12 items-center justify-center border px-3 text-[0.82rem] font-medium uppercase transition ${
-                    active
-                      ? "hrushe-inverse-action"
-                      : available
-                        ? "border-transparent bg-[#f6f6f6] text-[var(--foreground)] hover:border-[var(--foreground)]"
-                        : "cursor-not-allowed border-transparent bg-[#f6f6f6] text-[var(--muted)] line-through opacity-45"
-                  }`}
-                >
-                  {size}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      <div ref={actionRef} className="mt-5 space-y-4 sm:mt-6">
-        <button
-          type="button"
-          onClick={onAddToCart}
-          disabled={soldOut || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-          className="hrushe-inverse-action inline-flex min-h-[3.5rem] w-full items-center justify-center px-5 text-[0.74rem] font-bold uppercase tracking-[0.08em] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55 sm:min-h-[3.75rem] sm:px-6 sm:text-[0.82rem]"
-        >
-          {soldOut ? "Currently unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
-        </button>
-        {addError ? <p className="text-sm text-[var(--accent)]" role="alert">{addError}</p> : null}
-        <div className="grid gap-2 text-[0.8rem] font-medium sm:grid-cols-2 sm:text-[0.86rem]">
-          <div className="flex min-h-12 items-center justify-between border border-[var(--border)] px-4">
-            <span>{product.returnEligible ? "Free size exchange" : "Free shipping on prepaid orders"}</span>
-            <span aria-hidden="true">›</span>
-          </div>
-          <div className="flex min-h-12 items-center justify-between border border-[var(--border)] px-4">
-            <span>Dispatches in 1–3 business days</span>
-            <span aria-hidden="true">›</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 border-t border-[var(--border)] sm:mt-7">
-        {productInfoSections.map((section) => {
-          const isOpen = openPanel === section.key;
-
-          return (
-            <div key={section.key} className="border-b border-[var(--border)]">
-              <button
-                type="button"
-                onClick={() =>
-                  setOpenPanel((current) => (current === section.key ? null : section.key))
-                }
-                className="flex w-full items-center justify-between gap-6 py-4 text-left text-[0.88rem] font-semibold"
-                aria-expanded={isOpen}
-              >
-                <span>{section.title}</span>
-                <span className="text-lg leading-none" aria-hidden="true">
-                  {isOpen ? "-" : "+"}
-                </span>
-              </button>
-
-              {isOpen ? (
-                <div className="pb-5 text-[0.86rem] leading-7 text-[var(--muted)]">
-                  {section.key === "details" ? (
-                    <div className="space-y-4">
-                      {product.description ? <p>{product.description}</p> : null}
-                      {modelNote ? <p>{modelNote}</p> : null}
-                      {detailRows.length > 0 ? (
-                        <dl className="grid gap-2 sm:grid-cols-2">
-                          {detailRows.map((item) => (
-                            <div key={item.label} className="flex gap-2">
-                              <dt className="font-semibold text-[var(--foreground)]">{item.label}:</dt>
-                              <dd>{item.value}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                      ) : null}
-                      {washCare ? <p>{washCare}</p> : null}
-                    </div>
-                  ) : null}
-                  {section.key === "faqs" ? (
-                    <p>
-                      Need help with fit or fabric? Message HRUSHE support and we will help you choose the right size before checkout.
-                    </p>
-                  ) : null}
-                  {section.key === "shipping" ? (
-                    <p>
-                      Orders dispatch within 1–3 business days. One size exchange is available when eligible, and returns follow the product return policy.
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      items.findIndex((candidate) => candidate.colors[0]?.toLowerCase() === item.colors[0]?.toLowerCase()) === index
   );
 }
+
+function ColourWords({
+  product,
+  colourProducts,
+  className,
+  wordClassName,
+}: {
+  product: Product;
+  colourProducts: Product[];
+  className: string;
+  wordClassName: string;
+}) {
+  if (colourProducts.length < 2) {
+    return null;
+  }
+
+  return (
+    <nav aria-label="Colour" className={className}>
+      {colourProducts.map((colourProduct) => {
+        const colour = colourProduct.colors[0];
+
+        if (colourProduct.id === product.id) {
+          return (
+            <span key={colourProduct.id} aria-current="true" className={`fr-choice is-active is-underlined ${wordClassName}`}>
+              {colour}
+            </span>
+          );
+        }
+
+        return (
+          <Link
+            key={colourProduct.id}
+            href={`/product/${colourProduct.slug || colourProduct.id}`}
+            aria-label={`View ${colour}`}
+            className={`fr-choice is-underlined ${wordClassName}`}
+          >
+            {colour}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const { products, loading } = useStorefrontData();
@@ -582,15 +269,10 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(normalizedMatchedProduct);
   const [productLoading, setProductLoading] = useState(true);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const [selectedColor, setSelectedColor] = useState(
-    matchedProduct?.colors[0] || ""
-  );
   const [selectedSize, setSelectedSize] = useState("");
   const [addError, setAddError] = useState("");
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
-  const mainAddToCartRef = useRef<HTMLDivElement>(null);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-  const [showStickyAddToCart, setShowStickyAddToCart] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -646,29 +328,8 @@ export default function ProductDetailPage() {
     }
 
     setActiveMediaIndex(0);
-    setSelectedColor(product.colors[0] || "");
     setSelectedSize("");
     setAddError("");
-  }, [product]);
-
-  useEffect(() => {
-    const actionElement = mainAddToCartRef.current;
-
-    if (!actionElement) {
-      setShowStickyAddToCart(false);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowStickyAddToCart(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-      },
-      { threshold: 0.15 }
-    );
-
-    observer.observe(actionElement);
-
-    return () => observer.disconnect();
   }, [product]);
 
   if (loading || productLoading) {
@@ -687,17 +348,12 @@ export default function ProductDetailPage() {
       <div className="page-shell bg-[var(--background)]">
         <SiteHeader />
         <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-          <div className="mt-8 border border-[rgba(17,17,17,0.08)] bg-[var(--surface)] px-6 py-8 sm:px-8">
-            <h1 className="text-[2rem] font-medium uppercase tracking-[-0.05em] text-[var(--foreground)]">
-              Product not found
-            </h1>
-            <p className="mt-3 max-w-xl text-[var(--muted)]">
+          <div className="mt-8 flex flex-col gap-5 px-2 py-8">
+            <h1 className="fr-word text-[3rem]">Not found.</h1>
+            <p className="max-w-xl text-[var(--muted)]">
               This product is no longer available or the link may be incorrect.
             </p>
-            <Link
-              href="/shop"
-              className="mt-6 inline-flex min-h-11 items-center border border-[var(--foreground)] px-5 text-[0.82rem] font-medium uppercase tracking-[0.14em] text-[var(--foreground)]"
-            >
+            <Link href="/shop" className="fr-mono fr-link self-start">
               Back to shop
             </Link>
           </div>
@@ -706,60 +362,65 @@ export default function ProductDetailPage() {
     );
   }
 
+  const displayName = getProductDisplayName(product);
   const mediaItems = buildProductMediaItems(product);
-  const activeMedia = mediaItems[activeMediaIndex] || mediaItems[0] || null;
   const requiresSize = product.sizes.length > 0;
-  const effectiveColor = selectedColor || product.colors[0] || "";
-  const selectedVariantAvailable =
+  const effectiveColor = product.colors[0] || "";
+  const isSizeAvailable = (size: string) =>
     !product.trackInventory ||
-    product.variants?.some(
-      (variant) =>
-        variant.active &&
-        variant.stock > 0 &&
-        variant.size.toLowerCase() === selectedSize.toLowerCase() &&
-        (!effectiveColor || variant.color.toLowerCase() === effectiveColor.toLowerCase())
+    Boolean(
+      product.variants?.some(
+        (variant) =>
+          variant.active &&
+          variant.stock > 0 &&
+          variant.size.toLowerCase() === size.toLowerCase() &&
+          (!effectiveColor || variant.color.toLowerCase() === effectiveColor.toLowerCase())
+      )
     );
-  const canAddToCart =
-    (!requiresSize || Boolean(selectedSize)) && Boolean(selectedVariantAvailable);
+  const canAddToCart = (!requiresSize || Boolean(selectedSize)) && (!selectedSize || isSizeAvailable(selectedSize));
+  const siblingProducts = products.filter((item) => item.id !== product.id && item.category === product.category);
+  const colourProducts = getColourProducts(product, siblingProducts);
   const relatedProducts = products
-    .filter(
-      (item) =>
-        item.id !== product.id &&
-        (item.category === product.category || item.featured)
-    )
+    .filter((item) => item.id !== product.id && (item.category === product.category || item.featured))
     .slice(0, 4);
-  const siblingProducts = products.filter(
-    (item) => item.id !== product.id && item.category === product.category
-  );
-  const reviews = (product.reviews || []).filter(
-    (review) =>
-      review.verifiedPurchase === true &&
-      review.status !== "pending" &&
-      review.status !== "rejected" &&
-      review.status !== "hidden" &&
-      !/hrushabh|kshitij/i.test(review.reviewerName)
-  );
   const compareAtPrice = Number(product.compareAtPrice) > product.price ? Number(product.compareAtPrice) : 0;
-  const hasDiscount = compareAtPrice > product.price;
   const priceText = `₹${product.price.toLocaleString("en-IN")}`;
   const compareAtPriceText = compareAtPrice ? `₹${compareAtPrice.toLocaleString("en-IN")}` : "";
   const hasMultipleMedia = mediaItems.length > 1;
   const productUnavailable = product.status === "Sold Out" || product.availability === "sold-out";
+  const fitLabel = getProductFit(product) || getProductFitLine(product);
+  const labelLine = [getProductFabricLine(product), fitLabel].filter(Boolean).join(" · ");
+  const detailRows = getProductDetailRows(product);
+  const washCare = getWashCare(product);
+  const modelNote = [
+    product.modelHeight ? `Model is ${product.modelHeight}` : "",
+    product.modelWornSize ? `wearing ${product.modelWornSize}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const sideLabel = product.gender && product.gender !== "Unisex" ? product.gender : "";
+  const ctaLabel = productUnavailable
+    ? "Currently unavailable"
+    : requiresSize && !selectedSize
+      ? "Select a size"
+      : `Add to bag · ${selectedSize || priceText}`;
+  const ctaHint = productUnavailable
+    ? "This piece is sold out"
+    : requiresSize && !selectedSize
+      ? "Choose a size to continue"
+      : "Folded & dispatched in 1–3 business days";
+  const ctaDisabled = productUnavailable || (Boolean(selectedSize) && !canAddToCart);
 
   const showPreviousMedia = () => {
-    if (!hasMultipleMedia) {
-      return;
+    if (hasMultipleMedia) {
+      setActiveMediaIndex((current) => (current - 1 + mediaItems.length) % mediaItems.length);
     }
-
-    setActiveMediaIndex((current) => (current - 1 + mediaItems.length) % mediaItems.length);
   };
 
   const showNextMedia = () => {
-    if (!hasMultipleMedia) {
-      return;
+    if (hasMultipleMedia) {
+      setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
     }
-
-    setActiveMediaIndex((current) => (current + 1) % mediaItems.length);
   };
 
   const handleSwipeStart = (event: React.PointerEvent<HTMLElement>) => {
@@ -767,23 +428,19 @@ export default function ProductDetailPage() {
       return;
     }
 
-    event.currentTarget.setPointerCapture(event.pointerId);
     swipeStartRef.current = { x: event.clientX, y: event.clientY };
   };
 
   const handleSwipeEnd = (event: React.PointerEvent<HTMLElement>) => {
-    if (!hasMultipleMedia || !swipeStartRef.current) {
-      swipeStartRef.current = null;
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+
+    if (!hasMultipleMedia || !start) {
       return;
     }
 
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    const deltaX = event.clientX - swipeStartRef.current.x;
-    const deltaY = event.clientY - swipeStartRef.current.y;
-    swipeStartRef.current = null;
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
 
     if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) {
       return;
@@ -791,22 +448,21 @@ export default function ProductDetailPage() {
 
     if (deltaX < 0) {
       showNextMedia();
-      return;
+    } else {
+      showPreviousMedia();
     }
-
-    showPreviousMedia();
   };
 
   const handleAddToCart = () => {
     if (requiresSize && !selectedSize) {
-      const message = "Please select a size before adding to cart.";
+      const message = "Please select a size before adding to bag.";
       setAddError(message);
       pushToast(message, "error");
       return;
     }
 
     if (!canAddToCart) {
-      const message = "This selection is currently unavailable.";
+      const message = "This size is currently unavailable.";
       setAddError(message);
       pushToast(message, "error");
       return;
@@ -814,7 +470,7 @@ export default function ProductDetailPage() {
 
     addItem({
       productId: product.id,
-      name: getProductDisplayName(product),
+      name: displayName,
       price: product.price,
       size: selectedSize,
       color: effectiveColor,
@@ -823,19 +479,25 @@ export default function ProductDetailPage() {
       image: product.images[0],
     });
     setAddError("");
-    pushToast(`${getProductDisplayName(product)} added to bag`);
+    pushToast(`${displayName} added to bag`);
     openCart();
   };
 
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="w-full pb-28 lg:pb-0">
-        <h1 className="sr-only">{product.name}</h1>
-        <div className="lg:grid lg:grid-cols-[minmax(0,50.5vw)_minmax(420px,1fr)] lg:items-start">
-          <section aria-label="Product media gallery">
+      <main className="w-full pb-36 lg:pb-0">
+        <div className="lg:grid lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[minmax(0,1fr)_min(30vw,440px)_minmax(0,1fr)] lg:items-center lg:gap-x-14 lg:px-10 lg:py-10 xl:gap-x-16">
+          <ColourWords
+            product={product}
+            colourProducts={colourProducts}
+            className="hidden lg:flex lg:flex-col lg:items-end lg:gap-2 lg:justify-self-end"
+            wordClassName="fr-word text-[clamp(1.75rem,3vw,2.75rem)]"
+          />
+
+          <section aria-label="Product media gallery" className="px-5 pt-2 lg:px-0 lg:pt-0">
             <div
-              className="relative overflow-hidden bg-[#f7f7f7] lg:h-[calc(100vh-7rem)] lg:min-h-[560px] lg:max-h-[760px]"
+              className="fr-frame aspect-[3/4] w-full select-none"
               onPointerDown={handleSwipeStart}
               onPointerUp={handleSwipeEnd}
               onPointerCancel={() => {
@@ -843,98 +505,177 @@ export default function ProductDetailPage() {
               }}
               style={{ touchAction: "pan-y" }}
             >
-              <div className="relative aspect-[3.7/5] sm:aspect-[4/5] lg:h-full lg:aspect-auto">
-                <ProductMediaFrame
-                  item={activeMedia}
-                  product={product}
-                  imageClassName="object-contain object-center lg:object-cover"
-                  onVideoEnded={showNextMedia}
-                />
-              </div>
+              {mediaItems.length === 0 ? (
+                <div className="h-full w-full" style={{ backgroundColor: product.accent || "#eeece8" }} />
+              ) : (
+                mediaItems.map((item, index) => {
+                  const isActive = index === activeMediaIndex;
+
+                  if (item.type === "video" && !isActive) {
+                    return null;
+                  }
+
+                  return (
+                    <div key={item.id} className={`fr-frame__layer ${isActive ? "is-active" : ""}`} aria-hidden={!isActive}>
+                      <ProductMediaFrame
+                        item={item}
+                        product={product}
+                        imageClassName="object-cover"
+                        onVideoEnded={showNextMedia}
+                      />
+                    </div>
+                  );
+                })
+              )}
               {hasMultipleMedia ? (
                 <>
                   <button
                     type="button"
                     onClick={showPreviousMedia}
-                    className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)] sm:left-4"
-                    aria-label="Previous product media"
-                  >
-                    ‹
-                  </button>
+                    className="absolute inset-y-0 left-0 z-10 w-2/5 cursor-w-resize bg-transparent"
+                    aria-label="Previous photo"
+                  />
                   <button
                     type="button"
                     onClick={showNextMedia}
-                    className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-3xl font-light text-[var(--foreground)] sm:right-4"
-                    aria-label="Next product media"
-                  >
-                    ›
-                  </button>
+                    className="absolute inset-y-0 right-0 z-10 w-3/5 cursor-e-resize bg-transparent"
+                    aria-label="Next photo"
+                  />
                 </>
               ) : null}
-              <div className="absolute bottom-3 left-3 flex max-w-[80%] items-center gap-2 text-[0.72rem] font-medium text-[var(--muted)] sm:bottom-5 sm:left-5 sm:text-[0.78rem]">
-                <span className="bg-white px-3 py-2 text-[var(--foreground)]">
-                  {activeMediaIndex + 1} / {Math.max(mediaItems.length, 1)}
-                </span>
-                <span className="hidden bg-white px-3 py-2 sm:inline">
-                  {product.modelHeight || product.modelWornSize
-                    ? [
-                        product.modelHeight ? `Model is ${product.modelHeight}` : "",
-                        product.modelWornSize ? `wearing size ${product.modelWornSize}` : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")
-                    : "Product gallery"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={showNextMedia}
-                className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center text-2xl leading-none text-[var(--foreground)] sm:bottom-5 sm:right-5"
-                aria-label="Expand product media"
-              >
-                ⛶
-              </button>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <span className="fr-mono fr-muted">
+                {String(activeMediaIndex + 1).padStart(2, "0")} / {String(Math.max(mediaItems.length, 1)).padStart(2, "0")}
+                {modelNote ? ` · ${modelNote}` : ""}
+              </span>
+              {product.sizeGuide?.length ? (
+                <button type="button" onClick={() => setSizeGuideOpen(true)} className="fr-mono fr-link min-h-11">
+                  Size guide
+                </button>
+              ) : null}
             </div>
           </section>
 
-          <section aria-label="Product details and purchase options" className="lg:sticky lg:top-[7rem]">
-            <ProductInfoPanel
+          <section
+            aria-label="Product details and purchase options"
+            className="flex flex-col gap-5 px-5 pt-5 lg:max-w-[340px] lg:justify-self-start lg:px-0 lg:pt-0"
+          >
+            <span className="fr-mono fr-muted">{[sideLabel, product.category].filter(Boolean).join(" · ")}</span>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="fr-word text-[2.1rem] lg:text-[clamp(2.25rem,3vw,2.75rem)]">{displayName}</h1>
+              <WishlistButton
+                productId={product.id}
+                label={`Save ${displayName}`}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-[var(--foreground)]"
+                iconClassName="h-4 w-4"
+              />
+            </div>
+            <p className="flex items-baseline gap-3 text-[1.05rem]">
+              <span>{priceText}</span>
+              {compareAtPriceText ? <span className="text-[0.85rem] text-[var(--muted)] line-through">{compareAtPriceText}</span> : null}
+            </p>
+
+            <ColourWords
               product={product}
-              siblingProducts={siblingProducts}
-              priceText={priceText}
-              compareAtPriceText={compareAtPriceText}
-              hasDiscount={hasDiscount}
-              reviewCount={reviews.length}
-              selectedColor={selectedColor}
-              selectedSize={selectedSize}
-              addError={addError}
-              requiresSize={requiresSize}
-              canAddToCart={canAddToCart}
-              onColorSelect={(color) => {
-                setSelectedColor(color);
-                setSelectedSize("");
-                setAddError("");
-              }}
-              onSizeSelect={(size) => {
-                setSelectedSize(size);
-                setAddError("");
-              }}
-              onAddToCart={handleAddToCart}
-              onOpenSizeGuide={() => setSizeGuideOpen(true)}
-              actionRef={mainAddToCartRef}
+              colourProducts={colourProducts}
+              className="flex flex-wrap gap-x-4 gap-y-1 lg:hidden"
+              wordClassName="fr-word min-h-10 text-[1.15rem]"
             />
+
+            {requiresSize ? (
+              <div className="flex flex-col gap-2">
+                <span className="fr-mono">Size{selectedSize ? ` · ${selectedSize}` : ""}</span>
+                <div className="flex flex-wrap items-end gap-7" role="group" aria-label="Size">
+                  {product.sizes.map((size) => {
+                    const available = isSizeAvailable(size);
+                    const active = selectedSize === size;
+
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          if (available) {
+                            setSelectedSize(size);
+                            setAddError("");
+                          }
+                        }}
+                        disabled={!available}
+                        aria-pressed={active}
+                        aria-label={`Size ${size}${available ? "" : ", unavailable"}`}
+                        className={`fr-choice fr-word is-underlined min-w-12 text-[2.75rem]! lg:text-[3.5rem]! ${active ? "is-active" : ""}`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="hidden flex-col gap-2 lg:flex">
+              <button type="button" onClick={handleAddToCart} disabled={ctaDisabled} className="fr-button">
+                {ctaLabel}
+              </button>
+              <p className="fr-mono fr-muted text-center text-[0.6rem]">{ctaHint}</p>
+            </div>
+            {addError ? (
+              <p className="text-sm text-[var(--danger)]" role="alert">
+                {addError}
+              </p>
+            ) : null}
+
+            <div className="fr-label flex flex-col gap-1">
+              {labelLine ? <span className="fr-mono">{labelLine}</span> : null}
+              <span className="text-[0.82rem] text-[var(--muted)]">
+                {product.returnEligible === false ? "Dispatch in 1–3 business days" : "One free size exchange · Dispatch in 1–3 business days"}
+              </span>
+            </div>
+
+            <div className="flex flex-col">
+              <details className="fr-accordion">
+                <summary className="fr-mono">Details</summary>
+                <div className="flex flex-col gap-3 py-4 text-[0.88rem] leading-7 text-[var(--muted)]">
+                  {product.description ? <p>{product.description}</p> : null}
+                  {detailRows.length > 0 ? (
+                    <dl className="grid gap-1">
+                      {detailRows.map((item) => (
+                        <div key={item.label} className="flex gap-2">
+                          <dt className="text-[var(--foreground)]">{item.label}</dt>
+                          <dd>{item.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                </div>
+              </details>
+              {washCare ? (
+                <details className="fr-accordion">
+                  <summary className="fr-mono">Care</summary>
+                  <p className="py-4 text-[0.88rem] leading-7 text-[var(--muted)]">{washCare}</p>
+                </details>
+              ) : null}
+              <details className="fr-accordion">
+                <summary className="fr-mono">Shipping &amp; returns</summary>
+                <p className="py-4 text-[0.88rem] leading-7 text-[var(--muted)]">
+                  Orders dispatch within 1–3 business days. One size exchange is available when eligible, and returns follow
+                  the product return policy.
+                </p>
+              </details>
+            </div>
           </section>
         </div>
 
         {mediaItems.length > 1 ? (
           <section
-            className="hide-scrollbar flex snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain bg-[#f7f7f7]"
+            className="hide-scrollbar mt-12 flex snap-x snap-mandatory gap-1 overflow-x-auto overscroll-x-contain lg:mt-4"
             aria-label="Product detail gallery"
           >
             {mediaItems.slice(1).map((item) => (
               <div
                 key={item.id}
-                className="relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start overflow-hidden bg-[#f7f7f7] sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[33.333333vw]"
+                className="fr-frame relative h-[52svh] min-h-[360px] w-[86vw] flex-none snap-start sm:w-[70vw] lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:max-h-[760px] lg:w-[33.333333vw]"
               >
                 {item.type === "image" ? (
                   <Image
@@ -943,7 +684,7 @@ export default function ProductDetailPage() {
                     fill
                     loading="lazy"
                     unoptimized={shouldBypassImageOptimization(item.src)}
-                    sizes="(max-width: 640px) 86vw, (max-width: 1024px) 70vw, (max-width: 1280px) 42vw, 34vw"
+                    sizes="(max-width: 640px) 86vw, (max-width: 1024px) 70vw, 34vw"
                     className="object-cover object-center"
                   />
                 ) : (
@@ -964,11 +705,9 @@ export default function ProductDetailPage() {
         ) : null}
 
         {relatedProducts.length > 0 ? (
-          <section className="border-t border-[var(--border)] bg-[var(--background)] py-14 lg:py-16">
-            <h2 className="text-center text-[0.86rem] font-bold uppercase tracking-[0.04em]">
-              Style With
-            </h2>
-            <div className="collection-plp__grid collection-plp__grid--editorial mt-10">
+          <section className="py-14 lg:py-16">
+            <h2 className="fr-mono px-5 lg:px-10">Also in the edit</h2>
+            <div className="collection-plp__grid collection-plp__grid--editorial mt-8">
               {relatedProducts.map((item) => (
                 <ProductCard key={item.id} product={item} variant="editorial" />
               ))}
@@ -977,32 +716,12 @@ export default function ProductDetailPage() {
         ) : null}
       </main>
 
-      {showStickyAddToCart ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[var(--background)] px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
-          <div className="mx-auto grid max-w-xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.88rem] font-semibold text-[var(--foreground)]">
-                {priceText}
-              </p>
-              <p className="mt-0.5 truncate text-[0.68rem] uppercase tracking-[0.12em] text-[var(--muted)]">
-                {requiresSize
-                  ? selectedSize
-                    ? `Size ${selectedSize} selected`
-                    : "Select size"
-                  : "Ready to add"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={productUnavailable || (requiresSize ? Boolean(selectedSize) && !canAddToCart : !canAddToCart)}
-              className="hrushe-inverse-action inline-flex min-h-12 max-w-[11.75rem] items-center justify-center overflow-hidden whitespace-nowrap px-4 text-[0.68rem] font-semibold uppercase tracking-[0.08em] transition disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[176px] sm:max-w-none sm:px-5 sm:text-[0.72rem] sm:tracking-[0.1em]"
-            >
-              {productUnavailable ? "Unavailable" : requiresSize && !selectedSize ? "Select a size" : `Add to bag — ${priceText}`}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--border)] bg-[var(--background)] px-5 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-3 lg:hidden">
+        <button type="button" onClick={handleAddToCart} disabled={ctaDisabled} className="fr-button">
+          {ctaLabel}
+        </button>
+        <p className="fr-mono fr-muted mt-2 text-center text-[0.58rem]">{ctaHint}</p>
+      </div>
 
       <SizeGuideModal
         open={sizeGuideOpen}

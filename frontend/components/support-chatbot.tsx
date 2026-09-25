@@ -161,7 +161,7 @@ export function SupportChatbot() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`fixed right-4 z-[112] grid h-14 w-14 place-items-center rounded-full bg-black text-white shadow-[0_14px_34px_rgba(0,0,0,0.22)] lg:hidden ${
+        className={`fixed right-4 z-[112] grid h-14 w-14 place-items-center rounded-full bg-black text-white! shadow-[0_14px_34px_rgba(0,0,0,0.22)] lg:hidden ${
           shouldClearStickyAction
             ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
             : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
