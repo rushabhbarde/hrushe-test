@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
@@ -27,6 +27,7 @@ export function CartDrawer() {
   const { pushToast } = useToast();
   const pathname = usePathname();
   const { dialogRef, initialFocusRef } = useDialogAccessibility(isCartOpen, closeCart);
+  const [selected, setSelected] = useState(0);
 
   useEffect(() => {
     closeCart();
@@ -36,14 +37,15 @@ export function CartDrawer() {
     return null;
   }
 
-  const total = subtotal;
+  const activeIndex = Math.min(selected, Math.max(items.length - 1, 0));
+  const activeItem = items[activeIndex];
 
   return (
     <div className="fixed inset-0 z-[115]">
       <button
         type="button"
-        aria-label="Close cart drawer"
-        className="absolute inset-0 bg-black/38 backdrop-blur-[2px]"
+        aria-label="Close bag"
+        className="absolute inset-0 bg-black/30"
         onClick={closeCart}
       />
       <aside
@@ -51,219 +53,141 @@ export function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
-        className="absolute right-0 top-0 flex h-[100dvh] w-full max-w-[34rem] flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-[0_0_50px_rgba(0,0,0,0.16)]"
+        className="absolute right-0 top-0 flex h-[100dvh] w-full max-w-[30rem] flex-col bg-[var(--background)]"
       >
-          <header className="shrink-0 border-b border-[var(--border)] px-4 py-4 sm:px-6 sm:py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
-              <h2
-                id="cart-drawer-title"
-                className="mt-2 text-xl font-semibold uppercase leading-none tracking-normal"
-              >
-                Your cart
-                {isReady && itemCount > 0 ? (
-                  <sup className="ml-1 align-super text-[0.72rem]">{itemCount}</sup>
-                ) : null}
-              </h2>
-            </div>
-            <button
-              type="button"
-              ref={initialFocusRef}
-              onClick={closeCart}
-              aria-label="Close cart"
-              className="flex h-11 w-11 items-center justify-center border border-transparent text-2xl leading-none transition hover:border-[var(--border)] hover:bg-[var(--surface)] focus-visible:border-[var(--foreground)] focus-visible:outline-none"
-            >
-              ×
-            </button>
-          </div>
-
-          {isReady && items.length > 0 ? (
-            <div className="mt-5">
-              <div className="h-1.5 bg-[var(--foreground)]" aria-hidden="true" />
-              <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-                Complimentary delivery unlocked. Dispatch within 1–3 business days.
-              </p>
-            </div>
-          ) : null}
+        <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-5 sm:px-8 sm:pt-7">
+          <h2 id="cart-drawer-title" className="flex items-baseline gap-3">
+            <span className="fr-word text-[2.75rem]">Bag</span>
+            {isReady ? <span className="fr-mono fr-muted">{String(itemCount).padStart(2, "0")}</span> : null}
+          </h2>
+          <button
+            type="button"
+            ref={initialFocusRef}
+            onClick={closeCart}
+            className="fr-mono fr-choice is-active min-h-11"
+          >
+            Close
+          </button>
         </header>
 
-        <div className="hide-scrollbar mt-6 flex-1 space-y-4 overflow-y-auto">
+        <div className="hide-scrollbar flex-1 overflow-y-auto px-5 sm:px-8">
           {!isReady ? (
-            <div className="loading-pulse space-y-0 px-4 sm:px-6">
-              {[0, 1].map((item) => (
-                <div key={item} className="grid grid-cols-[6.5rem_1fr] border-b border-[var(--border)] py-5">
-                  <div className="aspect-[0.84/1] bg-[var(--surface-strong)]" />
-                  <div className="px-4">
-                    <div className="h-4 w-3/4 bg-[var(--surface-strong)]" />
-                    <div className="mt-3 h-3 w-1/2 bg-[var(--surface-strong)]" />
-                    <div className="mt-5 h-9 w-full bg-[var(--surface-strong)]" />
-                  </div>
-                </div>
-              ))}
+            <div className="loading-pulse flex flex-col gap-4 pt-4">
+              <div className="aspect-[3/4] w-40 bg-[var(--surface-strong)]" />
+              <div className="h-8 w-2/3 bg-[var(--surface-strong)]" />
             </div>
           ) : items.length === 0 ? (
-            <div className="mx-4 empty-shell p-6 sm:mx-6">
-              <p className="text-lg font-semibold uppercase tracking-normal">Your cart is empty.</p>
-              <p className="mt-3 text-sm text-[var(--muted)]">
-                Add pieces you are considering and return here for one clean checkout.
-              </p>
-              <Link
-                href="/shop"
-                className="button-primary mt-5 inline-flex px-5 py-3 transition"
-              >
-                Shop now
-              </Link>
+            <div className="flex flex-col gap-5 pt-10">
+              <p className="fr-word text-[2.5rem]">Nothing here yet.</p>
+              <p className="text-[0.9rem] text-[var(--muted)]">Pieces you add will wait here for one calm checkout.</p>
+              <div className="fr-mono flex gap-6">
+                <Link href="/collection/men" className="fr-link">Shop men</Link>
+                <Link href="/collection/women" className="fr-link">Shop women</Link>
+              </div>
             </div>
           ) : (
-            <div className="px-4 sm:px-6">
-              <Link
-                href="/policies?tab=returns"
-                className="flex min-h-12 w-full items-center justify-between border-y border-[var(--border)] text-left text-sm font-semibold uppercase tracking-[0.08em] transition hover:text-[var(--accent)]"
-              >
-                <span>Shipping & returns</span>
-                <span aria-hidden="true">›</span>
-              </Link>
+            <div className="flex flex-col gap-6 pb-6 pt-2">
+              {activeItem ? (
+                <Link href={`/product/${activeItem.productId}`} className="fr-frame block aspect-[3/4] w-40 sm:w-48" aria-label={`View ${activeItem.name}`}>
+                  <span className="fr-frame__layer is-active">
+                    {activeItem.image ? (
+                      <Image
+                        src={activeItem.image}
+                        alt={activeItem.name}
+                        fill
+                        unoptimized={shouldBypassImageOptimization(activeItem.image)}
+                        sizes="200px"
+                      />
+                    ) : (
+                      <span className="block h-full w-full" style={{ background: activeItem.accent }} />
+                    )}
+                  </span>
+                </Link>
+              ) : null}
 
-              <div className="divide-y divide-[var(--border)]">
-                {items.map((item) => (
-                  <article
+              <ul className="flex flex-col">
+                {items.map((item, index) => (
+                  <li
                     key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-                    className="grid grid-cols-[5.85rem_minmax(0,1fr)] items-start gap-3 py-5 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4"
+                    className="flex flex-col gap-2 border-b border-[var(--border)] py-4"
                   >
-                    <Link
-                      href={`/product/${item.productId}`}
-                      className="relative aspect-[0.84/1] overflow-hidden bg-[#f6f6f6]"
-                    >
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          unoptimized={shouldBypassImageOptimization(item.image)}
-                          sizes="120px"
-                          className="object-contain p-2"
-                        />
-                      ) : (
-                        <div className="h-full w-full" style={{ background: item.accent }} />
-                      )}
-                    </Link>
-
-                    <div className="grid min-w-0 gap-4">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
-                        <div className="min-w-0">
-                          <Link
-                            href={`/product/${item.productId}`}
-                            className="line-clamp-2 block text-sm font-semibold uppercase leading-5 transition hover:text-[var(--accent)]"
-                          >
-                            {item.name}
-                          </Link>
-                          <p className="mt-2 text-sm text-[var(--muted)]">
-                            {item.size || "Default"} / {item.color || "Default"}
-                            {item.fit ? ` / ${item.fit}` : ""}
-                          </p>
-                        </div>
-                        <p className="whitespace-nowrap text-sm font-semibold">
-                          {formatCartPrice(item.price * item.quantity)}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="inline-grid grid-cols-3 border border-[var(--border)] text-sm">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextQuantity = item.quantity - 1;
-                              updateQuantity(
-                                item.productId,
-                                item.size,
-                                item.color,
-                                nextQuantity,
-                                item.fit
-                              );
-                              pushToast(
-                                nextQuantity <= 0 ? "Item removed from bag" : "Bag updated",
-                                nextQuantity <= 0 ? "error" : "success"
-                              );
-                            }}
-                            className="flex h-10 w-10 items-center justify-center transition hover:bg-[var(--hover-fill)]"
-                            aria-label={`Decrease quantity of ${item.name}`}
-                          >
-                            -
-                          </button>
-                          <span className="flex h-10 w-10 items-center justify-center border-x border-[var(--border)]">
-                            {item.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateQuantity(
-                                item.productId,
-                                item.size,
-                                item.color,
-                                item.quantity + 1,
-                                item.fit
-                              );
-                              pushToast("Bag updated");
-                            }}
-                            className="flex h-10 w-10 items-center justify-center transition hover:bg-[var(--hover-fill)]"
-                            aria-label={`Increase quantity of ${item.name}`}
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              removeItem(item.productId, item.size, item.color, item.fit);
-                              pushToast("Item removed from bag", "error");
-                            }}
-                            className="flex h-10 w-10 items-center justify-center text-xl text-[var(--muted)] transition hover:bg-[var(--hover-fill)] hover:text-[var(--danger)]"
-                            aria-label={`Remove ${item.name}`}
-                          >
-                            ×
-                          </button>
-                        </div>
+                    <div className="flex items-baseline justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelected(index)}
+                        className={`fr-choice fr-word text-left text-[1.75rem]! ${index === activeIndex ? "is-active" : ""}`}
+                      >
+                        {item.name}
+                      </button>
+                      <span className="shrink-0 text-[0.95rem]">{formatCartPrice(item.price * item.quantity)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="fr-mono fr-muted">
+                        {[item.color, item.size ? `Size ${item.size}` : "", item.fit].filter(Boolean).join(" · ")}
+                      </span>
+                      <div className="fr-mono flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextQuantity = item.quantity - 1;
+                            updateQuantity(item.productId, item.size, item.color, nextQuantity, item.fit);
+                            pushToast(
+                              nextQuantity <= 0 ? "Item removed from bag" : "Bag updated",
+                              nextQuantity <= 0 ? "error" : "success"
+                            );
+                          }}
+                          className="fr-choice is-active h-11 w-9 text-center"
+                          aria-label={`Decrease quantity of ${item.name}`}
+                        >
+                          −
+                        </button>
+                        <span aria-label={`Quantity ${item.quantity}`}>{item.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateQuantity(item.productId, item.size, item.color, item.quantity + 1, item.fit);
+                            pushToast("Bag updated");
+                          }}
+                          className="fr-choice is-active h-11 w-9 text-center"
+                          aria-label={`Increase quantity of ${item.name}`}
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            removeItem(item.productId, item.size, item.color, item.fit);
+                            pushToast("Item removed from bag", "error");
+                          }}
+                          className="fr-choice ml-3 min-h-11"
+                          aria-label={`Remove ${item.name}`}
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
-                  </article>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>
 
         {isReady && items.length > 0 ? (
-          <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-5">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--muted)]">Subtotal</span>
-                <span>{formatCartPrice(subtotal)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--muted)]">Delivery</span>
-                <span>Free</span>
-              </div>
-              <div className="flex items-center justify-between border-t border-[var(--border)] pt-4 text-base font-semibold">
-                <span>Total</span>
-                <span>{formatCartPrice(total)}</span>
-              </div>
+          <footer className="flex shrink-0 flex-col gap-3 border-t border-[var(--border)] px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-8">
+            <div className="flex items-baseline justify-between">
+              <span className="fr-mono">Total · delivery free</span>
+              <span className="fr-word text-[2rem]">{formatCartPrice(subtotal)}</span>
             </div>
-
-            <Link
-              href="/checkout"
-              className="button-primary mt-5 inline-flex w-full justify-center px-5 py-3 text-xs font-semibold uppercase tracking-[0.1em] transition"
-            >
-              Secure checkout
+            <Link href="/checkout" className="fr-button">
+              Checkout
             </Link>
-            <Link
-              href="/cart"
-              className="button-secondary mt-3 inline-flex min-h-12 w-full items-center justify-center px-5 text-xs font-semibold uppercase tracking-[0.1em] transition"
-            >
-              View shopping bag
-            </Link>
+            <div className="flex items-center justify-between">
+              <Link href="/cart" className="fr-mono fr-link">
+                View bag
+              </Link>
+              <span className="fr-mono fr-muted">One free size exchange</span>
+            </div>
           </footer>
         ) : null}
       </aside>
