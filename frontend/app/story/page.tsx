@@ -23,45 +23,35 @@ const founders = [
 ];
 
 const originStory = [
-  "HRUSHE was born from a belief that fashion should be simple, expressive, and built for real life.",
-  "Not overloaded with trends.",
-  "Not loud for the sake of attention.",
-  "Just clean, comfortable, premium everyday wear that lets people feel confident in their own skin.",
-  "Our journey started with one idea: to create clothing that blends minimal design, perfect fit, and high-quality fabric at an honest price.",
-  "When we looked around, we saw two kinds of fashion: cheap, disposable fast fashion or overpriced premium wear that wasn't practical for everyday use.",
-  "We felt there had to be a middle ground, something stylish, affordable, long-lasting, and genuinely comfortable.",
-  "So we set out to build it.",
+  "Most fashion sits at two extremes.",
+  "Fast fashion: trend-heavy, over-designed, made to be replaced.",
+  "Traditional luxury: expensive, often formal, and leaning on logos to say what the clothes should.",
+  "HRUSHE sits between them. Premium-feeling everyday clothing, at an accessible premium price.",
+  "Clothes that feel right at a café, at work, on a journey or on a relaxed evening — without changing who you are.",
 ];
 
 const buildStory = [
-  "What began as sketches, fabric samples, and late-night brainstorming slowly turned into a brand with a purpose.",
-  "Every product we create today is a reflection of that purpose.",
-  "We obsess over small details: the stitching, the softness, the fall of the fabric, the color tone, and the fit on different body types.",
-  "Because we want every piece to make you feel good the moment you wear it.",
+  "A garment doesn’t need a huge logo or complicated graphics to feel premium.",
+  "That feeling comes from fabric, fit, construction, proportion, colour and finishing.",
+  "If a detail doesn’t add value, we remove it.",
+  "Fewer, stronger pieces. The ones you reach for again and again.",
 ];
 
 const meaningStory = [
-  "HRUSHE isn't just a clothing line. It's a mindset, a celebration of minimalism, comfort, and effortless confidence.",
-  "We design for people who want more out of their wardrobe: more durability, more comfort, more style, and more honesty.",
-  "From oversized tees to daily essentials, each product is crafted with care and finished with quality checks that ensure you get something worth owning, not just wearing.",
-  "Our story is still being written, and every customer who chooses HRUSHE becomes part of that journey.",
-  "A community built on simplicity, authenticity, and modern everyday style.",
+  "Not “look at my expensive clothes.” Just clothes that feel like you.",
+  "Modern everyday uniforms, designed with intention, for people who want to look refined without trying too hard.",
+  "Clothing is where HRUSHE begins. Quiet confidence and intentional living are what it is built around.",
 ];
 
-const values = [
-  "Minimal design",
-  "Better fit",
-  "Honest quality",
-  "Everyday comfort",
-];
+const values = ["Clean silhouettes", "Honest materials", "Repeat wear", "Quiet confidence"];
 
 const chapters = [
-  { index: "01", word: "Why", title: "A middle ground between disposable and impractical.", paragraphs: originStory },
-  { index: "02", word: "Care", title: "Care shows up in the details.", paragraphs: buildStory },
-  { index: "03", word: "Meaning", title: "Simplicity, authenticity, and modern everyday style.", paragraphs: meaningStory },
+  { index: "01", word: "Between", title: "Fast fashion and loud luxury.", paragraphs: originStory },
+  { index: "02", word: "Less", title: "Less, but better.", paragraphs: buildStory },
+  { index: "03", word: "You", title: "This just feels like me.", paragraphs: meaningStory },
 ];
 
-const refusals = ["Trends", "Noise", "Fast fashion", "Overpricing"];
+const refusals = ["Loud logos", "Hype", "Trend-chasing", "Visual noise"];
 
 function Chapter({ index, word, title, paragraphs }: (typeof chapters)[number]) {
   return (
@@ -102,7 +92,8 @@ export default function StoryPage() {
               quietly.
             </p>
             <p className="max-w-md text-base leading-7 text-[var(--muted)]">
-              HRUSHE was born from a belief that fashion should be simple, expressive, and built for real life.
+              HRUSHE is modern everyday clothing: refined essentials with clean silhouettes, honest materials and quiet
+              confidence.
             </p>
             <ul className="flex flex-wrap gap-x-5 gap-y-2">
               {values.map((value) => (
@@ -130,7 +121,7 @@ export default function StoryPage() {
               ))}
             </ul>
             <p className="mt-8 max-w-md text-base leading-7">
-              Just clean, comfortable, premium everyday wear that lets people feel confident in their own skin.
+              You don’t need to be loud to be noticed. You simply wear something that feels right.
             </p>
           </section>
 
@@ -156,9 +147,9 @@ export default function StoryPage() {
           </section>
 
           <section className="flex flex-col gap-6 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-14 lg:py-24">
-            <span className="fr-mono fr-muted">And this is only the beginning</span>
+            <span className="fr-mono fr-muted">Defined quietly</span>
             <p className="fr-word text-[clamp(3rem,10vw,8rem)]">Welcome to HRUSHE.</p>
-            <p className="max-w-md text-base leading-7 text-[var(--muted)]">Where style is simple and comfort is everything.</p>
+            <p className="max-w-md text-base leading-7 text-[var(--muted)]">Wear what feels like you.</p>
             <Link href="/?choose" className="fr-button max-w-sm">
               Enter the edit
             </Link>

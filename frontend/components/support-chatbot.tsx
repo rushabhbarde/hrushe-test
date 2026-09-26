@@ -115,13 +115,6 @@ export function SupportChatbot() {
   const selectedOption =
     issueOptions.find((option) => option.value === selectedValue) || null;
   const shouldHide = pathname.startsWith("/admin") || pathname.startsWith("/checkout");
-  const shouldHideClosedTrigger =
-    pathname === "/" ||
-    pathname === "/men" ||
-    pathname === "/women" ||
-    pathname === "/shop" ||
-    pathname === "/login" ||
-    pathname.startsWith("/collection/");
   // Phones: the Frame bottom bar (4rem) or a sticky add-to-bag bar sits at the bottom edge.
   const shouldClearStickyAction =
     pathname.startsWith("/product/") || pathname === "/cart" || pathname === "/checkout";
@@ -153,28 +146,9 @@ export function SupportChatbot() {
     return null;
   }
 
-  if (!isOpen && shouldHideClosedTrigger) {
-    return null;
-  }
-
+  // No floating button: the panel opens from Menu → Help and from the Contact page.
   if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className={`fixed right-4 z-[112] grid h-12 w-12 place-items-center bg-[var(--foreground)] text-[var(--background)]! lg:hidden ${
-          shouldClearStickyAction
-            ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-            : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"
-        }`}
-        aria-label="Open HRUSHE support"
-      >
-        <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M6.5 8.5h13.5c1.4 0 2.5 1.1 2.5 2.5v7.5c0 1.4-1.1 2.5-2.5 2.5h-7.2L8.2 25v-4H6.5C5.1 21 4 19.9 4 18.5V11c0-1.4 1.1-2.5 2.5-2.5Z" />
-          <path d="M23 13h2.5c1.4 0 2.5 1.1 2.5 2.5V23c0 1.4-1.1 2.5-2.5 2.5h-1.7v3.2L20.2 25.5H16" />
-        </svg>
-      </button>
-    );
+    return null;
   }
 
   async function submitTicket() {
