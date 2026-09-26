@@ -191,6 +191,7 @@ test("public product listing includes storefront fields updated by admin", async
                 sizes: ["M"],
                 images: ["https://example.com/updated.jpg"],
                 galleryImages: ["https://example.com/gallery.jpg"],
+                womenImages: ["https://example.com/women.jpg", "data:image/png;base64,AAAA"],
                 videos: [{ id: "fit", title: "Fit", url: "https://example.com/fit.mp4" }],
                 status: "Active",
                 fitType: "Regular",
@@ -236,6 +237,8 @@ test("public product listing includes storefront fields updated by admin", async
   assert.deepEqual(res.body[0].colors, ["Black"]);
   assert.equal(res.body[0].images[0], "https://example.com/updated.jpg");
   assert.equal(res.body[0].galleryImages[0], "https://example.com/gallery.jpg");
+  assert.deepEqual(res.body[0].womenImages, ["https://example.com/women.jpg"]);
+  assert.deepEqual(res.body[0].menImages, []);
   assert.equal(res.body[0].variants[0].stock, 1);
   assert.equal(res.body[0].variants[0].reserved, undefined);
   assert.equal(res.body[0].fabric, "Cotton");
@@ -424,4 +427,14 @@ test("permanent product deletion is blocked for order-referenced products", asyn
 
   assert.equal(nextError?.statusCode, 409);
   assert.match(nextError?.message, /referenced by orders/i);
+});
+
+test("per-side photo sets are normalised and partial updates leave them alone", () => {
+  const full = normalizeProductPayload({ name: "Tee", womenImages: ["https://example.com/w.jpg"] });
+  assert.deepEqual(full.womenImages, ["https://example.com/w.jpg"]);
+  assert.deepEqual(full.menImages, []);
+
+  const partial = normalizeProductPayload({ name: "Tee" }, { partial: true });
+  assert.equal(Object.prototype.hasOwnProperty.call(partial, "womenImages"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(partial, "menImages"), false);
 });

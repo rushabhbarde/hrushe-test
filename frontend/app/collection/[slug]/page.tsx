@@ -16,6 +16,7 @@ import {
   productCategoryList,
   slugsMatch,
   sortProductsByStorefrontPriority,
+  withSideImages,
 } from "@/lib/catalog";
 import { useStorefrontData } from "@/lib/use-storefront";
 
@@ -228,12 +229,13 @@ export default function CollectionPage() {
     [matchedCategory, products]
   );
   const visibleProducts = useMemo(() => {
-    if (isGenderCollection && matchedCollectionProducts.length === 0 && products.length > 0) {
-      return getNewInProducts(products);
-    }
+    const shown =
+      isGenderCollection && matchedCollectionProducts.length === 0 && products.length > 0
+        ? getNewInProducts(products)
+        : matchedCollectionProducts;
 
-    return matchedCollectionProducts;
-  }, [isGenderCollection, matchedCollectionProducts, products]);
+    return isGenderCollection ? withSideImages(shown, collectionSlug === "women" ? "Women" : "Men") : shown;
+  }, [collectionSlug, isGenderCollection, matchedCollectionProducts, products]);
   const relatedProducts = getNewInProducts(products, { limit: 4 });
   const categoryTabs = useMemo(
     () => getCollectionCategoryTabs(visibleProducts),

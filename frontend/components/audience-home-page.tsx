@@ -4,7 +4,7 @@ import {
   getVisibleHomepageCards,
   type HomepageSection,
 } from "@/lib/admin-workspace";
-import { getCollectionProducts, getNewInProducts, type Product } from "@/lib/catalog";
+import { getCollectionProducts, getNewInProducts, withSideImages, type Product } from "@/lib/catalog";
 import { getHomepageManagement, getStorefrontProducts } from "@/lib/server-storefront";
 import { FrameHome, type FrameHomeCampaign } from "@/components/frame-home";
 import { HomepageMediaFrame } from "@/components/homepage-media";
@@ -71,7 +71,7 @@ export async function AudienceHomePage({ audience }: { audience: Audience }) {
   const hero = sections.find((section) => section.sectionType === "audience-hero");
   const side = audienceLabels[audience];
   const sideProducts: Product[] = getCollectionProducts(allProducts, side);
-  const products = sideProducts.length > 0 ? sideProducts : getNewInProducts(allProducts);
+  const products = withSideImages(sideProducts.length > 0 ? sideProducts : getNewInProducts(allProducts), side);
 
   return (
     <div className="page-shell bg-[var(--background)]">
