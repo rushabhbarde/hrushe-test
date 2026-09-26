@@ -3,12 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { EmptyState } from "@/components/empty-state";
 import { FrameIndex } from "@/components/frame-index";
-import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductCard } from "@/components/product-card";
-import { ProductListingSkeleton } from "@/components/product-listing-grid";
-import { SectionHeading } from "@/components/section-heading";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import type { Product } from "@/lib/catalog";
@@ -338,7 +334,7 @@ export default function CollectionPage() {
                     type="button"
                     onClick={() => setView(option)}
                     aria-pressed={view === option}
-                    className={`fr-choice min-h-11 ${view === option ? "is-active fr-link" : ""}`}
+                    className={`fr-mono fr-choice min-h-11 ${view === option ? "is-active fr-link" : ""}`}
                   >
                     {option === "index" ? "Index" : "Grid"}
                   </button>
@@ -379,22 +375,20 @@ export default function CollectionPage() {
               ))}
             </section>
           ) : (
-            <section className="mx-auto max-w-[760px] px-4 py-20 sm:px-6">
-              <EmptyState
-                title={`${activeCategoryLabel} is being prepared.`}
-                description="Reset the controls to return to the complete gender edit, or explore the newest available HRUSHE pieces."
-                ctaHref="/shop"
-                ctaLabel="Explore all products"
-              />
+            <section className="flex flex-col gap-4 px-5 py-16 lg:px-10">
+              <p className="fr-word text-[clamp(2.5rem,7vw,5rem)]">{activeCategoryLabel}: soon.</p>
+              <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+                These pieces are being prepared. Reset to see the whole {genderTitle.toLowerCase()} edit.
+              </p>
               {activeControlCount > 0 ? (
-                <button
-                  type="button"
-                  onClick={resetControls}
-                  className="button-primary mt-4 min-h-12 px-6 text-xs font-semibold uppercase tracking-[0.12em]"
-                >
-                  Reset controls
+                <button type="button" onClick={resetControls} className="fr-button max-w-xs">
+                  Reset
                 </button>
-              ) : null}
+              ) : (
+                <Link href="/shop" className="fr-mono fr-link self-start">
+                  See every piece →
+                </Link>
+              )}
             </section>
           )}
         </main>
@@ -415,7 +409,7 @@ export default function CollectionPage() {
             >
               <div className="collection-filter-drawer__header">
                 <div>
-                  <p className="eyebrow text-[var(--muted)]">{genderTitle}</p>
+                  <p className="text-[var(--muted)]">{genderTitle}</p>
                   <h2 id="collection-filter-title">Filter &amp; sort</h2>
                 </div>
                 <button
@@ -486,56 +480,37 @@ export default function CollectionPage() {
   }
 
   return (
-    <div className="page-shell">
+    <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        <div className="mb-7">
-          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop", href: "/shop" }, { label: displayCategory }]} />
-        </div>
-        <SectionHeading eyebrow="Collection" eyebrowClassName="text-[var(--accent)]" title={displayCategory} description={collectionDescription} />
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/shop" className="button-secondary px-5 py-3 transition">Back to shop</Link>
-          <Link href="/story" className="button-secondary px-5 py-3 transition">Discover the fit</Link>
-        </div>
-        <div className="mt-10">
-          {loading ? (
-            <ProductListingSkeleton count={8} />
-          ) : visibleProducts.length > 0 ? (
-            <>
-              <div className="mb-5 flex flex-col gap-2 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-                <span>{visibleProducts.length} pieces available</span>
-                <span>Filtered by collection</span>
-              </div>
-              <section className="collection-plp__grid collection-plp__grid--matrix" aria-label={`${displayCategory} products`}>
-                {visibleProducts.map((product, index) => (
-                  <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} showInfo={false} />
-                ))}
-              </section>
-            </>
-          ) : (
-            <div className="space-y-10">
-              <EmptyState
-                title={`${displayCategory} is ${matchedCategory ? "coming soon" : "not live yet"}.`}
-                description="The next release for this edit is being prepared. Explore the newest available HRUSHE pieces in the meantime."
-                ctaHref="/shop"
-                ctaLabel="Explore all products"
-              />
-              {relatedProducts.length > 0 ? (
-                <section aria-labelledby="related-collection-products">
-                  <div className="mb-5 flex flex-col gap-2 border-t border-[var(--border)] pt-8 text-[0.76rem] uppercase tracking-[0.16em] text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-                    <h2 id="related-collection-products" className="font-medium text-[var(--foreground)]">You may also like</h2>
-                    <span>Newest available pieces</span>
-                  </div>
-                  <section className="collection-plp__grid collection-plp__grid--matrix" aria-label="Newest available pieces">
-                    {relatedProducts.map((product, index) => (
-                      <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} showInfo={false} />
-                    ))}
-                  </section>
-                </section>
-              ) : null}
-            </div>
-          )}
-        </div>
+      <main className="collection-plp">
+        <header className="collection-plp__intro">
+          <div>
+            <p>Collection</p>
+            <h1>
+              {displayCategory}
+              {!loading && visibleProducts.length > 0 ? <span>{String(visibleProducts.length).padStart(2, "0")}</span> : null}
+            </h1>
+            {collectionDescription && (loading || visibleProducts.length > 0) ? <div className="collection-plp__description">{collectionDescription}</div> : null}
+          </div>
+        </header>
+
+        {loading ? (
+          <CollectionSkeleton layout="editorial" />
+        ) : visibleProducts.length > 0 ? (
+          <div className="pt-4">
+            <FrameIndex products={visibleProducts} label={`${displayCategory} products`} />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-12 pb-16">
+            <section className="flex flex-col gap-4 px-5 py-10 lg:px-10">
+              <p className="fr-word text-[clamp(2.5rem,7vw,5rem)]">{matchedCategory ? "Coming soon." : "Not here yet."}</p>
+              <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+                The next release for {displayCategory} is being prepared. Meanwhile, the newest pieces:
+              </p>
+            </section>
+            {relatedProducts.length > 0 ? <FrameIndex products={relatedProducts} label="Newest pieces" /> : null}
+          </div>
+        )}
       </main>
       <SiteFooter />
     </div>

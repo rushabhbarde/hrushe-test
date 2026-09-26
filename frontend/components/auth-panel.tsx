@@ -1,14 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
-import {
-  HRUSHE_LOGO_DIMENSIONS,
-  HRUSHE_LOGO_PATH,
-} from "@/lib/brand-assets";
 
 export type AuthMode = "login" | "signup";
 type AuthView = "auth" | "forgot-password";
@@ -17,7 +12,6 @@ type AuthPanelProps = {
   initialMode?: AuthMode;
   onSuccess?: () => void;
   onModeChange?: (mode: AuthMode) => void;
-  variant?: "classic" | "prestige";
   className?: string;
 };
 
@@ -40,7 +34,6 @@ export function AuthPanel({
   initialMode = "login",
   onSuccess,
   onModeChange,
-  variant = "classic",
   className = "",
 }: AuthPanelProps) {
   const { login, signup } = useCustomerAuth();
@@ -55,8 +48,6 @@ export function AuthPanel({
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [signupName, setSignupName] = useState("");
-  const [signupFirstName, setSignupFirstName] = useState("");
-  const [signupLastName, setSignupLastName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
@@ -136,9 +127,7 @@ export function AuthPanel({
 
   const onSignupSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const composedSignupName =
-      signupName.trim() ||
-      [signupFirstName.trim(), signupLastName.trim()].filter(Boolean).join(" ");
+    const composedSignupName = signupName.trim();
     const normalizedEmail = signupEmail.trim().toLowerCase();
     const normalizedPhone = normalizePhone(signupPhone);
     const passwordError = validatePassword(signupPassword);
@@ -316,340 +305,12 @@ export function AuthPanel({
     }
   };
 
-  if (variant === "prestige") {
-    const prestigeField =
-      "group grid gap-2 border-b border-white/18 pb-3 text-[0.9rem] font-semibold text-white sm:text-[0.92rem]";
-    const prestigeInput =
-      "w-full bg-transparent text-[0.95rem] font-medium text-white outline-none placeholder:text-white/42";
-    const prestigeButton =
-      "min-h-12 w-full border border-white/26 px-5 text-sm font-semibold text-white transition hover:border-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-55";
-    const prestigeLightButton =
-      "hrushe-light-action min-h-12 w-full px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55";
-    const prestigeError = error ? (
-      <p className="border border-white/16 bg-white/[0.06] px-4 py-3 text-sm leading-5 text-white/82" aria-live="polite">
-        {error}
-      </p>
-    ) : null;
-    const prestigeLogo = (
-      <Image
-        src={HRUSHE_LOGO_PATH}
-        alt="HRUSHE"
-        width={HRUSHE_LOGO_DIMENSIONS.width}
-        height={HRUSHE_LOGO_DIMENSIONS.height}
-        priority
-            className="mx-auto h-auto w-40 brightness-0 invert sm:w-52"
-      />
-    );
-
-    if (view === "forgot-password") {
-      return (
-        <section className={`w-full text-white ${className}`.trim()}>
-          <button
-            type="button"
-            onClick={closeForgotPassword}
-            className="mb-10 text-xs font-semibold uppercase tracking-[0.18em] text-white/56 transition hover:text-white"
-          >
-            Back to login
-          </button>
-          <div className="mx-auto max-w-md">
-            {prestigeLogo}
-            <p className="mt-2 text-center text-sm font-semibold uppercase tracking-[0.12em] text-white/72">
-              Reset access
-            </p>
-            {forgotStep === "request" ? (
-              <form className="mt-14 grid gap-7" onSubmit={(event) => void onRequestOtp(event)}>
-                <label className={prestigeField}>
-                  Email
-                  <input
-                    value={forgotEmail}
-                    onChange={(event) => setForgotEmail(event.target.value)}
-                    className={prestigeInput}
-                    placeholder="Your email address"
-                    type="email"
-                    autoComplete="email"
-                    required
-                  />
-                </label>
-                {prestigeError}
-                <button type="submit" disabled={isForgotOtpSubmitting} className={prestigeButton}>
-                  {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
-                </button>
-              </form>
-            ) : (
-              <form className="mt-14 grid gap-7" onSubmit={(event) => void onResetPassword(event)}>
-                <label className={prestigeField}>
-                  Email
-                  <input
-                    value={forgotEmail}
-                    onChange={(event) => setForgotEmail(event.target.value)}
-                    className={prestigeInput}
-                    placeholder="Your email address"
-                    type="email"
-                    autoComplete="email"
-                    required
-                  />
-                </label>
-                <label className={prestigeField}>
-                  OTP
-                  <input
-                    value={forgotOtp}
-                    onChange={(event) => setForgotOtp(event.target.value)}
-                    className={prestigeInput}
-                    placeholder="6-digit OTP"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    required
-                  />
-                </label>
-                <label className={prestigeField}>
-                  New password
-                  <input
-                    value={forgotPassword}
-                    onChange={(event) => setForgotPassword(event.target.value)}
-                    className={prestigeInput}
-                    placeholder="Choose password"
-                    type={showForgotPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword((current) => !current)}
-                  className="-mt-5 justify-self-end text-xs font-semibold uppercase tracking-[0.16em] text-white/48 hover:text-white"
-                >
-                  {showForgotPassword ? "Hide" : "Show"}
-                </button>
-                {devOtp ? <p className="text-sm text-white/48">Dev OTP: {devOtp}</p> : null}
-                {prestigeError}
-                <button type="submit" disabled={isSubmitting} className={prestigeLightButton}>
-                  {isSubmitting ? "Resetting..." : "Reset password"}
-                </button>
-              </form>
-            )}
-          </div>
-        </section>
-      );
-    }
-
-    if (mode === "signup") {
-      return (
-        <section className={`w-full text-white ${className}`.trim()}>
-          <div className="mb-8 text-center">
-            <Image
-              src={HRUSHE_LOGO_PATH}
-              alt="HRUSHE"
-              width={HRUSHE_LOGO_DIMENSIONS.width}
-              height={HRUSHE_LOGO_DIMENSIONS.height}
-              priority
-              className="mx-auto h-auto w-40 brightness-0 invert sm:w-44"
-            />
-            <h1 className="mt-5 text-xl font-semibold uppercase tracking-[0.08em] text-white">
-              Create account
-            </h1>
-          </div>
-          <form className="grid gap-4 sm:gap-5" onSubmit={(event) => void onSignupSubmit(event)}>
-            <label className={prestigeField}>
-              Email
-              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8.5rem] sm:items-end">
-                <input
-                  value={signupEmail}
-                  onChange={(event) => {
-                    setSignupEmail(event.target.value);
-                    setSignupOtpRequested(false);
-                    setSignupOtp("");
-                    setSignupDevOtp("");
-                  }}
-                  className={prestigeInput}
-                  placeholder="Your email address"
-                  type="email"
-                  autoComplete="email"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => void onRequestSignupOtp()}
-                  disabled={isSignupOtpSubmitting}
-                  className="min-h-9 border border-white/18 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white/72 transition hover:border-white hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isSignupOtpSubmitting ? "Sending" : signupOtpRequested ? "Resend" : "Send OTP"}
-                </button>
-              </div>
-            </label>
-            <label className={prestigeField}>
-              First name
-              <input
-                value={signupFirstName}
-                onChange={(event) => setSignupFirstName(event.target.value)}
-                className={prestigeInput}
-                placeholder="Your first name"
-                autoComplete="given-name"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Last name
-              <input
-                value={signupLastName}
-                onChange={(event) => setSignupLastName(event.target.value)}
-                className={prestigeInput}
-                placeholder="Your last name"
-                autoComplete="family-name"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Phone
-              <input
-                value={signupPhone}
-                onChange={(event) => setSignupPhone(event.target.value)}
-                className={prestigeInput}
-                placeholder="10-digit phone number"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Email OTP
-              <input
-                value={signupOtp}
-                onChange={(event) => setSignupOtp(event.target.value)}
-                className={prestigeInput}
-                placeholder="Verification code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Password
-              <input
-                value={signupPassword}
-                onChange={(event) => setSignupPassword(event.target.value)}
-                className={prestigeInput}
-                placeholder="Choose password"
-                type={showSignupPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Confirm password
-              <input
-                value={signupConfirmPassword}
-                onChange={(event) => setSignupConfirmPassword(event.target.value)}
-                className={prestigeInput}
-                placeholder="Repeat password"
-                type={showSignupConfirmPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-              />
-            </label>
-            <div className="-mt-2 grid justify-items-end gap-2 text-right text-xs font-semibold uppercase tracking-[0.16em] text-white/48 sm:flex sm:flex-wrap sm:justify-end sm:gap-x-4">
-              <button type="button" onClick={() => setShowSignupPassword((current) => !current)} className="hover:text-white">
-                {showSignupPassword ? "Hide password" : "Show password"}
-              </button>
-              <button type="button" onClick={() => setShowSignupConfirmPassword((current) => !current)} className="hover:text-white">
-                {showSignupConfirmPassword ? "Hide confirm" : "Show confirm"}
-              </button>
-            </div>
-            <label className="flex items-start gap-3 text-sm font-semibold leading-6 text-white/82">
-              <input type="checkbox" className="mt-1 h-4 w-4 border border-white/28 bg-transparent accent-white" />
-              Subscribe to receive email updates about HRUSHE product launches, promotions and exclusive discounts.
-            </label>
-            {signupDevOtp ? <p className="text-sm text-white/48">Dev OTP: {signupDevOtp}</p> : null}
-            {prestigeError}
-            <button type="submit" disabled={isSubmitting} className={prestigeLightButton}>
-              {isSubmitting ? "Creating account..." : "Create Account"}
-            </button>
-          </form>
-          <button
-            type="button"
-            onClick={() => switchMode("login")}
-            className="mt-5 w-full text-center text-sm font-semibold text-white/46 transition hover:text-white"
-          >
-            Already got an account? Login here
-          </button>
-        </section>
-      );
-    }
-
-    return (
-      <section className={`w-full text-white ${className}`.trim()}>
-        <div className="mx-auto max-w-md">
-          {prestigeLogo}
-          <h1 className="mt-7 text-center text-xl font-semibold uppercase tracking-[0.08em] text-white">
-            Sign in
-          </h1>
-          <form className="mt-10 grid gap-6 sm:mt-12 sm:gap-7 lg:mt-14" onSubmit={(event) => void onLoginSubmit(event)}>
-            <label className={prestigeField}>
-              Your email address
-              <input
-                value={loginIdentifier}
-                onChange={(event) => setLoginIdentifier(event.target.value)}
-                className={prestigeInput}
-                placeholder="Email address or phone number"
-                autoComplete="username"
-                required
-              />
-            </label>
-            <label className={prestigeField}>
-              Enter your password
-              <input
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-                className={prestigeInput}
-                placeholder="Password"
-                type={showLoginPassword ? "text" : "password"}
-                autoComplete="current-password"
-                required
-              />
-            </label>
-            <div className="-mt-4 flex items-center justify-between gap-4">
-              <button
-                type="button"
-                onClick={() => setShowLoginPassword((current) => !current)}
-                className="text-xs font-semibold uppercase tracking-[0.16em] text-white/42 transition hover:text-white"
-              >
-                {showLoginPassword ? "Hide" : "Show"}
-              </button>
-              <button
-                type="button"
-                onClick={openForgotPassword}
-                className="text-sm font-semibold text-white/46 transition hover:text-white"
-              >
-                Forgot your password?
-              </button>
-            </div>
-            {prestigeError}
-            <div className="grid gap-3 pt-3">
-              <button type="submit" disabled={isSubmitting} className={prestigeButton}>
-                {isSubmitting ? "Signing in..." : "Sign in"}
-              </button>
-              <button type="button" onClick={() => switchMode("signup")} className={prestigeButton}>
-                Create an account
-              </button>
-            </div>
-          </form>
-          <a
-            href="/story"
-            className="mt-16 block text-center text-sm font-semibold text-white/44 underline underline-offset-4 transition hover:text-white sm:mt-28"
-          >
-            Explore HRUSHE
-          </a>
-        </div>
-      </section>
-    );
-  }
-
   const panelTitle =
     view === "forgot-password"
-      ? "Reset your password."
+      ? "New password."
       : mode === "login"
         ? "Welcome back."
-        : "Create your account.";
+        : "Join us.";
   const panelDescription =
     view === "forgot-password"
       ? "Verify your email OTP and set a fresh password without leaving checkout."
@@ -662,14 +323,13 @@ export function AuthPanel({
       : mode === "login"
         ? ["Saved bag and pieces", "Fast checkout access", "Order tracking in one place"]
         : ["Verified email signup", "Saved delivery profile", "Saved pieces and cart shortcuts"];
-  const formClass = "auth-switch-panel mt-5 grid gap-3.5 sm:mt-6 sm:gap-4";
-  const inputClass =
-    "lux-input bg-white/75 text-[0.95rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.68)]";
+  const formClass = "auth-switch-panel mt-6 grid gap-5";
+  const inputClass = "fr-input";
   const passwordToggleClass =
-    "absolute right-4 top-1/2 -translate-y-1/2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-black";
+    "fr-mono fr-choice absolute right-0 top-1/2 -translate-y-1/2";
   const errorMessage = error ? (
     <p
-      className="border border-[color-mix(in_srgb,var(--danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] px-4 py-3 text-sm leading-5 text-[var(--danger)]"
+      className="border-l-2 border-[var(--danger)] pl-3 text-sm leading-5 text-[var(--danger)]"
       aria-live="polite"
     >
       {error}
@@ -677,18 +337,14 @@ export function AuthPanel({
   ) : null;
 
   return (
-    <div className={`lux-panel overflow-hidden ${className}`.trim()}>
-      <div className="grid lg:grid-cols-[0.84fr_1.16fr]">
-        <aside className="relative hidden min-h-[640px] overflow-hidden bg-[#111111] p-8 text-white lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.18),transparent_28rem)]" />
-          <div className="relative">
-            <p className="eyebrow text-white/60">HRUSHE Account</p>
-            <h2 className="display-font mt-5 max-w-sm text-6xl leading-[0.88] tracking-[-0.06em]">
-              Quiet access. Faster orders.
-            </h2>
-            <p className="mt-6 max-w-xs text-sm leading-6 text-white/64">
-              A clean member space for saved delivery details, saved pieces,
-              and checkout without repeating yourself.
+    <div className={`overflow-hidden bg-[var(--background)] ${className}`.trim()}>
+      <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+        <aside className="fr-frame relative hidden min-h-[600px] p-8 lg:flex lg:flex-col lg:justify-between">
+          <div className="relative flex flex-col gap-4">
+            <p className="fr-mono fr-muted">Wardrobe</p>
+            <p className="fr-word max-w-sm text-[3.5rem]">Defined quietly.</p>
+            <p className="max-w-xs text-sm leading-6 text-[var(--muted)]">
+              Your orders, saved pieces and delivery details, kept in one quiet place.
             </p>
           </div>
 
@@ -696,56 +352,41 @@ export function AuthPanel({
             {panelHighlights.map((item, index) => (
               <div
                 key={item}
-                className="grid grid-cols-[3.5rem_1fr] items-center border border-white/12 bg-white/[0.04] px-4 py-3"
+                className="grid grid-cols-[3rem_1fr] items-baseline border-t border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] py-3"
               >
-                <span className="text-xs font-semibold tracking-[0.22em] text-white/42">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="text-sm font-medium text-white/86">{item}</span>
+                <span className="fr-mono fr-muted">{String(index + 1).padStart(2, "0")}</span>
+                <span className="fr-mono">{item}</span>
               </div>
             ))}
           </div>
         </aside>
 
-        <section className="relative bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] px-4 py-5 sm:px-7 sm:py-8 lg:px-8">
-          <div className="mb-5 border border-[var(--border)] bg-black px-4 py-4 text-white lg:hidden">
-            <p className="eyebrow text-white/58">HRUSHE Account</p>
-            <p className="mt-2 text-sm leading-5 text-white/76">
-              Secure access for saved bags, saved pieces, and faster checkout.
-            </p>
-          </div>
-
-          <div className="pr-12 sm:pr-14">
-            <p className="eyebrow text-[var(--accent)]">Account access</p>
-            <h2 className="display-font mt-2 text-[2.45rem] leading-[0.9] tracking-[-0.055em] sm:text-5xl lg:text-[3.35rem]">
+        <section className="relative px-5 py-7 sm:px-8 sm:py-10 lg:px-10">
+          <div className="flex flex-col gap-3 pr-12 sm:pr-14">
+            <p className="fr-mono fr-muted">Wardrobe</p>
+            <h2 className="fr-word text-[clamp(2.75rem,10vw,4rem)]">
               {panelTitle}
             </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
+            <p className="max-w-xl text-sm leading-6 text-[var(--muted)]">
               {panelDescription}
             </p>
           </div>
 
           {view === "auth" ? (
-            <div className="mt-5 grid max-w-md grid-cols-2 border border-[var(--border)] bg-white/70 p-1">
+            <div className="mt-6 flex gap-6">
               <button
                 type="button"
                 onClick={() => switchMode("login")}
-                className={`min-h-11 px-4 text-sm font-semibold transition ${
-                  mode === "login"
-                    ? "hrushe-inverse-action shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
-                    : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
-                }`}
+                aria-pressed={mode === "login"}
+                className={`fr-mono fr-choice is-underlined min-h-11 ${mode === "login" ? "is-active" : ""}`}
               >
-                Login
+                Sign in
               </button>
               <button
                 type="button"
                 onClick={() => switchMode("signup")}
-                className={`min-h-11 px-4 text-sm font-semibold transition ${
-                  mode === "signup"
-                    ? "hrushe-inverse-action shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
-                    : "text-[var(--muted)] hover:bg-black/[0.04] hover:text-black"
-                }`}
+                aria-pressed={mode === "signup"}
+                className={`fr-mono fr-choice is-underlined min-h-11 ${mode === "signup" ? "is-active" : ""}`}
               >
                 Create account
               </button>
@@ -754,10 +395,9 @@ export function AuthPanel({
             <button
               type="button"
               onClick={closeForgotPassword}
-              className="mt-5 inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)] transition hover:text-black"
+              className="fr-mono fr-choice fr-link is-active mt-6"
             >
-              <span className="h-px w-10 bg-current" />
-              Back to login
+              ← Back to sign in
             </button>
           )}
 
@@ -778,7 +418,7 @@ export function AuthPanel({
                 <button
                   type="submit"
                   disabled={isForgotOtpSubmitting}
-                  className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  className="fr-button"
                 >
                   {isForgotOtpSubmitting ? "Sending OTP..." : "Send OTP"}
                 </button>
@@ -809,7 +449,7 @@ export function AuthPanel({
                   <input
                     value={forgotPassword}
                     onChange={(event) => setForgotPassword(event.target.value)}
-                    className={`${inputClass} pr-24`}
+                    className={`${inputClass} pr-16!`}
                     aria-label="New password"
                     placeholder="New password"
                     type={showForgotPassword ? "text" : "password"}
@@ -834,7 +474,7 @@ export function AuthPanel({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="button-primary px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                    className="fr-button"
                   >
                     {isSubmitting ? "Resetting..." : "Reset password"}
                   </button>
@@ -847,7 +487,7 @@ export function AuthPanel({
                       setDevOtp("");
                       setError("");
                     }}
-                    className="button-secondary px-5 py-3 transition"
+                    className="fr-mono min-h-[3.25rem] border border-[color-mix(in_srgb,var(--foreground)_22%,transparent)]"
                   >
                     Resend OTP
                   </button>
@@ -869,7 +509,7 @@ export function AuthPanel({
                 <input
                   value={loginPassword}
                   onChange={(event) => setLoginPassword(event.target.value)}
-                  className={`${inputClass} pr-24`}
+                  className={`${inputClass} pr-16!`}
                   aria-label="Password"
                   placeholder="Password"
                   type={showLoginPassword ? "text" : "password"}
@@ -889,16 +529,16 @@ export function AuthPanel({
                 <button
                   type="button"
                   onClick={openForgotPassword}
-                  className="justify-self-start text-sm font-medium text-[var(--accent)] underline underline-offset-4 transition hover:text-black"
+                  className="fr-mono fr-choice fr-link justify-self-start"
                 >
                   Forgot password?
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  className="fr-button"
                 >
-                  {isSubmitting ? "Signing in..." : "Login"}
+                  {isSubmitting ? "Signing in…" : "Sign in"}
                 </button>
               </div>
             </form>
@@ -956,7 +596,7 @@ export function AuthPanel({
                   type="button"
                   onClick={() => void onRequestSignupOtp()}
                   disabled={isSignupOtpSubmitting}
-                  className="button-secondary whitespace-nowrap px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  className="fr-mono min-h-12 whitespace-nowrap border border-[color-mix(in_srgb,var(--foreground)_22%,transparent)] px-4 disabled:opacity-60"
                 >
                   {isSignupOtpSubmitting
                     ? "Sending..."
@@ -970,7 +610,7 @@ export function AuthPanel({
                   <input
                     value={signupPassword}
                     onChange={(event) => setSignupPassword(event.target.value)}
-                    className={`${inputClass} pr-24`}
+                    className={`${inputClass} pr-16!`}
                     aria-label="Password"
                     placeholder="Password"
                     type={showSignupPassword ? "text" : "password"}
@@ -989,7 +629,7 @@ export function AuthPanel({
                   <input
                     value={signupConfirmPassword}
                     onChange={(event) => setSignupConfirmPassword(event.target.value)}
-                    className={`${inputClass} pr-24`}
+                    className={`${inputClass} pr-16!`}
                     aria-label="Confirm password"
                     placeholder="Confirm password"
                     type={showSignupConfirmPassword ? "text" : "password"}
@@ -1014,17 +654,17 @@ export function AuthPanel({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="button-primary w-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
+                className="fr-button"
               >
                 {isSubmitting ? "Creating account..." : "Create account"}
               </button>
             </form>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--border)] pt-4 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-            <span>Secure account access</span>
-            <span className="h-1 w-1 bg-[var(--border)]" />
-            <span>OTP protected</span>
+          <div className="fr-mono fr-muted mt-8 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span>Secure access</span>
+            <span aria-hidden="true">·</span>
+            <span>Email OTP protected</span>
           </div>
         </section>
       </div>
