@@ -73,6 +73,9 @@ export type Product = {
   compareAtPrice?: number;
   reviews?: ProductReview[];
   galleryImages?: string[];
+  /** Optional per-side photo sets; empty means "use images". */
+  womenImages?: string[];
+  menImages?: string[];
   fabric?: string;
   gsm?: string;
   cottonType?: string;
@@ -230,6 +233,14 @@ export function formatCollectionLabel(slug: string) {
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+/** The photos a piece should wear on one side of the store: its Women or Men set when it has one. */
+export function withSideImages(products: Product[], side: "Women" | "Men"): Product[] {
+  return products.map((product) => {
+    const sideImages = (side === "Women" ? product.womenImages : product.menImages)?.filter(Boolean) || [];
+    return sideImages.length > 0 ? { ...product, images: sideImages, thumbnailUrl: sideImages[0] } : product;
+  });
 }
 
 export function getCollectionProducts(products: Product[], collectionLabel: string) {

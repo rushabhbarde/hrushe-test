@@ -41,46 +41,46 @@ export function AdminAuthPanel({
   };
 
   return (
-    <div className={`grain-card rounded-[2rem] p-6 sm:p-8 ${className}`.trim()}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow text-[var(--accent)]">Admin portal</p>
-          <h2 className="display-font mt-3 text-3xl sm:text-4xl">Admin login.</h2>
-          <p className="mt-3 max-w-md text-sm leading-6 text-[var(--muted)]">
-            Sign in to manage products, homepage content, and live customer orders.
-          </p>
-        </div>
+    <div className={`flex flex-col gap-8 ${className}`.trim()}>
+      <div className="flex flex-col gap-4">
+        <p className="fr-mono fr-muted">Atelier · HRUSHE admin</p>
+        <h1 className="fr-word text-[clamp(3rem,10vw,5rem)]">Sign in.</h1>
+        <p className="max-w-md text-sm leading-6 text-[var(--muted)]">
+          Pieces, the homepage and orders, for the people who run HRUSHE.
+        </p>
       </div>
 
-      <form className="mt-8 grid gap-4" onSubmit={onSubmit}>
-        <input
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-          placeholder="Admin email"
-          type="email"
-          autoComplete="username"
-          required
-        />
-        <input
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="rounded-2xl border border-[var(--border)] bg-white/70 px-4 py-3"
-          placeholder="Password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-        {error ? <p className="text-sm text-[var(--accent)]">{error}</p> : null}
-        <p className="text-xs leading-5 text-[var(--muted)]">
-          Use the configured admin email. Access is restricted by the assigned admin role.
-        </p>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="button-primary rounded-full px-5 py-3 transition disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? "Signing in..." : "Login"}
+      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
+        <label className="fr-field">
+          <span>Admin email</span>
+          <input
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            className="fr-input"
+            type="email"
+            autoComplete="username"
+            required
+          />
+        </label>
+        <label className="fr-field">
+          <span>Password</span>
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="fr-input"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </label>
+        {error ? (
+          <p className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <p className="fr-mono fr-muted">Access follows your admin role.</p>
+        <button type="submit" disabled={isSubmitting} className="fr-button">
+          {isSubmitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </div>

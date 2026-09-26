@@ -223,6 +223,16 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Optional per-side photo sets. A piece shown under Women uses womenImages when set,
+    // under Men uses menImages; otherwise both fall back to images.
+    womenImages: {
+      type: [String],
+      default: [],
+    },
+    menImages: {
+      type: [String],
+      default: [],
+    },
     status: {
       type: String,
       enum: [

@@ -6,18 +6,14 @@ import type { ReactNode } from "react";
 type Tone = "default" | "accent" | "success" | "warning";
 
 const toneClasses: Record<Tone, string> = {
-  default:
-    "border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_86%,transparent)] text-[var(--foreground)]",
-  accent:
-    "border-[color:color-mix(in_srgb,var(--foreground)_16%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_7%,transparent)] text-[var(--foreground)]",
-  success:
-    "border-[rgba(18,130,74,0.18)] bg-[rgba(18,130,74,0.1)] text-[#12824a]",
-  warning:
-    "border-[rgba(193,112,24,0.18)] bg-[rgba(193,112,24,0.1)] text-[#8c5417]",
+  default: "border-[color-mix(in_srgb,var(--foreground)_18%,transparent)] text-[var(--muted)]",
+  accent: "border-[var(--foreground)] text-[var(--foreground)]",
+  success: "border-[#1f6b43] text-[#1f6b43]",
+  warning: "border-[#8c5417] text-[#8c5417]",
 };
 
 function fieldClassName(className = "") {
-  return `min-h-12 w-full min-w-0 max-w-full border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-4 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[color:color-mix(in_srgb,var(--muted)_90%,transparent)] focus:border-[color:color-mix(in_srgb,var(--foreground)_28%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--foreground)_5%,transparent)] ${className}`.trim();
+  return `min-h-12 w-full min-w-0 max-w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_30%,transparent)] bg-transparent px-0 text-base text-[var(--foreground)] outline-none transition placeholder:text-[#8e8981] focus:border-[var(--foreground)] ${className}`.trim();
 }
 
 export function AdminBadge({
@@ -29,7 +25,7 @@ export function AdminBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] ${toneClasses[tone]}`}
+      className={`fr-mono inline-flex items-center border px-2 py-1 text-[10px]! ${toneClasses[tone]}`}
     >
       {children}
     </span>
@@ -45,7 +41,7 @@ export function AdminPanel({
 }) {
   return (
     <section
-      className={`border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_92%,transparent),color-mix(in_srgb,var(--surface-strong)_88%,transparent))] p-5 shadow-[0_20px_48px_rgba(17,17,17,0.08)] backdrop-blur md:p-6 ${className}`}
+      className={`border-t border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] pt-6 ${className}`}
     >
       {children}
     </section>
@@ -60,13 +56,7 @@ export function AdminSectionLabel({
   tone?: Tone;
 }) {
   return (
-    <p
-      className={`text-[11px] font-medium uppercase tracking-[0.28em] ${
-        tone === "accent"
-          ? "text-[color:color-mix(in_srgb,var(--foreground)_82%,transparent)]"
-          : "text-[var(--muted)]"
-      }`}
-    >
+    <p className={`fr-mono ${tone === "accent" ? "" : "fr-muted"}`}>
       {children}
     </p>
   );
@@ -84,10 +74,10 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="theme-spotlight overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_94%,transparent),color-mix(in_srgb,var(--surface-strong)_90%,transparent))] px-5 py-6 shadow-[0_24px_60px_rgba(17,17,17,0.08)] sm:px-7 sm:py-8 lg:flex lg:items-end lg:justify-between">
-      <div className="max-w-3xl">
-        <AdminSectionLabel>{eyebrow}</AdminSectionLabel>
-        <h1 className="display-font mt-3 text-4xl leading-none text-[var(--foreground)] sm:text-5xl">
+    <div className="flex flex-col gap-6 pb-2 lg:flex-row lg:items-end lg:justify-between">
+      <div className="max-w-4xl">
+        <AdminSectionLabel tone="default">{eyebrow}</AdminSectionLabel>
+        <h1 className="fr-word mt-4 text-[clamp(2.5rem,5vw,4.5rem)]">
           {title}
         </h1>
         {description ? (
@@ -112,8 +102,8 @@ export function AdminActionButton({
 }) {
   const className =
     variant === "primary"
-      ? "button-primary px-5 py-3 text-sm font-medium"
-      : "button-secondary px-5 py-3 text-sm font-medium";
+      ? "fr-button w-auto! px-6"
+      : "fr-mono inline-flex min-h-[3.25rem] items-center border border-[var(--foreground)] px-6";
 
   return (
     <Link href={href} className={className}>
@@ -134,13 +124,10 @@ export function AdminMetricCard({
   tone?: Tone;
 }) {
   return (
-    <AdminPanel className="flex min-h-[164px] flex-col justify-between">
-      <div className="flex items-start justify-between gap-3">
-        <AdminSectionLabel tone={tone}>{label}</AdminSectionLabel>
-        <AdminBadge tone={tone}>{tone === "default" ? "Live" : tone}</AdminBadge>
-      </div>
+    <AdminPanel className="flex min-h-[150px] flex-col justify-between gap-6">
+      <AdminSectionLabel tone={tone === "default" ? "default" : "accent"}>{label}</AdminSectionLabel>
       <div className="space-y-3">
-        <p className="text-4xl font-semibold leading-none tracking-[-0.04em] text-[var(--foreground)]">
+        <p className="fr-word text-[clamp(2.25rem,3.5vw,3.25rem)]">
           {value}
         </p>
         {detail ? <p className="text-sm leading-6 text-[var(--muted)]">{detail}</p> : null}
@@ -159,9 +146,9 @@ export function AdminSubhead({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-col gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-5 flex flex-col gap-3 pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--foreground)]">
+        <h2 className="fr-word text-[clamp(1.75rem,3vw,2.5rem)]">
           {title}
         </h2>
         {description ? (
@@ -183,9 +170,9 @@ export function AdminEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="empty-shell flex min-h-[240px] flex-col items-start justify-center px-6 py-8">
-      <AdminSectionLabel>Ready when you are</AdminSectionLabel>
-      <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{title}</h3>
+    <div className="flex min-h-[200px] flex-col items-start justify-center py-8">
+      <AdminSectionLabel tone="default">Nothing yet</AdminSectionLabel>
+      <h3 className="fr-word mt-3 text-[clamp(1.75rem,3vw,2.5rem)]">{title}</h3>
       <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
@@ -220,7 +207,7 @@ export function AdminField({
 }) {
   return (
     <label className="grid min-w-0 gap-2">
-      <span className="min-w-0 text-sm font-medium text-[var(--foreground)]">{label}</span>
+      <span className="fr-mono fr-muted min-w-0">{label}</span>
       {children}
       {hint ? <span className="text-xs leading-5 text-[var(--muted)]">{hint}</span> : null}
     </label>
@@ -242,7 +229,7 @@ export function AdminSwitch({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full min-w-0 items-center justify-between gap-4 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4 text-left"
+      className="flex w-full min-w-0 items-center justify-between gap-4 border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-4 text-left"
       aria-pressed={checked}
     >
       <div className="min-w-0">
@@ -275,9 +262,7 @@ export function AdminKeyValue({
 }) {
   return (
     <div className="space-y-1">
-      <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--muted)]">
-        {label}
-      </p>
+      <p className="fr-mono fr-muted">{label}</p>
       <div className="text-sm leading-6 text-[var(--foreground)]">{value}</div>
     </div>
   );
@@ -307,14 +292,12 @@ export function AdminConfirmDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(0,0,0,0.36)] px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md border border-[color:color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_96%,transparent),color-mix(in_srgb,var(--surface-strong)_94%,transparent))] p-6 shadow-[0_32px_80px_rgba(17,17,17,0.18)]">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(0,0,0,0.36)] px-4">
+      <div role="alertdialog" aria-modal="true" className="w-full max-w-md bg-[var(--background)] p-8">
         <AdminSectionLabel tone={destructive ? "warning" : "accent"}>
           {destructive ? "Confirm destructive action" : "Confirm action"}
         </AdminSectionLabel>
-        <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[var(--foreground)]">
-          {title}
-        </h3>
+        <h3 className="fr-word mt-3 text-[2rem]">{title}</h3>
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{description}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <button type="button" onClick={onCancel} className="button-secondary px-5 py-3 text-sm font-medium">

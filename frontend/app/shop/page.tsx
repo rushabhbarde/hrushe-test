@@ -2,8 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EmptyState } from "@/components/empty-state";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { FrameIndex } from "@/components/frame-index";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -234,7 +233,8 @@ function ShopContent() {
   const { products, loading } = useStorefrontData();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [layout, setLayout] = useState<CollectionLayout>("matrix");
+  const [view, setView] = useState<"index" | "grid">("index");
+  const [layout, setLayout] = useState<CollectionLayout>("editorial");
   const [selectedColour, setSelectedColour] = useState("all");
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
   const [sort, setSort] = useState<SortOption>(routeSort);
@@ -245,208 +245,187 @@ function ShopContent() {
     setSort(routeSort);
   }, [routeSort]);
 
-  const visibleProducts = useMemo(() => products.filter(isVisibleStorefrontProduct), [products]);
-  const colours = useMemo(
-    () => Array.from(new Set(visibleProducts.flatMap((product) => product.colors))).filter(Boolean),
-    [visibleProducts]
+  const sourceProducts = useMemo(
+    () => (isNewArrivalsRoute ? getNewInProducts(products) : products.filter(isVisibleStorefrontProduct)),
+    [isNewArrivalsRoute, products]
   );
-  const activeFilterCount =
-    Number(selectedColour !== "all") + Number(availability !== "all");
+  const categoryTabs = useMemo(() => getShopCategoryTabs(sourceProducts), [sourceProducts]);
+  const colours = useMemo(
+    () => Array.from(new Set(sourceProducts.flatMap((product) => product.colors))).filter(Boolean),
+    [sourceProducts]
+  );
 
-  const filteredProducts = useMemo(() => {
-    const filtered = visibleProducts.filter((product) => {
+  const shownProducts = useMemo(() => {
+    const filtered = sourceProducts.filter((product) => {
+      const matchesCategory =
+        activeCategory === "all" ||
+        getDerivedProductCategories(product).some((category) => slugsMatch(category, activeCategory));
       const matchesColour =
         selectedColour === "all" ||
         product.colors.some((colour) => colour.toLowerCase() === selectedColour.toLowerCase());
-      const matchesAvailability =
-        availability === "all" ||
-        (availability === "available" && productIsAvailable(product));
-      return matchesColour && matchesAvailability;
+      const matchesAvailability = availability === "all" || productIsAvailable(product);
+      return matchesCategory && matchesColour && matchesAvailability;
     });
 
     return sortShopProducts(filtered, sort);
-  }, [availability, selectedColour, sort, visibleProducts]);
+  }, [activeCategory, availability, selectedColour, sort, sourceProducts]);
 
-  const newArrivalProducts = useMemo(() => getNewInProducts(products), [products]);
-  const newArrivalCategoryTabs = useMemo(
-    () => getShopCategoryTabs(newArrivalProducts),
-    [newArrivalProducts]
-  );
-  const newArrivalDisplayTabs =
-    newArrivalCategoryTabs.length > 0 ? newArrivalCategoryTabs : loading ? preferredCategoryOrder.slice(0, 6) : [];
-  const newArrivalProductsForCategory = useMemo(() => {
-    const productsForCategory =
-      activeCategory === "all"
-        ? newArrivalProducts
-        : newArrivalProducts.filter((product) =>
-            getDerivedProductCategories(product).some((category) => slugsMatch(category, activeCategory))
-          );
+  const defaultSort: SortOption = isNewArrivalsRoute ? "newest" : "edit";
+  const activeControlCount =
+    Number(activeCategory !== "all") +
+    Number(selectedColour !== "all") +
+    Number(availability !== "all") +
+    Number(sort !== defaultSort);
+  const title = isNewArrivalsRoute ? "New in" : "The edit";
 
-    return sortShopProducts(productsForCategory, sort);
-  }, [activeCategory, newArrivalProducts, sort]);
-  const activeNewArrivalControlCount = Number(activeCategory !== "all") + Number(sort !== "newest");
-  const activeCategoryLabel = activeCategory === "all" ? "NEW ARRIVALS" : normaliseCategoryLabel(activeCategory);
-
-  const clearFilters = () => {
+  const resetControls = () => {
+    setActiveCategory("all");
     setSelectedColour("all");
     setAvailability("all");
+    setSort(defaultSort);
   };
 
-  const resetNewArrivalControls = () => {
-    setActiveCategory("all");
-    setSort("newest");
-  };
+  return (
+    <div className="page-shell bg-[var(--background)]">
+      <SiteHeader />
+      <main className="collection-plp">
+        <header className="collection-plp__intro">
+          <div>
+            <p>{isNewArrivalsRoute ? "Shop · Newest first" : "Shop · Every piece"}</p>
+            <h1>
+              {title}
+              {!loading && sourceProducts.length > 0 ? <span>{String(sourceProducts.length).padStart(2, "0")}</span> : null}
+            </h1>
+          </div>
+        </header>
 
-  if (isNewArrivalsRoute) {
-    return (
-      <div className="page-shell bg-[var(--background)]">
-        <SiteHeader />
-        <main className="collection-plp">
-          <header className="collection-plp__intro">
-            <div>
-              <p>Shop</p>
-              <h1>
-                NEW ARRIVALS
-                {!loading && newArrivalProducts.length > 0 ? <span>{newArrivalProducts.length}</span> : null}
-              </h1>
-              <div className="collection-plp__description">
-                A focused HRUSHE edit of newest available pieces, arranged for quick browsing.
-              </div>
-            </div>
-          </header>
-
-          <nav className="collection-plp__category-nav" aria-label="New arrivals categories">
-            <button
-              type="button"
-              onClick={() => setActiveCategory("all")}
-              aria-pressed={activeCategory === "all"}
-            >
-              View All
+        {categoryTabs.length > 1 ? (
+          <nav className="collection-plp__category-nav" aria-label={`${title} categories`}>
+            <button type="button" onClick={() => setActiveCategory("all")} aria-pressed={activeCategory === "all"}>
+              All
             </button>
-            {newArrivalDisplayTabs.map((category) => (
+            {categoryTabs.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => setActiveCategory(category)}
                 aria-pressed={slugsMatch(activeCategory, category)}
-                disabled={loading}
               >
                 {normaliseCategoryLabel(category)}
               </button>
             ))}
           </nav>
+        ) : null}
 
-          <div className="collection-plp__toolbar" aria-label="New arrivals controls">
-            <div className="collection-plp__filter-actions">
-              {activeNewArrivalControlCount > 0 ? (
-                <button type="button" onClick={resetNewArrivalControls} className="collection-plp__reset-button">
-                  Reset
+        <div className="collection-plp__toolbar" aria-label={`${title} controls`}>
+          <div className="collection-plp__filter-actions">
+            {activeControlCount > 0 ? (
+              <button type="button" onClick={resetControls} className="collection-plp__reset-button">
+                Reset
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="collection-plp__filter-button"
+              aria-haspopup="dialog"
+            >
+              <FilterSlidersIcon />
+              <span>Filter &amp; Sort</span>
+              {activeControlCount > 0 ? <sup>{activeControlCount}</sup> : null}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-5">
+            <div className="fr-mono flex gap-4" role="group" aria-label="View">
+              {(["index", "grid"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setView(option)}
+                  aria-pressed={view === option}
+                  className={`fr-mono fr-choice min-h-11 ${view === option ? "is-active fr-link" : ""}`}
+                >
+                  {option === "index" ? "Index" : "Grid"}
                 </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="collection-plp__filter-button"
-                aria-haspopup="dialog"
-              >
-                <FilterSlidersIcon />
-                <span>Filter &amp; Sort</span>
-                {activeNewArrivalControlCount > 0 ? <sup>{activeNewArrivalControlCount}</sup> : null}
+              ))}
+            </div>
+            {view === "grid" ? (
+              <div className="collection-plp__layout-controls" aria-label="Product grid density">
+                {layoutOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLayout(option.value)}
+                    aria-label={option.label}
+                    aria-pressed={layout === option.value}
+                  >
+                    <LayoutIcon variant={option.icon} cells={option.cells} />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {loading ? (
+          <ShopCollectionSkeleton layout={layout} />
+        ) : shownProducts.length > 0 && view === "index" ? (
+          <div className="pt-6">
+            <FrameIndex key={`${activeCategory}-${selectedColour}-${availability}-${sort}`} products={shownProducts} label={`${title} products`} />
+          </div>
+        ) : shownProducts.length > 0 ? (
+          <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label={`${title} products`}>
+            {shownProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                variant="editorial"
+                priority={index < 4}
+                showInfo={layout !== "matrix"}
+              />
+            ))}
+          </section>
+        ) : (
+          <section className="flex flex-col gap-4 px-5 py-16 lg:px-10">
+            <p className="fr-word text-[clamp(2.5rem,7vw,5rem)]">Nothing in this edit.</p>
+            <p className="max-w-md text-base leading-7 text-[var(--muted)]">Loosen the filters to see every piece again.</p>
+            <button type="button" onClick={resetControls} className="fr-button max-w-xs">
+              Reset
+            </button>
+          </section>
+        )}
+      </main>
+
+      {filtersOpen ? (
+        <div className="collection-filter-drawer">
+          <button type="button" className="collection-filter-drawer__overlay" aria-label="Close filter and sort panel" onClick={closeFilters} />
+          <aside
+            ref={dialogRef}
+            className="collection-filter-drawer__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shop-filter-title"
+          >
+            <div className="collection-filter-drawer__header">
+              <div>
+                <p className="text-[var(--muted)]">{title}</p>
+                <h2 id="shop-filter-title">Filter &amp; sort</h2>
+              </div>
+              <button ref={initialFocusRef} type="button" onClick={closeFilters} aria-label="Close filter and sort panel">
+                ×
               </button>
             </div>
 
-            <div className="collection-plp__layout-controls" aria-label="Product grid density">
-              {layoutOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setLayout(option.value)}
-                  aria-label={option.label}
-                  aria-pressed={layout === option.value}
-                >
-                  <LayoutIcon variant={option.icon} cells={option.cells} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {loading ? (
-            <ShopCollectionSkeleton layout={layout} />
-          ) : newArrivalProductsForCategory.length > 0 ? (
-            <section className={`collection-plp__grid collection-plp__grid--${layout}`} aria-label="New arrivals products">
-              {newArrivalProductsForCategory.map((product, index) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  variant="editorial"
-                  priority={index < 4}
-                  showInfo={layout !== "matrix"}
-                />
-              ))}
-            </section>
-          ) : (
-            <section className="mx-auto max-w-[760px] px-4 py-20 sm:px-6">
-              <EmptyState
-                title={`${activeCategoryLabel} is being prepared.`}
-                description="Reset the controls to return to the complete New Arrivals edit, or explore all available HRUSHE pieces."
-                ctaHref="/shop"
-                ctaLabel="Explore all products"
-              />
-              {activeNewArrivalControlCount > 0 ? (
-                <button
-                  type="button"
-                  onClick={resetNewArrivalControls}
-                  className="button-primary mt-4 min-h-12 px-6 text-xs font-semibold uppercase tracking-[0.12em]"
-                >
-                  Reset controls
-                </button>
-              ) : null}
-            </section>
-          )}
-        </main>
-
-        {filtersOpen ? (
-          <div className="collection-filter-drawer">
-            <button
-              type="button"
-              className="collection-filter-drawer__overlay"
-              aria-label="Close filter and sort panel"
-              onClick={() => setFiltersOpen(false)}
-            />
-            <aside
-              ref={dialogRef}
-              className="collection-filter-drawer__panel"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="shop-new-arrivals-filter-title"
-            >
-              <div className="collection-filter-drawer__header">
-                <div>
-                  <p className="eyebrow text-[var(--muted)]">NEW ARRIVALS</p>
-                  <h2 id="shop-new-arrivals-filter-title">Filter &amp; sort</h2>
-                </div>
-                <button
-                  ref={initialFocusRef}
-                  type="button"
-                  onClick={() => setFiltersOpen(false)}
-                  aria-label="Close filter and sort panel"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="collection-filter-drawer__body">
+            <div className="collection-filter-drawer__body">
+              {categoryTabs.length > 1 ? (
                 <fieldset>
                   <legend>Category</legend>
                   <div className="collection-filter-drawer__option-grid">
-                    <button
-                      type="button"
-                      onClick={() => setActiveCategory("all")}
-                      aria-pressed={activeCategory === "all"}
-                    >
-                      NEW ARRIVALS
+                    <button type="button" onClick={() => setActiveCategory("all")} aria-pressed={activeCategory === "all"}>
+                      All
                     </button>
-                    {newArrivalDisplayTabs.map((category) => (
+                    {categoryTabs.map((category) => (
                       <button
                         key={category}
                         type="button"
@@ -458,163 +437,67 @@ function ShopContent() {
                     ))}
                   </div>
                 </fieldset>
+              ) : null}
 
+              {colours.length > 1 ? (
                 <fieldset>
-                  <legend>Sort</legend>
+                  <legend>Colour</legend>
                   <div className="collection-filter-drawer__option-grid">
-                    {sortOptions.map((option) => (
+                    {colours.map((colour) => (
                       <button
-                        key={option.value}
+                        key={colour}
                         type="button"
-                        onClick={() => setSort(option.value)}
-                        aria-pressed={sort === option.value}
+                        onClick={() => setSelectedColour((current) => (current === colour ? "all" : colour))}
+                        aria-pressed={selectedColour === colour}
+                        className="flex items-center gap-3"
                       >
-                        {option.label}
+                        <span
+                          className="h-3 w-3 shrink-0 border border-[var(--border)]"
+                          style={{ backgroundColor: swatchColors[colour.toLowerCase()] || "#d9d9d4" }}
+                          aria-hidden="true"
+                        />
+                        {colour.replace(/begie/i, "beige")}
                       </button>
                     ))}
                   </div>
                 </fieldset>
-              </div>
-
-              <div className="collection-filter-drawer__footer">
-                <button type="button" onClick={resetNewArrivalControls}>
-                  Reset
-                </button>
-                <button type="button" onClick={() => setFiltersOpen(false)}>
-                  View {newArrivalProductsForCategory.length}
-                </button>
-              </div>
-            </aside>
-          </div>
-        ) : null}
-
-        <SiteFooter />
-      </div>
-    );
-  }
-
-  return (
-    <div className="page-shell bg-[var(--background)]">
-      <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-8 sm:px-6 sm:pt-12 lg:px-8 lg:pb-28 lg:pt-16">
-        <div className="mb-5">
-          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Shop" }]} />
-        </div>
-        <header className="grid gap-5 border-b border-[var(--border)] pb-7 lg:grid-cols-[1fr_0.7fr] lg:items-end lg:pb-9">
-          <div>
-            <p className="eyebrow text-[var(--muted)]">HRUSHE collection</p>
-            <h1 className="mt-4 text-[1.55rem] font-medium uppercase leading-none tracking-normal sm:text-[2.75rem] sm:leading-[0.96] lg:text-[4rem]">
-              The collection.
-            </h1>
-          </div>
-          <p className="max-w-xl text-[0.84rem] leading-6 text-[var(--muted)] sm:text-[0.95rem] sm:leading-7">
-            A quiet collection of essentials, built with intention and designed to be worn your way.
-          </p>
-        </header>
-
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[var(--border)] py-3.5">
-          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-            {filteredProducts.length} {filteredProducts.length === 1 ? "piece" : "pieces"}
-          </p>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2.5 sm:flex-none">
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="inline-flex min-h-10 shrink-0 items-center border border-[var(--border)] px-4 text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
-            >
-              Filter{activeFilterCount ? ` (${activeFilterCount})` : ""}
-            </button>
-            <label className="sr-only" htmlFor="shop-sort">Sort collection</label>
-            <select
-              id="shop-sort"
-              value={sort}
-              onChange={(event) => setSort(event.target.value as SortOption)}
-              className="min-h-10 min-w-0 max-w-full flex-1 border border-[var(--border)] bg-transparent px-3 text-[0.62rem] font-semibold uppercase tracking-[0.1em] outline-none sm:flex-none"
-            >
-              <option value="edit">Curated edit</option>
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: low to high</option>
-              <option value="price-high">Price: high to low</option>
-            </select>
-          </div>
-        </div>
-
-        <section className="pt-10 sm:pt-12">
-          {loading ? (
-            <div className="collection-plp__grid collection-plp__grid--matrix" aria-hidden="true">
-              {Array.from({ length: 8 }, (_, index) => (
-                <div key={index} className="bg-[var(--background)]">
-                  <div className="loading-pulse aspect-[4/5] bg-[var(--surface-strong)]" />
-                  <div className="px-5 py-5">
-                    <div className="h-3 w-4/5 bg-[var(--surface-strong)]" />
-                    <div className="mt-2 h-3 w-2/5 bg-[var(--surface-strong)]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <section className="collection-plp__grid collection-plp__grid--matrix" aria-label="All HRUSHE products">
-              {filteredProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} variant="editorial" priority={index < 6} />
-              ))}
-            </section>
-          ) : (
-            <div>
-              <EmptyState
-                title="No pieces match this edit."
-                description="Clear the filters to return to the complete collection."
-              />
-              <button type="button" onClick={clearFilters} className="button-primary mt-4 min-h-12 px-6 text-xs font-semibold uppercase tracking-[0.12em]">
-                Clear filters
-              </button>
-            </div>
-          )}
-        </section>
-      </main>
-
-      {filtersOpen ? (
-        <div className="fixed inset-0 z-[115]">
-          <button type="button" aria-label="Close filters" className="absolute inset-0 bg-black/35" onClick={closeFilters} />
-          <aside ref={dialogRef} className="absolute right-0 top-0 flex h-full w-full max-w-[430px] flex-col bg-[var(--background)] px-5 py-6 sm:px-8 sm:py-8" role="dialog" aria-modal="true" aria-labelledby="filter-title">
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-6">
-              <div>
-                <p className="eyebrow text-[var(--muted)]">Collection controls</p>
-                <h2 id="filter-title" className="mt-3 text-2xl font-medium">Filter</h2>
-              </div>
-              <button ref={initialFocusRef} type="button" onClick={closeFilters} className="flex h-12 w-12 items-center justify-center border border-[var(--border)] text-xl" aria-label="Close filters">×</button>
-            </div>
-
-            <div className="flex-1 space-y-10 overflow-y-auto py-8">
-              <fieldset>
-                <legend className="eyebrow text-[var(--muted)]">Colour</legend>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {colours.map((colour) => (
-                    <button key={colour} type="button" onClick={() => setSelectedColour((current) => current === colour ? "all" : colour)} className={`flex min-h-12 items-center gap-3 border px-4 text-left text-xs font-medium capitalize ${selectedColour === colour ? "border-[var(--foreground)]" : "border-[var(--border)]"}`}>
-                      <span className="h-3 w-3 border border-[var(--border)]" style={{ backgroundColor: swatchColors[colour.toLowerCase()] || "#d9d9d4" }} />
-                      {colour.replace(/begie/i, "beige")}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              ) : null}
 
               <fieldset>
-                <legend className="eyebrow text-[var(--muted)]">Availability</legend>
-                <div className="mt-4 grid gap-2">
-                  {[
-                    ["all", "All pieces"],
-                    ["available", "Available now"],
-                  ].map(([value, label]) => (
-                    <button key={value} type="button" onClick={() => setAvailability(value as AvailabilityFilter)} className={`min-h-12 border px-4 text-left text-xs font-medium uppercase tracking-[0.08em] ${availability === value ? "hrushe-inverse-action" : "border-[var(--border)]"}`}>
+                <legend>Availability</legend>
+                <div className="collection-filter-drawer__option-grid">
+                  {(
+                    [
+                      ["all", "All pieces"],
+                      ["available", "Available now"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setAvailability(value)} aria-pressed={availability === value}>
                       {label}
                     </button>
                   ))}
                 </div>
               </fieldset>
+
+              <fieldset>
+                <legend>Sort</legend>
+                <div className="collection-filter-drawer__option-grid">
+                  {sortOptions.map((option) => (
+                    <button key={option.value} type="button" onClick={() => setSort(option.value)} aria-pressed={sort === option.value}>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 border-t border-[var(--border)] pt-5">
-              <button type="button" onClick={clearFilters} className="button-secondary px-5 text-[0.68rem] font-semibold uppercase tracking-[0.1em]">Clear</button>
-              <button type="button" onClick={closeFilters} className="button-primary px-5 text-[0.68rem] font-semibold uppercase">View {filteredProducts.length}</button>
+            <div className="collection-filter-drawer__footer">
+              <button type="button" onClick={resetControls}>
+                Reset
+              </button>
+              <button type="button" onClick={closeFilters}>
+                View {shownProducts.length}
+              </button>
             </div>
           </aside>
         </div>

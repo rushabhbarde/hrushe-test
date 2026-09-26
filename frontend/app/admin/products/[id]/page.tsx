@@ -102,9 +102,9 @@ export default function EditProductPage() {
           initialProduct={product}
           initialMeta={resolveProductAdminMeta(workspace, product)}
           categoryOptions={categoryOptions}
-          submitLabel="Update product"
-          title="Edit launch product."
-          description="Update catalog copy, premium imagery, manual visibility status, and merchandising labels from one luxury admin surface."
+          submitLabel="Save and publish"
+          title={product.name || "Edit piece."}
+          description="Photos for each side, price, sizes and stock. Save to publish."
           onSubmit={handleSubmit}
         />
       ) : (

@@ -5,13 +5,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import {
-  AdminBadge,
   AdminConfirmDialog,
   AdminFilterInput,
   AdminFilterSelect,
-  AdminPageHeader,
-  AdminPanel,
-  AdminSubhead,
   AdminTextArea,
 } from "@/components/admin-ui";
 import { useToast } from "@/components/toast-provider";
@@ -22,10 +18,31 @@ import {
   type ProductVideo,
   type ProductStatus,
 } from "@/lib/catalog";
-import { formatAdminCurrency, productStatusTone } from "@/lib/admin";
+import { formatAdminCurrency } from "@/lib/admin";
 import { resolveCatalogCategories, resolveProductAdminMeta } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
 import { useStorefrontData } from "@/lib/use-storefront";
+
+const LOW_STOCK = 3;
+
+/** Units free to sell per size: stock minus what open checkouts hold. */
+function stockBySize(product: Product) {
+  const sizes = product.sizes.length > 0 ? product.sizes : Array.from(new Set(product.variants?.map((v) => v.size) || []));
+  return sizes.slice(0, 6).map((size) => {
+    const units = (product.variants || [])
+      .filter((variant) => variant.size === size && variant.active !== false)
+      .reduce((total, variant) => total + Math.max(0, (variant.stock || 0) - (variant.reserved || 0)), 0);
+    return { size, units };
+  });
+}
+
+const statusWords: Array<{ key: string; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "Active", label: "Live" },
+  { key: "Draft", label: "Draft" },
+  { key: "Hidden", label: "Hidden" },
+  { key: "Sold Out", label: "Sold out" },
+];
 
 type BulkUploadPayload = Array<{
   name: string;
@@ -98,16 +115,6 @@ export default function AdminProductsPage() {
       })
       .sort((left, right) => left.product.name.localeCompare(right.product.name));
   }, [categoryFilter, products, query, statusFilter, workspace]);
-
-  const stats = useMemo(
-    () => ({
-      active: productRows.filter((row) => row.meta.status === "Active").length,
-      draft: productRows.filter((row) => row.meta.status === "Draft").length,
-      hidden: productRows.filter((row) => row.meta.status === "Hidden").length,
-      soldOut: productRows.filter((row) => row.meta.status === "Sold Out").length,
-    }),
-    [productRows]
-  );
 
   async function handleDuplicate(product: Product) {
     const meta = resolveProductAdminMeta(workspace, product);
@@ -241,182 +248,181 @@ export default function AdminProductsPage() {
 
   return (
     <AdminShell>
-      <div className="space-y-6">
-        <AdminPageHeader
-          eyebrow="Products"
-          title="Merchandise the full HRUSHE catalog with precision."
-          description="Search, filter, duplicate, bulk edit, and bulk upload products while keeping manual status control completely separate from inventory."
-          actions={
-            <>
-              <button
-                type="button"
-                onClick={() => setBulkUploadOpen((current) => !current)}
-                className="button-secondary px-5 py-3 text-sm font-medium"
-              >
-                Bulk upload
-              </button>
-              <Link href="/admin/add-product" className="button-primary px-5 py-3 text-sm font-medium">
-                Create product
-              </Link>
-            </>
-          }
-        />
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <CatalogStat label="Active" value={String(stats.active)} />
-          <CatalogStat label="Draft" value={String(stats.draft)} />
-          <CatalogStat label="Hidden" value={String(stats.hidden)} />
-          <CatalogStat label="Sold out" value={String(stats.soldOut)} />
+      <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <nav aria-label="Piece status" className="flex flex-wrap gap-x-10 gap-y-3">
+            {statusWords.map((word) => {
+              const total =
+                word.key === "all"
+                  ? products.length
+                  : products.filter((product) => resolveProductAdminMeta(workspace, product).status === word.key).length;
+              const active = statusFilter === word.key;
+              return (
+                <button
+                  key={word.key}
+                  type="button"
+                  onClick={() => setStatusFilter(word.key)}
+                  aria-pressed={active}
+                  className={`fr-choice flex items-baseline gap-3 ${active ? "is-active" : ""}`}
+                >
+                  <span className="fr-word text-[clamp(2.25rem,4.5vw,3.5rem)]">{word.label}</span>
+                  <span className="fr-mono">{String(total).padStart(2, "0")}</span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="flex gap-3">
+            <Link href="/admin/add-product" className="fr-button w-auto! px-7">
+              Add a piece
+            </Link>
+            <button
+              type="button"
+              onClick={() => setBulkUploadOpen((current) => !current)}
+              className="fr-mono min-h-[3.25rem] border border-[var(--foreground)] px-6"
+            >
+              Bulk upload
+            </button>
+          </div>
         </div>
 
-        <AdminPanel>
-          <AdminSubhead title="Search and filters" description="Manage visibility, collection labels, and product setup from one table." />
-          <div className="grid gap-3 lg:grid-cols-[1.5fr_repeat(2,minmax(0,1fr))]">
-            <AdminFilterInput
-              placeholder="Search by name, slug, category, color"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <AdminFilterSelect value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-              <option value="all">All categories</option>
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </AdminFilterSelect>
-            <AdminFilterSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-              <option value="all">All statuses</option>
+        <div className="grid gap-6 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <AdminFilterInput
+            aria-label="Search pieces"
+            placeholder="Name, slug, category or colour"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <AdminFilterSelect aria-label="Category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+            <option value="all">Every category</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </AdminFilterSelect>
+        </div>
+
+        {selectedIds.length ? (
+          <div className="flex flex-wrap items-center gap-5 border-y border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] py-4">
+            <span className="fr-mono">{String(selectedIds.length).padStart(2, "0")} selected</span>
+            <AdminFilterSelect
+              aria-label="Set status"
+              value={bulkStatus}
+              onChange={(event) => setBulkStatus(event.target.value as ProductStatus)}
+              className="max-w-[200px]"
+            >
               {["Active", "Draft", "Hidden", "Sold Out"].map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
               ))}
             </AdminFilterSelect>
+            <button type="button" onClick={() => void applyBulkStatus()} className="fr-button w-auto! px-6">
+              Apply
+            </button>
+            <button type="button" onClick={() => setSelectedIds([])} className="fr-mono fr-choice fr-link is-active">
+              Clear
+            </button>
           </div>
+        ) : null}
 
-          {selectedIds.length ? (
-            <div className="mt-5 flex flex-wrap items-center gap-3 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] px-4 py-4">
-              <p className="text-sm font-medium">{selectedIds.length} selected</p>
-              <AdminFilterSelect value={bulkStatus} onChange={(event) => setBulkStatus(event.target.value as ProductStatus)} className="max-w-[220px]">
-                {["Active", "Draft", "Hidden", "Sold Out"].map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </AdminFilterSelect>
-              <button type="button" onClick={() => void applyBulkStatus()} className="button-primary px-4 py-2.5 text-sm font-medium">
-                Apply bulk edit
+        {bulkUploadOpen ? (
+          <div className="flex flex-col gap-4 border-y border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] py-6">
+            <span className="fr-mono">Bulk upload · JSON</span>
+            <p className="max-w-2xl text-sm text-[var(--muted)]">
+              Paste a JSON array of pieces with fields like name, description, price, status, fitType and collectionLabels.
+            </p>
+            <AdminTextArea
+              aria-label="Bulk upload JSON"
+              value={bulkUploadText}
+              onChange={(event) => setBulkUploadText(event.target.value)}
+              placeholder='[{"name":"Piece name","description":"Factual description","price":1499,"status":"Draft"}]'
+            />
+            <div className="flex gap-3">
+              <button type="button" onClick={() => void handleBulkUpload()} className="fr-button w-auto! px-6">
+                Import
+              </button>
+              <button type="button" onClick={() => setBulkUploadOpen(false)} className="fr-mono fr-choice fr-link is-active">
+                Close
               </button>
             </div>
-          ) : null}
-
-          {bulkUploadOpen ? (
-            <div className="mt-5 border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_80%,transparent)] p-4">
-              <p className="text-sm font-semibold">Bulk upload JSON</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Paste a JSON array with product objects including fields like `name`, `description`, `price`, `status`, `fitType`, and `collectionLabels`.
-              </p>
-              <AdminTextArea
-                className="mt-4"
-                value={bulkUploadText}
-                onChange={(event) => setBulkUploadText(event.target.value)}
-                placeholder='[{"name":"Product name","description":"Factual product description","price":1499,"status":"Draft"}]'
-              />
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button type="button" onClick={() => void handleBulkUpload()} className="button-primary px-4 py-2.5 text-sm font-medium">
-                  Import products
-                </button>
-                <button type="button" onClick={() => setBulkUploadOpen(false)} className="button-secondary px-4 py-2.5 text-sm font-medium">
-                  Close
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mt-5 overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
-            <div className="hidden grid-cols-[48px_minmax(0,1.4fr)_160px_160px_140px_180px] gap-3 border-b border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] px-5 py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--muted)] lg:grid">
-              <span />
-              <span>Product</span>
-              <span>Status</span>
-              <span>Labels</span>
-              <span>Price</span>
-              <span className="text-right">Actions</span>
-            </div>
-
-            <div className="divide-y divide-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)]">
-              {productRows.map(({ product, meta }) => (
-                <div key={product.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[48px_minmax(0,1.4fr)_160px_160px_140px_180px] lg:px-5">
-                  <label className="flex items-start justify-center pt-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(product.id)}
-                      onChange={(event) =>
-                        setSelectedIds((current) =>
-                          event.target.checked
-                            ? [...current, product.id]
-                            : current.filter((id) => id !== product.id)
-                        )
-                      }
-                    />
-                  </label>
-
-                  <div className="flex items-start gap-4">
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--foreground)_8%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-strong)_84%,transparent)]">
-                      {product.images[0] ? (
-                        <Image src={product.images[0]} alt={product.name} fill unoptimized className="object-cover" />
-                      ) : null}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base font-semibold tracking-[-0.02em]">{product.name}</p>
-                      <p className="mt-1 text-sm text-[var(--muted)]">{product.slug || "Slug pending"}</p>
-                      <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                        {product.category} · {meta.fitType} · {meta.gender}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <AdminBadge tone={productStatusTone(meta.status)}>{meta.status}</AdminBadge>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {meta.collectionLabels.length ? (
-                      meta.collectionLabels.map((label) => (
-                        <AdminBadge key={`${product.id}-${label}`} tone="accent">
-                          {label}
-                        </AdminBadge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-[var(--muted)]">No labels</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold">{formatAdminCurrency(product.price)}</p>
-                    {product.compareAtPrice ? (
-                      <p className="mt-1 text-sm text-[var(--muted)] line-through">
-                        {formatAdminCurrency(product.compareAtPrice)}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
-                    <Link href={`/admin/products/${product.id}`} className="button-secondary px-4 py-2.5 text-xs font-medium uppercase tracking-[0.16em]">
-                      Edit
-                    </Link>
-                    <button type="button" onClick={() => void handleDuplicate(product)} className="button-secondary px-4 py-2.5 text-xs font-medium uppercase tracking-[0.16em]">
-                      Duplicate
-                    </button>
-                    <button type="button" onClick={() => setDeleteTarget(product)} className="px-4 py-2.5 text-xs font-medium uppercase tracking-[0.16em] text-[var(--danger)]">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        </AdminPanel>
+        ) : null}
+
+        <div className="flex flex-col">
+          <div className="fr-mono fr-muted flex justify-between border-b border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] pb-3">
+            <span>
+              {String(productRows.length).padStart(2, "0")} pieces · units free per size · underlined = {LOW_STOCK} or fewer
+            </span>
+            <span className="hidden lg:inline">Status · price</span>
+          </div>
+          {productRows.map(({ product, meta }) => {
+            const sizes = stockBySize(product);
+            return (
+              <div
+                key={product.id}
+                className="grid grid-cols-[auto_3rem_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-b border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] py-4 lg:grid-cols-[auto_3rem_minmax(0,1fr)_auto_8rem_auto]"
+              >
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${product.name}`}
+                  checked={selectedIds.includes(product.id)}
+                  onChange={(event) =>
+                    setSelectedIds((current) =>
+                      event.target.checked ? [...current, product.id] : current.filter((id) => id !== product.id)
+                    )
+                  }
+                />
+                <Link href={`/admin/products/${product.id}`} aria-hidden="true" tabIndex={-1} className="fr-frame block aspect-[4/5] w-12">
+                  {product.images[0] ? (
+                    <span className="fr-frame__layer is-active">
+                      <Image src={product.images[0]} alt="" fill unoptimized sizes="48px" />
+                    </span>
+                  ) : null}
+                </Link>
+                <Link href={`/admin/products/${product.id}`} className="min-w-0">
+                  <span className="fr-word block truncate text-[clamp(1.75rem,3.5vw,3rem)]">{product.name}</span>
+                  <span className="fr-mono fr-muted mt-1 block">
+                    {[product.category, meta.gender, product.colors[0]].filter(Boolean).join(" · ")}
+                  </span>
+                </Link>
+                <div className="col-span-3 flex gap-6 lg:col-span-1">
+                  {product.trackInventory === false ? (
+                    <span className="fr-mono fr-muted">Stock not tracked</span>
+                  ) : (
+                    sizes.map(({ size, units }) => (
+                      <span key={size} className="flex flex-col items-center gap-1">
+                        <span className="fr-mono fr-muted">{size}</span>
+                        <span
+                          className={`fr-word text-[1.75rem] ${
+                            units <= LOW_STOCK ? "underline decoration-2 underline-offset-[6px]" : "fr-quiet"
+                          }`}
+                        >
+                          {String(units).padStart(2, "0")}
+                        </span>
+                      </span>
+                    ))
+                  )}
+                </div>
+                <div className="col-span-3 flex items-baseline gap-4 lg:col-span-1 lg:flex-col lg:items-end lg:gap-1">
+                  <span className={`fr-mono ${meta.status === "Active" ? "" : "fr-muted"}`}>
+                    {meta.status === "Active" ? "Live" : meta.status}
+                  </span>
+                  <span className="text-sm">{formatAdminCurrency(product.price)}</span>
+                </div>
+                <div className="col-span-3 flex gap-5 lg:col-span-1 lg:flex-col lg:items-end lg:gap-1">
+                  <button type="button" onClick={() => void handleDuplicate(product)} className="fr-mono fr-choice">
+                    Duplicate
+                  </button>
+                  <button type="button" onClick={() => setDeleteTarget(product)} className="fr-mono fr-choice">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          {productRows.length === 0 ? <p className="fr-mono fr-muted py-10">No pieces match.</p> : null}
+        </div>
       </div>
 
       <AdminConfirmDialog
@@ -443,14 +449,5 @@ export default function AdminProductsPage() {
         onCancel={() => setDeleteTarget(null)}
       />
     </AdminShell>
-  );
-}
-
-function CatalogStat({ label, value }: { label: string; value: string }) {
-  return (
-    <AdminPanel>
-      <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</p>
-      <p className="mt-4 text-3xl font-semibold tracking-[-0.04em]">{value}</p>
-    </AdminPanel>
   );
 }

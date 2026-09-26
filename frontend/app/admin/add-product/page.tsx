@@ -38,9 +38,9 @@ export default function AddProductPage() {
     <AdminShell>
       <AdminProductForm
         categoryOptions={categoryOptions}
-        submitLabel="Save product"
-        title="Create the next product drop."
-        description="Create premium product entries with manual status control, rich imagery, fit settings, and collection labels without touching inventory."
+        submitLabel="Save piece"
+        title="A new piece."
+        description="Name it, price it, give it photos for each side, and set the sizes you have."
         onSubmit={handleSubmit}
       />
     </AdminShell>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
+import { AdminWorkbench } from "@/components/admin-workbench";
 import {
   AdminBadge,
   AdminMetricCard,
@@ -64,21 +65,12 @@ export default function AdminDashboardPage() {
   return (
     <AdminShell>
       <div className="space-y-6">
-        <AdminPageHeader
-          eyebrow="Overview"
-          title="Run HRUSHE from one operations dashboard."
-          description="Server-backed revenue, payment, inventory, fulfilment, support, and storefront publishing signals for the current operating window."
-          actions={
-            <>
-              <Link href="/admin/homepage" className="button-secondary px-5 py-3 text-sm font-medium">
-                Manage homepage
-              </Link>
-              <Link href="/admin/orders" className="button-primary px-5 py-3 text-sm font-medium">
-                Open orders
-              </Link>
-            </>
-          }
+        <AdminWorkbench
+          lowStockVariants={overview.inventory.lowStockVariants}
+          exchangesPending={overview.returns.exchangesPending}
         />
+
+        <AdminPageHeader eyebrow="The numbers" title="How the week is going." />
 
         <AdminPanel>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

@@ -500,9 +500,9 @@ export default function AdminHomepagePage() {
     <AdminShell>
       <div className="space-y-6">
         <AdminPageHeader
-          eyebrow="Homepage management"
-          title="Manage sections and cards."
-          description="Edit the existing homepage sections with approved presets only: images, titles, links, visibility, order, card font size, and card title position."
+          eyebrow="Homepage"
+          title="The gateway & the campaign."
+          description="The Women and Men photos that open the store, and each side's campaign. Keep gateway photos in the same studio and distance so they cross-fade in one frame."
           actions={
             <button
               type="button"

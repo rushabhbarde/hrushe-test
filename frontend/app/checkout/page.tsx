@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
-import { useCart, type CartLine } from "@/components/cart-provider";
+import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
@@ -60,8 +60,9 @@ declare global {
 }
 
 const shipping = 0;
-const checkoutInputClass =
-  "lux-input !min-h-[3.75rem] !border-x-0 !border-t-0 !border-b !border-[var(--border)] !bg-transparent !px-0 focus:!border-[var(--foreground)]";
+const checkoutInputClass = "fr-input";
+const stepLabels = ["Contact", "Delivery", "Payment"] as const;
+const stepQuestions = ["How can we reach you?", "Where should we send it?", "How would you like to pay?"] as const;
 
 function formatPrice(value: number) {
   return `₹${value.toLocaleString("en-IN")}`;
@@ -119,101 +120,6 @@ function buildAddressPreview(
     .join(", ");
 }
 
-function OrderSummary({
-  items,
-  itemCount,
-  subtotal,
-  compact = false,
-}: {
-  items: CartLine[];
-  itemCount: number;
-  subtotal: number;
-  compact?: boolean;
-}) {
-  const total = subtotal + shipping;
-
-  return (
-    <div
-      className={
-        compact
-          ? "bg-[var(--foreground)] p-4 text-white"
-          : "bg-[var(--foreground)] p-5 text-white shadow-[0_28px_80px_rgba(17,17,17,0.12)] sm:p-6"
-      }
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow text-white/54">Order</p>
-          <p className="mt-2 text-lg font-semibold uppercase tracking-normal">Details</p>
-        </div>
-        <span className="text-sm font-semibold text-white/72">{itemCount}</span>
-      </div>
-
-      <div className="mt-6 grid gap-5">
-        {items.map((item) => (
-          <div
-            key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`}
-            className="grid grid-cols-[4.75rem_minmax(0,1fr)_auto] items-start gap-4 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto]"
-          >
-            <div className="relative aspect-[0.84/1] overflow-visible bg-white/10">
-              <span className="absolute -right-2 -top-2 z-10 flex h-6 min-w-6 items-center justify-center bg-white px-1 text-xs font-semibold text-[var(--foreground)]">
-                {item.quantity}
-              </span>
-              {item.image ? (
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  unoptimized={shouldBypassImageOptimization(item.image)}
-                  sizes="96px"
-                  className="object-contain p-2"
-                />
-              ) : (
-                <div className="h-full w-full" style={{ background: item.accent }} />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase leading-5 text-white">{item.name}</p>
-              <p className="mt-1 text-sm text-white/62">
-                {item.size || "OS"} / {item.color || "Default"}
-              </p>
-            </div>
-            <p className="whitespace-nowrap text-sm font-semibold text-white">
-              {formatPrice(item.price * item.quantity)}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-7 space-y-3 text-sm text-white/72">
-        <div className="flex items-center justify-between">
-          <span>Subtotal</span>
-          <span className="text-white">{formatPrice(subtotal)}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Shipping</span>
-          <span className="text-white">{shipping ? formatPrice(shipping) : "Free"}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Estimated tax</span>
-          <span className="text-white">Included</span>
-        </div>
-        <div className="pt-5">
-          <div className="mb-5 h-px bg-white/34" aria-hidden="true" />
-          <div className="flex items-center justify-between text-lg font-semibold">
-            <span className="text-white">Total</span>
-            <span className="text-white">{formatPrice(total)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 bg-white/8 px-4 py-4">
-        <p className="text-xs leading-6 text-white/62">
-          Dispatch within 1–3 business days. Delivery time depends on the destination and courier.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -226,7 +132,7 @@ export default function CheckoutPage() {
       user?.addresses?.[0]?.id ||
       "manual"
   );
-  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -493,216 +399,263 @@ export default function CheckoutPage() {
     }
   };
 
+  const total = subtotal + shipping;
+  const advance = () => {
+    if (step === 1 && validateContact()) {
+      setStep(2);
+    } else if (step === 2 && validateShipping()) {
+      setStep(3);
+    }
+  };
+  const field = (label: string, input: React.ReactNode, className = "") => (
+    <label className={`fr-field ${className}`}>
+      <span>{label}</span>
+      {input}
+    </label>
+  );
+  const firstItem = items[0];
+
   return (
-    <div className="page-shell lg:h-dvh lg:overflow-hidden">
+    <div className="page-shell">
       <SiteHeader />
-      <main className="lux-page py-6 sm:py-10 lg:h-[calc(100dvh-6rem)] lg:min-h-0 lg:overflow-hidden lg:py-12">
-          <div className="lux-container lg:h-full">
-            {!isReady ? (
-              <>
-                <h1 className="sr-only">Checkout</h1>
-                <LoadingState
-                  title="Preparing your checkout"
-                  description="We are syncing your saved bag before payment details are shown."
-                />
-              </>
-            ) : items.length === 0 ? (
-              <section className="mx-auto max-w-3xl py-10">
-                <h1 className="sr-only">Checkout</h1>
-                <EmptyState
-                  title="Your checkout is waiting for products."
-                  description="Add a few pieces to your cart first, then come back here to finish the order."
-                  ctaHref="/shop"
-                  ctaLabel="Go to shop"
-                />
-              </section>
-            ) : (
-              <div className="grid gap-10 lg:h-full lg:grid-cols-[minmax(0,0.98fr)_420px] lg:items-stretch lg:overflow-hidden xl:gap-16">
-                <section className="reveal-up min-w-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pb-12 lg:pr-8">
-                  <Link
-                    href="/cart"
-                    className="mb-8 inline-flex min-h-11 items-center gap-4 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--muted)] transition hover:text-[var(--foreground)]"
-                  >
-                    <span className="h-px w-14 bg-current" />
-                    Back to bag
-                  </Link>
+      <main className="px-5 pb-40 pt-6 lg:px-10 lg:pb-16 lg:pt-8">
+        {!isReady ? (
+          <>
+            <h1 className="sr-only">Checkout</h1>
+            <LoadingState title="Preparing your checkout" description="We are syncing your saved bag before payment details are shown." />
+          </>
+        ) : items.length === 0 ? (
+          <section className="mx-auto max-w-3xl py-10">
+            <h1 className="sr-only">Checkout</h1>
+            <EmptyState
+              title="Your checkout is waiting for products."
+              description="Add a few pieces to your bag first, then come back here to finish the order."
+              ctaHref="/shop"
+              ctaLabel="Go to shop"
+            />
+          </section>
+        ) : (
+          <>
+            <div className="mb-3 flex items-center justify-between">
+              <Link href="/cart" className="fr-mono">
+                ← Bag
+              </Link>
+              <span className="fr-mono fr-muted">Step {step} / 3 · Secure checkout</span>
+            </div>
+            <ol className="grid grid-cols-3 gap-2" aria-label="Checkout steps">
+              {stepLabels.map((label, index) => {
+                const done = index + 1 <= step;
 
-                  <h1 className="text-2xl font-semibold uppercase tracking-normal sm:text-4xl">
-                    Secure checkout
-                  </h1>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--muted)]">
-                    Confirm contact and delivery details before opening the Razorpay payment window.
-                  </p>
+                return (
+                  <li key={label} className="flex flex-col gap-2" aria-current={index + 1 === step ? "step" : undefined}>
+                    <span className="h-0.5" style={{ background: done ? "var(--foreground)" : "color-mix(in srgb, var(--foreground) 12%, transparent)" }} />
+                    <button
+                      type="button"
+                      onClick={() => index + 1 < step && setStep((index + 1) as 1 | 2 | 3)}
+                      disabled={index + 1 >= step}
+                      className={`fr-mono text-left ${done ? "text-[var(--foreground)]" : "text-[#8e8981]"} ${index + 1 < step ? "cursor-pointer underline underline-offset-4" : "cursor-default"}`}
+                    >
+                      {String(index + 1).padStart(2, "0")} {label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
 
-                  <button
-                    type="button"
-                    onClick={() => setSummaryOpen((current) => !current)}
-                    className="mt-6 flex min-h-14 w-full items-center justify-between bg-[var(--foreground)] px-4 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:mt-7 lg:hidden"
-                    aria-expanded={summaryOpen}
-                    aria-controls="mobile-order-summary"
-                  >
-                    <span>Your order ({itemCount})</span>
-                    <span>{summaryOpen ? "Close" : formatPrice(subtotal)}</span>
-                  </button>
-                  {summaryOpen ? (
-                    <div id="mobile-order-summary" className="mobile-drawer-enter mt-4 lg:hidden">
-                      <OrderSummary items={items} itemCount={itemCount} subtotal={subtotal} compact />
-                    </div>
-                  ) : null}
+            <div className="mt-10 grid gap-12 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-24">
+              <form
+                className="flex max-w-[760px] flex-col gap-7"
+                onSubmit={(event) => {
+                  if (step < 3) {
+                    event.preventDefault();
+                    advance();
+                    return;
+                  }
 
-                  <form
-                    className="mt-8 max-w-[640px] space-y-8 sm:mt-10 sm:space-y-10"
-                    onSubmit={(event) => void onSubmit(event)}
-                  >
-                    <div className="auth-switch-panel space-y-8 sm:space-y-10">
-                      <fieldset className="grid gap-5">
-                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.1em]">Contact details</legend>
-                        <label className="field-label">
-                          Email
-                          <input
-                            name="email"
-                            value={form.email}
-                            onChange={onChange}
-                            className={checkoutInputClass}
-                            type="email"
-                            autoComplete="email"
-                            required
-                          />
-                        </label>
-                        <label className="field-label">
-                          Phone
-                          <input
-                            name="phone"
-                            value={form.phone}
-                            onChange={onChange}
-                            className={checkoutInputClass}
-                            type="tel"
-                            inputMode="tel"
-                            autoComplete="tel"
-                            maxLength={16}
-                            required
-                          />
-                        </label>
-                        <p className="text-xs leading-5 text-[var(--muted)]">Used only for delivery and order updates.</p>
-                      </fieldset>
+                  void onSubmit(event);
+                }}
+              >
+                <h1 className="fr-word text-[2.6rem] lg:text-[clamp(3.5rem,6vw,5.5rem)]">{stepQuestions[step - 1]}</h1>
 
-                      {user?.addresses && user.addresses.length > 0 ? (
-                        <section aria-labelledby="saved-address-heading">
-                          <div className="mb-4 flex items-center justify-between gap-3">
-                            <h2 id="saved-address-heading" className="text-sm font-semibold uppercase tracking-[0.08em]">Saved address</h2>
+                {step === 1 ? (
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    {field("Email", <input name="email" value={form.email} onChange={onChange} className={checkoutInputClass} type="email" autoComplete="email" required />)}
+                    {field("Phone", <input name="phone" value={form.phone} onChange={onChange} className={checkoutInputClass} type="tel" inputMode="tel" autoComplete="tel" maxLength={16} required />)}
+                    <p className="text-[0.82rem] text-[var(--muted)] sm:col-span-2">Used only for delivery and order updates.</p>
+                  </div>
+                ) : null}
+
+                {step === 2 ? (
+                  <div className="flex flex-col gap-6">
+                    {user?.addresses && user.addresses.length > 0 ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <span className="fr-mono">Saved addresses</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAddressId("manual");
+                              setForm(buildFormFromAddress(null, user));
+                            }}
+                            className="fr-mono fr-choice fr-link min-h-11"
+                          >
+                            Enter manually
+                          </button>
+                        </div>
+                        <div className="flex flex-col">
+                          {user.addresses.map((address) => (
                             <button
+                              key={address.id}
                               type="button"
                               onClick={() => {
-                                setSelectedAddressId("manual");
-                                setForm(buildFormFromAddress(null, user));
+                                setSelectedAddressId(address.id);
+                                setForm(buildFormFromAddress(address, user));
                               }}
-                              className="text-xs uppercase tracking-[0.12em] text-[var(--muted)] underline underline-offset-4"
+                              aria-pressed={selectedAddressId === address.id}
+                              className={`fr-choice flex flex-col gap-1 border-b border-[var(--border)] py-3 text-left ${selectedAddressId === address.id ? "is-active" : ""}`}
                             >
-                              Enter manually
+                              <span className="fr-word text-[1.5rem]!">{address.label} · {address.fullName}</span>
+                              <span className="text-[0.85rem]">{buildAddressPreview(address)}</span>
                             </button>
-                          </div>
-                          <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                            {user.addresses.map((address) => (
-                              <button
-                                key={address.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedAddressId(address.id);
-                                  setForm(buildFormFromAddress(address, user));
-                                }}
-                                aria-pressed={selectedAddressId === address.id}
-                                className={`min-w-[230px] p-4 text-left text-sm transition ${
-                                  selectedAddressId === address.id
-                                    ? "hrushe-inverse-action"
-                                    : "bg-[#f6f6f6] text-[var(--foreground)] hover:bg-[var(--surface-strong)]"
-                                }`}
-                              >
-                                <span className="text-xs uppercase tracking-[0.16em]">{address.label}</span>
-                                <p className="mt-2 font-semibold">{address.fullName}</p>
-                                <p className="mt-1 leading-6 opacity-75">{buildAddressPreview(address)}</p>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-                      ) : null}
-
-                      <fieldset className="grid gap-4">
-                        <legend className="mb-1 text-sm font-semibold uppercase tracking-[0.08em]">Delivery address</legend>
-                        <label className="field-label">Full name<input name="fullName" value={form.fullName} onChange={onChange} className={checkoutInputClass} autoComplete="name" required /></label>
-                        <label className="field-label">Address type<select name="label" value={form.label} onChange={onChange} className={checkoutInputClass}><option value="Home">Home</option><option value="Work">Work</option><option value="Other">Other</option></select></label>
-                        <label className="field-label">Address<input name="house" value={form.house} onChange={onChange} className={checkoutInputClass} autoComplete="address-line1" required /></label>
-                        <label className="field-label">Area / locality<input name="area" value={form.area} onChange={onChange} className={checkoutInputClass} autoComplete="address-line2" required /></label>
-                        <label className="field-label">Landmark <span className="normal-case tracking-normal">(optional)</span><input name="landmark" value={form.landmark} onChange={onChange} className={checkoutInputClass} /></label>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <label className="field-label">City<input name="city" value={form.city} onChange={onChange} className={checkoutInputClass} autoComplete="address-level2" required /></label>
-                          <label className="field-label">State / region<input name="state" value={form.state} onChange={onChange} className={checkoutInputClass} autoComplete="address-level1" required /></label>
+                          ))}
                         </div>
-                        <label className="field-label sm:max-w-[calc(50%_-_0.5rem)]">Postal code<input name="pincode" value={form.pincode} onChange={onChange} className={checkoutInputClass} autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required /></label>
-                      </fieldset>
-
-                      <div className="border-t border-[var(--border)] pt-6">
-                        <p className="text-sm font-semibold uppercase tracking-[0.1em]">
-                          Payment
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                          Secure Razorpay payment opens after review. Your order is created only after
-                          payment verification.
-                        </p>
-                        <label className="mt-4 flex items-start gap-3 text-sm text-[var(--muted)]">
-                          <input
-                            type="checkbox"
-                            checked={acceptedTerms}
-                            onChange={(event) => {
-                              setAcceptedTerms(event.target.checked);
-                              if (event.target.checked) {
-                                setError("");
-                              }
-                            }}
-                            className="mt-0.5 h-5 w-5 rounded-none"
-                          />
-                          <span>
-                            I agree to the <Link href="/policies" className="underline underline-offset-4">Terms and Conditions</Link>.
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {error ? (
-                      <div role="alert" className="border border-[var(--accent)]/20 bg-[var(--accent)]/6 px-4 py-3 text-sm text-[var(--accent)]">
-                        {error}
                       </div>
                     ) : null}
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="lux-action w-full sm:w-[230px] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {submitting
-                          ? verifiedSuccessUrl
-                            ? "Redirecting..."
-                            : "Opening..."
-                          : "Pay securely"}
-                      </button>
-                      {verifiedSuccessUrl ? (
-                        <Link
-                          href={verifiedSuccessUrl}
-                          className="button-secondary inline-flex min-h-12 items-center rounded-full px-5 text-xs font-semibold uppercase tracking-[0.12em]"
-                        >
-                          Continue to confirmation
-                        </Link>
-                      ) : null}
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      {field("Full name", <input name="fullName" value={form.fullName} onChange={onChange} className={checkoutInputClass} autoComplete="name" required />)}
+                      {field(
+                        "Address type",
+                        <select name="label" value={form.label} onChange={onChange} className={checkoutInputClass}>
+                          <option value="Home">Home</option>
+                          <option value="Work">Work</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      )}
+                      {field("House, street", <input name="house" value={form.house} onChange={onChange} className={checkoutInputClass} autoComplete="address-line1" required />, "sm:col-span-2")}
+                      {field("Area / locality", <input name="area" value={form.area} onChange={onChange} className={checkoutInputClass} autoComplete="address-line2" required />)}
+                      {field("Landmark (optional)", <input name="landmark" value={form.landmark} onChange={onChange} className={checkoutInputClass} />)}
+                      {field("City", <input name="city" value={form.city} onChange={onChange} className={checkoutInputClass} autoComplete="address-level2" required />)}
+                      {field("State", <input name="state" value={form.state} onChange={onChange} className={checkoutInputClass} autoComplete="address-level1" required />)}
+                      {field("PIN code", <input name="pincode" value={form.pincode} onChange={onChange} className={checkoutInputClass} autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required />)}
                     </div>
-                  </form>
-                </section>
+                  </div>
+                ) : null}
 
-                <aside className="reveal-up-delayed hidden lg:block lg:h-full lg:overflow-y-auto lg:overscroll-contain">
-                  <OrderSummary items={items} itemCount={itemCount} subtotal={subtotal} />
-                </aside>
-              </div>
-            )}
-          </div>
+                {step === 3 ? (
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-center gap-4 border border-[var(--foreground)] p-5">
+                      <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--foreground)]" aria-hidden="true" />
+                      <span className="flex flex-col gap-1">
+                        <span className="font-medium">Pay online</span>
+                        <span className="text-[0.85rem] text-[var(--muted)]">UPI, cards and netbanking via Razorpay. Your order is confirmed after payment.</span>
+                      </span>
+                    </div>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="fr-mono fr-muted">Contact</span>
+                        <span className="text-[0.95rem]">{form.email}</span>
+                        <span className="text-[0.95rem]">{form.phone}</span>
+                        <button type="button" onClick={() => setStep(1)} className="fr-mono fr-choice is-active fr-link mt-1 self-start">
+                          Change
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="fr-mono fr-muted">Delivering to</span>
+                        <span className="text-[0.95rem]">{form.fullName}</span>
+                        <span className="text-[0.95rem] text-[var(--muted)]">{buildAddressPreview(form)}</span>
+                        <button type="button" onClick={() => setStep(2)} className="fr-mono fr-choice is-active fr-link mt-1 self-start">
+                          Change
+                        </button>
+                      </div>
+                    </div>
+                    <label className="flex items-start gap-3 text-[0.9rem] text-[var(--muted)]">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(event) => {
+                          setAcceptedTerms(event.target.checked);
+                          if (event.target.checked) {
+                            setError("");
+                          }
+                        }}
+                        className="mt-0.5 h-5 w-5 rounded-none accent-[var(--foreground)]"
+                      />
+                      <span>
+                        I agree to the{" "}
+                        <Link href="/policies" className="underline underline-offset-4">
+                          Terms and Conditions
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                  </div>
+                ) : null}
+
+                {error ? (
+                  <p role="alert" className="text-[0.9rem] text-[var(--danger)]">
+                    {error}
+                  </p>
+                ) : null}
+
+                <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-2 border-t border-[var(--border)] bg-[var(--background)] px-5 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-3 lg:static lg:border-0 lg:p-0">
+                  <div className="flex items-baseline justify-between lg:hidden">
+                    <span className="fr-mono fr-muted">{String(itemCount).padStart(2, "0")} pieces</span>
+                    <span className="fr-word text-[1.6rem]">{formatPrice(total)}</span>
+                  </div>
+                  <button type="submit" disabled={submitting} className="fr-button lg:max-w-[320px]">
+                    {step < 3
+                      ? step === 1
+                        ? "Continue to delivery"
+                        : "Continue to payment"
+                      : submitting
+                        ? verifiedSuccessUrl
+                          ? "Redirecting…"
+                          : "Opening payment…"
+                        : `Pay ${formatPrice(total)}`}
+                  </button>
+                  {verifiedSuccessUrl ? (
+                    <Link href={verifiedSuccessUrl} className="fr-mono fr-link self-start">
+                      Continue to confirmation
+                    </Link>
+                  ) : null}
+                </div>
+              </form>
+
+              <aside className="hidden flex-col gap-4 lg:flex" aria-label="Your order">
+                {firstItem ? (
+                  <div className="fr-frame aspect-[3/4] w-full">
+                    <div className="fr-frame__layer is-active">
+                      {firstItem.image ? (
+                        <Image src={firstItem.image} alt={firstItem.name} fill unoptimized={shouldBypassImageOptimization(firstItem.image)} sizes="300px" />
+                      ) : (
+                        <div className="h-full w-full" style={{ background: firstItem.accent }} />
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+                <ul className="flex flex-col">
+                  {items.map((item) => (
+                    <li key={`${item.productId}-${item.size}-${item.color}-${item.fit || ""}`} className="flex justify-between gap-3 border-b border-[var(--border)] py-2 text-[0.85rem]">
+                      <span>
+                        {item.name} <span className="text-[var(--muted)]">· {item.size || "OS"} × {item.quantity}</span>
+                      </span>
+                      <span>{formatPrice(item.price * item.quantity)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex justify-between text-[0.85rem] text-[var(--muted)]">
+                  <span>Delivery</span>
+                  <span>{shipping ? formatPrice(shipping) : "Free"}</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="fr-mono">Total</span>
+                  <span className="fr-word text-[2.25rem]">{formatPrice(total)}</span>
+                </div>
+                <span className="fr-mono fr-muted text-[0.6rem]">Dispatch in 1–3 business days · tax included</span>
+              </aside>
+            </div>
+          </>
+        )}
       </main>
       <SiteFooter />
     </div>

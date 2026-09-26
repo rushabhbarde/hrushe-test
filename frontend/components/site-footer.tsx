@@ -115,8 +115,8 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
       <footer className="flex min-h-[calc(100svh-3.375rem)] flex-col justify-between border-t border-white/15 bg-black text-white sm:min-h-0">
         <div className="mx-auto grid w-full max-w-[1600px] flex-1 content-center gap-9 px-6 py-12 sm:flex-none sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
           <div className="max-w-lg">
-            <p className="eyebrow text-white/45">{settings.brandName}</p>
-            <p className="mt-3 text-[2rem] font-medium uppercase leading-none text-white sm:text-[2.6rem]">
+            <p className="fr-mono text-white/45">{settings.brandName}</p>
+            <p className="fr-word mt-3 text-[clamp(2.75rem,10vw,4.5rem)] text-white">
               Defined Quietly.
             </p>
             <p className="mt-4 text-sm leading-6 text-white/55">
@@ -138,7 +138,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
         </div>
 
         <div className="border-t border-white/15">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-6 py-5 text-[10px] uppercase tracking-[0.14em] text-white/45 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-2 px-6 py-5 fr-mono text-white/45 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
             <p>&copy; 2026 HRUSHE. All rights reserved.</p>
             <a href={`mailto:${settings.contactEmail}`} className="hover:text-white">
               {settings.contactEmail}
@@ -155,8 +155,8 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
         <div className="grid gap-8 md:grid-cols-[0.92fr_1.08fr] lg:gap-14">
           <section className="flex flex-col justify-between gap-8">
             <div className="max-w-xl">
-              <p className="eyebrow text-white/55">{settings.brandName}</p>
-              <p className="mt-4 max-w-[12ch] text-[2.25rem] font-medium uppercase leading-[0.96] text-white sm:text-[3.25rem]">
+              <p className="fr-mono text-white/55">{settings.brandName}</p>
+              <p className="fr-word mt-4 max-w-[12ch] text-[clamp(3rem,8vw,6.5rem)] text-white">
                 Defined Quietly.
               </p>
               <p className="mt-5 max-w-md text-sm leading-6 text-white/60 sm:text-[0.95rem]">
@@ -164,10 +164,10 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-px border border-white/15 bg-white/15 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
               {serviceHighlights.map((item) => (
-                <div key={item.label} className="min-h-20 bg-black p-3 sm:min-h-24 sm:p-4">
-                  <p className="eyebrow text-white/38">{item.label}</p>
+                <div key={item.label} className="border-t border-white/15 pt-3">
+                  <p className="fr-mono text-white/38">{item.label}</p>
                   <p className="mt-3 text-sm leading-5 text-white/78">{item.value}</p>
                 </div>
               ))}
@@ -177,7 +177,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
           <div className="grid grid-cols-2 content-start gap-x-6 gap-y-8 lg:grid-cols-4">
             {footerGroups.map((group) => (
               <div key={group.title} className="border-t border-white/15 pt-5">
-                <p className="eyebrow text-white/45">{group.title}</p>
+                <p className="fr-mono text-white/45">{group.title}</p>
                 <div className="mt-5 space-y-3.5 text-sm text-white/75 md:space-y-4">
                   {group.links.map((link) => (
                     <Link key={link.href} href={link.href} className="block hover:text-white">
@@ -202,7 +202,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
         <div className="mt-8 border-t border-white/15 py-6 sm:mt-10">
           <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
             <div>
-              <p className="eyebrow text-white/45">Client services</p>
+              <p className="fr-mono text-white/45">Client services</p>
               <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-white/75 sm:flex sm:flex-wrap sm:gap-x-8">
                 {contactLinks.map((link) => (
                   <a
@@ -229,7 +229,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
         </div>
 
         <div className="border-t border-white/15 pt-5">
-          <div className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.14em] text-white/45 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-2 fr-mono text-white/45 md:flex-row md:items-center md:justify-between">
             <p>&copy; 2026 HRUSHE. All rights reserved.</p>
             <p>Designed in India / Defined quietly</p>
           </div>

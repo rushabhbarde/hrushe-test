@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useOptionalCart } from "@/components/cart-provider";
 import { useOptionalCustomerAuth } from "@/components/customer-auth-provider";
@@ -20,16 +20,9 @@ import {
   type HomepageAudience,
   type HomepageSection,
 } from "@/lib/admin-workspace";
-import { HomepageMediaFrame } from "@/components/homepage-media";
 import { resolveHomepageMediaUrl } from "@/lib/homepage-media";
 
-const navItems = [
-  { href: "/women", label: "Women" },
-  { href: "/men", label: "Men" },
-  { href: "/story", label: "Story" },
-];
 const noop = () => {};
-const noopAsync = async () => {};
 
 type AudienceMenuKey = "Women" | "Men";
 type AudienceMenuItem = {
@@ -127,9 +120,6 @@ const audienceMap: Record<AudienceMenuKey, HomepageAudience> = {
   Men: "men",
 };
 
-function isAudienceMenuKey(value: string): value is AudienceMenuKey {
-  return audienceMenuKeys.includes(value as AudienceMenuKey);
-}
 
 function normalizeHomepageManagementPayload(payload: HomepageManagementPayload) {
   const { hasCustomSections, ...homeManagementPayload } = payload || {};
@@ -189,91 +179,162 @@ function buildAudienceMenus(homeManagement: HomeManagement): AudienceMenus {
   }, {} as AudienceMenus);
 }
 
-function routeIsActive(pathname: string, href: string) {
-  if (href === "/women") {
-    return pathname === href || pathname.startsWith("/collection/women");
-  }
 
-  if (href === "/men") {
-    return pathname === href || pathname.startsWith("/collection/men");
-  }
-
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function HeaderIcon({
-  label,
-  children,
-  onClick,
-  href,
-  expanded,
+function MenuOverlay({
+  open,
+  onClose,
+  initialSide,
+  audienceMenus,
+  isAuthenticated,
+  loginHref,
+  wishlistCount,
+  onOpenWishlist,
 }: {
-  label: string;
-  children: React.ReactNode;
-  onClick?: () => void;
-  href?: string;
-  expanded?: boolean;
+  open: boolean;
+  onClose: () => void;
+  initialSide: AudienceMenuKey;
+  audienceMenus: AudienceMenus;
+  isAuthenticated: boolean;
+  loginHref: string;
+  wishlistCount: number;
+  onOpenWishlist: () => void;
 }) {
-  const className =
-    "flex h-11 w-11 items-center justify-center transition hover:bg-[var(--hover-fill)]";
+  const [side, setSide] = useState<AudienceMenuKey>(initialSide);
+  const menu = audienceMenus[side];
+  const sidePath = side === "Men" ? "men" : "women";
+  const links = [
+    { href: "/new-in", label: "New in" },
+    { href: `/collection/${sidePath}`, label: `All ${side.toLowerCase()}` },
+    ...menu.featured,
+    ...menu.categories.filter((item) => item.tone !== "sale"),
+  ].filter(
+    (item, index, items) =>
+      !/home$/i.test(item.label) &&
+      items.findIndex((candidate) => candidate.href === item.href) === index
+  );
 
-  if (href) {
-    return (
-      <Link href={href} aria-label={label} className={className}>
-        {children}
-      </Link>
-    );
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose, open]);
+
+  if (!open) {
+    return null;
   }
 
   return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-expanded={expanded}
-      onClick={onClick}
-      className={className}
+    <div
+      id="site-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu"
+      className="fixed inset-0 z-[120] flex flex-col overflow-y-auto bg-[var(--background)]"
     >
-      {children}
-    </button>
+      <div className="flex h-16 shrink-0 items-center justify-between px-5 lg:h-[5.5rem] lg:px-10">
+        <Link href="/" onClick={onClose} aria-label="HRUSHE home">
+          <Image
+            src={HRUSHE_LOGO_PATH}
+            alt="HRUSHE"
+            width={HRUSHE_LOGO_DIMENSIONS.width}
+            height={HRUSHE_LOGO_DIMENSIONS.height}
+            className="h-7 w-auto lg:h-9"
+          />
+        </Link>
+        <button type="button" onClick={onClose} className="fr-mono fr-choice is-active min-h-11 px-2">
+          Close
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-16 lg:px-10 lg:pb-12 lg:pt-10">
+        <div className="flex items-baseline gap-5 lg:flex-col lg:gap-2" role="group" aria-label="Collection">
+          {(["Men", "Women"] as AudienceMenuKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSide(key)}
+              aria-pressed={side === key}
+              className={`fr-choice fr-word text-[3.25rem]! lg:text-[7rem]! ${side === key ? "is-active" : ""}`}
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+
+        <nav aria-label={`${side} categories`} className="flex flex-col">
+          {links.map((item) => (
+            <Link
+              key={`${side}-${item.href}-${item.label}`}
+              href={item.href}
+              onClick={onClose}
+              className="fr-index-row is-active grid-cols-[minmax(0,1fr)_auto]! py-3"
+            >
+              <span className="fr-word text-[2rem] lg:text-[3rem]">{item.label}</span>
+              <span className="fr-mono" aria-hidden="true">→</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[var(--border)] px-5 py-5 lg:px-10">
+        <Link href={isAuthenticated ? "/account" : loginHref} onClick={onClose} className="fr-mono">
+          {isAuthenticated ? "Wardrobe" : "Sign in"}
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onOpenWishlist();
+          }}
+          className="fr-mono fr-choice is-active min-h-11"
+        >
+          Saved{wishlistCount > 0 ? ` (${wishlistCount})` : ""}
+        </button>
+        <Link href="/track-order" onClick={onClose} className="fr-mono">
+          Track order
+        </Link>
+        <Link href="/story" onClick={onClose} className="fr-mono">
+          Our story
+        </Link>
+        <Link href="/contact" onClick={onClose} className="fr-mono">
+          Contact
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            window.dispatchEvent(new CustomEvent("hrushe:open-support"));
+          }}
+          className="fr-mono fr-choice is-active min-h-11"
+        >
+          Help
+        </button>
+        <span className="ml-auto text-[0.8rem] text-[var(--muted)]">Defined quietly.</span>
+      </div>
+    </div>
   );
 }
 
-function LogoutIcon() {
-  return (
-    <svg viewBox="0 -0.5 25 25" className="h-5 w-5" fill="none" aria-hidden="true">
-      <path
-        d="M11.75 9.874C11.75 10.2882 12.0858 10.624 12.5 10.624C12.9142 10.624 13.25 10.2882 13.25 9.874H11.75ZM13.25 4C13.25 3.58579 12.9142 3.25 12.5 3.25C12.0858 3.25 11.75 3.58579 11.75 4H13.25ZM9.81082 6.66156C10.1878 6.48991 10.3542 6.04515 10.1826 5.66818C10.0109 5.29121 9.56615 5.12478 9.18918 5.29644L9.81082 6.66156ZM5.5 12.16L4.7499 12.1561L4.75005 12.1687L5.5 12.16ZM12.5 19L12.5086 18.25C12.5029 18.25 12.4971 18.25 12.4914 18.25L12.5 19ZM19.5 12.16L20.2501 12.1687L20.25 12.1561L19.5 12.16ZM15.8108 5.29644C15.4338 5.12478 14.9891 5.29121 14.8174 5.66818C14.6458 6.04515 14.8122 6.48991 15.1892 6.66156L15.8108 5.29644ZM13.25 9.874V4H11.75V9.874H13.25ZM9.18918 5.29644C6.49843 6.52171 4.7655 9.19951 4.75001 12.1561L6.24999 12.1639C6.26242 9.79237 7.65246 7.6444 9.81082 6.66156L9.18918 5.29644ZM4.75005 12.1687C4.79935 16.4046 8.27278 19.7986 12.5086 19.75L12.4914 18.25C9.08384 18.2892 6.28961 15.5588 6.24995 12.1513L4.75005 12.1687ZM12.4914 19.75C16.7272 19.7986 20.2007 16.4046 20.2499 12.1687L18.7501 12.1513C18.7104 15.5588 15.9162 18.2892 12.5086 18.25L12.4914 19.75ZM20.25 12.1561C20.2345 9.19951 18.5016 6.52171 15.8108 5.29644L15.1892 6.66156C17.3475 7.6444 18.7376 9.79237 18.75 12.1639L20.25 12.1561Z"
-        fill="#d61f26"
-      />
-    </svg>
-  );
-}
-
-function SupportIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-      <path
-        d="M7.5 8.5h17c1.66 0 3 1.34 3 3v7.2c0 1.66-1.34 3-3 3h-5.2L16 25.8l-3.3-4.1H7.5c-1.66 0-3-1.34-3-3v-7.2c0-1.66 1.34-3 3-3Z"
-        strokeLinejoin="round"
-      />
-      <text x="16" y="17.1" textAnchor="middle" fontSize="6.1" fontWeight="700" letterSpacing="0.3" fill="currentColor" stroke="none">
-        HELP
-      </text>
-    </svg>
-  );
-}
-
-function SaveIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13.6L12 15.5l-6.5 4.1V6A1.5 1.5 0 0 1 7 4.5Z" strokeLinejoin="round" />
-    </svg>
-  );
+function hidesMobileBar(pathname: string) {
+  return pathname.startsWith("/product/") || pathname.startsWith("/checkout");
 }
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const router = useRouter();
   const cart = useOptionalCart();
   const wishlist = useOptionalWishlist();
   const customerAuth = useOptionalCustomerAuth();
@@ -282,32 +343,20 @@ export function SiteHeader() {
   const wishlistCount = wishlist?.itemCount || 0;
   const openWishlist = wishlist?.openWishlist || noop;
   const isAuthenticated = customerAuth?.isAuthenticated || false;
-  const user = customerAuth?.user || null;
-  const logout = customerAuth?.logout || noopAsync;
-  const routeMobileAudience: AudienceMenuKey =
+  const router = useRouter();
+  const routeSide: AudienceMenuKey | null =
     pathname.startsWith("/men") || pathname.startsWith("/collection/men")
       ? "Men"
-      : "Women";
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const [activeAudienceMenu, setActiveAudienceMenu] = useState<AudienceMenuKey | null>(null);
-  const [activeMobileAudience, setActiveMobileAudience] = useState<AudienceMenuKey>(routeMobileAudience);
+      : pathname.startsWith("/women") || pathname.startsWith("/collection/women")
+        ? "Women"
+        : null;
+  const [menuOpen, setMenuOpen] = useState(false);
   const [audienceMenus, setAudienceMenus] = useState<AudienceMenus>(() =>
     buildAudienceMenus(defaultAdminWorkspace.homeManagement)
   );
-  const accountMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileMenuToggleRef = useRef<HTMLButtonElement | null>(null);
-  const accountInitial = user?.name?.charAt(0).toUpperCase() || "H";
   const loginHref = `/login?next=${encodeURIComponent("/account")}`;
-  const activeMobileMenu = audienceMenus[activeMobileAudience];
-  const mobileFeaturedLinks = activeMobileMenu.featured.filter(
-    (item) => !item.label.toLowerCase().endsWith("home")
-  );
-  const mobilePrimaryLinks = [
-    ...(mobileFeaturedLinks.length > 0 ? mobileFeaturedLinks : activeMobileMenu.featured),
-    { href: "/shop?sort=newest", label: "New Arrivals" },
-  ];
+  const openSaved = isAuthenticated ? openWishlist : () => router.push(loginHref);
+  const showMobileBar = !hidesMobileBar(pathname);
 
   useEffect(() => {
     let active = true;
@@ -329,413 +378,101 @@ export function SiteHeader() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isAccountMenuOpen && !isMobileMenuOpen && !activeAudienceMenu) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) {
-        setIsAccountMenuOpen(false);
-      }
-      if (
-        !mobileMenuRef.current?.contains(event.target as Node) &&
-        !mobileMenuToggleRef.current?.contains(event.target as Node)
-      ) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsAccountMenuOpen(false);
-        setIsMobileMenuOpen(false);
-        setActiveAudienceMenu(null);
-      }
-    };
-
-    window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [activeAudienceMenu, isAccountMenuOpen, isMobileMenuOpen]);
-
-  useEffect(() => {
-    if (!isMobileMenuOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMobileMenuOpen]);
+  const sideLink = (key: AudienceMenuKey, className: string) => (
+    <Link
+      key={key}
+      href={key === "Men" ? "/men" : "/women"}
+      aria-current={routeSide === key ? "page" : undefined}
+      className={`fr-choice ${routeSide === key ? "is-active" : ""} ${className}`}
+    >
+      {key}
+    </Link>
+  );
 
   return (
-    <header
-      className={`sticky top-0 border-b border-[var(--border)] bg-[var(--header-background)] ${
-        isMobileMenuOpen ? "z-[115]" : "z-30"
-      }`}
-      onMouseLeave={() => setActiveAudienceMenu(null)}
-    >
-      <div className="mx-auto max-w-[1600px] px-3 py-1.5 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
-          <div className="hidden items-center gap-7 lg:flex">
-            <nav className="hidden items-center gap-7 text-[0.74rem] font-medium uppercase tracking-[0.08em] text-[var(--muted)] lg:flex">
-              {navItems.map((item) => {
-                const audienceMenu = isAudienceMenuKey(item.label) ? item.label : null;
+    <>
+      <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)]">
+        <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center px-5 lg:h-[5.5rem] lg:px-10">
+          <nav aria-label="Site" className="hidden items-center gap-6 lg:flex">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-expanded={menuOpen}
+              aria-controls="site-menu"
+              className="fr-mono fr-choice is-active min-h-11"
+            >
+              Menu
+            </button>
+            <span className="h-3 w-px bg-[var(--border)]" aria-hidden="true" />
+            {(["Women", "Men"] as AudienceMenuKey[]).map((key) => sideLink(key, "fr-mono min-h-11 inline-flex items-center"))}
+          </nav>
+          <span className="lg:hidden" />
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onMouseEnter={() => setActiveAudienceMenu(audienceMenu)}
-                    onFocus={() => setActiveAudienceMenu(audienceMenu)}
-                    aria-current={routeIsActive(pathname, item.href) ? "page" : undefined}
-                    className={routeIsActive(pathname, item.href) ? "nav-link-active" : "hover:text-[var(--foreground)]"}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          <Link href="/" className="flex shrink-0 items-center justify-start lg:justify-center">
+          <Link href="/" aria-label="HRUSHE home" className="justify-self-center">
             <Image
               src={HRUSHE_LOGO_PATH}
               alt="HRUSHE"
               width={HRUSHE_LOGO_DIMENSIONS.width}
               height={HRUSHE_LOGO_DIMENSIONS.height}
               priority
-              className="h-[1.7rem] w-auto object-contain sm:h-10 lg:h-12"
+              className="h-6 w-auto object-contain lg:h-9"
             />
           </Link>
 
-          <div className="site-header-mobile-actions flex min-w-max shrink-0 items-center justify-end gap-0 sm:gap-1">
-            <div ref={accountMenuRef} className="relative hidden lg:block">
-              {isAuthenticated ? (
-                <HeaderIcon
-                  label="Account"
-                  expanded={isAccountMenuOpen}
-                  onClick={() => setIsAccountMenuOpen((current) => !current)}
-                >
-                  <span className="flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-[var(--accent)]/8 text-sm font-semibold text-[var(--accent)]">
-                    {accountInitial}
-                  </span>
-                </HeaderIcon>
-              ) : (
-                <HeaderIcon label="Account" onClick={() => router.push(loginHref)}>
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-                  </svg>
-                </HeaderIcon>
-              )}
+          <nav aria-label="Account" className="hidden items-center justify-end gap-6 lg:flex">
+            <Link href="/search" className="fr-mono min-h-11 inline-flex items-center">
+              Search
+            </Link>
+            <Link href={isAuthenticated ? "/account" : loginHref} className="fr-mono min-h-11 inline-flex items-center">
+              {isAuthenticated ? "Wardrobe" : "Account"}
+            </Link>
+            <button type="button" onClick={openSaved} className="fr-mono fr-choice is-active min-h-11">
+              Saved{wishlistCount > 0 ? ` (${wishlistCount})` : ""}
+            </button>
+            <button type="button" onClick={openCart} className="fr-mono fr-choice is-active min-h-11">
+              Bag ({itemCount})
+            </button>
+          </nav>
+          <span className="lg:hidden" />
+        </div>
+      </header>
 
-              {isAccountMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.6rem)] min-w-[190px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_45px_rgba(0,0,0,0.08)]">
-                  <Link href="/account" className="block px-4 py-3 text-sm hover:bg-[var(--hover-fill)]" onClick={() => setIsAccountMenuOpen(false)}>
-                    My account
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      void logout();
-                    }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[var(--accent)] hover:bg-[var(--hover-fill)]"
-                  >
-                    <LogoutIcon />
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="hidden lg:block">
-              <HeaderIcon
-                label="Saved"
-                onClick={isAuthenticated ? openWishlist : () => router.push(loginHref)}
-              >
-                <span className="relative inline-flex">
-                  <SaveIcon />
-                  {wishlistCount > 0 ? (
-                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
-                      {wishlistCount}
-                    </span>
-                  ) : null}
-                </span>
-              </HeaderIcon>
-            </div>
-
-            <HeaderIcon label="Search" href="/search">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="m16 16 4 4" />
-              </svg>
-            </HeaderIcon>
-
-            <div className="lg:hidden">
-              <HeaderIcon label="Account" onClick={() => router.push(isAuthenticated ? "/account" : loginHref)}>
-                {isAuthenticated ? (
-                  <span className="flex h-8 w-8 items-center justify-center border border-[var(--border)] bg-[var(--accent)]/8 text-xs font-semibold text-[var(--accent)]">
-                    {accountInitial}
-                  </span>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-                  </svg>
-                )}
-              </HeaderIcon>
-            </div>
-
-            <HeaderIcon label="Cart" onClick={openCart}>
-              <span className="relative inline-flex">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-                  <path
-                    d="M16 8H17.1597C18.1999 8 19.0664 8.79732 19.1528 9.83391L19.8195 17.8339C19.9167 18.9999 18.9965 20 17.8264 20H6.1736C5.00352 20 4.08334 18.9999 4.18051 17.8339L4.84718 9.83391C4.93356 8.79732 5.80009 8 6.84027 8H8M16 8H8M16 8L16 7C16 5.93913 15.5786 4.92172 14.8284 4.17157C14.0783 3.42143 13.0609 3 12 3C10.9391 3 9.92172 3.42143 9.17157 4.17157C8.42143 4.92172 8 5.93913 8 7L8 8M16 8L16 12M8 8L8 12"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {itemCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
-                    {itemCount}
-                  </span>
-                ) : null}
-              </span>
-            </HeaderIcon>
-
-            <div className="hidden lg:block">
-              <HeaderIcon
-                label="Support"
-                onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
-              >
-                <SupportIcon />
-              </HeaderIcon>
-            </div>
-
+      {showMobileBar ? (
+        <nav aria-label="Main" className="fr-cap lg:hidden">
+          <div className="flex items-baseline gap-4">
+            {(["Men", "Women"] as AudienceMenuKey[]).map((key) => sideLink(key, "fr-word text-[1.5rem] min-h-11 inline-flex items-center"))}
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/search" className="fr-mono inline-flex min-h-11 items-center">
+              Search
+            </Link>
+            <button type="button" onClick={openCart} className="fr-mono fr-choice is-active min-h-11">
+              Bag {itemCount}
+            </button>
             <button
-              ref={mobileMenuToggleRef}
               type="button"
-              onClick={() => {
-                if (!isMobileMenuOpen) {
-                  setActiveMobileAudience(routeMobileAudience);
-                }
-
-                setIsMobileMenuOpen((current) => !current);
-              }}
-              className="flex h-11 w-11 items-center justify-center lg:hidden"
-              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-site-navigation"
+              onClick={() => setMenuOpen(true)}
+              aria-expanded={menuOpen}
+              aria-controls="site-menu"
+              className="fr-mono fr-choice is-active min-h-11"
             >
-              <span className="relative flex h-4 w-5 items-center justify-center">
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "rotate-45" : "-translate-y-[5px]"
-                  }`}
-                />
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-                <span
-                  className={`absolute h-px w-5 bg-[var(--foreground)] transition ${
-                    isMobileMenuOpen ? "-rotate-45" : "translate-y-[5px]"
-                  }`}
-                />
-              </span>
+              Menu
             </button>
           </div>
-        </div>
-      </div>
-
-      {activeAudienceMenu ? (
-        <div className="absolute left-0 top-full hidden h-[calc(100svh-100%)] w-[min(760px,52vw)] overflow-hidden bg-[var(--background)] shadow-[18px_28px_60px_rgba(0,0,0,0.08)] lg:grid lg:grid-cols-[1.12fr_1fr]">
-          <div className="hide-scrollbar flex h-full flex-col overflow-y-auto px-8 py-7">
-            <div className="space-y-4 text-[0.9rem] font-semibold uppercase tracking-[0.02em]">
-              {audienceMenus[activeAudienceMenu].featured.map((item) => (
-                <Link
-                  key={`${activeAudienceMenu}-${item.href}-${item.label}`}
-                  href={item.href}
-                  onClick={() => setActiveAudienceMenu(null)}
-                  className="block hover:text-[var(--accent)]"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-14 space-y-4 text-[0.92rem]">
-              {audienceMenus[activeAudienceMenu].categories.map((item) => (
-                <Link
-                  key={`${activeAudienceMenu}-${item.href}-${item.label}`}
-                  href={item.href}
-                  onClick={() => setActiveAudienceMenu(null)}
-                  className={`block hover:text-[var(--accent)] ${
-                    "tone" in item && item.tone === "sale" ? "font-medium text-[var(--accent)]" : ""
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-auto space-y-4 text-[0.86rem]">
-              <Link href="/login?mode=signup&next=%2Faccount" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
-                Sign up for first access
-              </Link>
-              <Link
-                href={isAuthenticated ? "/account" : loginHref}
-                onClick={() => setActiveAudienceMenu(null)}
-                className="block hover:text-[var(--accent)]"
-              >
-                My Account
-              </Link>
-              <Link href="/contact" onClick={() => setActiveAudienceMenu(null)} className="block hover:text-[var(--accent)]">
-                Contact Us
-              </Link>
-            </div>
-          </div>
-          <div className="hide-scrollbar h-full min-h-0 overflow-y-auto overscroll-contain bg-[var(--surface)]">
-            {audienceMenus[activeAudienceMenu].cards.map((card) => (
-              <Link
-                key={`${activeAudienceMenu}-${card.href}-${card.label}`}
-                href={card.href}
-                onClick={() => setActiveAudienceMenu(null)}
-                className="group relative block h-[34.25rem] min-h-[34.25rem] max-h-[34.25rem] overflow-hidden"
-              >
-                <HomepageMediaFrame
-                  src={card.image}
-                  alt={card.imageAlt}
-                  sizes="360px"
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  objectPosition={card.objectPosition}
-                />
-                <span className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/55 to-transparent px-7 pb-7 pt-20 text-[0.86rem] font-semibold uppercase tracking-[0.05em] text-white">
-                  <span>{card.label}</span>
-                  <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">
-                    ›
-                  </span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        </nav>
       ) : null}
 
-      {isMobileMenuOpen ? (
-        <div id="mobile-site-navigation" className="absolute left-0 top-full z-40 h-[calc(100svh-100%)] w-full overflow-y-auto border-t border-[var(--border)] bg-white/92 backdrop-blur-sm lg:hidden">
-          <div ref={mobileMenuRef} className="mobile-drawer-enter mx-auto max-w-[1600px] border-b border-[var(--border)] bg-[var(--background)] px-4 pb-[calc(0.85rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_18px_36px_rgba(0,0,0,0.04)] sm:px-6">
-            <div className="flex items-center justify-start gap-7 border-b border-[var(--border)] pb-4 text-[0.74rem] font-medium uppercase tracking-[0.11em]">
-              {audienceMenuKeys.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveMobileAudience(key)}
-                  aria-pressed={activeMobileAudience === key}
-                  className={`min-h-7 text-left transition ${
-                    activeMobileAudience === key
-                      ? "font-medium text-[var(--foreground)]"
-                      : "text-[var(--muted)]"
-                  }`}
-                >
-                  {key}
-                </button>
-              ))}
-              <Link
-                href="/story"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`inline-flex min-h-7 items-center ${
-                  routeIsActive(pathname, "/story")
-                    ? "font-medium text-[var(--foreground)]"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                Story
-              </Link>
-            </div>
-
-            <nav className="mt-5 grid gap-2.5 text-[0.86rem] font-medium uppercase leading-tight tracking-[0.08em]" aria-label={`${activeMobileAudience} featured navigation`}>
-              {mobilePrimaryLinks.map((item) => (
-                <Link
-                  key={`${activeMobileAudience}-mobile-featured-${item.href}-${item.label}`}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex min-h-7 items-center justify-between gap-4"
-                >
-                  <span>{item.label}</span>
-                  <span aria-hidden="true" className="text-[0.82rem] font-normal">›</span>
-                </Link>
-              ))}
-            </nav>
-
-            <div className="mt-4 border-t border-[var(--border)] pt-3.5">
-              <div className="grid gap-2 text-[0.84rem] leading-snug">
-                {activeMobileMenu.categories.map((item) => (
-                  <Link
-                    key={`${activeMobileAudience}-mobile-category-${item.href}-${item.label}`}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="min-h-6"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {isAuthenticated ? (
-              <Link href="/account" onClick={() => setIsMobileMenuOpen(false)} className="mt-5 block border-t border-[var(--border)] pt-3.5 text-[0.72rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-                Signed in as {user?.name}
-              </Link>
-            ) : null}
-
-            <div className="mt-4 flex items-center justify-end gap-2 border-t border-[var(--border)] pt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  if (isAuthenticated) {
-                    openWishlist();
-                  } else {
-                    router.push(loginHref);
-                  }
-                }}
-                className="relative flex h-9 w-9 items-center justify-center border border-[var(--border)]"
-                aria-label="Saved pieces"
-              >
-                <SaveIcon />
-                {wishlistCount > 0 ? (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center bg-[var(--accent)] px-1 text-[9px] font-semibold text-white">
-                    {wishlistCount}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  window.dispatchEvent(new CustomEvent("hrushe:open-support"));
-                }}
-                className="flex h-9 w-9 items-center justify-center border border-[var(--border)]"
-                aria-label="Support"
-              >
-                <SupportIcon />
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </header>
+      <MenuOverlay
+        key={menuOpen ? "open" : "closed"}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        initialSide={routeSide || "Men"}
+        audienceMenus={audienceMenus}
+        isAuthenticated={isAuthenticated}
+        loginHref={loginHref}
+        wishlistCount={wishlistCount}
+        onOpenWishlist={openSaved}
+      />
+    </>
   );
 }

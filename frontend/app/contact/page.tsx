@@ -27,34 +27,42 @@ export default function ContactPage() {
   return (
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
-      <main className="mx-auto max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
-        <section className="grid gap-10 border-b border-[var(--border)] pb-12 lg:grid-cols-[1fr_0.72fr] lg:items-end lg:pb-16">
-          <div>
-            <p className="eyebrow text-[var(--muted)]">Contact</p>
-            <h1 className="mt-5 max-w-[9ch] text-[2.2rem] font-medium uppercase leading-[0.94] tracking-[-0.035em] sm:text-[4.5rem] sm:leading-[0.92] sm:tracking-[-0.045em] lg:text-[5.5rem]">
-              We’re here to help.
-            </h1>
-          </div>
-          <div>
-            <p className="max-w-xl text-[0.94rem] leading-7 text-[var(--muted)] sm:text-base">
-              For order support, include your order number and the email or phone number used at checkout. We usually reply within one business day.
+      <main className="px-5 pb-16 pt-6 lg:px-10 lg:pb-24 lg:pt-12">
+        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+          <div className="flex flex-col gap-5">
+            <span className="fr-mono fr-muted">Contact</span>
+            <h1 className="fr-word text-[clamp(3.5rem,14vw,8rem)] lg:text-[clamp(4rem,7vw,8rem)]">Talk to us.</h1>
+            <p className="max-w-md text-base leading-7 text-[var(--muted)]">
+              For an order, include its number and the email or phone you used at checkout. We usually reply within one
+              business day.
             </p>
-            <Link href="/track-order" className="button-primary mt-8 inline-flex items-center justify-center px-7 text-[0.68rem] font-semibold uppercase">
+            <Link href="/track-order" className="fr-button mt-2 max-w-sm">
               Track an order
             </Link>
           </div>
-        </section>
 
-        <section className="mt-12 grid gap-px bg-[var(--border)] md:grid-cols-3 lg:mt-16">
-          {contactDetails.map((item) => (
-            <a key={item.title} href={item.href} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} className="hrushe-inverse-hover group bg-[var(--surface)] p-6 transition sm:p-8 lg:min-h-64">
-              <p className="eyebrow text-[var(--muted)] transition group-hover:text-white/55">{item.title}</p>
-              <p className="mt-8 text-xl font-medium sm:text-2xl">{item.value}</p>
-              <p className="mt-5 max-w-xs text-sm leading-7 text-[var(--muted)] transition group-hover:text-white/60">{item.note}</p>
-              <span className="mt-10 block text-lg" aria-hidden="true">↗</span>
-            </a>
-          ))}
-        </section>
+          <ul className="flex flex-col lg:pt-10">
+            {contactDetails.map((item) => (
+              <li key={item.title}>
+                <a
+                  href={item.href}
+                  target={item.href.startsWith("http") ? "_blank" : undefined}
+                  rel={item.href.startsWith("http") ? "noreferrer" : undefined}
+                  className="fr-index-row group !grid-cols-[minmax(0,1fr)_auto] py-5!"
+                >
+                  <span className="flex min-w-0 flex-col gap-2">
+                    <span className="fr-mono">{item.title}</span>
+                    <span className="fr-word break-words text-[clamp(1.75rem,4vw,3rem)] normal-case!">{item.value}</span>
+                    <span className="text-sm leading-6 text-[var(--muted)]">{item.note}</span>
+                  </span>
+                  <span aria-hidden="true" className="text-2xl">
+                    ↗
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </main>
       <SiteFooter />
     </div>

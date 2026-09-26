@@ -112,11 +112,11 @@ export function PolicyLayout({
 
   return (
     <main className="bg-[var(--background)]">
-      <div className="mx-auto max-w-[1600px] px-4 py-11 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
-        <header className="grid gap-8 border-b border-[var(--border)] pb-9 sm:pb-12 lg:grid-cols-[minmax(0,0.78fr)_minmax(18rem,0.22fr)] lg:items-end">
+      <div className="mx-auto max-w-[1440px] px-5 pb-16 pt-6 lg:px-10 lg:pb-24 lg:pt-12">
+        <header className="grid gap-8 border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pb-9 sm:pb-12 lg:grid-cols-[minmax(0,0.78fr)_minmax(18rem,0.22fr)] lg:items-end">
           <div className="max-w-5xl">
-            <p className="eyebrow text-[var(--muted)]">{label}</p>
-            <h1 className="mt-5 max-w-[13ch] text-[2.1rem] font-medium uppercase leading-[0.94] text-[var(--foreground)] sm:text-[3.6rem] lg:text-[4.7rem] xl:text-[5.15rem]">
+            <p className="fr-mono fr-muted">{label}</p>
+            <h1 className="fr-word mt-5 max-w-[18ch] text-[clamp(2.75rem,7vw,5.5rem)]">
               {title}
             </h1>
             <p className="mt-6 max-w-2xl text-[0.98rem] leading-7 text-[var(--muted)] sm:text-[1.04rem] sm:leading-8">
@@ -124,7 +124,7 @@ export function PolicyLayout({
             </p>
           </div>
           <div className="border-t border-[var(--border)] pt-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
-            <p className="text-[0.68rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+            <p className="fr-mono fr-muted">
               {lastUpdated}
             </p>
           </div>
@@ -139,7 +139,7 @@ export function PolicyLayout({
             aria-controls="mobile-policy-contents"
           >
             <span>
-              <span className="eyebrow block text-[var(--muted)]">Contents</span>
+              <span className="fr-mono fr-muted block">Contents</span>
               <span className="mt-1 block text-sm font-medium text-[var(--foreground)]">
                 {currentPolicy.label}
               </span>
@@ -160,11 +160,7 @@ export function PolicyLayout({
                       key={`mobile-${policy.key}`}
                       type="button"
                       onClick={() => switchPolicy(policy.key)}
-                      className={`min-h-11 border px-4 py-3 text-left text-sm font-medium ${
-                        isActive
-                          ? "border-[var(--foreground)] bg-[var(--background)] text-[var(--foreground)]"
-                          : "border-[var(--border)] bg-transparent text-[var(--foreground)]"
-                      }`}
+                      className={`fr-choice fr-word min-h-11 py-1 text-left text-[1.6rem]! ${isActive ? "is-active" : ""}`}
                     >
                       {policy.label}
                     </button>
@@ -196,7 +192,7 @@ export function PolicyLayout({
           <aside className="hidden min-w-0 lg:block" aria-label="Policy sections">
             <div className="sticky top-32 space-y-9">
               <div>
-                <p className="eyebrow border-b border-[var(--border)] pb-4 text-[var(--muted)]">
+                <p className="fr-mono fr-muted border-b border-[var(--border)] pb-4">
                   {label}
                 </p>
                 <div className="mt-4 grid gap-2" role="tablist" aria-label="Policy pages">
@@ -212,11 +208,7 @@ export function PolicyLayout({
                         role="tab"
                         aria-selected={isActive}
                         aria-controls="active-policy-panel"
-                        className={`group grid min-h-14 grid-cols-[0.55rem_1fr] items-center gap-3 border border-transparent px-2 py-3 text-left transition ${
-                          isActive
-                            ? "text-[var(--foreground)]"
-                            : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                        }`}
+                        className={`fr-choice group grid min-h-12 grid-cols-[0.55rem_1fr] items-center gap-3 py-2 text-left ${isActive ? "is-active" : ""}`}
                       >
                         <span
                           className={`h-px w-full transition ${
@@ -224,7 +216,7 @@ export function PolicyLayout({
                           }`}
                           aria-hidden="true"
                         />
-                        <span className="text-[0.92rem] font-medium leading-5">{policy.label}</span>
+                        <span className="fr-word text-[1.5rem]">{policy.label}</span>
                       </button>
                     );
                   })}
@@ -232,7 +224,7 @@ export function PolicyLayout({
               </div>
 
               <nav aria-label={`${currentPolicy.label} table of contents`}>
-                <p className="eyebrow border-b border-[var(--border)] pb-4 text-[var(--muted)]">
+                <p className="fr-mono fr-muted border-b border-[var(--border)] pb-4">
                   {currentPolicy.label}
                 </p>
                 <div className="mt-4 border-l border-[var(--border)]">
@@ -259,8 +251,8 @@ export function PolicyLayout({
                 </div>
               </nav>
 
-              <Link href="/contact" className="button-secondary inline-flex items-center px-5 py-3 text-sm transition">
-                Need support?
+              <Link href="/contact" className="fr-mono fr-link inline-flex">
+                Need help? Talk to us →
               </Link>
             </div>
           </aside>
@@ -272,8 +264,8 @@ export function PolicyLayout({
             className="min-w-0"
           >
             <div className="grid gap-4 border-b border-[var(--border)] pb-8 lg:grid-cols-[8rem_minmax(0,46rem)] lg:gap-10">
-              <p className="eyebrow text-[var(--muted)]">{currentPolicy.label}</p>
-              <h2 className="text-[2rem] font-medium leading-none text-[var(--foreground)] sm:text-[2.7rem]">
+              <p className="fr-mono fr-muted">Policy</p>
+              <h2 className="fr-word text-[clamp(2.5rem,6vw,4rem)]">
                 {currentPolicy.label}
               </h2>
             </div>
@@ -285,7 +277,7 @@ export function PolicyLayout({
                   id={section.id}
                   className="scroll-mt-32 grid gap-4 border-b border-[var(--border)] py-8 sm:py-10 lg:grid-cols-[8rem_minmax(0,46rem)] lg:gap-10 lg:py-12"
                 >
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                  <p className="fr-mono fr-muted">
                     {String(index + 1).padStart(2, "0")}
                   </p>
                   <div className="min-w-0">

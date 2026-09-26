@@ -111,7 +111,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     <AuthModalContext.Provider value={value}>
       {children}
       {isOpen ? (
-        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/55 px-3 py-4 backdrop-blur-xl sm:px-6 sm:py-8">
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/40 px-3 py-4 sm:px-6 sm:py-8">
           <button
             type="button"
             aria-label="Close account popup"
@@ -123,10 +123,10 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={closeAuthModal}
-                className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center border border-[var(--border)] bg-white/95 text-xl text-black shadow-sm transition hover:bg-white sm:right-4 sm:top-4"
+                className="fr-mono fr-choice is-active absolute right-4 top-4 z-20 min-h-11 sm:right-6 sm:top-6"
                 aria-label="Close"
               >
-                ×
+                Close ×
               </button>
               <AuthPanel
                 initialMode={mode}
@@ -137,7 +137,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
                     router.push(nextPath);
                   }
                 }}
-                className="shadow-[0_34px_90px_rgba(0,0,0,0.24)]"
+                className=""
               />
             </div>
           </div>

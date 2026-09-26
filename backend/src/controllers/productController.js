@@ -103,6 +103,8 @@ const assertNoEmbeddedMedia = (payload = {}) => {
   const values = [
     ...(Array.isArray(payload.images) ? payload.images : []),
     ...(Array.isArray(payload.galleryImages) ? payload.galleryImages : []),
+    ...(Array.isArray(payload.womenImages) ? payload.womenImages : []),
+    ...(Array.isArray(payload.menImages) ? payload.menImages : []),
     ...(Array.isArray(payload.videos)
       ? payload.videos.flatMap((video) => [video?.url, video?.posterUrl])
       : []),
@@ -350,6 +352,12 @@ const normalizeProductPayload = (
       : [];
   }
 
+  for (const key of ["womenImages", "menImages"]) {
+    if (!partial || payload[key] !== undefined) {
+      normalized[key] = Array.isArray(payload[key]) ? payload[key] : [];
+    }
+  }
+
   if (!partial || payload.status !== undefined) {
     normalized.status = PRODUCT_STATUSES.includes(payload.status)
       ? payload.status
@@ -467,6 +475,8 @@ const mapPublicProductListItem = (product) => ({
   thumbnailUrl: (product.images || []).find(isUsableMediaUrl) || "",
   images: (product.images || []).filter(isUsableMediaUrl),
   galleryImages: (product.galleryImages || []).filter(isUsableMediaUrl),
+  womenImages: (product.womenImages || []).filter(isUsableMediaUrl),
+  menImages: (product.menImages || []).filter(isUsableMediaUrl),
   videos: (product.videos || [])
     .filter((video) => isUsableMediaUrl(video?.url))
     .map((video) => ({
@@ -514,6 +524,8 @@ const mapAdminProductListItem = (product) => ({
   slug: correctLegacySlug(product.slug),
   images: (product.images || []).filter(isUsableMediaUrl).slice(0, 2),
   galleryImages: (product.galleryImages || []).filter(isUsableMediaUrl).slice(0, 1),
+  womenImages: (product.womenImages || []).filter(isUsableMediaUrl).slice(0, 1),
+  menImages: (product.menImages || []).filter(isUsableMediaUrl).slice(0, 1),
   videos: (product.videos || []).filter((video) => isUsableMediaUrl(video?.url)),
   reviews: [],
 });
@@ -567,6 +579,8 @@ const getProductDetailResponse = async (product, { includePrivate = false } = {}
     pricePaise: getPaiseValue(productData, "pricePaise", "price"),
     images: (productData.images || []).filter(isUsableMediaUrl),
     galleryImages: (productData.galleryImages || []).filter(isUsableMediaUrl),
+    womenImages: (productData.womenImages || []).filter(isUsableMediaUrl),
+    menImages: (productData.menImages || []).filter(isUsableMediaUrl),
     videos: (productData.videos || [])
       .filter((video) => isUsableMediaUrl(video?.url))
       .map((video) => ({
