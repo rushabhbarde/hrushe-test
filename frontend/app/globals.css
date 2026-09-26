@@ -78,7 +78,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -87,7 +87,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-hrushe);
