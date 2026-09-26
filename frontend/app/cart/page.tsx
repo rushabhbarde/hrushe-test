@@ -112,7 +112,7 @@ export default function CartPage() {
         {src ? (
           <Image src={src} alt={alt} fill unoptimized={shouldBypassImageOptimization(src)} sizes="(min-width: 1024px) 30vw, 100vw" />
         ) : (
-          <div className="h-full w-full" style={{ background: accent || "#eeece8" }} />
+          <div className="h-full w-full" style={{ background: accent || "var(--fr-stone)" }} />
         )}
       </div>
     </div>

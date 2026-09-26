@@ -13,7 +13,7 @@ const toneClasses: Record<Tone, string> = {
 };
 
 function fieldClassName(className = "") {
-  return `min-h-12 w-full min-w-0 max-w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_30%,transparent)] bg-transparent px-0 text-base text-[var(--foreground)] outline-none transition placeholder:text-[#8e8981] focus:border-[var(--foreground)] ${className}`.trim();
+  return `min-h-12 w-full min-w-0 max-w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_30%,transparent)] bg-transparent px-0 text-base text-[var(--foreground)] outline-none transition placeholder:text-[var(--fr-quiet)] focus:border-[var(--foreground)] ${className}`.trim();
 }
 
 export function AdminBadge({

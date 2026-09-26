@@ -3,6 +3,21 @@
  * Plain class selectors on purpose: they outrank the unlayered element resets in globals.css.
  */
 
+:root {
+  /* Quiet grey passes 4.5:1 on white, so small mono labels stay readable. */
+  --fr-quiet: #77726a;
+  --fr-stone: #eeece8;
+  --fr-stone-soft: #f5f3ef;
+  --fr-faint: #d6d2cb;
+}
+
+:root[data-theme="dark"] {
+  --fr-quiet: #a19c94;
+  --fr-stone: #1b1a18;
+  --fr-stone-soft: #22211f;
+  --fr-faint: #4a4741;
+}
+
 .fr-word {
   font-weight: 700;
   letter-spacing: -0.05em;
@@ -22,7 +37,7 @@
 }
 
 .fr-quiet {
-  color: #8e8981;
+  color: var(--fr-quiet);
 }
 
 .fr-link {
@@ -34,7 +49,7 @@
 .fr-frame {
   position: relative;
   overflow: hidden;
-  background: #eeece8;
+  background: var(--fr-stone);
 }
 
 .fr-frame__layer {
@@ -59,11 +74,17 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: #8e8981;
+  color: var(--fr-quiet);
   cursor: pointer;
   text-align: inherit;
   font-family: inherit;
   transition: color 0.4s ease;
+}
+
+/* Buttons reset text-transform and letter-spacing; a choice inside a mono or word group should keep them. */
+.fr-choice:not(.fr-mono):not(.fr-word) {
+  letter-spacing: inherit;
+  text-transform: inherit;
 }
 
 .fr-choice.is-active,
@@ -140,7 +161,7 @@
   gap: 1rem;
   padding: 0.6rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
-  color: #8e8981;
+  color: var(--fr-quiet);
   transition: color 0.4s ease;
 }
 
@@ -256,7 +277,7 @@
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
   background: transparent;
-  color: #8e8981;
+  color: var(--fr-quiet);
   text-align: left;
   font-family: inherit;
   font-size: 1.75rem;
@@ -374,7 +395,7 @@
 
 .collection-plp__category-nav :where(button, a) {
   min-height: 2.75rem;
-  color: #8e8981;
+  color: var(--fr-quiet);
 }
 
 .collection-plp__category-nav :where(button[aria-pressed="true"], a:hover) {
@@ -398,7 +419,7 @@
 }
 
 .collection-plp__grid [data-product-card-variant="editorial"] [data-product-image-frame] {
-  background: #eeece8;
+  background: var(--fr-stone);
 }
 
 .collection-filter-drawer__header {
@@ -446,7 +467,7 @@
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
   padding: 0.35rem 0;
-  color: #8e8981;
+  color: var(--fr-quiet);
   font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.04em;

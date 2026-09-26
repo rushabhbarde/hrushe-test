@@ -121,7 +121,7 @@ export function CookieConsentBanner() {
   if (view === "preferences") {
     return (
       <div
-        className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+        className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6"
         role="presentation"
       >
         <div
@@ -130,16 +130,13 @@ export function CookieConsentBanner() {
           aria-modal="true"
           aria-labelledby="cookie-preferences-title"
           aria-describedby="cookie-preferences-description"
-          className="max-h-[92dvh] w-full overflow-y-auto border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] sm:max-w-[640px]"
+          className="max-h-[92dvh] w-full overflow-y-auto bg-[var(--background)] text-[var(--foreground)] sm:max-w-[600px]"
         >
-          <div className="flex items-start justify-between gap-6 border-b border-[var(--border)] px-5 py-5 sm:px-8 sm:py-7">
-            <div>
-              <p className="eyebrow text-[var(--muted)]">Privacy controls</p>
-              <h2
-                id="cookie-preferences-title"
-                className="mt-3 text-2xl font-medium uppercase tracking-[-0.03em] sm:text-3xl"
-              >
-                Cookie preferences
+          <div className="flex items-start justify-between gap-6 px-5 pb-2 pt-6 sm:px-8 sm:pt-8">
+            <div className="flex flex-col gap-3">
+              <p className="fr-mono fr-muted">Your privacy</p>
+              <h2 id="cookie-preferences-title" className="fr-word text-[clamp(2.5rem,8vw,3.5rem)]">
+                Cookies.
               </h2>
             </div>
             <button
@@ -147,17 +144,17 @@ export function CookieConsentBanner() {
               onClick={() =>
                 setView(getCookieConsentSnapshot() ? "hidden" : "default")
               }
-              className="min-h-11 min-w-11 border border-[var(--border)] text-xl"
+              className="fr-mono fr-choice is-active min-h-11"
               aria-label="Close cookie preferences"
             >
-              ×
+              Close ×
             </button>
           </div>
 
-          <div className="space-y-3 px-5 py-5 sm:px-8 sm:py-7">
+          <div className="flex flex-col px-5 py-5 sm:px-8">
             <p
               id="cookie-preferences-description"
-              className="max-w-2xl text-sm leading-6 text-[var(--muted)]"
+              className="mb-3 max-w-2xl text-sm leading-6 text-[var(--muted)]"
             >
               Choose which optional technologies HRUSHE may use. Essential
               cookies remain active because they secure login, cart, checkout,
@@ -188,20 +185,16 @@ export function CookieConsentBanner() {
             />
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-[var(--border)] px-5 py-5 sm:flex-row sm:justify-end sm:px-8">
+          <div className="grid gap-3 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-2 sm:grid-cols-2 sm:px-8 sm:pb-8">
             <button
               type="button"
               onClick={() => commitConsent(defaultPreferences)}
-              className="button-secondary px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]"
+              className="fr-mono min-h-[3.25rem] border border-[var(--foreground)]"
             >
-              Reject optional
+              Decline all optional
             </button>
-            <button
-              type="button"
-              onClick={() => commitConsent(preferences)}
-              className="button-primary px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]"
-            >
-              Save preferences
+            <button type="button" onClick={() => commitConsent(preferences)} className="fr-button">
+              Save choices
             </button>
           </div>
         </div>
@@ -212,54 +205,49 @@ export function CookieConsentBanner() {
   return (
     <aside
       aria-label="Cookie consent"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] px-3 pb-3 sm:px-4 sm:pb-4"
+      className="fixed inset-x-0 bottom-0 z-[113] border-t border-[color-mix(in_srgb,var(--foreground)_12%,transparent)] bg-[var(--background)] px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-[var(--foreground)] lg:px-10 lg:py-5"
     >
-      <div className="pointer-events-auto mx-auto grid w-full max-w-[1120px] gap-4 border border-white/15 bg-black px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 text-white sm:px-5 sm:py-5 md:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="max-w-3xl">
-          <p className="eyebrow text-white/50">Your privacy</p>
-          <p className="mt-2 text-sm leading-6 text-white/75">
-            We use essential cookies to run HRUSHE. With your permission, we
-            also use analytics and marketing technologies to understand and
-            improve your experience. Read our{" "}
-            <Link
-              href="/policies?tab=privacy"
-              className="underline decoration-white/35 underline-offset-4 hover:text-white focus-visible:outline-white/70"
+      <div className="mx-auto grid w-full max-w-[1440px] gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10">
+        <div className="flex flex-col gap-1 lg:flex-row lg:items-baseline lg:gap-6">
+          <div className="flex items-center justify-between gap-4 lg:contents">
+            <p className="fr-mono fr-muted shrink-0">Your privacy</p>
+            <button
+              type="button"
+              onClick={() => setView("preferences")}
+              className="fr-mono fr-choice is-active fr-link min-h-11 lg:hidden"
             >
-              Privacy Policy
+              Preferences
+            </button>
+          </div>
+          <p className="max-w-3xl text-sm leading-6 text-[var(--muted)]">
+            Essential cookies run the store. Analytics and marketing ones only with your yes.{" "}
+            <Link href="/policies?tab=privacy" className="fr-link text-[var(--foreground)]">
+              Privacy policy
             </Link>
-            .
           </p>
         </div>
 
-        <div className="grid gap-2 min-[560px]:grid-cols-3 lg:min-w-[34rem]">
+        <div className="grid grid-cols-2 items-center gap-3 lg:grid-cols-[auto_auto_auto] lg:gap-x-6">
           <button
             type="button"
             onClick={() => setView("preferences")}
-            className="flex min-h-11 items-center justify-center border border-white/25 px-4 text-center hover:border-white/60 focus-visible:outline-white/70"
+            className="fr-mono fr-choice is-active fr-link hidden min-h-11 lg:inline"
           >
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85">
-              Preferences
-            </span>
+            Preferences
           </button>
           <button
             type="button"
             onClick={() => commitConsent(defaultPreferences)}
-            className="flex min-h-11 items-center justify-center border border-white/25 px-4 text-center hover:border-white/60 focus-visible:outline-white/70"
+            className="fr-mono min-h-11 border border-[var(--foreground)] px-5"
           >
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85">
-              Reject optional
-            </span>
+            Decline
           </button>
           <button
             type="button"
-            onClick={() =>
-              commitConsent({ analytics: true, marketing: true })
-            }
-            className="flex min-h-11 items-center justify-center bg-white px-5 text-center hover:bg-white/90 focus-visible:outline-white/70"
+            onClick={() => commitConsent({ analytics: true, marketing: true })}
+            className="fr-button min-h-11! px-5"
           >
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black">
-              Accept all
-            </span>
+            Accept all
           </button>
         </div>
       </div>
@@ -281,17 +269,11 @@ function ConsentCategory({
   onChange?: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-5 border border-[var(--border)] px-4 py-4 sm:px-5">
+    <div className="flex items-start justify-between gap-5 border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-4">
       <div>
-        <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em]">
-            {title}
-          </h3>
-          {locked ? (
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-              Always active
-            </span>
-          ) : null}
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h3 className="fr-word text-[1.6rem]">{title}</h3>
+          {locked ? <span className="fr-mono fr-muted">Always on</span> : null}
         </div>
         <p className="mt-2 max-w-md text-xs leading-5 text-[var(--muted)]">
           {description}

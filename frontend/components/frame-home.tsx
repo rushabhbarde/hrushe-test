@@ -60,7 +60,7 @@ function SlideMedia({ slide, campaign, priority, sizes }: { slide: Slide; campai
   const src = slide.product.images[0];
 
   if (!src) {
-    return <div className="h-full w-full" style={{ backgroundColor: slide.product.accent || "#eeece8" }} />;
+    return <div className="h-full w-full" style={{ backgroundColor: slide.product.accent || "var(--fr-stone)" }} />;
   }
 
   return (
@@ -117,8 +117,8 @@ export function FrameHome({
         <div className="flex flex-col gap-4">
           <div className="fr-frame aspect-[3/4] w-full">{frameLayers("(min-width: 1024px) 30vw, 100vw")}</div>
           <div className="flex items-center justify-between gap-4">
-            <span className="fr-mono fr-muted">{current.meta}</span>
-            <Link href={current.href} className="fr-mono fr-link">
+            <span className="fr-mono fr-muted min-w-0 truncate">{current.meta}</span>
+            <Link href={current.href} className="fr-mono fr-link shrink-0 whitespace-nowrap">
               {current.cta} →
             </Link>
           </div>
@@ -144,27 +144,48 @@ export function FrameHome({
         </nav>
       </section>
 
-      <section aria-label={`${side} home`} className="flex flex-col gap-3 px-5 pb-8 pt-3 lg:hidden">
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }} aria-hidden="true">
-          {slides.map((_, index) => (
-            <span key={index} className="h-0.5" style={{ background: index <= active ? "var(--foreground)" : "color-mix(in srgb, var(--foreground) 14%, transparent)" }} />
-          ))}
+      <section
+        aria-label={`${side} home`}
+        className="flex flex-col gap-3 px-5 pb-8 pt-3 md:grid md:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] md:items-center md:gap-x-10 md:px-8 md:py-10 lg:hidden"
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${slides.length}, minmax(0, 1fr))` }} aria-hidden="true">
+            {slides.map((_, index) => (
+              <span key={index} className="h-0.5" style={{ background: index <= active ? "var(--foreground)" : "color-mix(in srgb, var(--foreground) 14%, transparent)" }} />
+            ))}
+          </div>
+          <div className="fr-frame relative aspect-[4/5] w-full">
+            {frameLayers("(min-width: 768px) 400px, 100vw")}
+            <button type="button" onClick={() => step(-1)} aria-label="Previous" className="absolute inset-y-0 left-0 z-10 w-2/5 bg-transparent" />
+            <button type="button" onClick={() => step(1)} aria-label="Next" className="absolute inset-y-0 right-0 z-10 w-3/5 bg-transparent" />
+          </div>
         </div>
-        <div className="fr-frame relative aspect-[4/5] w-full">
-          {frameLayers("100vw")}
-          <button type="button" onClick={() => step(-1)} aria-label="Previous" className="absolute inset-y-0 left-0 z-10 w-2/5 bg-transparent" />
-          <button type="button" onClick={() => step(1)} aria-label="Next" className="absolute inset-y-0 right-0 z-10 w-3/5 bg-transparent" />
+        <div className="flex flex-col gap-3 md:gap-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <h1 className="fr-word text-[2.25rem] md:text-[3rem]">{current.name}</h1>
+            <span className="fr-mono fr-muted shrink-0">
+              {String(active + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+            </span>
+          </div>
+          <span className="fr-mono fr-muted">{current.meta}</span>
+          <Link href={current.href} className="fr-button mt-1">
+            {current.cta}
+          </Link>
+          <nav aria-label="The edit" className="hidden flex-col md:flex">
+            <span className="fr-mono fr-muted mb-2 mt-4">The edit · {String(slides.length - 1).padStart(2, "0")}</span>
+            {slides.slice(1).map((slide, index) => (
+              <button
+                key={slide.href}
+                type="button"
+                onClick={() => setActive(index + 1)}
+                className={`fr-choice flex min-h-11 items-baseline gap-3 text-left ${active === index + 1 ? "is-active" : ""}`}
+              >
+                <span className="fr-mono w-6">{String(index + 1).padStart(2, "0")}</span>
+                <span className="fr-word text-[1.4rem]">{slide.name}</span>
+              </button>
+            ))}
+          </nav>
         </div>
-        <div className="flex items-baseline justify-between gap-4">
-          <h1 className="fr-word text-[2.25rem]">{current.name}</h1>
-          <span className="fr-mono fr-muted shrink-0">
-            {String(active + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
-          </span>
-        </div>
-        <span className="fr-mono fr-muted">{current.meta}</span>
-        <Link href={current.href} className="fr-button mt-1">
-          {current.cta}
-        </Link>
       </section>
     </>
   );

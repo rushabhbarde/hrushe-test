@@ -48,7 +48,7 @@ export default function ContactPage() {
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                  className="fr-index-row group !grid-cols-[minmax(0,1fr)_auto] py-5!"
+                  className="fr-index-row is-active group !grid-cols-[minmax(0,1fr)_auto] py-5!"
                 >
                   <span className="flex min-w-0 flex-col gap-2">
                     <span className="fr-mono">{item.title}</span>
