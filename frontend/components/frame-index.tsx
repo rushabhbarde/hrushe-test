@@ -23,7 +23,7 @@ function FrameImage({ product, priority, sizes }: { product: Product; priority: 
   const src = product.images[0];
 
   if (!src) {
-    return <div className="h-full w-full" style={{ backgroundColor: product.accent || "#eeece8" }} />;
+    return <div className="h-full w-full" style={{ backgroundColor: product.accent || "var(--fr-stone)" }} />;
   }
 
   return (
@@ -55,7 +55,7 @@ export function FrameIndex({ products, label }: { products: Product[]; label: st
     <>
       <section
         aria-label={label}
-        className="hidden items-center gap-x-16 px-10 pb-16 pt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_min(30vw,440px)] xl:gap-x-24"
+        className="hidden items-center gap-x-10 px-8 pb-16 pt-6 md:grid md:grid-cols-[minmax(0,1fr)_min(40vw,340px)] lg:gap-x-16 lg:px-10 lg:grid-cols-[minmax(0,1fr)_min(30vw,440px)] xl:gap-x-24"
       >
         <nav aria-label={`${label} index`} className="flex flex-col">
           {products.map((product, index) => (
@@ -67,7 +67,7 @@ export function FrameIndex({ products, label }: { products: Product[]; label: st
               className={`fr-index-row ${index === activeIndex ? "is-active" : ""}`}
             >
               <span className="fr-mono">{String(index + 1).padStart(2, "0")}</span>
-              <span className="fr-word text-[clamp(2.5rem,4.6vw,4.25rem)]">{getProductDisplayName(product)}</span>
+              <span className="fr-word text-[1.8rem] lg:text-[clamp(2.5rem,4.6vw,4.25rem)]">{getProductDisplayName(product)}</span>
               <span className="fr-mono">
                 {[productColour(product), formatPrice(product.price)].filter(Boolean).join(" · ")}
               </span>
@@ -79,7 +79,7 @@ export function FrameIndex({ products, label }: { products: Product[]; label: st
           <div className="fr-frame aspect-[3/4] w-full">
             {products.map((product, index) => (
               <div key={product.id} className={`fr-frame__layer ${index === activeIndex ? "is-active" : ""}`} aria-hidden={index !== activeIndex}>
-                <FrameImage product={product} priority={index === 0} sizes="(min-width: 1024px) 30vw, 100vw" />
+                <FrameImage product={product} priority={index === 0} sizes="(min-width: 1024px) 30vw, 340px" />
               </div>
             ))}
           </div>
@@ -92,7 +92,7 @@ export function FrameIndex({ products, label }: { products: Product[]; label: st
         </div>
       </section>
 
-      <section aria-label={label} className="flex flex-col gap-10 px-5 pb-14 pt-4 lg:hidden">
+      <section aria-label={label} className="flex flex-col gap-10 px-5 pb-14 pt-4 md:hidden">
         {products.map((product, index) => (
           <Link key={product.id} href={productHref(product)} className="flex flex-col gap-3">
             <span className="fr-frame block aspect-[3/4] w-full">

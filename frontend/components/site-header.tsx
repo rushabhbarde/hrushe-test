@@ -439,14 +439,16 @@ export function SiteHeader() {
 
       {showMobileBar ? (
         <nav aria-label="Main" className="fr-cap lg:hidden">
-          <div className="flex items-baseline gap-4">
-            {(["Men", "Women"] as AudienceMenuKey[]).map((key) => sideLink(key, "fr-word text-[1.5rem] min-h-11 inline-flex items-center"))}
+          <div className="flex items-baseline gap-3 min-[360px]:gap-4">
+            {(["Men", "Women"] as AudienceMenuKey[]).map((key) =>
+              sideLink(key, "fr-word text-[1.3rem] min-[360px]:text-[1.5rem] min-h-11 inline-flex items-center")
+            )}
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/search" className="fr-mono inline-flex min-h-11 items-center">
+          <div className="flex items-center gap-3 min-[360px]:gap-4">
+            <Link href="/search" className="fr-mono hidden min-h-11 items-center min-[360px]:inline-flex">
               Search
             </Link>
-            <button type="button" onClick={openCart} className="fr-mono fr-choice is-active min-h-11">
+            <button type="button" onClick={openCart} className="fr-mono fr-choice is-active min-h-11 whitespace-nowrap">
               Bag {itemCount}
             </button>
             <button

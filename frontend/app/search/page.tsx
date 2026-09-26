@@ -135,7 +135,7 @@ function SearchPageContent() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onBlur={() => rememberSearch(query)}
-            className="fr-word fr-search w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_18%,transparent)] bg-transparent pb-3 text-[clamp(3rem,13vw,10rem)]! outline-none! placeholder:text-[#d6d2cb] focus:border-[var(--foreground)]"
+            className="fr-word fr-search w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_18%,transparent)] bg-transparent pb-3 text-[clamp(3rem,13vw,10rem)]! outline-none! placeholder:text-[var(--fr-faint)] focus:border-[var(--foreground)]"
             placeholder="Type"
             autoComplete="off"
             autoFocus

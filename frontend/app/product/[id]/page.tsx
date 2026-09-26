@@ -487,7 +487,7 @@ export default function ProductDetailPage() {
     <div className="page-shell bg-[var(--background)]">
       <SiteHeader />
       <main className="w-full pb-36 lg:pb-0">
-        <div className="lg:grid lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[minmax(0,1fr)_min(30vw,440px)_minmax(0,1fr)] lg:items-center lg:gap-x-14 lg:px-10 lg:py-10 xl:gap-x-16">
+        <div className="md:grid md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:items-start md:gap-x-10 md:px-8 md:pt-6 lg:grid lg:min-h-[calc(100svh-7rem)] lg:grid-cols-[minmax(0,1fr)_min(30vw,440px)_minmax(0,1fr)] lg:items-center lg:gap-x-14 lg:px-10 lg:py-10 xl:gap-x-16">
           <ColourWords
             product={product}
             colourProducts={colourProducts}
@@ -495,7 +495,7 @@ export default function ProductDetailPage() {
             wordClassName="fr-word text-[clamp(1.75rem,3vw,2.75rem)]"
           />
 
-          <section aria-label="Product media gallery" className="px-5 pt-2 lg:px-0 lg:pt-0">
+          <section aria-label="Product media gallery" className="px-5 pt-2 md:px-0 md:pt-0">
             <div
               className="fr-frame aspect-[3/4] w-full select-none"
               onPointerDown={handleSwipeStart}
@@ -506,7 +506,7 @@ export default function ProductDetailPage() {
               style={{ touchAction: "pan-y" }}
             >
               {mediaItems.length === 0 ? (
-                <div className="h-full w-full" style={{ backgroundColor: product.accent || "#eeece8" }} />
+                <div className="h-full w-full" style={{ backgroundColor: product.accent || "var(--fr-stone)" }} />
               ) : (
                 mediaItems.map((item, index) => {
                   const isActive = index === activeMediaIndex;
@@ -559,11 +559,11 @@ export default function ProductDetailPage() {
 
           <section
             aria-label="Product details and purchase options"
-            className="flex flex-col gap-5 px-5 pt-5 lg:max-w-[340px] lg:justify-self-start lg:px-0 lg:pt-0"
+            className="flex flex-col gap-5 px-5 pt-5 md:px-0 md:pt-0 lg:max-w-[340px] lg:justify-self-start"
           >
             <span className="fr-mono fr-muted">{[sideLabel, product.category].filter(Boolean).join(" · ")}</span>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="fr-word text-[2.1rem] lg:text-[clamp(2.25rem,3vw,2.75rem)]">{displayName}</h1>
+              <h1 className="fr-word text-[2.1rem] md:text-[2.75rem] lg:text-[clamp(2.25rem,3vw,2.75rem)]">{displayName}</h1>
               <WishlistButton
                 productId={product.id}
                 label={`Save ${displayName}`}

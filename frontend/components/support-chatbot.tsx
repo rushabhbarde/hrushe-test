@@ -115,13 +115,7 @@ export function SupportChatbot() {
   const selectedOption =
     issueOptions.find((option) => option.value === selectedValue) || null;
   const shouldHide = pathname.startsWith("/admin") || pathname.startsWith("/checkout");
-  const shouldHideClosedTrigger =
-    pathname === "/" ||
-    pathname === "/men" ||
-    pathname === "/women" ||
-    pathname === "/shop" ||
-    pathname === "/login" ||
-    pathname.startsWith("/collection/");
+  // Phones: the Frame bottom bar (4rem) or a sticky add-to-bag bar sits at the bottom edge.
   const shouldClearStickyAction =
     pathname.startsWith("/product/") || pathname === "/cart" || pathname === "/checkout";
 
@@ -152,28 +146,9 @@ export function SupportChatbot() {
     return null;
   }
 
-  if (!isOpen && shouldHideClosedTrigger) {
-    return null;
-  }
-
+  // No floating button: the panel opens from Menu → Help and from the Contact page.
   if (!isOpen) {
-    return (
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className={`fixed right-4 z-[112] grid h-14 w-14 place-items-center rounded-full bg-black text-white! shadow-[0_14px_34px_rgba(0,0,0,0.22)] lg:hidden ${
-          shouldClearStickyAction
-            ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-            : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
-        }`}
-        aria-label="Open HRUSHE support"
-      >
-        <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M6.5 8.5h13.5c1.4 0 2.5 1.1 2.5 2.5v7.5c0 1.4-1.1 2.5-2.5 2.5h-7.2L8.2 25v-4H6.5C5.1 21 4 19.9 4 18.5V11c0-1.4 1.1-2.5 2.5-2.5Z" />
-          <path d="M23 13h2.5c1.4 0 2.5 1.1 2.5 2.5V23c0 1.4-1.1 2.5-2.5 2.5h-1.7v3.2L20.2 25.5H16" />
-        </svg>
-      </button>
-    );
+    return null;
   }
 
   async function submitTicket() {
@@ -242,7 +217,7 @@ export function SupportChatbot() {
       className={`fixed right-4 z-[115] sm:bottom-6 sm:right-6 ${
         shouldClearStickyAction
           ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"
       }`}
     >
       <div
@@ -250,43 +225,37 @@ export function SupportChatbot() {
         aria-modal="false"
         aria-labelledby="support-panel-title"
         data-support-panel-version="refined"
-        className="w-[calc(100vw-2rem)] max-w-[430px] overflow-hidden rounded-lg border border-black/15 bg-[#f7f5ef] text-black shadow-[0_28px_70px_rgba(0,0,0,0.24)]"
+        className="w-[calc(100vw-2rem)] max-w-[430px] overflow-hidden border border-black/15 bg-[var(--background)] text-[var(--foreground)]"
       >
         <div className="border-b border-black/10 bg-white px-5 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[#7b0019]">
-                HRUSHE Support
-              </p>
-              <h2 id="support-panel-title" className="mt-2 text-[1.65rem] font-semibold leading-none">
-                What do you need help with?
+              <p className="fr-mono fr-muted">HRUSHE · Help</p>
+              <h2 id="support-panel-title" className="fr-word mt-3 text-[2rem]">
+                How can we help?
               </h2>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-black/15 bg-[#f7f5ef] text-base font-semibold transition hover:border-black hover:bg-black hover:text-white"
+              className="fr-mono fr-choice is-active min-h-11 shrink-0"
               aria-label="Close support chat"
             >
-              ×
+              Close ×
             </button>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-black/60 sm:grid-cols-3">
-            <span className="rounded-md border border-black/10 bg-[#f7f5ef] px-3 py-2">
-              Ticket support
-            </span>
-            <span className="rounded-md border border-black/10 bg-[#f7f5ef] px-3 py-2">
-              Email reply
-            </span>
-            <span className="col-span-2 rounded-md border border-black/10 bg-[#f7f5ef] px-3 py-2 sm:col-span-1">
-              Mon-Sat
-            </span>
+          <div className="fr-mono fr-muted mt-4 flex flex-wrap gap-x-4 gap-y-1">
+            <span>Ticket support</span>
+            <span aria-hidden="true">·</span>
+            <span>Email reply</span>
+            <span aria-hidden="true">·</span>
+            <span>Mon–Sat</span>
           </div>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
           {ticketCode ? (
-            <div className="rounded-lg border border-[#12824a]/25 bg-white px-4 py-4 shadow-[0_12px_26px_rgba(18,130,74,0.08)]">
+            <div className="border border-[#12824a]/25 bg-white px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#12824a]">
                 Ticket created
               </p>
@@ -297,14 +266,14 @@ export function SupportChatbot() {
               <button
                 type="button"
                 onClick={() => setTicketCode("")}
-                className="mt-4 rounded-md border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition hover:bg-black hover:text-white"
+                className="mt-4 border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition hover:bg-black hover:text-white"
               >
                 Create another
               </button>
             </div>
           ) : (
             <>
-              <div className="rounded-lg border border-[#7b0019]/15 bg-white px-4 py-3 text-sm leading-6 text-black/70">
+              <div className="border border-black/10 bg-white px-4 py-3 text-sm leading-6 text-black/70">
                 Choose a topic and we will route it to the right HRUSHE team. Never share OTPs, passwords, or card details.
               </div>
 
@@ -314,10 +283,10 @@ export function SupportChatbot() {
                     key={option.value}
                     type="button"
                     onClick={() => setSelectedValue(option.value)}
-                    className={`min-h-[4.25rem] rounded-md border px-3 py-2.5 text-left transition ${
+                    className={`min-h-[4.25rem] border px-3 py-2.5 text-left transition ${
                       selectedValue === option.value
-                        ? "border-black bg-black text-white shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
-                        : "border-black/10 bg-white hover:border-[#7b0019]/45 hover:bg-[#fffaf7]"
+                        ? "border-black bg-black text-white"
+                        : "border-black/10 bg-white hover:border-black/40 hover:bg-[var(--fr-stone-soft)]"
                     }`}
                   >
                     <span className="block text-[0.7rem] font-semibold uppercase tracking-[0.08em]">
@@ -335,8 +304,8 @@ export function SupportChatbot() {
               </div>
 
               {selectedOption ? (
-                <div className="mt-5 space-y-3 rounded-lg border border-black/10 bg-white p-4">
-                  <div className="rounded-md bg-[#f7f5ef] px-3 py-3 text-sm leading-6 text-black/72">
+                <div className="mt-5 space-y-3 border border-black/10 bg-white p-4">
+                  <div className="bg-[var(--fr-stone-soft)] px-3 py-3 text-sm leading-6 text-black/72">
                     {selectedOption.prompt}
                   </div>
 
@@ -349,7 +318,7 @@ export function SupportChatbot() {
                       }
                       autoComplete="name"
                       disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full rounded-md border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
+                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
                     />
                   </label>
                   <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
@@ -362,7 +331,7 @@ export function SupportChatbot() {
                       }
                       autoComplete="email"
                       disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full rounded-md border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
+                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
                     />
                   </label>
                   <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
@@ -375,7 +344,7 @@ export function SupportChatbot() {
                         setForm((current) => ({ ...current, phone: event.target.value }))
                       }
                       autoComplete="tel"
-                      className="min-h-11 w-full rounded-md border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
+                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
                     />
                   </label>
                   {selectedOption.needsOrder ? (
@@ -386,7 +355,7 @@ export function SupportChatbot() {
                         onChange={(event) =>
                           setForm((current) => ({ ...current, orderId: event.target.value }))
                         }
-                        className="min-h-11 w-full rounded-md border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
+                        className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
                       />
                     </label>
                   ) : null}
@@ -398,14 +367,14 @@ export function SupportChatbot() {
                         setForm((current) => ({ ...current, message: event.target.value }))
                       }
                       rows={4}
-                      className="w-full resize-none rounded-md border border-black/12 bg-white px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none transition focus:border-black"
+                      className="w-full resize-none border border-black/12 bg-white px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none transition focus:border-black"
                     />
                   </label>
                   <button
                     type="button"
                     onClick={() => void submitTicket()}
                     disabled={isSubmitting}
-                    className="w-full rounded-md bg-black px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-[#7b0019] disabled:cursor-not-allowed disabled:opacity-55"
+                    className="fr-button"
                   >
                     {isSubmitting ? "Creating ticket..." : "Create support ticket"}
                   </button>

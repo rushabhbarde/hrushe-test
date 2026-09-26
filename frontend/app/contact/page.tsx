@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OpenSupportButton } from "@/components/open-support-button";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -39,6 +40,9 @@ export default function ContactPage() {
             <Link href="/track-order" className="fr-button mt-2 max-w-sm">
               Track an order
             </Link>
+            <OpenSupportButton className="fr-mono fr-choice is-active fr-link self-start">
+              Write to us here →
+            </OpenSupportButton>
           </div>
 
           <ul className="flex flex-col lg:pt-10">
@@ -48,7 +52,7 @@ export default function ContactPage() {
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel={item.href.startsWith("http") ? "noreferrer" : undefined}
-                  className="fr-index-row group !grid-cols-[minmax(0,1fr)_auto] py-5!"
+                  className="fr-index-row is-active group !grid-cols-[minmax(0,1fr)_auto] py-5!"
                 >
                   <span className="flex min-w-0 flex-col gap-2">
                     <span className="fr-mono">{item.title}</span>

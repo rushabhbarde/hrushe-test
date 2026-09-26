@@ -5,13 +5,13 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Men",
-  description: "Shop HRUSHE menswear: new arrivals, vacation edits, t-shirts, tank tops, pants, and shorts.",
+  description: "HRUSHE for men: refined everyday essentials with clean silhouettes and honest materials. Defined quietly.",
   alternates: {
     canonical: "/men",
   },
   openGraph: {
     title: "Men | HRUSHE",
-    description: "Shop HRUSHE menswear: new arrivals, vacation edits, t-shirts, tank tops, pants, and shorts.",
+    description: "HRUSHE for men: refined everyday essentials with clean silhouettes and honest materials. Defined quietly.",
     url: "/men",
   },
 };

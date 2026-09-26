@@ -453,7 +453,7 @@ export default function CheckoutPage() {
                       type="button"
                       onClick={() => index + 1 < step && setStep((index + 1) as 1 | 2 | 3)}
                       disabled={index + 1 >= step}
-                      className={`fr-mono text-left ${done ? "text-[var(--foreground)]" : "text-[#8e8981]"} ${index + 1 < step ? "cursor-pointer underline underline-offset-4" : "cursor-default"}`}
+                      className={`fr-mono text-left ${done ? "text-[var(--foreground)]" : "text-[var(--fr-quiet)]"} ${index + 1 < step ? "cursor-pointer underline underline-offset-4" : "cursor-default"}`}
                     >
                       {String(index + 1).padStart(2, "0")} {label}
                     </button>

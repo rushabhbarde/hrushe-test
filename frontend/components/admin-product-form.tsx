@@ -1150,7 +1150,7 @@ function SidePhotos({
           ) : (
             <label
               htmlFor={inputId}
-              className="fr-mono absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed border-[color-mix(in_srgb,var(--foreground)_35%,transparent)] bg-[#f5f3ef] p-6 text-center"
+              className="fr-mono absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed border-[color-mix(in_srgb,var(--foreground)_35%,transparent)] bg-[var(--fr-stone-soft)] p-6 text-center"
             >
               + Add {side === "Women" ? "women’s" : "men’s"} photos
               {fallback ? <span className="fr-muted normal-case! tracking-normal!">Until then this side uses the main photos.</span> : null}

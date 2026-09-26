@@ -115,7 +115,7 @@ export function AdminShell({
         value={globalQuery}
         onChange={(event) => setGlobalQuery(event.target.value)}
         placeholder="Search"
-        className="fr-mono w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_22%,transparent)] bg-transparent py-2 outline-none! placeholder:text-[#8e8981] focus:border-[var(--foreground)]"
+        className="fr-mono w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_22%,transparent)] bg-transparent py-2 outline-none! placeholder:text-[var(--fr-quiet)] focus:border-[var(--foreground)]"
       />
     </form>
   );
