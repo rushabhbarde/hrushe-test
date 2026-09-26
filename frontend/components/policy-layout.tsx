@@ -160,7 +160,7 @@ export function PolicyLayout({
                       key={`mobile-${policy.key}`}
                       type="button"
                       onClick={() => switchPolicy(policy.key)}
-                      className={`fr-choice fr-word min-h-11 py-1 text-left text-[1.6rem] ${isActive ? "is-active" : ""}`}
+                      className={`fr-choice fr-word min-h-11 py-1 text-left text-[1.6rem]! ${isActive ? "is-active" : ""}`}
                     >
                       {policy.label}
                     </button>

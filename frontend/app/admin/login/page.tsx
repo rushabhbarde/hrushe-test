@@ -19,7 +19,7 @@ function AdminLoginPageContent() {
   return (
     <div className="page-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-xl px-5 py-10 sm:px-8">
+      <main className="mx-auto max-w-lg px-5 pb-20 pt-10 sm:px-8 lg:pt-16">
         <AdminAuthPanel
           onSuccess={() => {
             router.push(nextPath);

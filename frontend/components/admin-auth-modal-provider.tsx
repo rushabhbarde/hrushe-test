@@ -89,7 +89,7 @@ export function AdminAuthModalProvider({ children }: { children: ReactNode }) {
     <AdminAuthModalContext.Provider value={value}>
       {children}
       {isOpen ? (
-        <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/40 px-4 py-6">
           <button
             type="button"
             aria-label="Close admin login popup"
@@ -100,17 +100,17 @@ export function AdminAuthModalProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={closeAdminAuthModal}
-              className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-xl text-black shadow-sm transition hover:bg-white"
+              className="fr-mono fr-choice is-active absolute right-6 top-6 z-20 min-h-11"
               aria-label="Close"
             >
-              ×
+              Close ×
             </button>
             <AdminAuthPanel
               onSuccess={() => {
                 closeAdminAuthModal();
                 router.push(nextPath || "/admin");
               }}
-              className="shadow-[0_30px_80px_rgba(0,0,0,0.18)]"
+              className="bg-[var(--background)] p-8 sm:p-10"
             />
           </div>
         </div>

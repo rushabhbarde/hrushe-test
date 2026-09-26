@@ -4,24 +4,22 @@ import Link from "next/link";
 
 export default function StorefrontError({ reset }: { reset: () => void }) {
   return (
-    <main className="lux-page flex items-center py-16">
-      <div className="lux-container">
-        <div className="empty-shell max-w-3xl p-8 sm:p-12">
-          <p className="eyebrow text-[var(--muted)]">HRUSHE</p>
-          <h1 className="mt-4 text-3xl font-medium uppercase tracking-[-0.04em] sm:text-5xl">
-            This page needs another moment.
-          </h1>
-          <p className="mt-5 max-w-xl text-sm leading-7 text-[var(--muted)] sm:text-base">
-            The storefront could not complete this request. Try again, or return to the collection.
+    <main className="flex min-h-[80svh] items-center px-5 py-16 lg:px-10">
+      <div className="mx-auto grid w-full max-w-[1320px] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end lg:gap-20">
+        <div className="flex flex-col gap-4">
+          <span className="fr-mono fr-muted">HRUSHE</span>
+          <h1 className="fr-word text-[clamp(3.5rem,12vw,8rem)]">One moment.</h1>
+        </div>
+        <div className="flex flex-col gap-5">
+          <p className="text-base leading-7 text-[var(--muted)]">
+            This page could not finish loading. Try again, or go back to the edit.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={reset} className="button-primary px-6 text-xs font-semibold uppercase tracking-[0.12em]">
-              Try again
-            </button>
-            <Link href="/shop" className="button-secondary inline-flex items-center justify-center px-6 text-xs font-semibold uppercase tracking-[0.12em]">
-              View the shop
-            </Link>
-          </div>
+          <button type="button" onClick={reset} className="fr-button">
+            Try again
+          </button>
+          <Link href="/shop" className="fr-mono fr-link self-start">
+            See the edit →
+          </Link>
         </div>
       </div>
     </main>

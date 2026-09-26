@@ -49,6 +49,8 @@ type FormState = {
   variants: ProductVariant[];
   images: string[];
   galleryImages: string[];
+  womenImages: string[];
+  menImages: string[];
   fabric: string;
   gsm: string;
   cottonType: string;
@@ -129,6 +131,8 @@ function buildInitialState(
     variants: product?.variants || [],
     images: product?.images || [],
     galleryImages: meta?.galleryImages || product?.galleryImages || [],
+    womenImages: product?.womenImages || [],
+    menImages: product?.menImages || [],
     fabric: product?.fabric || "",
     gsm: product?.gsm || "",
     cottonType: product?.cottonType || "",
@@ -269,7 +273,7 @@ export function AdminProductForm({
 
   async function uploadImages(
     files: FileList | null,
-    key: "images" | "galleryImages",
+    key: "images" | "galleryImages" | "womenImages" | "menImages",
     maxDimension: number
   ) {
     if (!files?.length) {
@@ -287,7 +291,13 @@ export function AdminProductForm({
         })
       );
       updateForm(key, [...form[key], ...uploaded]);
-      pushToast(`${key === "images" ? "Product" : "Gallery"} images added.`);
+      pushToast(
+        key === "womenImages"
+          ? "Women’s photos added."
+          : key === "menImages"
+            ? "Men’s photos added."
+            : `${key === "images" ? "Product" : "Gallery"} images added.`
+      );
     } catch (error) {
       pushToast(
         error instanceof Error ? error.message : "Could not process those images.",
@@ -410,7 +420,7 @@ export function AdminProductForm({
       }
 
       if (
-        [...form.images, ...form.galleryImages, ...form.videos.flatMap((video) => [video.url, video.posterUrl || ""])].some(
+        [...form.images, ...form.galleryImages, ...form.womenImages, ...form.menImages, ...form.videos.flatMap((video) => [video.url, video.posterUrl || ""])].some(
           (url) => /^data:/i.test(url)
         )
       ) {
@@ -436,6 +446,8 @@ export function AdminProductForm({
         images: form.images,
         videos: form.videos,
         galleryImages: form.galleryImages,
+        womenImages: form.womenImages,
+        menImages: form.menImages,
         fabric: form.fabric.trim(),
         gsm: form.gsm.trim(),
         cottonType: form.cottonType.trim(),
@@ -484,7 +496,20 @@ export function AdminProductForm({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Product management" title={title} description={description} />
+      <AdminPageHeader eyebrow="Pieces" title={title} description={description} />
+
+      <SidePhotos
+        name={form.name}
+        womenImages={form.womenImages}
+        menImages={form.menImages}
+        fallback={form.images[0]}
+        uploading={mediaUploadsInFlight > 0}
+        onUpload={(files, side) => uploadImages(files, side === "Women" ? "womenImages" : "menImages", 1080)}
+        onRemove={(side, index) => {
+          const key = side === "Women" ? "womenImages" : "menImages";
+          updateForm(key, form[key].filter((_, itemIndex) => itemIndex !== index));
+        }}
+      />
 
       <form className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]" onSubmit={(event) => void handleSubmit(event)}>
         <div className="space-y-6">
@@ -1062,6 +1087,132 @@ export function AdminProductForm({
         </div>
       </form>
     </div>
+  );
+}
+
+/**
+ * One piece, two sides: the frame shows the piece as Women or Men sees it.
+ * A side without its own photos falls back to the main product images.
+ */
+function SidePhotos({
+  name,
+  womenImages,
+  menImages,
+  fallback,
+  uploading,
+  onUpload,
+  onRemove,
+}: {
+  name: string;
+  womenImages: string[];
+  menImages: string[];
+  fallback?: string;
+  uploading: boolean;
+  onUpload: (files: FileList | null, side: "Women" | "Men") => Promise<void>;
+  onRemove: (side: "Women" | "Men", index: number) => void;
+}) {
+  const [side, setSide] = useState<"Women" | "Men">("Men");
+  const [shown, setShown] = useState(0);
+  const photos = side === "Women" ? womenImages : menImages;
+  const current = photos[Math.min(shown, photos.length - 1)] || "";
+  const inputId = `side-photos-${side.toLowerCase()}`;
+
+  const sideButton = (value: "Women" | "Men", className: string) => (
+    <button
+      type="button"
+      onClick={() => {
+        setSide(value);
+        setShown(0);
+      }}
+      aria-pressed={side === value}
+      className={`fr-choice fr-word text-[clamp(3rem,7vw,6rem)]! ${side === value ? "is-active" : ""} ${className}`}
+    >
+      {value}
+    </button>
+  );
+
+  return (
+    <section
+      aria-label="Photos for each side"
+      className="grid items-center gap-6 border-y border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] py-8 lg:grid-cols-[minmax(0,1fr)_min(26vw,360px)_minmax(0,1fr)] lg:gap-x-14"
+    >
+      <div className="flex gap-6 lg:contents">
+        {sideButton("Women", "lg:justify-self-end")}
+        <span className="lg:hidden">{sideButton("Men", "")}</span>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="fr-frame aspect-[4/5] w-full">
+          {current ? (
+            <div className="fr-frame__layer is-active">
+              <Image src={current} alt={`${name || "Piece"} · ${side}`} fill unoptimized sizes="360px" />
+            </div>
+          ) : (
+            <label
+              htmlFor={inputId}
+              className="fr-mono absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 border border-dashed border-[color-mix(in_srgb,var(--foreground)_35%,transparent)] bg-[#f5f3ef] p-6 text-center"
+            >
+              + Add {side === "Women" ? "women’s" : "men’s"} photos
+              {fallback ? <span className="fr-muted normal-case! tracking-normal!">Until then this side uses the main photos.</span> : null}
+            </label>
+          )}
+        </div>
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="fr-mono">
+            {side} photos · {String(photos.length).padStart(2, "0")}
+          </span>
+          <label htmlFor={inputId} className="fr-mono fr-link cursor-pointer">
+            {uploading ? "Uploading…" : photos.length ? "Add more" : "Upload"}
+          </label>
+          <input
+            id={inputId}
+            type="file"
+            accept="image/*"
+            multiple
+            className="sr-only"
+            onChange={(event) => {
+              const input = event.currentTarget;
+              void onUpload(input.files, side).finally(() => {
+                input.value = "";
+              });
+            }}
+          />
+        </div>
+        {photos.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {photos.map((photo, index) => (
+              <div key={`${photo}-${index}`} className="flex flex-col items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShown(index)}
+                  aria-label={`Show ${side} photo ${index + 1}`}
+                  className={`fr-frame block h-16 w-12 ${index === shown ? "outline outline-1 outline-[var(--foreground)]" : ""}`}
+                >
+                  <span className="fr-frame__layer is-active">
+                    <Image src={photo} alt="" fill unoptimized sizes="48px" />
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRemove(side, index);
+                    setShown(0);
+                  }}
+                  className="fr-mono fr-choice text-[9px]!"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <span className="text-sm text-[var(--muted)]">
+          Photos for each side of the store. A side without its own photos shows the main product images.
+        </span>
+      </div>
+
+      <span className="hidden lg:block">{sideButton("Men", "justify-self-start")}</span>
+    </section>
   );
 }
 
