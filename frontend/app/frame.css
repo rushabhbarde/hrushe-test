@@ -542,3 +542,10 @@
   line-height: 0.9;
   text-transform: uppercase;
 }
+
+/* Chapters home: category photos are portraits; in the wide desktop window show them whole. */
+@media (min-width: 1024px) {
+  .chapter-edit .fr-frame__layer img {
+    object-fit: contain;
+  }
+}
