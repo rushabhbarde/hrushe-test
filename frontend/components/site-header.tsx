@@ -415,7 +415,7 @@ export function SiteHeader() {
               width={HRUSHE_LOGO_DIMENSIONS.width}
               height={HRUSHE_LOGO_DIMENSIONS.height}
               priority
-              className="h-6 w-auto object-contain lg:h-9"
+              className="h-8 w-auto object-contain lg:h-11"
             />
           </Link>
 
