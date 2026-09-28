@@ -28,6 +28,8 @@ const {
 } = require("../utils/otpVerification");
 const { isValidIndianPhone, normalizeIndianPhone } = require("../utils/phone");
 const { toUserConflictError } = require("../utils/userDuplicateKey");
+const crypto = require("crypto");
+const firebaseIdToken = require("../utils/firebaseIdToken");
 
 const PASSWORD_HASH_ROUNDS = 12;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -206,6 +208,78 @@ const login = asyncHandler(async (req, res) => {
   await user.save();
 
   return sendAuthResponse(req, res, user, "Login successful");
+});
+
+/**
+ * Mobile + OTP sign-in. The browser proves the phone with Firebase and sends the ID token.
+ * Known phone → signed in. New phone → { needsProfile: true } until name and email are sent.
+ */
+const phoneSignIn = asyncHandler(async (req, res) => {
+  const { idToken, name, email } = req.body;
+  const { phoneNumber } = await firebaseIdToken.verifyFirebasePhoneToken(idToken);
+  const phone = normalizeIndianPhone(phoneNumber);
+  validateIndianPhone(phone);
+
+  const existingUser = await User.findOne({ phone });
+  if (existingUser) {
+    if (existingUser.role === "admin") {
+      throw new AppError("Use the admin sign-in for this account.", 403);
+    }
+    existingUser.isVerified = true;
+    existingUser.lastLoginAt = new Date();
+    await existingUser.save();
+    return sendAuthResponse(req, res, existingUser, "Login successful");
+  }
+
+  if (!name || !email) {
+    return res.json({ needsProfile: true, phone });
+  }
+
+  const normalizedName = String(name).trim();
+  const normalizedEmail = normalizeEmail(email);
+  if (normalizedName.length < 2) {
+    throw new AppError("Full name must be at least 2 characters long", 400);
+  }
+  validateEmail(normalizedEmail);
+
+  if (await User.findOne({ email: normalizedEmail })) {
+    throw new AppError("This email already has an HRUSHE account. Use the mobile number saved on it.", 409);
+  }
+
+  // Phone accounts have no password; store an unusable random one to satisfy the schema.
+  const unusablePassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), PASSWORD_HASH_ROUNDS);
+  let user;
+  try {
+    user = await User.create({
+      name: normalizedName,
+      email: normalizedEmail,
+      password: unusablePassword,
+      phone,
+      isVerified: true,
+      lastLoginAt: new Date(),
+    });
+  } catch (error) {
+    throw toUserConflictError(error) || error;
+  }
+
+  await Cart.create({ userId: user._id, items: [] });
+
+  try {
+    const delivery = await sendEmail({
+      to: normalizedEmail,
+      subject: "Welcome to HRUSHE",
+      html: buildWelcomeEmail({ name: normalizedName }),
+      templateKey: env.ZEPTOMAIL_TEMPLATE_WELCOME || undefined,
+      mergeInfo: { name: normalizedName, email: normalizedEmail },
+    });
+    if (!delivery.delivered) {
+      logEmailFailure("Welcome", new Error(delivery.reason || "Mail delivery failed"));
+    }
+  } catch (error) {
+    logEmailFailure("Welcome", error);
+  }
+
+  return sendAuthResponse(req, res, user, "User created successfully", 201);
 });
 
 const adminLogin = asyncHandler(async (req, res) => {
@@ -526,6 +600,7 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 module.exports = {
   signup,
   login,
+  phoneSignIn,
   adminLogin,
   me,
   updateMe,

@@ -12,5 +12,8 @@ describe("production CSP headers", () => {
     expect(csp).toContain("https://cdn.razorpay.com");
     expect(csp).toContain("https://static.cloudflareinsights.com");
     expect(csp).toContain("https://cloudflareinsights.com");
+    // Firebase phone sign-in (reCAPTCHA + Identity Toolkit)
+    expect(csp).toContain("https://identitytoolkit.googleapis.com");
+    expect(csp).toContain("https://www.gstatic.com");
   });
 });

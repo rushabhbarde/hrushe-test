@@ -2,6 +2,7 @@ const express = require("express");
 const {
   signup,
   login,
+  phoneSignIn,
   adminLogin,
   me,
   updateMe,
@@ -26,6 +27,11 @@ router.post(
   "/login",
   createRateLimiter({ name: "login", max: 15, windowMs: 15 * 60 * 1000 }),
   login
+);
+router.post(
+  "/phone",
+  createRateLimiter({ name: "phone-login", max: 15, windowMs: 15 * 60 * 1000 }),
+  phoneSignIn
 );
 router.post(
   "/admin-login",
