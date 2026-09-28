@@ -94,6 +94,8 @@ const env = {
       : process.env.OTP_DEV_MODE === "true",
   FIREBASE_PROJECT_ID: String(process.env.FIREBASE_PROJECT_ID || "").trim(),
   // Shiprocket: an API user (Shiprocket → Settings → API) and the pickup location name.
+  // Master switch: nothing is sent to Shiprocket unless this is exactly "true".
+  SHIPROCKET_ENABLED: String(process.env.SHIPROCKET_ENABLED || "").trim().toLowerCase() === "true",
   SHIPROCKET_EMAIL: String(process.env.SHIPROCKET_EMAIL || "").trim(),
   SHIPROCKET_PASSWORD: process.env.SHIPROCKET_PASSWORD || "",
   SHIPROCKET_PICKUP_LOCATION: String(process.env.SHIPROCKET_PICKUP_LOCATION || "Primary").trim(),

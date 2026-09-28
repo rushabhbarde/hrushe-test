@@ -1195,7 +1195,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 /** Admin retry: send a confirmed order to Shiprocket if it was not sent or failed. */
 const sendToShiprocket = asyncHandler(async (req, res) => {
   if (!shiprocket.isShiprocketConfigured()) {
-    throw new AppError("Shiprocket is not connected yet. Add the Shiprocket API user in Render.", 503);
+    throw new AppError("Shiprocket is switched off. Set SHIPROCKET_ENABLED=true with the API user in Render.", 503);
   }
   const existing = await Order.findById(req.params.id);
   if (!existing) {

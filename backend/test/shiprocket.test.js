@@ -81,7 +81,7 @@ test("payload is a prepaid order with the customer's address and items", () => {
 });
 
 test("create logs in, creates the order and reports Shiprocket's rejection", async (t) => {
-  withEnv(t, { SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
+  withEnv(t, { SHIPROCKET_ENABLED: true, SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
   shiprocket.resetShiprocketTokenForTests();
   const calls = [];
   const ok = async (url, init) => {
@@ -108,7 +108,7 @@ test("tracking statuses map to our order statuses", () => {
 });
 
 test("an order is sent once; failures are stored for retry", async (t) => {
-  withEnv(t, { SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
+  withEnv(t, { SHIPROCKET_ENABLED: true, SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
   let creates = 0;
   let stored;
   stub(t, Order, "findById", async () => sampleOrder());
@@ -144,8 +144,8 @@ test("an order is sent once; failures are stored for retry", async (t) => {
   assert.match(stored["shiprocket.error"], /Invalid pincode/);
 });
 
-test("nothing is sent while Shiprocket is not connected", async (t) => {
-  withEnv(t, { SHIPROCKET_EMAIL: "", SHIPROCKET_PASSWORD: "" });
+test("nothing is sent while Shiprocket is switched off, even with credentials", async (t) => {
+  withEnv(t, { SHIPROCKET_ENABLED: false, SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
   stub(t, Order, "findById", async () => sampleOrder());
   stub(t, Order, "findOneAndUpdate", async () => {
     throw new Error("should not claim");

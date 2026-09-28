@@ -5,7 +5,7 @@ const API = "https://apiv2.shiprocket.in/v1/external";
 const tokenCache = { token: "", expiresAt: 0 };
 
 function isShiprocketConfigured() {
-  return Boolean(env.SHIPROCKET_EMAIL && env.SHIPROCKET_PASSWORD);
+  return Boolean(env.SHIPROCKET_ENABLED && env.SHIPROCKET_EMAIL && env.SHIPROCKET_PASSWORD);
 }
 
 async function getToken({ fetchImpl = fetch } = {}) {
