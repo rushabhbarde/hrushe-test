@@ -437,9 +437,34 @@ export function SiteHeader() {
             <Link href="/search" className="fr-mono min-h-11 inline-flex items-center">
               Search
             </Link>
-            <Link href={isAuthenticated ? "/account" : loginHref} className="fr-mono min-h-11 inline-flex items-center">
-              {isAuthenticated ? "Wardrobe" : "Account"}
-            </Link>
+            {isAuthenticated ? (
+              <div className="group relative">
+                <Link href="/account" className="fr-mono min-h-11 inline-flex items-center">
+                  Wardrobe
+                </Link>
+                <div className="invisible absolute right-0 top-full z-40 flex min-w-[11rem] flex-col gap-1 border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[var(--background)] px-5 py-4 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                  <Link href="/account?section=orders" className="fr-mono min-h-9 inline-flex items-center">
+                    Orders
+                  </Link>
+                  <Link href="/account?section=profile" className="fr-mono min-h-9 inline-flex items-center">
+                    Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void customerAuth?.logout().finally(() => router.push("/"));
+                    }}
+                    className="fr-mono fr-choice is-active min-h-9 text-left"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <Link href={loginHref} className="fr-mono min-h-11 inline-flex items-center">
+                Account
+              </Link>
+            )}
             <button type="button" onClick={openSaved} className="fr-mono fr-choice is-active min-h-11">
               Saved{wishlistCount > 0 ? ` (${wishlistCount})` : ""}
             </button>
