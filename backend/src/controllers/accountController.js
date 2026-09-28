@@ -205,6 +205,11 @@ const updateProfile = asyncHandler(async (req, res) => {
     throw new AppError("Phone number is already in use", 409);
   }
 
+  // With mobile + OTP sign-in the phone is the login identity: it can't be changed without a code.
+  if (env.FIREBASE_PROJECT_ID && user.phone && normalizedPhone !== user.phone) {
+    throw new AppError("Your mobile number is how you sign in. Contact us to change it.", 400);
+  }
+
   user.name = normalizedName;
   user.phone = normalizedPhone;
   user.gender = String(gender || "").trim();

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AccountGuard } from "@/components/account-guard";
+import { BirthDateField } from "@/components/birth-date-field";
+import { isPhoneSignInEnabled } from "@/lib/firebase-phone";
 import {
   AccountSectionCard,
   AccountShell,
@@ -231,6 +233,8 @@ function AccountPageContent() {
     useState<CommunicationPreferences>(emptyNotifications);
   const [addressForm, setAddressForm] = useState(emptyAddressForm);
   const [supportForm, setSupportForm] = useState(emptySupportForm);
+  const phoneSignInEnabled = isPhoneSignInEnabled();
+  const [emailChange, setEmailChange] = useState({ open: false, newEmail: "", otp: "", sent: false, busy: false });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -322,6 +326,11 @@ function AccountPageContent() {
   );
 
   const saveProfile = useCallback(async () => {
+    if (profileForm.dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(profileForm.dateOfBirth)) {
+      setError("Choose the day, month and year of your birth date.");
+      return;
+    }
+
     setSubmitting("profile");
     setError("");
 
@@ -605,6 +614,39 @@ function AccountPageContent() {
     }
   }, [pushToast, supportForm]);
 
+  const requestEmailChange = useCallback(async () => {
+    setEmailChange((current) => ({ ...current, busy: true }));
+    setError("");
+    try {
+      await apiRequest("/account/email-change/request-otp", {
+        method: "POST",
+        body: JSON.stringify({ newEmail: emailChange.newEmail.trim() }),
+      });
+      setEmailChange((current) => ({ ...current, sent: true, busy: false }));
+      pushToast("Code sent to your new email");
+    } catch (changeError) {
+      setEmailChange((current) => ({ ...current, busy: false }));
+      setError(changeError instanceof Error ? changeError.message : "Could not send the code.");
+    }
+  }, [emailChange.newEmail, pushToast]);
+
+  const confirmEmailChange = useCallback(async () => {
+    setEmailChange((current) => ({ ...current, busy: true }));
+    setError("");
+    try {
+      await apiRequest("/account/email-change/verify", {
+        method: "POST",
+        body: JSON.stringify({ newEmail: emailChange.newEmail.trim(), otp: emailChange.otp.trim() }),
+      });
+      pushToast("Email updated. Please sign in again.");
+      await logout().catch(() => undefined);
+      router.push("/login?next=%2Faccount");
+    } catch (changeError) {
+      setEmailChange((current) => ({ ...current, busy: false }));
+      setError(changeError instanceof Error ? changeError.message : "Could not confirm the code.");
+    }
+  }, [emailChange.newEmail, emailChange.otp, logout, pushToast, router]);
+
   const submitPasswordChange = useCallback(async () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
       setError("Current password and new password are required.");
@@ -835,19 +877,17 @@ function AccountPageContent() {
                       { label: "Full name", value: profileForm.name, key: "name", type: "text" },
                       { label: "Email", value: profileForm.email, key: "email", type: "email" },
                       { label: "Phone", value: profileForm.phone, key: "phone", type: "text" },
-                      {
-                        label: "Date of birth",
-                        value: profileForm.dateOfBirth,
-                        key: "dateOfBirth",
-                        type: "date",
-                      },
                     ].map((field) => (
                       <label key={field.key} className="space-y-2">
-                        <span className="text-sm text-[var(--muted)]">{field.label}</span>
+                        <span className="text-sm text-[var(--muted)]">
+                          {field.key === "phone" && phoneSignInEnabled ? "Phone · your sign-in number" : field.label}
+                        </span>
                         <input
                           type={field.type}
                           value={field.value}
-                          disabled={!profileEditing}
+                          disabled={
+                            !profileEditing || field.key === "email" || (field.key === "phone" && phoneSignInEnabled)
+                          }
                           onChange={(event) =>
                             setProfileForm((current) => ({
                               ...current,
@@ -858,6 +898,15 @@ function AccountPageContent() {
                         />
                       </label>
                     ))}
+                    <div className="space-y-2">
+                      <span className="text-sm text-[var(--muted)]">Date of birth</span>
+                      <BirthDateField
+                        value={profileForm.dateOfBirth}
+                        disabled={!profileEditing}
+                        onChange={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))}
+                        selectClassName="w-full min-w-0 rounded-[1.2rem] border border-[var(--border)] bg-white/80 px-2 py-3 disabled:opacity-70"
+                      />
+                    </div>
                     <label className="space-y-2">
                       <span className="text-sm text-[var(--muted)]">Gender</span>
                       <select
@@ -905,6 +954,73 @@ function AccountPageContent() {
                 ) : null}
 
                 <div className="section-divider mt-8" />
+                <div className="mt-8 flex flex-col gap-4">
+                  <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">Email</p>
+                  {!emailChange.open ? (
+                    <div className="flex flex-wrap items-baseline justify-between gap-4">
+                      <span className="text-base">{summary?.user.email || user?.email}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEmailChange({ open: true, newEmail: "", otp: "", sent: false, busy: false })}
+                        className="fr-mono fr-choice fr-link is-active"
+                      >
+                        Change email
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                      <label className="space-y-2">
+                        <span className="text-sm text-[var(--muted)]">
+                          {emailChange.sent ? `Code sent to ${emailChange.newEmail}` : "New email"}
+                        </span>
+                        {emailChange.sent ? (
+                          <input
+                            value={emailChange.otp}
+                            onChange={(event) =>
+                              setEmailChange((current) => ({ ...current, otp: event.target.value.replace(/\D/g, "").slice(0, 6) }))
+                            }
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            placeholder="6-digit code"
+                            className="w-full rounded-[1.2rem] border border-[var(--border)] bg-white/80 px-4 py-3"
+                          />
+                        ) : (
+                          <input
+                            type="email"
+                            value={emailChange.newEmail}
+                            onChange={(event) => setEmailChange((current) => ({ ...current, newEmail: event.target.value }))}
+                            autoComplete="email"
+                            className="w-full rounded-[1.2rem] border border-[var(--border)] bg-white/80 px-4 py-3"
+                          />
+                        )}
+                      </label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          disabled={emailChange.busy}
+                          onClick={() => void (emailChange.sent ? confirmEmailChange() : requestEmailChange())}
+                          className="button-primary px-5 py-3 disabled:opacity-60"
+                        >
+                          {emailChange.busy ? "One moment…" : emailChange.sent ? "Confirm" : "Send code"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEmailChange({ open: false, newEmail: "", otp: "", sent: false, busy: false })}
+                          className="button-secondary px-5 py-3"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {phoneSignInEnabled ? (
+                  <p className="fr-mono fr-muted mt-8">
+                    You sign in with your mobile number and a one-time code. No password needed.
+                  </p>
+                ) : (
+                  <>
                 <div className="mt-8 rounded-[1.6rem] border border-[var(--border)] bg-white/70 p-5">
                   <p className="text-sm uppercase tracking-[0.18em] text-[var(--accent)]">
                     Security
@@ -963,6 +1079,8 @@ function AccountPageContent() {
                     </button>
                   </div>
                 </div>
+                  </>
+                )}
               </AccountSectionCard>
             ) : null}
 

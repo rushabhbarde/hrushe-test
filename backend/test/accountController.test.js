@@ -363,3 +363,34 @@ test("moving a wishlist item keeps wishlist unchanged when cart save fails", asy
   assert.equal(userSaved, false);
   assert.deepEqual(user.wishlist, [productId]);
 });
+
+test("with mobile sign-in on, the sign-in phone cannot be changed from the profile", async (t) => {
+  installModelStubs(t);
+  const env = require("../src/config/env");
+  const previousProject = env.FIREBASE_PROJECT_ID;
+  env.FIREBASE_PROJECT_ID = "hrushe-test";
+  t.after(() => {
+    env.FIREBASE_PROJECT_ID = previousProject;
+  });
+
+  let saved = false;
+  User.findOne = async () => null;
+  User.findById = async () => ({
+    _id: "507f1f77bcf86cd799439011",
+    email: "customer@example.com",
+    name: "Test Customer",
+    phone: "9876543210",
+    save: async () => {
+      saved = true;
+    },
+  });
+
+  const { nextError } = await callController(updateProfile, {
+    user: { _id: "507f1f77bcf86cd799439011", email: "customer@example.com" },
+    body: { name: "Test Customer", email: "customer@example.com", phone: "9999999999" },
+  });
+
+  assert.equal(nextError?.statusCode, 400);
+  assert.match(nextError?.message || "", /how you sign in/i);
+  assert.equal(saved, false);
+});
