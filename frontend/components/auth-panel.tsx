@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
+import { PhoneSignIn } from "@/components/phone-sign-in";
+import { isPhoneSignInEnabled } from "@/lib/firebase-phone";
 import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 
@@ -37,6 +39,7 @@ export function AuthPanel({
   className = "",
 }: AuthPanelProps) {
   const { login, signup } = useCustomerAuth();
+  const phoneSignInEnabled = isPhoneSignInEnabled();
   const { pushToast } = useToast();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [view, setView] = useState<AuthView>("auth");
@@ -362,6 +365,10 @@ export function AuthPanel({
         </aside>
 
         <section className="relative px-5 py-7 sm:px-8 sm:py-10 lg:px-10">
+          {phoneSignInEnabled ? (
+            <PhoneSignIn onSuccess={onSuccess} />
+          ) : (
+            <>
           <div className="flex flex-col gap-3 pr-12 sm:pr-14">
             <p className="fr-mono fr-muted">Wardrobe</p>
             <h2 className="fr-word text-[clamp(2.75rem,10vw,4rem)]">
@@ -666,6 +673,8 @@ export function AuthPanel({
             <span aria-hidden="true">·</span>
             <span>Email OTP protected</span>
           </div>
+            </>
+          )}
         </section>
       </div>
     </div>

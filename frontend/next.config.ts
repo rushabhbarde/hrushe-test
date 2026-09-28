@@ -62,13 +62,13 @@ const nextConfig: NextConfig = {
   async headers() {
     const contentSecurityPolicy = [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://checkout.razorpay.com https://cdn.razorpay.com https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com`,
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://checkout.razorpay.com https://cdn.razorpay.com https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com https://www.google.com https://www.gstatic.com https://apis.google.com`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
       "font-src 'self' data: https:",
-      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://cloudflareinsights.com",
-      "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://cloudflareinsights.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.google.com",
+      "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

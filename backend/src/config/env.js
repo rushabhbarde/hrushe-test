@@ -92,6 +92,7 @@ const env = {
     process.env.OTP_DEV_MODE === undefined
       ? process.env.NODE_ENV !== "production"
       : process.env.OTP_DEV_MODE === "true",
+  FIREBASE_PROJECT_ID: String(process.env.FIREBASE_PROJECT_ID || "").trim(),
   MSG91_AUTH_KEY: process.env.MSG91_AUTH_KEY || "",
   MSG91_SENDER_ID: process.env.MSG91_SENDER_ID || "",
   MSG91_DLT_TEMPLATE_ID: process.env.MSG91_DLT_TEMPLATE_ID || "",

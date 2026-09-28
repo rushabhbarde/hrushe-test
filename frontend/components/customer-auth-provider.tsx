@@ -62,6 +62,8 @@ type CustomerAuthContextValue = {
   isChecking: boolean;
   signup: (payload: SignupPayload) => Promise<boolean>;
   login: (identifier: string, password: string) => Promise<boolean>;
+  /** Mobile + OTP: send the Firebase ID token; new numbers return needsProfile until name/email are sent. */
+  phoneSignIn: (idToken: string, profile?: { name: string; email: string }) => Promise<{ needsProfile: boolean }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<boolean>;
@@ -174,6 +176,21 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           return false;
         }
+      },
+      phoneSignIn: async (idToken: string, profile?: { name: string; email: string }) => {
+        const response = await apiRequest<Partial<AuthResponse> & { needsProfile?: boolean }>("/auth/phone", {
+          method: "POST",
+          body: JSON.stringify({ idToken, ...profile }),
+        });
+
+        if (response.needsProfile || !response.user) {
+          return { needsProfile: true };
+        }
+
+        clearAdminToken();
+        setCustomerToken();
+        setUser(response.user);
+        return { needsProfile: false };
       },
       login: async (identifier: string, password: string) => {
         try {
