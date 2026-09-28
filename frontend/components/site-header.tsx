@@ -434,6 +434,13 @@ export function SiteHeader() {
           </Link>
 
           <nav aria-label="Account" className="hidden items-center justify-end gap-6 lg:flex">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("hrushe:open-support"))}
+              className="fr-mono fr-choice is-active min-h-11"
+            >
+              Help
+            </button>
             <Link href="/search" className="fr-mono min-h-11 inline-flex items-center">
               Search
             </Link>

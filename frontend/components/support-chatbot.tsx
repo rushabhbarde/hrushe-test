@@ -26,69 +26,54 @@ type TicketResponse = {
 const issueOptions: IssueOption[] = [
   {
     value: "track-order",
-    label: "Track order",
-    hint: "Delivery or tracking status",
-    prompt: "Share your order number or tracking issue.",
+    label: "Where’s my order",
+    hint: "Delivery or tracking",
+    prompt: "Share your order number and what you’re seeing.",
     needsOrder: true,
   },
   {
     value: "return-request",
     label: "Return",
-    hint: "Start a return request",
-    prompt: "Tell us what you want to return and why.",
+    hint: "Send a piece back",
+    prompt: "Tell us which piece you’d like to return and why.",
     needsOrder: true,
   },
   {
     value: "exchange-request",
     label: "Exchange",
-    hint: "Size or piece exchange",
-    prompt: "Share the item and size/color you want to exchange.",
+    hint: "Another size or colour",
+    prompt: "Tell us the piece and the size or colour you’d like instead.",
     needsOrder: true,
   },
   {
-    value: "login-help",
-    label: "Login",
-    hint: "Access your account",
-    prompt: "Describe what happens when you try to log in.",
-  },
-  {
-    value: "signup-help",
-    label: "Signup",
-    hint: "Create an account",
-    prompt: "Tell us where signup is getting stuck.",
-  },
-  {
     value: "payment-refund",
-    label: "Payment/refund",
-    hint: "Payment or refund issue",
-    prompt: "Share payment, refund, or checkout details.",
+    label: "Payment or refund",
+    hint: "Charges and refunds",
+    prompt: "Tell us what happened with the payment or refund.",
     needsOrder: true,
   },
   {
     value: "product-size",
-    label: "Product/size",
-    hint: "Fit, stock, or details",
-    prompt: "Ask about fit, size, product details, or stock.",
+    label: "Size or fit",
+    hint: "Before you buy",
+    prompt: "Ask about fit, size, fabric or stock.",
   },
   {
-    value: "coupon-sale",
-    label: "Coupon/sale",
-    hint: "Offer or sale help",
-    prompt: "Tell us which coupon or offer is not working.",
-  },
-  {
-    value: "website-issue",
-    label: "Website issue",
-    hint: "Page or checkout bug",
-    prompt: "Describe the page or button that is not working.",
+    value: "login-help",
+    label: "Signing in",
+    hint: "Mobile code or account",
+    prompt: "Tell us what happens when you try to sign in.",
   },
   {
     value: "other",
-    label: "Other",
-    hint: "Anything else",
-    prompt: "Tell us what you need help with.",
+    label: "Something else",
+    hint: "Anything at all",
+    prompt: "Tell us how we can help.",
   },
 ];
+
+const CONTACT_EMAIL = "team@hrushe.in";
+const CONTACT_PHONE = "+91 91128 54988";
 
 const emptyForm = {
   name: "",
@@ -115,9 +100,6 @@ export function SupportChatbot() {
   const selectedOption =
     issueOptions.find((option) => option.value === selectedValue) || null;
   const shouldHide = pathname.startsWith("/admin") || pathname.startsWith("/checkout");
-  // Phones: the Frame bottom bar (4rem) or a sticky add-to-bag bar sits at the bottom edge.
-  const shouldClearStickyAction =
-    pathname.startsWith("/product/") || pathname === "/cart" || pathname === "/checkout";
 
   useEffect(() => {
     if (!user) {
@@ -146,7 +128,7 @@ export function SupportChatbot() {
     return null;
   }
 
-  // No floating button: the panel opens from Menu → Help and from the Contact page.
+  // No floating button: the help sheet opens from Menu → Help, the homes and the Contact page.
   if (!isOpen) {
     return null;
   }
@@ -212,178 +194,172 @@ export function SupportChatbot() {
     }
   }
 
+  const close = () => {
+    setIsOpen(false);
+    setTicketCode("");
+    setSelectedValue(null);
+  };
+  const step = ticketCode ? "sent" : selectedOption ? "form" : "topics";
+  const fieldClass =
+    "w-full border-0 border-b border-[color-mix(in_srgb,var(--foreground)_30%,transparent)] bg-transparent py-3 text-base outline-none focus:border-[var(--foreground)]";
+  const field = (label: string, input: React.ReactNode) => (
+    <label className="flex flex-col gap-1">
+      <span className="fr-mono fr-muted">{label}</span>
+      {input}
+    </label>
+  );
+
   return (
-    <div
-      className={`fixed right-4 z-[115] sm:bottom-6 sm:right-6 ${
-        shouldClearStickyAction
-          ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"
-      }`}
-    >
-      <div
+    <div className="fixed inset-0 z-[115]" role="presentation">
+      <button type="button" aria-label="Close help" onClick={close} className="absolute inset-0 bg-black/30" />
+      <aside
         role="dialog"
-        aria-modal="false"
+        aria-modal="true"
         aria-labelledby="support-panel-title"
-        data-support-panel-version="refined"
-        className="w-[calc(100vw-2rem)] max-w-[430px] overflow-hidden border border-black/15 bg-[var(--background)] text-[var(--foreground)]"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") close();
+        }}
+        className="absolute inset-y-0 right-0 flex w-full flex-col bg-[var(--background)] text-[var(--foreground)] sm:max-w-[460px]"
       >
-        <div className="border-b border-black/10 bg-white px-5 py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="fr-mono fr-muted">HRUSHE · Help</p>
-              <h2 id="support-panel-title" className="fr-word mt-3 text-[2rem]">
-                How can we help?
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="fr-mono fr-choice is-active min-h-11 shrink-0"
-              aria-label="Close support chat"
-            >
-              Close ×
-            </button>
-          </div>
-          <div className="fr-mono fr-muted mt-4 flex flex-wrap gap-x-4 gap-y-1">
-            <span>Ticket support</span>
-            <span aria-hidden="true">·</span>
-            <span>Email reply</span>
-            <span aria-hidden="true">·</span>
-            <span>Mon–Sat</span>
-          </div>
+        <div className="flex items-center justify-between px-6 pt-6">
+          <span className="fr-mono fr-muted">HRUSHE · Help</span>
+          <button type="button" onClick={close} className="fr-mono fr-choice is-active min-h-11" autoFocus>
+            Close ×
+          </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
-          {ticketCode ? (
-            <div className="border border-[#12824a]/25 bg-white px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#12824a]">
-                Ticket created
-              </p>
-              <p className="mt-2 text-2xl font-semibold">{ticketCode}</p>
-              <p className="mt-2 text-sm leading-6 text-black/62">
-                Our team has this in the support queue. Keep this code for follow-up.
-              </p>
-              <button
-                type="button"
-                onClick={() => setTicketCode("")}
-                className="mt-4 border border-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition hover:bg-black hover:text-white"
-              >
-                Create another
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="border border-black/10 bg-white px-4 py-3 text-sm leading-6 text-black/70">
-                Choose a topic and we will route it to the right HRUSHE team. Never share OTPs, passwords, or card details.
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
+        <div className="flex-1 overflow-y-auto px-6 pb-8 pt-6">
+          {step === "topics" ? (
+            <div className="flex flex-col gap-6">
+              <h2 id="support-panel-title" className="fr-word text-[clamp(2.5rem,9vw,3.25rem)]">
+                How can we help?
+              </h2>
+              <nav aria-label="Help topics" className="flex flex-col">
                 {issueOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setSelectedValue(option.value)}
-                    className={`min-h-[4.25rem] border px-3 py-2.5 text-left transition ${
-                      selectedValue === option.value
-                        ? "border-black bg-black text-white"
-                        : "border-black/10 bg-white hover:border-black/40 hover:bg-[var(--fr-stone-soft)]"
-                    }`}
+                    className="fr-index-row is-active grid-cols-[minmax(0,1fr)_auto]! py-3! text-left"
                   >
-                    <span className="block text-[0.7rem] font-semibold uppercase tracking-[0.08em]">
-                      {option.label}
+                    <span className="flex flex-col gap-1">
+                      <span className="fr-word text-[1.6rem]!">{option.label}</span>
+                      <span className="fr-mono fr-muted">{option.hint}</span>
                     </span>
-                    <span
-                      className={`mt-1 block text-[0.75rem] leading-4 ${
-                        selectedValue === option.value ? "text-white/68" : "text-black/52"
-                      }`}
-                    >
-                      {option.hint}
+                    <span className="fr-mono" aria-hidden="true">
+                      →
                     </span>
                   </button>
                 ))}
+              </nav>
+              <div className="flex flex-col gap-2">
+                <span className="fr-mono fr-muted">Or reach us directly · Mon–Sat, 10–7</span>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="fr-mono fr-link self-start normal-case!">
+                  {CONTACT_EMAIL}
+                </a>
+                <a href={`tel:${CONTACT_PHONE.replace(/\s/g, "")}`} className="fr-mono fr-link self-start">
+                  {CONTACT_PHONE}
+                </a>
               </div>
+            </div>
+          ) : null}
 
-              {selectedOption ? (
-                <div className="mt-5 space-y-3 border border-black/10 bg-white p-4">
-                  <div className="bg-[var(--fr-stone-soft)] px-3 py-3 text-sm leading-6 text-black/72">
-                    {selectedOption.prompt}
-                  </div>
+          {step === "form" && selectedOption ? (
+            <form
+              className="flex flex-col gap-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitTicket();
+              }}
+            >
+              <button type="button" onClick={() => setSelectedValue(null)} className="fr-mono fr-choice fr-link is-active self-start">
+                ← All topics
+              </button>
+              <h2 id="support-panel-title" className="fr-word text-[clamp(2.25rem,8vw,3rem)]">
+                {selectedOption.label}.
+              </h2>
+              <p className="text-sm leading-6 text-[var(--muted)]">
+                {selectedOption.prompt} Never share OTPs, passwords or card details.
+              </p>
+              {field(
+                "Name",
+                <input
+                  value={form.name}
+                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  autoComplete="name"
+                  disabled={Boolean(user) || isChecking}
+                  className={fieldClass}
+                  required
+                />
+              )}
+              {field(
+                "Email for our reply",
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                  autoComplete="email"
+                  disabled={Boolean(user) || isChecking}
+                  className={fieldClass}
+                  required
+                />
+              )}
+              {field(
+                "Phone (optional)",
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={form.phone}
+                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                  autoComplete="tel"
+                  className={fieldClass}
+                />
+              )}
+              {selectedOption.needsOrder
+                ? field(
+                    "Order number",
+                    <input
+                      value={form.orderId}
+                      onChange={(event) => setForm((current) => ({ ...current, orderId: event.target.value }))}
+                      className={fieldClass}
+                    />
+                  )
+                : null}
+              {field(
+                "Message",
+                <textarea
+                  value={form.message}
+                  onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
+                  rows={4}
+                  className={`${fieldClass} resize-none leading-6`}
+                  required
+                />
+              )}
+              <button type="submit" disabled={isSubmitting} className="fr-button mt-2">
+                {isSubmitting ? "Sending…" : "Send"}
+              </button>
+            </form>
+          ) : null}
 
-                  <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
-                    Name
-                    <input
-                      value={form.name}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, name: event.target.value }))
-                      }
-                      autoComplete="name"
-                      disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
-                    />
-                  </label>
-                  <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
-                    Email for updates
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, email: event.target.value }))
-                      }
-                      autoComplete="email"
-                      disabled={Boolean(user) || isChecking}
-                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black disabled:bg-black/[0.03]"
-                    />
-                  </label>
-                  <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
-                    Phone <span className="normal-case tracking-normal">(optional)</span>
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      value={form.phone}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, phone: event.target.value }))
-                      }
-                      autoComplete="tel"
-                      className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
-                    />
-                  </label>
-                  {selectedOption.needsOrder ? (
-                    <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
-                      Order number or tracking ID
-                      <input
-                        value={form.orderId}
-                        onChange={(event) =>
-                          setForm((current) => ({ ...current, orderId: event.target.value }))
-                        }
-                        className="min-h-11 w-full border border-black/12 bg-white px-3 text-sm font-normal normal-case tracking-normal text-black outline-none transition focus:border-black"
-                      />
-                    </label>
-                  ) : null}
-                  <label className="grid gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-black/55">
-                    Issue details
-                    <textarea
-                      value={form.message}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, message: event.target.value }))
-                      }
-                      rows={4}
-                      className="w-full resize-none border border-black/12 bg-white px-3 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-black outline-none transition focus:border-black"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => void submitTicket()}
-                    disabled={isSubmitting}
-                    className="fr-button"
-                  >
-                    {isSubmitting ? "Creating ticket..." : "Create support ticket"}
-                  </button>
-                </div>
-              ) : null}
-            </>
-          )}
+          {step === "sent" ? (
+            <div className="flex flex-col gap-5">
+              <h2 id="support-panel-title" className="fr-word text-[clamp(3rem,11vw,4rem)]">
+                Sent.
+              </h2>
+              <p className="fr-mono">Ticket · {ticketCode}</p>
+              <p className="text-sm leading-6 text-[var(--muted)]">
+                We usually reply by email within one business day. Keep the ticket number for follow-ups.
+              </p>
+              <button type="button" onClick={close} className="fr-button">
+                Done
+              </button>
+              <button type="button" onClick={() => setTicketCode("")} className="fr-mono fr-choice fr-link is-active self-start">
+                Ask something else
+              </button>
+            </div>
+          ) : null}
         </div>
-      </div>
+      </aside>
     </div>
   );
 }
