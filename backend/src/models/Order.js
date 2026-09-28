@@ -303,6 +303,17 @@ const orderSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    // Filled when an admin confirms the order and it is sent to Shiprocket.
+    shiprocket: {
+      status: { type: String, enum: ["", "sending", "created", "failed"], default: "" },
+      orderId: { type: String, default: "" },
+      shipmentId: { type: String, default: "" },
+      awbCode: { type: String, default: "" },
+      lastStatus: { type: String, default: "" },
+      error: { type: String, default: "" },
+      attemptedAt: { type: Date, default: null },
+      createdAt: { type: Date, default: null },
+    },
     orderStatus: {
       type: String,
       enum: [

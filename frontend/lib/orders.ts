@@ -104,6 +104,14 @@ export type OrderRecord = {
   products: OrderProductSnapshot[];
   createdAt: string;
   updatedAt?: string;
+  shiprocket?: {
+    status?: "" | "sending" | "created" | "failed";
+    orderId?: string;
+    shipmentId?: string;
+    awbCode?: string;
+    lastStatus?: string;
+    error?: string;
+  };
 };
 
 export type TrackingTimelineStep = {

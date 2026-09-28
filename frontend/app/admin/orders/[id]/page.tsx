@@ -61,6 +61,7 @@ export default function AdminOrderDetailPage() {
   const { workspace, saveWorkspace } = useAdminWorkspace();
   const { pushToast } = useToast();
   const [order, setOrder] = useState<OrderRecord | null>(null);
+  const [sendingShipment, setSendingShipment] = useState(false);
   const [orderMeta, setOrderMeta] = useState<OrderAdminMeta | null>(null);
   const [newUpdate, setNewUpdate] = useState({ title: "", detail: "" });
   const [loading, setLoading] = useState(true);
@@ -150,6 +151,25 @@ export default function AdminOrderDetailPage() {
       pushToast(error instanceof Error ? error.message : "Could not update order.", "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function sendToShiprocket() {
+    if (!order) {
+      return;
+    }
+    setSendingShipment(true);
+    try {
+      const updated = await apiRequest<OrderRecord>(`/order/${order.id}/shiprocket`, { method: "POST" });
+      setOrder(updated);
+      pushToast(
+        updated.shiprocket?.status === "created" ? "Sent to Shiprocket." : "Shiprocket didn’t accept it — see the reason below.",
+        updated.shiprocket?.status === "created" ? "success" : "error"
+      );
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not reach Shiprocket.", "error");
+    } finally {
+      setSendingShipment(false);
     }
   }
 
@@ -268,6 +288,56 @@ export default function AdminOrderDetailPage() {
           </div>
 
           <div className="space-y-5">
+            <AdminPanel>
+              <AdminSubhead
+                title="Shiprocket"
+                description="Paid orders go to Shiprocket only when you confirm them — after the customer call."
+              />
+              {order.shiprocket?.status === "created" ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <AdminKeyValue label="Status" value={<AdminBadge tone="success">Sent</AdminBadge>} />
+                  <AdminKeyValue label="Shiprocket order" value={order.shiprocket.orderId || "—"} />
+                  <AdminKeyValue label="Shipment" value={order.shiprocket.shipmentId || "—"} />
+                  <AdminKeyValue label="AWB" value={order.shiprocket.awbCode || "Assign a courier in Shiprocket"} />
+                  {order.shiprocket.lastStatus ? <AdminKeyValue label="Latest update" value={order.shiprocket.lastStatus} /> : null}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <AdminKeyValue
+                    label="Status"
+                    value={
+                      <AdminBadge tone={order.shiprocket?.status === "failed" ? "warning" : "default"}>
+                        {order.shiprocket?.status === "failed"
+                          ? "Failed"
+                          : order.shiprocket?.status === "sending"
+                            ? "Sending"
+                            : "Not sent"}
+                      </AdminBadge>
+                    }
+                  />
+                  {order.shiprocket?.error ? (
+                    <p className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]">{order.shiprocket.error}</p>
+                  ) : null}
+                  {["Confirmed", "Packed"].includes(order.orderStatus) && order.paymentStatus === "paid" ? (
+                    <button
+                      type="button"
+                      onClick={() => void sendToShiprocket()}
+                      disabled={sendingShipment}
+                      className="button-primary self-start px-5 py-3 text-sm font-medium disabled:opacity-60"
+                    >
+                      {sendingShipment ? "Sending…" : "Send to Shiprocket"}
+                    </button>
+                  ) : (
+                    <p className="text-sm text-[var(--muted)]">
+                      {order.orderStatus === "Pending"
+                        ? "Call the customer, then confirm the order — it goes to Shiprocket then."
+                        : "Only paid, confirmed orders can be sent."}
+                    </p>
+                  )}
+                </div>
+              )}
+            </AdminPanel>
+
             <AdminPanel>
               <AdminSubhead title="Fulfillment controls" description="Update courier, tracking, and shipping state." />
               <div className="grid gap-4">
