@@ -17,6 +17,8 @@ const {
   bulkReconcileOrders,
   scanPaymentReconciliation,
   reorderOrder,
+  sendToShiprocket,
+  shiprocketWebhook,
 } = require("../controllers/orderController");
 const {
   protect,
@@ -34,6 +36,8 @@ router.post("/checkout/failure", attachUserIfAuthenticated, requireCsrfIfAuthent
 router.get("/checkout/failure", failCheckout);
 router.get("/checkout/cancel", cancelCheckout);
 router.post("/checkout/webhook/razorpay", razorpayWebhook);
+// Shiprocket tracking updates (URL must not contain "shiprocket"; authenticated by x-api-key).
+router.post("/shipping/updates", shiprocketWebhook);
 router.post(
   "/checkout",
   createRateLimiter({ name: "checkout", max: 20, windowMs: 15 * 60 * 1000 }),
@@ -52,6 +56,7 @@ router.post("/reconciliation/bulk", protect, requireCsrf, requireAdminPermission
 router.post("/reconciliation/scan", protect, requireCsrf, requireAdminPermission("orders.manage"), scanPaymentReconciliation);
 router.post("/:id/reconcile", protect, requireCsrf, requireAdminPermission("orders.manage"), reconcileOrderPayment);
 router.post("/:id/reorder", protect, requireCsrf, reorderOrder);
+router.post("/:id/shiprocket", protect, requireCsrf, requireAdminPermission("orders.manage"), sendToShiprocket);
 router.get("/:id/invoice", protect, downloadInvoice);
 router.get("/all", protect, requireAdminPermission("orders.view"), getAllOrders);
 router.put("/status/:id", protect, requireCsrf, requireAdminPermission("orders.manage"), updateOrderStatus);

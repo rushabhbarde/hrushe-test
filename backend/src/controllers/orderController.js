@@ -6,6 +6,8 @@ const Razorpay = require("razorpay");
 const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
+const shipmentSync = require("../services/shipmentSync");
+const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
@@ -1167,6 +1169,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     courierName: order.courierName,
   });
 
+  // Only a human confirmation (Pending → Confirmed) hands the parcel to Shiprocket.
+  let responseOrder = order;
+  if (orderStatus === "Confirmed" && existingOrder.orderStatus === "Pending") {
+    const result = await shipmentSync.sendOrderToShiprocket(order._id);
+    responseOrder = result.order || order;
+  }
+
   if (
     orderStatus !== undefined ||
     trackingId !== undefined ||
@@ -1180,7 +1189,87 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  return res.json(order);
+  return res.json(responseOrder);
+});
+
+/** Admin retry: send a confirmed order to Shiprocket if it was not sent or failed. */
+const sendToShiprocket = asyncHandler(async (req, res) => {
+  if (!shiprocket.isShiprocketConfigured()) {
+    throw new AppError("Shiprocket is not connected yet. Add the Shiprocket API user in Render.", 503);
+  }
+  const existing = await Order.findById(req.params.id);
+  if (!existing) {
+    throw new AppError("Order not found", 404);
+  }
+  if (!["Confirmed", "Packed"].includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
+    throw new AppError("Only paid, confirmed orders can be sent to Shiprocket.", 409);
+  }
+
+  const result = await shipmentSync.sendOrderToShiprocket(existing._id);
+  await recordAuditLog(req, "order.shiprocket-send", { type: "order", id: existing._id }, {
+    status: result.order?.shiprocket?.status,
+  });
+  return res.json(result.order);
+});
+
+const SHIPROCKET_STATUS_RANK = ["Pending", "Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
+
+/** Shiprocket tracking webhook: fills AWB / courier / tracking link and moves the order forward. */
+const shiprocketWebhook = asyncHandler(async (req, res) => {
+  const expected = env.SHIPROCKET_WEBHOOK_TOKEN;
+  const received = String(req.headers["x-api-key"] || "");
+  const valid =
+    expected &&
+    received.length === expected.length &&
+    require("crypto").timingSafeEqual(Buffer.from(received), Buffer.from(expected));
+  if (!valid) {
+    throw new AppError("Unauthorized", 401);
+  }
+
+  const body = req.body || {};
+  const ourId = String(body.order_id || body.channel_order_id || "").trim();
+  const srOrderId = String(body.sr_order_id || "").trim();
+  const filters = [];
+  if (/^\d+$/.test(ourId)) filters.push({ orderNumber: Number(ourId) });
+  if (/^[a-f0-9]{24}$/i.test(ourId)) filters.push({ _id: ourId });
+  if (srOrderId) filters.push({ "shiprocket.orderId": srOrderId });
+  const order = filters.length ? await Order.findOne({ $or: filters }) : null;
+
+  // Always acknowledge so Shiprocket doesn't retry forever for orders we don't know.
+  if (!order) {
+    return res.json({ ok: true, matched: false });
+  }
+
+  const status = String(body.current_status || body.shipment_status || "").trim();
+  const awb = String(body.awb || "").trim();
+  const update = { "shiprocket.lastStatus": status.slice(0, 80) };
+  if (awb) {
+    update["shiprocket.awbCode"] = awb.slice(0, 60);
+    update.trackingId = awb.slice(0, 120);
+    update.trackingUrl = `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
+  }
+  if (body.courier_name) {
+    update.courierName = String(body.courier_name).trim().slice(0, 100);
+  }
+
+  const mapped = shiprocket.mapShiprocketStatus(status);
+  const movesForward =
+    mapped &&
+    SHIPROCKET_STATUS_RANK.indexOf(mapped) > SHIPROCKET_STATUS_RANK.indexOf(order.orderStatus) &&
+    SHIPROCKET_STATUS_RANK.indexOf(order.orderStatus) >= 1;
+  if (movesForward) {
+    update.orderStatus = mapped;
+  }
+
+  const updated = await Order.findOneAndUpdate({ _id: order._id, orderStatus: order.orderStatus }, { $set: update }, { new: true });
+  if (updated && movesForward) {
+    await safelySendOrderEmail(
+      updated,
+      `Your HRUSHE order is now ${updated.orderStatus}`,
+      `Your order status has been updated to ${updated.orderStatus}.`
+    );
+  }
+  return res.json({ ok: true, matched: true, orderStatus: updated?.orderStatus || order.orderStatus });
 });
 
 const createCheckout = asyncHandler(async (req, res) => {
@@ -2527,6 +2616,8 @@ const reorderOrder = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  sendToShiprocket,
+  shiprocketWebhook,
   getMyOrders,
   getOrderById,
   downloadInvoice,

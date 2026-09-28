@@ -93,6 +93,13 @@ const env = {
       ? process.env.NODE_ENV !== "production"
       : process.env.OTP_DEV_MODE === "true",
   FIREBASE_PROJECT_ID: String(process.env.FIREBASE_PROJECT_ID || "").trim(),
+  // Shiprocket: an API user (Shiprocket → Settings → API) and the pickup location name.
+  SHIPROCKET_EMAIL: String(process.env.SHIPROCKET_EMAIL || "").trim(),
+  SHIPROCKET_PASSWORD: process.env.SHIPROCKET_PASSWORD || "",
+  SHIPROCKET_PICKUP_LOCATION: String(process.env.SHIPROCKET_PICKUP_LOCATION || "Primary").trim(),
+  SHIPROCKET_WEBHOOK_TOKEN: String(process.env.SHIPROCKET_WEBHOOK_TOKEN || "").trim(),
+  SHIPROCKET_PACKAGE_WEIGHT_KG: Number(process.env.SHIPROCKET_PACKAGE_WEIGHT_KG || 0.4),
+  SHIPROCKET_PACKAGE_CM: String(process.env.SHIPROCKET_PACKAGE_CM || "30x24x4"),
   MSG91_AUTH_KEY: process.env.MSG91_AUTH_KEY || "",
   MSG91_SENDER_ID: process.env.MSG91_SENDER_ID || "",
   MSG91_DLT_TEMPLATE_ID: process.env.MSG91_DLT_TEMPLATE_ID || "",

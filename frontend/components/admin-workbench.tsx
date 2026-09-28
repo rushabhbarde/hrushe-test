@@ -71,7 +71,14 @@ export function AdminWorkbench({
         }),
       });
       updateOrders(orders.map((order) => (order.id === updated.id ? updated : order)));
-      pushToast(`Order #${current.orderNumber || current.id.slice(-6)} confirmed.`);
+      const label = `Order #${current.orderNumber || current.id.slice(-6)}`;
+      if (updated.shiprocket?.status === "created") {
+        pushToast(`${label} confirmed and sent to Shiprocket.`);
+      } else if (updated.shiprocket?.status === "failed") {
+        pushToast(`${label} confirmed, but Shiprocket refused it. Open the order to retry.`, "error");
+      } else {
+        pushToast(`${label} confirmed.`);
+      }
     } catch (error) {
       pushToast(error instanceof Error ? error.message : "Could not confirm this order.", "error");
     } finally {
