@@ -1018,6 +1018,29 @@ const downloadInvoice = asyncHandler(async (req, res) => {
   return res.send(pdfBuffer);
 });
 
+/**
+ * Same checks as the public Track Order page: the order reference must match the
+ * email or phone used at checkout. Returns the public (masked) view, or null.
+ */
+const lookupOrderForCustomer = async ({ orderReference, email = "", phone = "" }) => {
+  const reference = String(orderReference || "").trim().replace(/^#/, "");
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedPhone = phone && isValidIndianPhone(phone) ? normalizeIndianPhone(phone) : "";
+
+  if (!reference || (!normalizedEmail && !normalizedPhone) || !isValidPublicOrderReference(reference)) {
+    return null;
+  }
+
+  const order = await findOrderByReference(reference);
+  if (!order) {
+    return null;
+  }
+
+  const matchesEmail = normalizedEmail && order.customerEmail.toLowerCase() === normalizedEmail;
+  const matchesPhone = normalizedPhone && String(order.customerPhone || "").trim() === normalizedPhone;
+  return matchesEmail || matchesPhone ? buildPublicTrackingResponse(order) : null;
+};
+
 const trackOrder = asyncHandler(async (req, res) => {
   const { orderId, email, phone } = req.body;
   const normalizedOrderId = String(orderId || "").trim();
@@ -2616,6 +2639,7 @@ const reorderOrder = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  lookupOrderForCustomer,
   sendToShiprocket,
   shiprocketWebhook,
   getMyOrders,
