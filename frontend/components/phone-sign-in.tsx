@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ConfirmationResult } from "firebase/auth";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
+import { apiRequest } from "@/lib/api";
 import { confirmPhoneCode, describePhoneError, sendPhoneCode } from "@/lib/firebase-phone";
 
 type Step = "phone" | "code" | "profile";
@@ -18,6 +19,8 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [idToken, setIdToken] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,7 +80,7 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
     }
   }
 
-  async function createAccount() {
+  async function sendEmailCode() {
     if (name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Add your name and a valid email for order updates.");
       return;
@@ -85,7 +88,29 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
     setBusy(true);
     setError("");
     try {
-      const result = await phoneSignIn(idToken, { name: name.trim(), email: email.trim() });
+      await apiRequest("/auth/signup/request-otp", { method: "POST", body: JSON.stringify({ email: email.trim() }) });
+      setEmailOtp("");
+      setEmailCodeSent(true);
+    } catch (sendError) {
+      setError(describePhoneError(sendError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createAccount() {
+    if (!emailCodeSent) {
+      await sendEmailCode();
+      return;
+    }
+    if (!/^\d{6}$/.test(emailOtp)) {
+      setError("Enter the 6-digit code we emailed you.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await phoneSignIn(idToken, { name: name.trim(), email: email.trim(), emailOtp });
       if (!result.needsProfile) {
         onSuccess?.();
       }
@@ -108,7 +133,9 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
             ? "Sign in or join with your mobile number. We’ll text you a 6-digit code — no password."
             : step === "code"
               ? `Enter the code sent to ${shownPhone}.`
-              : "Your name, and an email for order updates and receipts."}
+              : emailCodeSent
+                ? `Enter the code we emailed to ${email.trim()}.`
+                : "Your name, and an email for order updates and receipts. We’ll send a code to confirm it."}
         </p>
       </div>
 
@@ -172,22 +199,50 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
 
         {step === "profile" ? (
           <>
-            <label className="fr-field">
-              <span>Full name</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} className="fr-input" autoComplete="name" required />
-            </label>
-            <label className="fr-field">
-              <span>Email</span>
-              <input
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="fr-input"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                required
-              />
-            </label>
+            {!emailCodeSent ? (
+              <>
+                <label className="fr-field">
+                  <span>Full name</span>
+                  <input value={name} onChange={(event) => setName(event.target.value)} className="fr-input" autoComplete="name" required />
+                </label>
+                <label className="fr-field">
+                  <span>Email</span>
+                  <input
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="fr-input"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    required
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="fr-field">
+                  <span>Email code</span>
+                  <input
+                    value={emailOtp}
+                    onChange={(event) => setEmailOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="fr-input tracking-[0.4em]!"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    required
+                  />
+                </label>
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  <button type="button" onClick={() => setEmailCodeSent(false)} className="fr-mono fr-choice fr-link is-active">
+                    Change email
+                  </button>
+                  <button type="button" onClick={() => void sendEmailCode()} disabled={busy} className="fr-mono fr-choice fr-link is-active">
+                    Resend code
+                  </button>
+                </div>
+              </>
+            )}
           </>
         ) : null}
 
@@ -198,7 +253,15 @@ export function PhoneSignIn({ onSuccess }: { onSuccess?: () => void }) {
         ) : null}
 
         <button type="submit" disabled={busy} className="fr-button">
-          {busy ? "One moment…" : step === "phone" ? "Send code" : step === "code" ? "Verify" : "Create account"}
+          {busy
+            ? "One moment…"
+            : step === "phone"
+              ? "Send code"
+              : step === "code"
+                ? "Verify"
+                : emailCodeSent
+                  ? "Create account"
+                  : "Send code to email"}
         </button>
       </form>
 
