@@ -210,7 +210,7 @@ function OrderRow({
 }
 
 function AccountPageContent() {
-  const { user, isChecking, refreshUser, changePassword } = useCustomerAuth();
+  const { user, isChecking, refreshUser, changePassword, logout } = useCustomerAuth();
   const { pushToast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -698,6 +698,9 @@ function AccountPageContent() {
             onSectionChange={changeSection}
             userName={summary?.user.name || user?.name || "HRUSHE member"}
             summaryBadges={dashboardBadges}
+            onSignOut={() => {
+              void logout().finally(() => router.push("/"));
+            }}
           >
             <div ref={contentStartRef} />
             {activeSection === "dashboard" ? (

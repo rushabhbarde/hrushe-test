@@ -17,6 +17,7 @@ type AccountShellProps = {
   onSectionChange: (section: AccountSectionId) => void;
   userName: string;
   summaryBadges?: Partial<Record<AccountSectionId, string>>;
+  onSignOut?: () => void;
   children: React.ReactNode;
 };
 
@@ -44,8 +45,14 @@ export function AccountShell({
   onSectionChange,
   userName,
   summaryBadges,
+  onSignOut,
   children,
 }: AccountShellProps) {
+  const signOutButton = onSignOut ? (
+    <button type="button" onClick={onSignOut} className="fr-mono fr-choice is-active fr-link min-h-11 self-start">
+      Sign out
+    </button>
+  ) : null;
   const firstName = (userName || "member").split(" ")[0];
   const activeItem = navigationItems.find((item) => item.id === activeSection) || navigationItems[0];
 
@@ -79,6 +86,7 @@ export function AccountShell({
                 .filter((item) => item.id !== "dashboard")
                 .map((item) => sectionButton(item, "fr-account-row"))}
             </nav>
+            {signOutButton}
           </>
         ) : (
           <div className="flex flex-col gap-3">
@@ -101,6 +109,7 @@ export function AccountShell({
         <Link href="/track-order" className="fr-mono fr-link self-start">
           Track an order without signing in
         </Link>
+        {signOutButton}
       </aside>
 
       <div className="flex min-w-0 flex-col gap-12">{children}</div>

@@ -189,6 +189,7 @@ function MenuOverlay({
   loginHref,
   wishlistCount,
   onOpenWishlist,
+  onSignOut,
 }: {
   open: boolean;
   onClose: () => void;
@@ -198,6 +199,7 @@ function MenuOverlay({
   loginHref: string;
   wishlistCount: number;
   onOpenWishlist: () => void;
+  onSignOut: () => void;
 }) {
   const [side, setSide] = useState<AudienceMenuKey>(initialSide);
   const menu = audienceMenus[side];
@@ -294,6 +296,18 @@ function MenuOverlay({
         <Link href={isAuthenticated ? "/account" : loginHref} onClick={onClose} className="fr-mono">
           {isAuthenticated ? "Wardrobe" : "Sign in"}
         </Link>
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onSignOut();
+            }}
+            className="fr-mono fr-choice is-active min-h-11"
+          >
+            Sign out
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => {
@@ -474,6 +488,9 @@ export function SiteHeader() {
         loginHref={loginHref}
         wishlistCount={wishlistCount}
         onOpenWishlist={openSaved}
+        onSignOut={() => {
+          void customerAuth?.logout().finally(() => router.push("/"));
+        }}
       />
     </>
   );
