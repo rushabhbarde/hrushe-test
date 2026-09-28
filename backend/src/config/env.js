@@ -93,9 +93,6 @@ const env = {
       ? process.env.NODE_ENV !== "production"
       : process.env.OTP_DEV_MODE === "true",
   FIREBASE_PROJECT_ID: String(process.env.FIREBASE_PROJECT_ID || "").trim(),
-  // Help assistant (Claude). Off unless an API key is set.
-  ANTHROPIC_API_KEY: String(process.env.ANTHROPIC_API_KEY || "").trim(),
-  SUPPORT_ASSISTANT_MODEL: String(process.env.SUPPORT_ASSISTANT_MODEL || "claude-sonnet-5").trim(),
   // Shiprocket: an API user (Shiprocket → Settings → API) and the pickup location name.
   // Master switch: nothing is sent to Shiprocket unless this is exactly "true".
   SHIPROCKET_ENABLED: String(process.env.SHIPROCKET_ENABLED || "").trim().toLowerCase() === "true",

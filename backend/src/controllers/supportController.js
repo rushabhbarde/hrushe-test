@@ -335,14 +335,11 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
   return res.json(serializeTicket(request));
 });
 
-const assistantStatus = (req, res) => res.json({ enabled: supportAssistant.isAssistantEnabled() });
+// HRUSHE's own assistant runs on this server (no outside AI), so it's always on.
+const assistantStatus = (req, res) => res.json({ enabled: true });
 
 /** One help-assistant turn. Body: { messages: [{ role: "user"|"assistant", content }] }. */
 const assistantChat = asyncHandler(async (req, res) => {
-  if (!supportAssistant.isAssistantEnabled()) {
-    throw new AppError("The assistant is off. Please write to the team instead.", 503);
-  }
-
   const raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
   const messages = raw
     .slice(-16)

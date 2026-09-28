@@ -72,7 +72,7 @@ const issueOptions: IssueOption[] = [
   },
 ];
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; suggestions?: string[] };
 type Handoff = { category: string; summary: string; orderNumber: string };
 
 const QUICK_STARTS = ["Where’s my order?", "Returns and exchanges", "Which size should I take?"];
@@ -222,14 +222,12 @@ export function SupportChatbot() {
     setChatInput("");
     setChatBusy(true);
     try {
-      const result = await apiRequest<{ reply: string; handoff: Handoff | null }>("/support/assistant", {
+      const result = await apiRequest<{ reply: string; handoff: Handoff | null; suggestions?: string[] }>("/support/assistant", {
         method: "POST",
-        body: JSON.stringify({ messages: next.slice(-16) }),
+        body: JSON.stringify({ messages: next.slice(-16).map(({ role, content: text }) => ({ role, content: text })) }),
       });
-      setChat([...next, { role: "assistant", content: result.reply }]);
-      if (result.handoff) {
-        setHandoff(result.handoff);
-      }
+      setChat([...next, { role: "assistant", content: result.reply, suggestions: result.suggestions || [] }]);
+      setHandoff(result.handoff || null);
     } catch {
       setChat([
         ...next,
@@ -310,8 +308,8 @@ export function SupportChatbot() {
                     How can we help?
                   </h2>
                   <p className="text-sm leading-6 text-[var(--muted)]">
-                    Ask about an order, returns, sizes or delivery. Answers come from our policies and live stock — and
-                    a person is always one tap away.
+                    Ask about an order, returns, sizes or delivery. Answers come straight from our policies and size
+                    guides — and a person is always one tap away.
                   </p>
                   <div className="flex flex-col items-start gap-2">
                     {QUICK_STARTS.map((question) => (
@@ -344,6 +342,20 @@ export function SupportChatbot() {
                   >
                     {entry.role === "assistant" ? <span className="fr-mono fr-muted mb-1 block">HRUSHE</span> : null}
                     {entry.content}
+                    {entry.role === "assistant" && index === chat.length - 1 && entry.suggestions?.length ? (
+                      <span className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                        {entry.suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => void sendChat(suggestion === "Talk to a person" ? "I want to talk to a person" : suggestion)}
+                            className="fr-mono fr-choice fr-link is-active min-h-10"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
                 {chatBusy ? <li className="fr-mono fr-muted self-start">Writing…</li> : null}
