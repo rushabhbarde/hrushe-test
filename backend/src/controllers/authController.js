@@ -215,7 +215,7 @@ const login = asyncHandler(async (req, res) => {
  * Known phone → signed in. New phone → { needsProfile: true } until name and email are sent.
  */
 const phoneSignIn = asyncHandler(async (req, res) => {
-  const { idToken, name, email } = req.body;
+  const { idToken, name, email, emailOtp } = req.body;
   const { phoneNumber } = await firebaseIdToken.verifyFirebasePhoneToken(idToken);
   const phone = normalizeIndianPhone(phoneNumber);
   validateIndianPhone(phone);
@@ -246,6 +246,12 @@ const phoneSignIn = asyncHandler(async (req, res) => {
     throw new AppError("This email already has an HRUSHE account. Use the mobile number saved on it.", 409);
   }
 
+  // The email is where receipts and order updates go: confirm it with a code before creating the account.
+  if (!emailOtp) {
+    throw new AppError("Enter the 6-digit code we emailed you.", 400);
+  }
+  await verifyOtpCode({ email: normalizedEmail, purpose: "signup", otp: emailOtp });
+
   // Phone accounts have no password; store an unusable random one to satisfy the schema.
   const unusablePassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), PASSWORD_HASH_ROUNDS);
   let user;
@@ -256,12 +262,14 @@ const phoneSignIn = asyncHandler(async (req, res) => {
       password: unusablePassword,
       phone,
       isVerified: true,
+      emailVerifiedAt: new Date(),
       lastLoginAt: new Date(),
     });
   } catch (error) {
     throw toUserConflictError(error) || error;
   }
 
+  await deleteOtpVerifications({ email: normalizedEmail, purpose: "signup" });
   await Cart.create({ userId: user._id, items: [] });
 
   try {

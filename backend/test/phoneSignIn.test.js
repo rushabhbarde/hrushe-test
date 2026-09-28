@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../src/models/User");
 const Cart = require("../src/models/Cart");
+const bcrypt = require("bcrypt");
+const VerificationCode = require("../src/models/VerificationCode");
 const mailer = require("../src/utils/mailer");
 const firebaseIdToken = require("../src/utils/firebaseIdToken");
 
@@ -57,13 +59,21 @@ function stubAll(t) {
     findOne: User.findOne,
     create: User.create,
     cart: Cart.create,
+    codeFind: VerificationCode.findOne,
+    codeDelete: VerificationCode.deleteMany,
   };
   t.after(() => {
     firebaseIdToken.verifyFirebasePhoneToken = originals.verify;
     User.findOne = originals.findOne;
     User.create = originals.create;
     Cart.create = originals.cart;
+    VerificationCode.findOne = originals.codeFind;
+    VerificationCode.deleteMany = originals.codeDelete;
   });
+  VerificationCode.findOne = () => ({
+    sort: async () => ({ codeHash: bcrypt.hashSync("654321", 4), expiresAt: new Date(Date.now() + 60_000), save: async () => {} }),
+  });
+  VerificationCode.deleteMany = async () => ({ deletedCount: 1 });
   firebaseIdToken.verifyFirebasePhoneToken = async () => ({ phoneNumber: "+919876543210", uid: "uid-1" });
   Cart.create = async () => ({});
 }
@@ -98,6 +108,33 @@ test("new phone asks for a profile before creating an account", async (t) => {
   assert.equal(res.cookies.length, 0);
 });
 
+test("new phone with name and email but no email code is refused", async (t) => {
+  stubAll(t);
+  User.findOne = async () => null;
+  User.create = async () => {
+    throw new Error("should not create");
+  };
+
+  const { error } = await call({ body: { idToken: "token", name: "Ravi K", email: "ravi@example.com" } });
+
+  assert.equal(error?.statusCode, 400);
+  assert.match(error?.message || "", /code we emailed/i);
+});
+
+test("a wrong email code does not create the account", async (t) => {
+  stubAll(t);
+  User.findOne = async () => null;
+  let created = false;
+  User.create = async () => {
+    created = true;
+  };
+
+  const { error } = await call({ body: { idToken: "token", name: "Ravi K", email: "ravi@example.com", emailOtp: "000000" } });
+
+  assert.ok(error, "wrong code is rejected");
+  assert.equal(created, false);
+});
+
 test("new phone with name and email creates a verified account", async (t) => {
   stubAll(t);
   User.findOne = async () => null;
@@ -107,13 +144,16 @@ test("new phone with name and email creates a verified account", async (t) => {
     return customer(payload);
   };
 
-  const { res, error } = await call({ body: { idToken: "token", name: "Ravi K", email: "Ravi@Example.com" } });
+  const { res, error } = await call({
+    body: { idToken: "token", name: "Ravi K", email: "Ravi@Example.com", emailOtp: "654321" },
+  });
 
   assert.ifError(error);
   assert.equal(res.statusCode, 201);
   assert.equal(created.phone, "9876543210");
   assert.equal(created.email, "ravi@example.com");
   assert.equal(created.isVerified, true);
+  assert.ok(created.emailVerifiedAt instanceof Date, "email is verified by the code");
   assert.ok(created.password.startsWith("$2"), "stores an unusable hashed password");
 });
 
