@@ -124,10 +124,21 @@ app.use(notFound);
 app.use(errorHandler);
 
 let cleanupInterval = null;
+let checkoutReadinessInterval = null;
 
 async function startDatabaseBackedTasks() {
   await connectDB();
   await refreshCheckoutAttemptIndexReadiness();
+  // A failed check at startup (e.g. a slow first query) must not block payments until the
+  // next restart: keep re-verifying every minute while checkout is unavailable.
+  if (!checkoutReadinessInterval) {
+    checkoutReadinessInterval = setInterval(() => {
+      if (!getCheckoutAttemptIndexReadiness().ready) {
+        void refreshCheckoutAttemptIndexReadiness();
+      }
+    }, 60 * 1000);
+    checkoutReadinessInterval.unref();
+  }
   await ensureAdminUser();
   const cleanupInventory = () =>
     cleanupExpiredInventoryReservations({ source: "interval" })
