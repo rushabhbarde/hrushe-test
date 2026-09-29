@@ -307,6 +307,16 @@ const orderSchema = new mongoose.Schema(
     // phone confirmation with the customer, which is what releases the order to Shiprocket.
     callConfirmedAt: { type: Date, default: null },
     callConfirmedBy: { type: String, default: "", trim: true },
+    // Discount code applied at checkout (WELCOME10, a friend's HRU- code, or a stored coupon).
+    couponCode: { type: String, default: "", uppercase: true, trim: true },
+    couponKind: { type: String, enum: ["", "welcome", "referral", "stored"], default: "" },
+    // For friend codes: whose code it was, and whether their thank-you code has been issued.
+    referralOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    referralRewardIssuedAt: { type: Date, default: null },
+    gift: {
+      wrap: { type: Boolean, default: false },
+      note: { type: String, default: "", trim: true, maxlength: 200 },
+    },
     // Filled when an admin confirms the order and it is sent to Shiprocket.
     shiprocket: {
       status: { type: String, enum: ["", "sending", "created", "failed"], default: "" },
@@ -429,6 +439,7 @@ orderSchema.index({ createdAt: -1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, createdAt: -1 });
 orderSchema.index({ customerEmail: 1, createdAt: -1 });
+orderSchema.index({ customerPhone: 1, paymentStatus: 1 });
 orderSchema.index({ inventoryReservationStatus: 1, inventoryReservationExpiresAt: 1 });
 orderSchema.index({ paymentReconciliationResultCode: 1, createdAt: -1 });
 orderSchema.index({ paymentReconciliationStartedAt: 1 });

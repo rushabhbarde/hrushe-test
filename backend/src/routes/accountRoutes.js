@@ -1,5 +1,6 @@
 const express = require("express");
 const {
+  getReferral,
   getAccountSummary,
   getProfile,
   updateProfile,
@@ -28,6 +29,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/summary", getAccountSummary);
+router.get("/referral", getReferral);
 router.get("/profile", getProfile);
 router.put("/profile", requireCsrf, updateProfile);
 router.post("/email-change/request-otp", requireCsrf, requestEmailChangeOtp);

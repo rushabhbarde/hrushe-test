@@ -187,6 +187,13 @@ const userSchema = new mongoose.Schema(
       ],
       default: "",
     },
+    // Personal friend code (HRU-XXXX), created the first time the customer opens "Invite friends".
+    referralCode: {
+      type: String,
+      default: undefined,
+      uppercase: true,
+      trim: true,
+    },
     tokenVersion: {
       type: Number,
       default: 0,
@@ -209,5 +216,7 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.index({ referralCode: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("User", userSchema);

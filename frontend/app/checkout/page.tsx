@@ -20,6 +20,7 @@ import {
 import { resolveCheckoutSuccessPath } from "@/lib/checkout-redirect";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
 import { getRazorpayLaunchBlocker } from "@/lib/razorpay-readiness";
+import { readRememberedReferral } from "@/lib/referral";
 
 type CheckoutResponse = {
   appOrderId: string;
@@ -36,6 +37,13 @@ type CheckoutResponse = {
   paymentStatus: string;
   mode: "provider";
   checkoutState: string;
+};
+
+type CouponPreview = {
+  code: string;
+  discount: number;
+  subtotal: number;
+  total: number;
 };
 
 type CheckoutForm = {
@@ -142,6 +150,12 @@ export default function CheckoutPage() {
     () => typeof window !== "undefined" && Boolean(window.Razorpay)
   );
   const [razorpayLoadError, setRazorpayLoadError] = useState("");
+  const [couponInput, setCouponInput] = useState(() => (typeof window === "undefined" ? "" : readRememberedReferral()));
+  const [coupon, setCoupon] = useState<(CouponPreview & { cartSubtotal: number }) | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [isGift, setIsGift] = useState(false);
+  const [giftNote, setGiftNote] = useState("");
 
   useEffect(() => {
     if (window.Razorpay) {
@@ -274,6 +288,7 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     setError("");
+    const gift = { wrap: isGift, note: isGift ? giftNote.trim() : "" };
 
     try {
       const checkoutSnapshot = buildCheckoutAttemptSnapshot({
@@ -294,6 +309,8 @@ export default function CheckoutPage() {
             landmark: form.landmark,
           },
         },
+        couponCode: activeCoupon?.code || "",
+        gift,
       });
 
       if (checkoutAttemptRef.current.snapshot !== checkoutSnapshot) {
@@ -327,6 +344,8 @@ export default function CheckoutPage() {
             paymentMethod: "Razorpay",
           },
           items,
+          couponCode: activeCoupon?.code || "",
+          gift,
         }),
       });
 
@@ -399,7 +418,32 @@ export default function CheckoutPage() {
     }
   };
 
-  const total = subtotal + shipping;
+  // A code applied to a different bag no longer holds; the customer applies it again.
+  const activeCoupon = coupon && coupon.cartSubtotal === subtotal ? coupon : null;
+  const discount = activeCoupon?.discount || 0;
+  const total = subtotal - discount + shipping;
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code || couponBusy) {
+      return;
+    }
+
+    setCouponBusy(true);
+    setCouponError("");
+    try {
+      const preview = await apiRequest<CouponPreview>("/order/coupon/preview", {
+        method: "POST",
+        body: JSON.stringify({ couponCode: code, items, email: form.email, phone: form.phone }),
+      });
+      setCoupon({ ...preview, cartSubtotal: subtotal });
+      setCouponInput(preview.code);
+    } catch (couponFailure) {
+      setCoupon(null);
+      setCouponError(couponFailure instanceof Error ? couponFailure.message : "That code isn’t valid.");
+    } finally {
+      setCouponBusy(false);
+    }
+  };
   const advance = () => {
     if (step === 1 && validateContact()) {
       setStep(2);
@@ -568,6 +612,85 @@ export default function CheckoutPage() {
                         </button>
                       </div>
                     </div>
+                    <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6">
+                      <span className="fr-mono">Code</span>
+                      {activeCoupon ? (
+                        <div className="flex items-baseline justify-between gap-4">
+                          <span className="text-[0.95rem]">
+                            {activeCoupon.code} <span className="text-[var(--muted)]">· −{formatPrice(activeCoupon.discount)}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCoupon(null);
+                              setCouponInput("");
+                            }}
+                            className="fr-mono fr-choice fr-link min-h-11"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-end gap-4">
+                          <input
+                            value={couponInput}
+                            onChange={(event) => {
+                              setCouponInput(event.target.value);
+                              setCouponError("");
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                void applyCoupon();
+                              }
+                            }}
+                            className={`${checkoutInputClass} flex-1 uppercase`}
+                            placeholder="WELCOME10 or a friend’s code"
+                            aria-label="Discount code"
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            maxLength={24}
+                          />
+                          <button type="button" onClick={() => void applyCoupon()} disabled={couponBusy || !couponInput.trim()} className="fr-mono fr-choice is-active fr-link min-h-11">
+                            {couponBusy ? "Checking…" : "Apply"}
+                          </button>
+                        </div>
+                      )}
+                      {couponError ? (
+                        <p role="alert" className="text-[0.85rem] text-[var(--danger)]">
+                          {couponError}
+                        </p>
+                      ) : !activeCoupon ? (
+                        <p className="text-[0.82rem] text-[var(--muted)]">First order? WELCOME10 takes 10% off.</p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-col gap-4 border-t border-[var(--border)] pt-6">
+                      <label className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isGift}
+                          onChange={(event) => setIsGift(event.target.checked)}
+                          className="mt-0.5 h-5 w-5 rounded-none accent-[var(--foreground)]"
+                        />
+                        <span className="flex flex-col gap-1">
+                          <span className="font-medium">This is a gift</span>
+                          <span className="text-[0.85rem] text-[var(--muted)]">Wrapped by hand, with your note on a card. No charge.</span>
+                        </span>
+                      </label>
+                      {isGift
+                        ? field(
+                            `Note for the card · ${200 - giftNote.length} left`,
+                            <textarea
+                              value={giftNote}
+                              onChange={(event) => setGiftNote(event.target.value.slice(0, 200))}
+                              className={`${checkoutInputClass} min-h-24 resize-none`}
+                              maxLength={200}
+                              rows={3}
+                              placeholder="Optional"
+                            />
+                          )
+                        : null}
+                    </div>
                     <label className="flex items-start gap-3 text-[0.9rem] text-[var(--muted)]">
                       <input
                         type="checkbox"
@@ -643,6 +766,18 @@ export default function CheckoutPage() {
                     </li>
                   ))}
                 </ul>
+                {activeCoupon ? (
+                  <div className="flex justify-between text-[0.85rem] text-[var(--muted)]">
+                    <span>{activeCoupon.code}</span>
+                    <span>−{formatPrice(activeCoupon.discount)}</span>
+                  </div>
+                ) : null}
+                {isGift ? (
+                  <div className="flex justify-between text-[0.85rem] text-[var(--muted)]">
+                    <span>Gift wrap</span>
+                    <span>Free</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between text-[0.85rem] text-[var(--muted)]">
                   <span>Delivery</span>
                   <span>{shipping ? formatPrice(shipping) : "Free"}</span>
