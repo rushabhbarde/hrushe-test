@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AdminAuthModalProvider } from "@/components/admin-auth-modal-provider";
 import { AdminAuthProvider } from "@/components/admin-auth-provider";
 import { AuthModalProvider } from "@/components/auth-modal-provider";
@@ -15,9 +15,14 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ToastProvider } from "@/components/toast-provider";
 import { WishlistDrawer } from "@/components/wishlist-drawer";
 import { WishlistProvider } from "@/components/wishlist-provider";
+import { rememberReferralFromSearch } from "@/lib/referral";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    rememberReferralFromSearch(window.location.search);
+  }, [pathname]);
 
   if (pathname.startsWith("/admin")) {
     return (

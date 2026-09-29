@@ -20,6 +20,7 @@ const {
   sendToShiprocket,
   shiprocketWebhook,
   confirmOrderAfterCall,
+  previewCoupon,
 } = require("../controllers/orderController");
 const {
   protect,
@@ -36,6 +37,12 @@ router.post("/checkout/verify", attachUserIfAuthenticated, requireCsrfIfAuthenti
 router.post("/checkout/failure", attachUserIfAuthenticated, requireCsrfIfAuthenticated, failCheckout);
 router.get("/checkout/failure", failCheckout);
 router.get("/checkout/cancel", cancelCheckout);
+router.post(
+  "/coupon/preview",
+  createRateLimiter({ name: "coupon-preview", max: 30, windowMs: 10 * 60 * 1000 }),
+  attachUserIfAuthenticated,
+  previewCoupon
+);
 router.post("/checkout/webhook/razorpay", razorpayWebhook);
 // Shiprocket tracking updates (URL must not contain "shiprocket"; authenticated by x-api-key).
 router.post("/shipping/updates", shiprocketWebhook);

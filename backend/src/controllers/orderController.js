@@ -7,6 +7,7 @@ const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const shipmentSync = require("../services/shipmentSync");
+const coupons = require("../services/coupons");
 const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
@@ -1192,6 +1193,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     courierName: order.courierName,
   });
 
+  if (order.orderStatus === "Delivered") {
+    await issueReferralReward(order);
+  }
+
   // Moving a paid order Pending → Confirmed by hand counts as the team's call confirmation.
   let responseOrder = order;
   if (orderStatus === "Confirmed" && existingOrder.orderStatus === "Pending" && !order.callConfirmedAt) {
@@ -1217,6 +1222,45 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   return res.json(responseOrder);
+});
+
+/** Gives the friend-code owner their thank-you code (once) and tells them by email. */
+const issueReferralReward = async (order) => {
+  try {
+    const reward = await coupons.grantReferralReward(order);
+    if (reward?.owner?.email) {
+      await sendEmail({
+        to: reward.owner.email,
+        subject: "A thank-you from HRUSHE",
+        html: `<p>Hi ${String(reward.owner.name || "").split(" ")[0].replace(/[<>&"']/g, "") || "there"},</p><p>A friend just received their first HRUSHE order with your code. Here’s 10% off your next one: <strong>${reward.coupon.code}</strong> (single use, for you only).</p><p>Defined quietly.<br/>HRUSHE</p>`,
+      });
+    }
+  } catch (error) {
+    logEvent("coupon.referral_reward.failed", { orderId: String(order?._id), message: error?.message }, "error");
+  }
+};
+
+/** Checkout preview: what a code would take off this bag. Same rules as checkout itself. */
+const previewCoupon = asyncHandler(async (req, res) => {
+  const normalizedItems = await resolveCheckoutItems(req.body.items);
+  const { subtotalPaise } = calculateOrderTotals({ items: normalizedItems });
+  const coupon = await coupons.resolveCoupon({
+    code: req.body.couponCode,
+    subtotalPaise,
+    userId: req.user?._id || null,
+    email: String(req.body.email || "").trim().toLowerCase(),
+    phone: String(req.body.phone || "").replace(/\D/g, "").slice(-10),
+  });
+  if (!coupon) {
+    throw new AppError("Enter a code.", 400);
+  }
+  const totals = calculateOrderTotals({ items: normalizedItems, discountPaise: coupon.discountPaise });
+  return res.json({
+    code: coupon.code,
+    discount: paiseToRupees(totals.discountPaise),
+    subtotal: paiseToRupees(totals.subtotalPaise),
+    total: paiseToRupees(totals.totalPaise),
+  });
 });
 
 /**
@@ -1320,6 +1364,9 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
   }
 
   const updated = await Order.findOneAndUpdate({ _id: order._id, orderStatus: order.orderStatus }, { $set: update }, { new: true });
+  if (updated?.orderStatus === "Delivered") {
+    await issueReferralReward(updated);
+  }
   if (updated && movesForward) {
     await safelySendOrderEmail(
       updated,
@@ -1379,7 +1426,20 @@ const createCheckout = asyncHandler(async (req, res) => {
 
   const normalizedItems = await resolveCheckoutItems(items);
 
-  const totals = calculateOrderTotals({ items: normalizedItems });
+  // Discount codes are validated and priced here, from the server-priced cart.
+  const { subtotalPaise } = calculateOrderTotals({ items: normalizedItems });
+  const coupon = await coupons.resolveCoupon({
+    code: req.body.couponCode,
+    subtotalPaise,
+    userId: req.user?._id || null,
+    email,
+    phone,
+  });
+  const totals = calculateOrderTotals({ items: normalizedItems, discountPaise: coupon?.discountPaise || 0 });
+  const gift = {
+    wrap: Boolean(req.body.gift?.wrap),
+    note: String(req.body.gift?.note || "").replace(/\s+/g, " ").trim().slice(0, 200),
+  };
   const totalAmount = paiseToRupees(totals.totalPaise);
   const identityHash = buildCheckoutIdentityHash({
     userId: req.user?._id || null,
@@ -1479,6 +1539,10 @@ const createCheckout = asyncHandler(async (req, res) => {
           customerPhone: phone,
           paymentMethod,
           paymentStatus: "initiated",
+          couponCode: coupon?.code || "",
+          couponKind: coupon?.kind || "",
+          referralOwnerId: coupon?.referralOwnerId || null,
+          gift,
           checkoutProvider: "razorpay",
           checkoutSessionId: razorpayOrder.id,
           checkoutUrl: "",
@@ -1675,6 +1739,8 @@ const verifyCheckout = asyncHandler(async (req, res) => {
   if (confirmedOrder.userId) {
     await Cart.findOneAndUpdate({ userId: confirmedOrder.userId }, { items: [] });
   }
+
+  await coupons.recordCouponUse(confirmedOrder);
   await safelySendOrderEmail(
     confirmedOrder,
     "Your HRUSHE order is confirmed",
@@ -2032,6 +2098,8 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       if (confirmedOrder.userId) {
         await Cart.findOneAndUpdate({ userId: confirmedOrder.userId }, { items: [] });
       }
+
+      await coupons.recordCouponUse(confirmedOrder);
 
       webhookEvent.status = "completed";
       webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED;
@@ -2674,6 +2742,7 @@ const reorderOrder = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  previewCoupon,
   confirmOrderAfterCall,
   lookupOrderForCustomer,
   sendToShiprocket,

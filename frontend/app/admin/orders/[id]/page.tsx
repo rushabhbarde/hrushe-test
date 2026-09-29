@@ -307,6 +307,30 @@ export default function AdminOrderDetailPage() {
           </div>
 
           <div className="space-y-5">
+            {order.gift?.wrap || order.couponCode ? (
+              <AdminPanel>
+                <AdminSubhead title="Packing" description="Check this before the box is closed." />
+                <div className="grid gap-4">
+                  {order.gift?.wrap ? (
+                    <AdminKeyValue
+                      label="Gift"
+                      value={
+                        <span className="flex flex-col gap-1">
+                          <AdminBadge tone="warning">Gift wrap</AdminBadge>
+                          <span className="text-sm">{order.gift.note ? `Card: “${order.gift.note}”` : "No note — plain card."}</span>
+                        </span>
+                      }
+                    />
+                  ) : null}
+                  {order.couponCode ? (
+                    <AdminKeyValue
+                      label="Code"
+                      value={`${order.couponCode}${order.discountPaise ? ` · −₹${(order.discountPaise / 100).toLocaleString("en-IN")}` : ""}`}
+                    />
+                  ) : null}
+                </div>
+              </AdminPanel>
+            ) : null}
             <AdminPanel>
               <AdminSubhead
                 title="Shiprocket"

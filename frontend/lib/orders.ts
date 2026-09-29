@@ -106,6 +106,10 @@ export type OrderRecord = {
   updatedAt?: string;
   callConfirmedAt?: string | null;
   callConfirmedBy?: string;
+  couponCode?: string;
+  couponKind?: "" | "welcome" | "referral" | "stored";
+  discountPaise?: number;
+  gift?: { wrap?: boolean; note?: string };
   shiprocket?: {
     status?: "" | "sending" | "created" | "failed";
     orderId?: string;

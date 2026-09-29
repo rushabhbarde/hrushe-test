@@ -4,6 +4,7 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const SupportRequest = require("../models/SupportRequest");
 const env = require("../config/env");
+const coupons = require("../services/coupons");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { sendEmail } = require("../utils/mailer");
@@ -744,7 +745,19 @@ const createSupportRequest = asyncHandler(async (req, res) => {
   });
 });
 
+/** Invite friends: the customer's personal code, share link and unused thank-you codes. */
+const getReferral = asyncHandler(async (req, res) => {
+  const code = await coupons.getOrCreateReferralCode(req.user._id);
+  const rewards = await coupons.listRewardCoupons(req.user._id);
+  return res.json({
+    code,
+    shareUrl: `https://hrushe.in/?ref=${encodeURIComponent(code)}`,
+    rewards: rewards.map((reward) => ({ code: reward.code, percent: reward.value })),
+  });
+});
+
 module.exports = {
+  getReferral,
   getAccountSummary,
   getProfile,
   updateProfile,

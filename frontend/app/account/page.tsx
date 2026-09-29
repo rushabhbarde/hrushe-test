@@ -14,6 +14,7 @@ import {
 } from "@/components/account-shell";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
+import { InviteFriends } from "@/components/invite-friends";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
 import { SiteFooter } from "@/components/site-footer";
@@ -810,6 +811,8 @@ function AccountPageContent() {
                     ))}
                   </dl>
                 </AccountSectionCard>
+
+                <InviteFriends />
               </>
             ) : null}
 
