@@ -160,7 +160,7 @@ export function Gateway({ options }: { options: GatewayOption[] }) {
           </Link>
 
           <div className="hidden items-center justify-between lg:flex">
-            <span className="text-[0.8125rem] text-[var(--muted)]">Defined quietly.</span>
+            <span className="text-[0.8125rem] text-[var(--muted)]">Defined quietly<span className="fr-mark">.</span></span>
             <Link
               href={active.href}
               onClick={onEnter(active)}

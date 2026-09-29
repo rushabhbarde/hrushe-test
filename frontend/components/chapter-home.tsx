@@ -74,6 +74,16 @@ export function ChapterHome({
 
   const goTo = (index: number) => sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" });
   const n = (index: number) => String(index + 1).padStart(2, "0");
+  // A title's closing full stop takes the logo's burgundy — the one mark on the screen.
+  const withMark = (text: string) =>
+    text.endsWith(".") ? (
+      <>
+        {text.slice(0, -1)}
+        <span className="fr-mark">.</span>
+      </>
+    ) : (
+      text
+    );
   const currentCard = edit[card] || edit[0];
 
   const room = (index: number, top: string, bottom: string, media: React.ReactNode, below: React.ReactNode, extraClass = "") => (
@@ -87,13 +97,13 @@ export function ChapterHome({
       className={`chapter-room flex min-h-[calc(100svh-7.5rem)] snap-start flex-col justify-center py-4 lg:min-h-[calc(100svh-5.5rem)] lg:px-10 lg:py-8 lg:pr-[18rem] ${extraClass}`}
     >
       <p className="fr-word relative z-[1] -mb-[0.14em] px-5 text-[clamp(3.5rem,16.5vw,5.5rem)] lg:-ml-[0.04em] lg:-mb-[0.2em] lg:px-0 lg:text-[clamp(5rem,8.5vw,8.5rem)]">
-        {top}
+        {withMark(top)}
       </p>
       <div className="fr-frame ml-5 mr-11 h-[50svh] lg:mx-0 lg:aspect-[2/1] lg:h-auto lg:w-full lg:max-w-[1040px]">{media}</div>
       <div className="flex w-full flex-col lg:max-w-[1040px]">
         {bottom ? (
           <p className="fr-word relative z-[1] -mt-[0.16em] px-5 text-right text-[clamp(3.5rem,16.5vw,5.5rem)] lg:-mt-[0.22em] lg:px-0 lg:text-[clamp(5rem,8.5vw,8.5rem)]">
-            {bottom}
+            {withMark(bottom)}
           </p>
         ) : null}
         <div className="px-5 pt-3 lg:px-0 lg:pt-4">{below}</div>
@@ -185,7 +195,7 @@ export function ChapterHome({
             aria-label={`${n(index)} · ${label}`}
             className={`fr-mono fr-choice flex min-h-8 min-w-8 items-center justify-center gap-3 lg:justify-start ${index === active ? "is-active" : ""}`}
           >
-            <span>{n(index)}</span>
+            <span className={index === active ? "fr-mark" : undefined}>{n(index)}</span>
             <span className="hidden max-w-[12rem] truncate lg:inline">{label}</span>
           </button>
         ))}

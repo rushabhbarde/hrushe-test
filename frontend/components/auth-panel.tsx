@@ -345,7 +345,7 @@ export function AuthPanel({
         <aside className="fr-frame relative hidden min-h-[600px] p-8 lg:flex lg:flex-col lg:justify-between">
           <div className="relative flex flex-col gap-4">
             <p className="fr-mono fr-muted">Wardrobe</p>
-            <p className="fr-word max-w-sm text-[3.5rem]">Defined quietly.</p>
+            <p className="fr-word max-w-sm text-[3.5rem]">Defined quietly<span className="fr-mark">.</span></p>
             <p className="max-w-xs text-sm leading-6 text-[var(--muted)]">
               Your orders, saved pieces and delivery details, kept in one quiet place.
             </p>

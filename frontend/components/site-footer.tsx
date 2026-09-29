@@ -112,12 +112,12 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <footer className="flex min-h-[calc(100svh-3.375rem)] flex-col justify-between border-t border-white/15 bg-black text-white sm:min-h-0">
+      <footer className="fr-mark-on-dark flex min-h-[calc(100svh-3.375rem)] flex-col justify-between border-t border-white/15 bg-black text-white sm:min-h-0">
         <div className="mx-auto grid w-full max-w-[1600px] flex-1 content-center gap-9 px-6 py-12 sm:flex-none sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
           <div className="max-w-lg">
             <p className="fr-mono text-white/45">{settings.brandName}</p>
             <p className="fr-word mt-3 text-[clamp(2.75rem,10vw,4.5rem)] text-white">
-              Defined Quietly.
+              Defined Quietly<span className="fr-mark">.</span>
             </p>
             <p className="mt-4 text-sm leading-6 text-white/55">
               Everyday uniforms, clear proportions, honest materials.
@@ -150,14 +150,14 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <footer className="border-t border-white/15 bg-black text-white">
+    <footer className="fr-mark-on-dark border-t border-white/15 bg-black text-white">
       <div className="mx-auto flex w-full max-w-[1600px] flex-col px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         <div className="grid gap-8 md:grid-cols-[0.92fr_1.08fr] lg:gap-14">
           <section className="flex flex-col justify-between gap-8">
             <div className="max-w-xl">
               <p className="fr-mono text-white/55">{settings.brandName}</p>
               <p className="fr-word mt-4 max-w-[12ch] text-[clamp(3rem,8vw,6.5rem)] text-white">
-                Defined Quietly.
+                Defined Quietly<span className="fr-mark">.</span>
               </p>
               <p className="mt-5 max-w-md text-sm leading-6 text-white/60 sm:text-[0.95rem]">
                 Quiet everyday uniforms with clear proportions, honest materials, and repeat-wear construction.
