@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { HomepageMediaFrame } from "@/components/homepage-media";
+import { OpenSupportButton } from "@/components/open-support-button";
 
 export type Chapter = {
   id: string;
@@ -101,6 +102,7 @@ export function ChapterHome({
   );
 
   return (
+    <>
     <div className="relative">
       {chapters.map((chapter, index) =>
         room(
@@ -195,5 +197,27 @@ export function ChapterHome({
         </div>
       </nav>
     </div>
+      <section
+        aria-label="Contact"
+        className="flex flex-col gap-5 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-5 py-14 lg:flex-row lg:items-end lg:justify-between lg:px-10 lg:py-20"
+      >
+        <div className="flex flex-col gap-3">
+          <span className="fr-mono fr-muted">Questions · Mon–Sat, 10–7</span>
+          <p className="fr-word text-[clamp(2.75rem,10vw,5.5rem)]">Talk to us.</p>
+        </div>
+        <div className="flex flex-col gap-4 lg:items-end">
+          <OpenSupportButton className="fr-button w-auto! px-8">Write to us</OpenSupportButton>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <a href="tel:+919112854988" className="fr-mono fr-link">
+              Call +91 91128 54988
+            </a>
+            <a href="mailto:team@hrushe.in" className="fr-mono fr-link normal-case!">
+              team@hrushe.in
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </>
   );
 }

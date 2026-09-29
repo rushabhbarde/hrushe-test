@@ -1,5 +1,7 @@
 const express = require("express");
 const {
+  assistantChat,
+  assistantStatus,
   createSupportTicket,
   getSupportRequests,
   getSupportRequestById,
@@ -22,6 +24,13 @@ router.post(
   attachUserIfAuthenticated,
   requireCsrfIfAuthenticated,
   createSupportTicket
+);
+
+router.get("/assistant", assistantStatus);
+router.post(
+  "/assistant",
+  createRateLimiter({ name: "support-assistant", max: 20, windowMs: 10 * 60 * 1000 }),
+  assistantChat
 );
 
 router.use(protect, adminOnly);

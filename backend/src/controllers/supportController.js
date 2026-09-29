@@ -12,6 +12,7 @@ const {
   sendListResponse,
 } = require("../utils/pagination");
 const { logEvent } = require("../utils/logger");
+const supportAssistant = require("../services/supportAssistant");
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_CATEGORIES = [
@@ -334,7 +335,38 @@ const updateSupportRequest = asyncHandler(async (req, res) => {
   return res.json(serializeTicket(request));
 });
 
+// HRUSHE's own assistant runs on this server (no outside AI), so it's always on.
+const assistantStatus = (req, res) => res.json({ enabled: true });
+
+/** One help-assistant turn. Body: { messages: [{ role: "user"|"assistant", content }] }. */
+const assistantChat = asyncHandler(async (req, res) => {
+  const raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const messages = raw
+    .slice(-16)
+    .map((message) => ({
+      role: message?.role === "assistant" ? "assistant" : "user",
+      content: String(message?.content || "").trim().slice(0, 1200),
+    }))
+    .filter((message) => message.content);
+
+  if (messages.length === 0 || messages[0].role !== "user" || messages[messages.length - 1].role !== "user") {
+    throw new AppError("Send a message to start.", 400);
+  }
+
+  try {
+    // Lazy require avoids a load-order cycle with the order controller.
+    const { lookupOrderForCustomer } = require("./orderController");
+    const result = await supportAssistant.runAssistant(messages, { lookupOrder: lookupOrderForCustomer });
+    return res.json(result);
+  } catch (error) {
+    logEvent("support.assistant.failed", { message: error?.message }, "error");
+    throw new AppError("The assistant can’t answer right now. Please write to the team instead.", 503);
+  }
+});
+
 module.exports = {
+  assistantChat,
+  assistantStatus,
   createSupportTicket,
   getSupportRequests,
   getSupportRequestById,

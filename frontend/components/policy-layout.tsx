@@ -24,6 +24,11 @@ type PolicyLayoutProps = {
   lastUpdated: string;
 };
 
+/** Policy copy numbers its headings ("1. Return Eligibility"); the layout already numbers them. */
+function displayTitle(title: string) {
+  return title.replace(/^\s*\d+[.)]\s*/, "");
+}
+
 function sectionId(policyKey: string, title: string) {
   return `${policyKey}-${title
     .toLowerCase()
@@ -180,7 +185,7 @@ export function PolicyLayout({
                         : "text-[var(--muted)]"
                     }`}
                   >
-                    {section.title}
+                    {displayTitle(section.title)}
                   </a>
                 ))}
               </nav>
@@ -245,7 +250,7 @@ export function PolicyLayout({
                         }`}
                         aria-hidden="true"
                       />
-                      {section.title}
+                      {displayTitle(section.title)}
                     </a>
                   ))}
                 </div>
@@ -282,7 +287,7 @@ export function PolicyLayout({
                   </p>
                   <div className="min-w-0">
                     <h3 className="text-[1.35rem] font-medium leading-tight text-[var(--foreground)] sm:text-[1.65rem]">
-                      {section.title}
+                      {displayTitle(section.title)}
                     </h3>
                     <div className="mt-5 max-w-3xl space-y-3 break-words text-[0.98rem] leading-8 text-[var(--muted)]">
                       {section.body.split("\n").map((paragraph, paragraphIndex) => (
