@@ -104,6 +104,8 @@ export type OrderRecord = {
   products: OrderProductSnapshot[];
   createdAt: string;
   updatedAt?: string;
+  callConfirmedAt?: string | null;
+  callConfirmedBy?: string;
   shiprocket?: {
     status?: "" | "sending" | "created" | "failed";
     orderId?: string;

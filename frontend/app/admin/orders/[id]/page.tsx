@@ -154,6 +154,25 @@ export default function AdminOrderDetailPage() {
     }
   }
 
+  async function confirmAfterCall() {
+    if (!order) {
+      return;
+    }
+    setSendingShipment(true);
+    try {
+      const updated = await apiRequest<OrderRecord>(`/order/${order.id}/confirm-call`, { method: "POST" });
+      setOrder(updated);
+      pushToast(
+        updated.shiprocket?.status === "created" ? "Confirmed and sent to Shiprocket." : "Confirmed after call.",
+        "success"
+      );
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not confirm the order.", "error");
+    } finally {
+      setSendingShipment(false);
+    }
+  }
+
   async function sendToShiprocket() {
     if (!order) {
       return;
@@ -293,6 +312,28 @@ export default function AdminOrderDetailPage() {
                 title="Shiprocket"
                 description="Paid orders go to Shiprocket only when you confirm them — after the customer call."
               />
+              <div className="mb-5 flex flex-col gap-3 border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pb-5">
+                {order.callConfirmedAt ? (
+                  <AdminKeyValue
+                    label="Call confirmed"
+                    value={`${new Date(order.callConfirmedAt).toLocaleString("en-IN")} · ${order.callConfirmedBy || "team"}`}
+                  />
+                ) : order.paymentStatus === "paid" && ["Pending", "Confirmed"].includes(order.orderStatus) ? (
+                  <>
+                    <p className="text-sm text-[var(--muted)]">
+                      Call {order.customerName} on {order.customerPhone || "their number"} to confirm size and address, then:
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void confirmAfterCall()}
+                      disabled={sendingShipment}
+                      className="button-primary self-start px-5 py-3 text-sm font-medium disabled:opacity-60"
+                    >
+                      {sendingShipment ? "Confirming…" : "Confirm after call"}
+                    </button>
+                  </>
+                ) : null}
+              </div>
               {order.shiprocket?.status === "created" ? (
                 <div className="grid gap-4 md:grid-cols-2">
                   <AdminKeyValue label="Status" value={<AdminBadge tone="success">Sent</AdminBadge>} />
@@ -318,7 +359,7 @@ export default function AdminOrderDetailPage() {
                   {order.shiprocket?.error ? (
                     <p className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]">{order.shiprocket.error}</p>
                   ) : null}
-                  {["Confirmed", "Packed"].includes(order.orderStatus) && order.paymentStatus === "paid" ? (
+                  {["Confirmed", "Packed"].includes(order.orderStatus) && order.paymentStatus === "paid" && order.callConfirmedAt ? (
                     <button
                       type="button"
                       onClick={() => void sendToShiprocket()}
@@ -329,9 +370,9 @@ export default function AdminOrderDetailPage() {
                     </button>
                   ) : (
                     <p className="text-sm text-[var(--muted)]">
-                      {order.orderStatus === "Pending"
-                        ? "Call the customer, then confirm the order — it goes to Shiprocket then."
-                        : "Only paid, confirmed orders can be sent."}
+                      {order.paymentStatus === "paid" && !order.callConfirmedAt
+                        ? "It goes to Shiprocket once you confirm it after the call."
+                        : "Only paid, call-confirmed orders can be sent."}
                     </p>
                   )}
                 </div>

@@ -1192,9 +1192,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     courierName: order.courierName,
   });
 
-  // Only a human confirmation (Pending → Confirmed) hands the parcel to Shiprocket.
+  // Moving a paid order Pending → Confirmed by hand counts as the team's call confirmation.
   let responseOrder = order;
-  if (orderStatus === "Confirmed" && existingOrder.orderStatus === "Pending") {
+  if (orderStatus === "Confirmed" && existingOrder.orderStatus === "Pending" && !order.callConfirmedAt) {
+    await Order.updateOne(
+      { _id: order._id, callConfirmedAt: null },
+      { $set: { callConfirmedAt: new Date(), callConfirmedBy: String(req.user?.email || req.user?.name || "admin") } }
+    );
     const result = await shipmentSync.sendOrderToShiprocket(order._id);
     responseOrder = result.order || order;
   }
@@ -1215,6 +1219,34 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   return res.json(responseOrder);
 });
 
+/**
+ * "Confirm after call": the team has phoned the customer and the order is good to ship.
+ * Records who confirmed it (once) and hands the order to Shiprocket.
+ */
+const confirmOrderAfterCall = asyncHandler(async (req, res) => {
+  const existing = await Order.findById(req.params.id);
+  if (!existing) {
+    throw new AppError("Order not found", 404);
+  }
+  if (existing.paymentStatus !== "paid" || !["Pending", "Confirmed"].includes(existing.orderStatus)) {
+    throw new AppError("Only paid orders that haven't shipped can be confirmed.", 409);
+  }
+
+  const confirmedBy = String(req.user?.email || req.user?.name || "admin").slice(0, 120);
+  const updated = await Order.findOneAndUpdate(
+    { _id: existing._id, callConfirmedAt: null, paymentStatus: "paid", orderStatus: { $in: ["Pending", "Confirmed"] } },
+    { $set: { callConfirmedAt: new Date(), callConfirmedBy: confirmedBy, orderStatus: "Confirmed" } },
+    { new: true }
+  );
+
+  if (updated) {
+    await recordAuditLog(req, "order.call-confirmed", { type: "order", id: updated._id }, { confirmedBy });
+  }
+
+  const result = await shipmentSync.sendOrderToShiprocket(existing._id);
+  return res.json(result.order || updated || existing);
+});
+
 /** Admin retry: send a confirmed order to Shiprocket if it was not sent or failed. */
 const sendToShiprocket = asyncHandler(async (req, res) => {
   if (!shiprocket.isShiprocketConfigured()) {
@@ -1226,6 +1258,9 @@ const sendToShiprocket = asyncHandler(async (req, res) => {
   }
   if (!["Confirmed", "Packed"].includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
     throw new AppError("Only paid, confirmed orders can be sent to Shiprocket.", 409);
+  }
+  if (!existing.callConfirmedAt) {
+    throw new AppError("Confirm the order with the customer first (Confirm after call).", 409);
   }
 
   const result = await shipmentSync.sendOrderToShiprocket(existing._id);
@@ -2639,6 +2674,7 @@ const reorderOrder = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  confirmOrderAfterCall,
   lookupOrderForCustomer,
   sendToShiprocket,
   shiprocketWebhook,

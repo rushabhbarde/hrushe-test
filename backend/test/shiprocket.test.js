@@ -11,7 +11,7 @@ const shipmentSync = require("../src/services/shipmentSync");
 auditLog.recordAuditLog = async () => {};
 mailer.sendEmail = async () => ({ delivered: true });
 
-const { updateOrderStatus, shiprocketWebhook } = require("../src/controllers/orderController");
+const { updateOrderStatus, shiprocketWebhook, confirmOrderAfterCall, sendToShiprocket } = require("../src/controllers/orderController");
 
 const sampleOrder = (extra = {}) => ({
   _id: "507f1f77bcf86cd799439011",
@@ -168,10 +168,16 @@ test("only Pending → Confirmed hands the order to Shiprocket", async (t) => {
   };
   stub(t, Order, "findById", Order.findById);
   stub(t, Order, "findOneAndUpdate", Order.findOneAndUpdate);
+  const calls = [];
+  stub(t, Order, "updateOne", async (filter, update) => {
+    calls.push(update.$set);
+    return { modifiedCount: 1 };
+  });
 
   const first = await confirm("Pending", "Confirmed");
   assert.ifError(first.error);
   assert.equal(sends.length, 1);
+  assert.ok(calls[0].callConfirmedAt instanceof Date, "a manual Pending → Confirmed counts as the call confirmation");
   assert.equal(first.res.body.shiprocket.status, "created");
 
   const second = await confirm("Confirmed", "Packed");
@@ -203,4 +209,42 @@ test("webhook needs the token and only moves orders forward", async (t) => {
   Order.findOne = async () => sampleOrder({ orderStatus: "Delivered" });
   await run(shiprocketWebhook, { headers: { "x-api-key": "hook-secret" }, body: { order_id: "1024", current_status: "IN TRANSIT" } });
   assert.equal(applied.orderStatus, undefined, "a delivered order is never moved back");
+});
+
+test("Confirm after call records who confirmed it, then sends to Shiprocket", async (t) => {
+  const sends = [];
+  stub(t, shipmentSync, "sendOrderToShiprocket", async (id) => {
+    sends.push(String(id));
+    return { order: sampleOrder({ callConfirmedAt: new Date(), shiprocket: { status: "created" } }) };
+  });
+  // Paid orders are auto-"Confirmed" by payment; the call confirmation is separate.
+  stub(t, Order, "findById", async () => sampleOrder({ orderStatus: "Confirmed", callConfirmedAt: null }));
+  let setFields;
+  stub(t, Order, "findOneAndUpdate", async (filter, update) => {
+    assert.equal(filter.callConfirmedAt, null, "only the first confirmation is recorded");
+    setFields = update.$set;
+    return sampleOrder({ ...update.$set });
+  });
+
+  const { res, error } = await run(confirmOrderAfterCall, {
+    params: { id: "507f1f77bcf86cd799439011" },
+    user: { _id: "admin", email: "team@hrushe.in" },
+  });
+  assert.ifError(error);
+  assert.equal(setFields.callConfirmedBy, "team@hrushe.in");
+  assert.ok(setFields.callConfirmedAt instanceof Date);
+  assert.equal(sends.length, 1);
+  assert.equal(res.body.shiprocket.status, "created");
+
+  Order.findById = async () => sampleOrder({ paymentStatus: "initiated" });
+  const unpaid = await run(confirmOrderAfterCall, { params: { id: "x" }, user: {} });
+  assert.equal(unpaid.error?.statusCode, 409);
+});
+
+test("the Shiprocket retry refuses orders nobody has confirmed by phone", async (t) => {
+  withEnv(t, { SHIPROCKET_ENABLED: true, SHIPROCKET_EMAIL: "api@hrushe.in", SHIPROCKET_PASSWORD: "secret" });
+  stub(t, Order, "findById", async () => sampleOrder({ orderStatus: "Confirmed", callConfirmedAt: null }));
+  const { error } = await run(sendToShiprocket, { params: { id: "x" }, user: {} });
+  assert.equal(error?.statusCode, 409);
+  assert.match(error?.message || "", /Confirm the order with the customer first/);
 });

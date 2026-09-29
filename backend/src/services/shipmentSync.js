@@ -5,8 +5,8 @@ const { logEvent } = require("../utils/logger");
 const STALE_SENDING_MS = 2 * 60 * 1000;
 
 /**
- * Sends a confirmed, paid order to Shiprocket exactly once. Called when an admin confirms
- * the order (and from the "Send to Shiprocket" retry). Never throws: a Shiprocket outage
+ * Sends a paid order to Shiprocket exactly once, and only after the team has confirmed it
+ * with the customer by phone (callConfirmedAt). Called from "Confirm after call" and the retry. Never throws: a Shiprocket outage
  * must not undo the confirmation, so failures are stored on the order for a retry.
  */
 async function sendOrderToShiprocket(orderId) {
@@ -20,6 +20,7 @@ async function sendOrderToShiprocket(orderId) {
       _id: orderId,
       orderStatus: { $in: ["Confirmed", "Packed"] },
       paymentStatus: "paid",
+      callConfirmedAt: { $ne: null },
       $or: [
         { "shiprocket.status": { $in: ["", "failed", null] } },
         { "shiprocket.status": { $exists: false } },

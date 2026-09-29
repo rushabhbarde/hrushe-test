@@ -19,6 +19,7 @@ const {
   reorderOrder,
   sendToShiprocket,
   shiprocketWebhook,
+  confirmOrderAfterCall,
 } = require("../controllers/orderController");
 const {
   protect,
@@ -57,6 +58,7 @@ router.post("/reconciliation/scan", protect, requireCsrf, requireAdminPermission
 router.post("/:id/reconcile", protect, requireCsrf, requireAdminPermission("orders.manage"), reconcileOrderPayment);
 router.post("/:id/reorder", protect, requireCsrf, reorderOrder);
 router.post("/:id/shiprocket", protect, requireCsrf, requireAdminPermission("orders.manage"), sendToShiprocket);
+router.post("/:id/confirm-call", protect, requireCsrf, requireAdminPermission("orders.manage"), confirmOrderAfterCall);
 router.get("/:id/invoice", protect, downloadInvoice);
 router.get("/all", protect, requireAdminPermission("orders.view"), getAllOrders);
 router.put("/status/:id", protect, requireCsrf, requireAdminPermission("orders.manage"), updateOrderStatus);

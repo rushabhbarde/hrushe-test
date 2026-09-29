@@ -303,6 +303,10 @@ const orderSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    // Payment confirmation sets orderStatus "Confirmed" automatically; this records the team's
+    // phone confirmation with the customer, which is what releases the order to Shiprocket.
+    callConfirmedAt: { type: Date, default: null },
+    callConfirmedBy: { type: String, default: "", trim: true },
     // Filled when an admin confirms the order and it is sent to Shiprocket.
     shiprocket: {
       status: { type: String, enum: ["", "sending", "created", "failed"], default: "" },
