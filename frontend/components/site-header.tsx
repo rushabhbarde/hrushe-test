@@ -337,7 +337,7 @@ function MenuOverlay({
         >
           Help
         </button>
-        <span className="ml-auto text-[0.8rem] text-[var(--muted)]">Defined quietly.</span>
+        <span className="ml-auto text-[0.8rem] text-[var(--muted)]">Defined quietly<span className="fr-mark">.</span></span>
       </div>
     </div>
   );

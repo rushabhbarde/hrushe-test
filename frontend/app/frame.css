@@ -9,6 +9,8 @@
   --fr-stone: #eeece8;
   --fr-stone-soft: #f5f3ef;
   --fr-faint: #d6d2cb;
+  /* The logo's burgundy, used only as a single mark: the full stop, the current chapter. */
+  --fr-mark: #5e0110;
 }
 
 :root[data-theme="dark"] {
@@ -16,6 +18,16 @@
   --fr-stone: #1b1a18;
   --fr-stone-soft: #22211f;
   --fr-faint: #4a4741;
+  --fr-mark: #c0566a;
+}
+
+.fr-mark {
+  color: var(--fr-mark);
+}
+
+/* On the black footer the deep burgundy disappears; use the lifted tone. */
+.fr-mark-on-dark {
+  --fr-mark: #c0566a;
 }
 
 .fr-word {

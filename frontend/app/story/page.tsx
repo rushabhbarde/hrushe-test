@@ -79,7 +79,7 @@ export default function StoryPage() {
             <span className="fr-mono fr-muted">Our story</span>
             <h1 aria-label="Defined quietly." className="fr-word text-[clamp(3.5rem,16vw,7rem)] lg:text-[clamp(3.5rem,5.6vw,7rem)]">
               Defined
-              <span className="lg:hidden"> quietly.</span>
+              <span className="lg:hidden"> quietly<span className="fr-mark">.</span></span>
             </h1>
           </div>
           <div aria-hidden="true" className="fr-frame h-[36svh] w-full lg:h-auto lg:aspect-[4/5]">
@@ -89,7 +89,7 @@ export default function StoryPage() {
           </div>
           <div className="flex flex-col gap-6 lg:self-end lg:pb-4">
             <p aria-hidden="true" className="fr-word hidden text-[clamp(3.5rem,5.6vw,7rem)] lg:block">
-              quietly.
+              quietly<span className="fr-mark">.</span>
             </p>
             <p className="max-w-md text-base leading-7 text-[var(--muted)]">
               HRUSHE is modern everyday clothing: refined essentials with clean silhouettes, honest materials and quiet

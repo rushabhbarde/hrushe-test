@@ -563,7 +563,7 @@ export default function ProductDetailPage() {
           >
             <span className="fr-mono fr-muted">{[sideLabel, product.category].filter(Boolean).join(" · ")}</span>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="fr-word text-[2.1rem] md:text-[2.75rem] lg:text-[clamp(2.25rem,3vw,2.75rem)]">{displayName}</h1>
+              <h1 className="fr-word text-[2.1rem] md:text-[2.75rem] lg:text-[clamp(2.25rem,3vw,2.75rem)]">{displayName}<span className="fr-mark">.</span></h1>
               <WishlistButton
                 productId={product.id}
                 label={`Save ${displayName}`}
