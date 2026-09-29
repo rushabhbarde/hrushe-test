@@ -18,8 +18,21 @@ function getInitialSearchParam(name: string) {
   return new URLSearchParams(window.location.search).get(name) || "";
 }
 
-const statusGroups: Array<{ key: string; label: string; statuses: OrderStatus[] }> = [
-  { key: "confirm", label: "Confirm", statuses: ["Pending"] },
+type StatusGroup = { key: string; label: string; statuses: OrderStatus[] };
+
+// "Confirm" = paid, not yet confirmed with the customer by phone; "Ship" = confirmed, not shipped.
+function inGroup(group: StatusGroup, order: { orderStatus: OrderStatus; paymentStatus: string; callConfirmedAt?: string | null }) {
+  if (group.key === "confirm") {
+    return order.paymentStatus === "paid" && !order.callConfirmedAt && ["Pending", "Confirmed"].includes(order.orderStatus);
+  }
+  if (group.key === "ship") {
+    return Boolean(order.callConfirmedAt) && group.statuses.includes(order.orderStatus);
+  }
+  return group.statuses.includes(order.orderStatus);
+}
+
+const statusGroups: StatusGroup[] = [
+  { key: "confirm", label: "Confirm", statuses: ["Pending", "Confirmed"] },
   { key: "ship", label: "Ship", statuses: ["Confirmed", "Packed"] },
   { key: "moving", label: "On the way", statuses: ["Shipped", "Out for delivery"] },
   { key: "done", label: "Done", statuses: ["Delivered"] },
@@ -56,7 +69,7 @@ export default function AdminOrdersPage() {
       const group = statusGroups.find((item) => item.key === statusFilter);
       const matchesStatus =
         statusFilter === "all" ||
-        (group ? group.statuses.includes(order.orderStatus) : order.orderStatus === statusFilter);
+        (group ? inGroup(group, order) : order.orderStatus === statusFilter);
       const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
       return matchesQuery && matchesStatus && matchesPayment;
     });
@@ -70,7 +83,7 @@ export default function AdminOrdersPage() {
             const total =
               group.key === "all"
                 ? orders.length
-                : orders.filter((order) => group.statuses.includes(order.orderStatus)).length;
+                : orders.filter((order) => inGroup(group, order)).length;
             const active = statusFilter === group.key;
             return (
               <button

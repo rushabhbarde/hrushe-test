@@ -46,11 +46,19 @@ export function AdminWorkbench({
   const toConfirm = useMemo(
     () =>
       orders
-        .filter((order) => order.orderStatus === "Pending" && order.paymentStatus === "paid")
+        // Paid orders are auto-"Confirmed" by payment; the team's call confirmation is separate.
+        .filter(
+          (order) =>
+            order.paymentStatus === "paid" &&
+            !order.callConfirmedAt &&
+            ["Pending", "Confirmed"].includes(order.orderStatus)
+        )
         .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()),
     [orders]
   );
-  const toShip = orders.filter((order) => ["Confirmed", "Packed"].includes(order.orderStatus)).length;
+  const toShip = orders.filter(
+    (order) => Boolean(order.callConfirmedAt) && ["Confirmed", "Packed"].includes(order.orderStatus)
+  ).length;
   const current = toConfirm.length > 0 ? toConfirm[position % toConfirm.length] : null;
   const image = current?.products.find((product) => product.image)?.image;
 
@@ -61,15 +69,7 @@ export function AdminWorkbench({
 
     setSaving(true);
     try {
-      const updated = await apiRequest<OrderRecord>(`/order/status/${current.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          orderStatus: "Confirmed",
-          courierName: current.courierName,
-          trackingId: current.trackingId,
-          trackingUrl: current.trackingUrl,
-        }),
-      });
+      const updated = await apiRequest<OrderRecord>(`/order/${current.id}/confirm-call`, { method: "POST" });
       updateOrders(orders.map((order) => (order.id === updated.id ? updated : order)));
       const label = `Order #${current.orderNumber || current.id.slice(-6)}`;
       if (updated.shiprocket?.status === "created") {
