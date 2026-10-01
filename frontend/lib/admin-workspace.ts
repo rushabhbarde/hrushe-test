@@ -62,6 +62,17 @@ export type HomepageCard = {
   isVisible: boolean;
 };
 
+/** A "Shop the look" dot on a campaign photo: x/y are fractions of the desktop photo,
+ * mobileX/mobileY of the phone photo when the section has a separate one. */
+export type HomepageLookTag = {
+  id: string;
+  productId: string;
+  x: number;
+  y: number;
+  mobileX?: number | null;
+  mobileY?: number | null;
+};
+
 export type HomepageSection = {
   id: string;
   audience: HomepageAudience;
@@ -84,6 +95,7 @@ export type HomepageSection = {
   titlePosition: HomepageTextPosition;
   textAlign: HomepageTextAlign;
   cards: HomepageCard[];
+  lookTags?: HomepageLookTag[];
   displayOrder: number;
   isVisible: boolean;
   publishStart: string | null;

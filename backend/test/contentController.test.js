@@ -455,3 +455,61 @@ test("homepage draft can keep incomplete media while hidden from publish", async
   assert.ifError(nextError);
   assert.equal(res.body.version, 3);
 });
+
+test("public homepage sections carry only well-formed shop-the-look dots", () => {
+  const { getPublicHomepageSections } = require("../src/controllers/contentController").__private;
+  const [section] = getPublicHomepageSections([
+    {
+      id: "women-hero",
+      audience: "women",
+      sectionType: "audience-hero",
+      title: "Escape the noise",
+      image: "/media/women.jpg",
+      isVisible: true,
+      lookTags: [
+        { id: "dot-1", productId: "tee-1", x: 0.4, y: 0.3, mobileX: 0.5, mobileY: 0.6, note: "secret" },
+        { id: "dot-2", productId: "tee-2", x: 0.7, y: 0.2 },
+        { id: "no-piece", productId: "", x: 0.1, y: 0.1 },
+        { id: "off-photo", productId: "tee-3", x: 1.4, y: 0.1 },
+      ],
+    },
+  ]);
+
+  assert.deepEqual(section.lookTags, [
+    { id: "dot-1", productId: "tee-1", x: 0.4, y: 0.3, mobileX: 0.5, mobileY: 0.6 },
+    { id: "dot-2", productId: "tee-2", x: 0.7, y: 0.2, mobileX: null, mobileY: null },
+  ]);
+});
+
+test("homepage save rejects shop-the-look dots outside the photo", async (t) => {
+  installSiteContentStubs(t);
+  SiteContent.findOne = async () => buildContent(2);
+  SiteContent.findOneAndUpdate = async () => {
+    throw new Error("invalid dots should not reach persistence");
+  };
+
+  const { nextError } = await callController(updateAdminWorkspace, {
+    user: { _id: "admin-id", email: "admin@example.com", role: "admin", adminRole: "super-admin" },
+    body: {
+      version: 2,
+      homeManagement: {
+        sections: [
+          {
+            id: "women-hero",
+            audience: "women",
+            sectionType: "audience-hero",
+            title: "Women",
+            image: "/media/women.jpg",
+            isVisible: false,
+            cards: [],
+            lookTags: [{ id: "dot-1", productId: "tee-1", x: 2, y: 0.5 }],
+          },
+        ],
+      },
+    },
+    headers: {},
+    socket: {},
+  });
+
+  assert.match(nextError?.message, /inside the photo/i);
+});

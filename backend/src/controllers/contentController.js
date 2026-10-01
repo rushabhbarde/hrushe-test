@@ -265,6 +265,59 @@ function assertHomepageCardIsValid(card = {}) {
   }
 }
 
+const MAX_LOOK_TAGS = 8;
+
+function isUnitFraction(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+// "Shop the look": dots on a campaign photo, each pointing at one piece. x/y are fractions
+// of the desktop photo; mobileX/mobileY of the phone photo when the section has its own.
+function assertHomepageLookTagsAreValid(lookTags) {
+  if (lookTags === undefined || lookTags === null) {
+    return;
+  }
+  if (!Array.isArray(lookTags)) {
+    throw new AppError("Shop the look tags must be an array.", 400);
+  }
+  if (lookTags.length > MAX_LOOK_TAGS) {
+    throw new AppError(`A campaign photo can carry at most ${MAX_LOOK_TAGS} shop-the-look dots.`, 400);
+  }
+  lookTags.forEach((tag = {}) => {
+    if (!isPlainObject(tag)) {
+      throw new AppError("Each shop-the-look dot must be an object.", 400);
+    }
+    if (String(tag.id || "").length > 80 || String(tag.productId || "").length > 80) {
+      throw new AppError("Shop-the-look dot ids must be 80 characters or fewer.", 400);
+    }
+    if (!isUnitFraction(tag.x) || !isUnitFraction(tag.y)) {
+      throw new AppError("Shop-the-look dots must sit inside the photo.", 400);
+    }
+    for (const key of ["mobileX", "mobileY"]) {
+      if (tag[key] !== undefined && tag[key] !== null && !isUnitFraction(tag[key])) {
+        throw new AppError("Shop-the-look dots must sit inside the phone photo.", 400);
+      }
+    }
+  });
+}
+
+function pickPublicLookTags(lookTags) {
+  if (!Array.isArray(lookTags)) {
+    return [];
+  }
+  return lookTags
+    .filter((tag) => isPlainObject(tag) && tag.productId && isUnitFraction(tag.x) && isUnitFraction(tag.y))
+    .slice(0, MAX_LOOK_TAGS)
+    .map((tag) => ({
+      id: String(tag.id || ""),
+      productId: String(tag.productId),
+      x: tag.x,
+      y: tag.y,
+      mobileX: isUnitFraction(tag.mobileX) ? tag.mobileX : null,
+      mobileY: isUnitFraction(tag.mobileY) ? tag.mobileY : null,
+    }));
+}
+
 function assertHomepageSectionIsValid(section = {}) {
   if (section.sectionType && !APPROVED_HOMEPAGE_SECTION_TYPES.has(section.sectionType)) {
     throw new AppError("Homepage section type must use an approved preset.", 400);
@@ -315,6 +368,7 @@ function assertHomepageSectionIsValid(section = {}) {
   }
 
   assertHomepageDateRange(section);
+  assertHomepageLookTagsAreValid(section.lookTags);
 
   if (Array.isArray(section.cards)) {
     if (section.cards.length > 24) {
@@ -535,6 +589,7 @@ const pickPublicHomepageSectionFields = (section = {}, now = Date.now()) => ({
         .filter((card) => isHomepageRecordPublic(card, now))
         .map(pickPublicHomepageCardFields)
     : [],
+  lookTags: pickPublicLookTags(section.lookTags),
   displayOrder: Number.isFinite(Number(section.displayOrder)) ? Number(section.displayOrder) : 0,
   isVisible: true,
   publishStart: section.publishStart || null,
