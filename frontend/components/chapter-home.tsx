@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { HomepageMediaFrame } from "@/components/homepage-media";
 import { OpenSupportButton } from "@/components/open-support-button";
+import { LookDots, LookPeek, LookStrip, useShopTheLook, type LookPiece } from "@/components/shop-the-look";
 
 export type Chapter = {
   id: string;
@@ -16,6 +17,8 @@ export type Chapter = {
   objectPosition: string;
   ctaText: string;
   ctaLink: string;
+  /** Shop the look: dots on this photo, each pointing at a piece. */
+  look: LookPiece[];
 };
 
 export type EditCard = {
@@ -44,6 +47,7 @@ export function ChapterHome({
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const [active, setActive] = useState(0);
   const [card, setCard] = useState(0);
+  const look = useShopTheLook();
   const hasEdit = edit.length > 0;
   const rail = [...chapters.map((chapter) => chapter.label), ...(hasEdit ? ["The edit"] : [])];
 
@@ -86,7 +90,15 @@ export function ChapterHome({
     );
   const currentCard = edit[card] || edit[0];
 
-  const room = (index: number, top: string, bottom: string, media: React.ReactNode, below: React.ReactNode, extraClass = "") => (
+  const room = (
+    index: number,
+    top: string,
+    bottom: string,
+    media: React.ReactNode,
+    below: React.ReactNode,
+    extraClass = "",
+    aside: React.ReactNode = null
+  ) => (
     <section
       key={index}
       ref={(element) => {
@@ -94,8 +106,9 @@ export function ChapterHome({
       }}
       data-chapter={index}
       aria-label={`${n(index)} · ${rail[index]}`}
-      className={`chapter-room flex min-h-[calc(100svh-7.5rem)] snap-start flex-col justify-center py-4 lg:min-h-[calc(100svh-5.5rem)] lg:px-10 lg:py-8 lg:pr-[18rem] ${extraClass}`}
+      className={`chapter-room relative flex min-h-[calc(100svh-7.5rem)] snap-start flex-col justify-center py-4 lg:min-h-[calc(100svh-5.5rem)] lg:px-10 lg:py-8 lg:pr-[18rem] ${extraClass}`}
     >
+      {aside}
       <p className="fr-word relative z-[1] -mb-[0.14em] px-5 text-[clamp(3.5rem,16.5vw,5.5rem)] lg:-ml-[0.04em] lg:-mb-[0.2em] lg:px-0 lg:text-[clamp(5rem,8.5vw,8.5rem)]">
         {withMark(top)}
       </p>
@@ -129,7 +142,19 @@ export function ChapterHome({
               className="h-full w-full object-cover"
               objectPosition={chapter.objectPosition}
             />
+            {chapter.look.length > 0 ? (
+              <LookDots
+                look={look}
+                room={index}
+                pieces={chapter.look}
+                image={chapter.image}
+                mobileImage={chapter.mobileImage}
+                objectPosition={chapter.objectPosition}
+              />
+            ) : null}
           </div>,
+          <>
+          <LookStrip look={look} room={index} pieces={chapter.look} />
           <div className="flex items-baseline justify-between gap-4">
             <Link href={chapter.ctaLink} className="fr-mono fr-link">
               {chapter.ctaText} →
@@ -140,6 +165,9 @@ export function ChapterHome({
               </button>
             ) : null}
           </div>
+          </>,
+          "",
+          <LookPeek look={look} room={index} pieces={chapter.look} />
         )
       )}
 
