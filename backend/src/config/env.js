@@ -102,6 +102,11 @@ const env = {
   SHIPROCKET_WEBHOOK_TOKEN: String(process.env.SHIPROCKET_WEBHOOK_TOKEN || "").trim(),
   SHIPROCKET_PACKAGE_WEIGHT_KG: Number(process.env.SHIPROCKET_PACKAGE_WEIGHT_KG || 0.4),
   SHIPROCKET_PACKAGE_CM: String(process.env.SHIPROCKET_PACKAGE_CM || "30x24x4"),
+  // WhatsApp order updates (Meta WhatsApp Cloud API). Off unless WHATSAPP_ENABLED is exactly "true".
+  WHATSAPP_ENABLED: String(process.env.WHATSAPP_ENABLED || "").trim().toLowerCase() === "true",
+  WHATSAPP_TOKEN: String(process.env.WHATSAPP_TOKEN || "").trim(),
+  WHATSAPP_PHONE_NUMBER_ID: String(process.env.WHATSAPP_PHONE_NUMBER_ID || "").trim(),
+  WHATSAPP_TEMPLATE_LANGUAGE: String(process.env.WHATSAPP_TEMPLATE_LANGUAGE || "en").trim(),
   MSG91_AUTH_KEY: process.env.MSG91_AUTH_KEY || "",
   MSG91_SENDER_ID: process.env.MSG91_SENDER_ID || "",
   MSG91_DLT_TEMPLATE_ID: process.env.MSG91_DLT_TEMPLATE_ID || "",
