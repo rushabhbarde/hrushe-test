@@ -27,6 +27,7 @@ const { installProcessErrorHandlers } = require("./src/utils/errorMonitoring");
 const {
   cleanupExpiredInventoryReservations,
 } = require("./src/services/checkoutInventory");
+const { startBackgroundJobs } = require("./src/services/backgroundJobs");
 const {
   getCheckoutAttemptIndexReadiness,
   refreshCheckoutAttemptIndexReadiness,
@@ -169,6 +170,7 @@ async function startDatabaseBackedTasks() {
     cleanupInterval = setInterval(cleanupInventory, 5 * 60 * 1000);
     cleanupInterval.unref();
   }
+  startBackgroundJobs();
 }
 
 app.listen(env.PORT, () => {

@@ -11,6 +11,7 @@ import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { trackShopEvent } from "@/lib/tracking";
 import { apiRequest } from "@/lib/api";
 import type { AddressRecord } from "@/lib/account";
 import {
@@ -156,6 +157,14 @@ export default function CheckoutPage() {
   const [couponBusy, setCouponBusy] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [giftNote, setGiftNote] = useState("");
+
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (isReady && items.length > 0 && !checkoutTracked.current) {
+      checkoutTracked.current = true;
+      trackShopEvent("begin_checkout", items);
+    }
+  }, [isReady, items]);
 
   useEffect(() => {
     if (window.Razorpay) {

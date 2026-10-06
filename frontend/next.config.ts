@@ -18,6 +18,12 @@ const configuredImageHosts = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
+    // A resized photo never changes (new uploads get new addresses), so keep each resized
+    // copy for a month instead of redoing the slow resize of a multi-megabyte original.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+    // The widest frame on the site is 1040px; 2048 covers it on sharp screens. Dropping the
+    // 3840 size stops phones and laptops asking for giant versions.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     remotePatterns: [
       { protocol: "https", hostname: "hrushe.in" },
       { protocol: "https", hostname: "www.hrushe.in" },

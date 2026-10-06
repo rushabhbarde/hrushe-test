@@ -1,23 +1,31 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { FrameStatement } from "@/components/frame-statement";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { trackShopEvent } from "@/lib/tracking";
 
 function CheckoutSuccessPageContent() {
   const searchParams = useSearchParams();
-  const { clearCart } = useCart();
+  const { clearCart, items, isReady } = useCart();
+  const purchaseTracked = useRef(false);
   const { user } = useCustomerAuth();
   const orderId = searchParams.get("orderId");
   const trackingLookup = orderId ? `/track-order?orderId=${encodeURIComponent(orderId)}` : "/track-order";
 
   useEffect(() => {
+    if (!isReady || purchaseTracked.current) {
+      return;
+    }
+    // Report the purchase once, from the bag as it was paid for, then empty the bag.
+    purchaseTracked.current = true;
+    trackShopEvent("purchase", items, { orderId: orderId || undefined });
     clearCart();
-  }, [clearCart]);
+  }, [clearCart, isReady, items, orderId]);
 
   return (
     <div className="page-shell">

@@ -36,3 +36,15 @@ node scripts/audit-user-phones.js
 ## Acceptance
 
 Backup/restore is accepted only when a real restore into an isolated database has completed and the restored app passes readiness plus the data audit scripts.
+
+## Nightly automatic backup (added 2026-10-07)
+
+The backend writes one backup a day to a **private** R2 bucket when `BACKUP_R2_BUCKET` is set on Render (it reuses the existing R2 credentials, which must be allowed to write to that bucket). Files are `backups/hrushe-YYYY-MM-DD.json.gz`, kept for 30 days. A failed backup emails `ALERT_EMAIL` and is retried within the hour. Look for `backup.completed` or `backup.failed` in the Render logs.
+
+To rehearse or perform a restore:
+
+1. Download a backup file from the bucket in the Cloudflare dashboard.
+2. See what it holds (changes nothing): `node scripts/restore-backup.js <file> <mongodb-uri>`
+3. Restore into a spare database first: `node scripts/restore-backup.js <file> <spare-database-uri> --replace`
+4. `--replace` empties and refills every collection in the file. Only point it at production when you mean to roll production back.
+

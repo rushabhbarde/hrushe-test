@@ -48,7 +48,12 @@ export const policyTabs = [
           "Courier delays and incorrect address issues are handled case by case. If an item arrives damaged, contact us within 48 hours so the order can be assessed under our Return & Refund Policy.",
       },
       {
-        title: "9. Contact",
+        title: "9. Grievance Officer",
+        body:
+          "If a concern is not resolved by our support team, you can write to our Grievance Officer.\n\nName: Hrushabh Barde\nDesignation: Grievance Officer, HRUSHE\nEmail: team@hrushe.in\nPhone: +91 9112854988 (Monday to Saturday, 10 am to 7 pm)\nAddress: 1, Barde Farms, Near Primary Health Sub Centre, Ganeshpur, Wani, Maharashtra, 445304.\n\nWe acknowledge every complaint within 48 hours and resolve it within one month of receiving it.",
+      },
+      {
+        title: "10. Contact",
         body:
           "For any questions, please contact us at: team@hrushe.in\n\nTrade name: HRUSHE (HRUSHABH BARDE)\nPhone number: +91 9112854988\nEmail: team@hrushe.in\nPhysical address: 1, Barde Farms, Near Primary Health Sub Centre, Ganeshpur, Wani, Maharashtra, 445304.",
       },
@@ -151,17 +156,22 @@ export const policyTabs = [
           "After the returned item is received and checked, an approved refund is initiated to the original payment method. Bank processing time is typically 5–7 business days after initiation.",
       },
       {
-        title: "4. Exchange",
+        title: "4. Return Shipping",
+        body:
+          "Return pickup and return shipping are paid by HRUSHE. You do not pay to send an eligible return back to us. We arrange the pickup from your delivery address once the return is approved.",
+      },
+      {
+        title: "5. Exchange",
         body:
           "One size exchange is available at no additional pickup or reshipping charge, subject to stock availability and the same unused, unwashed, tagged condition. Additional exchanges may incur logistics charges. Colour changes are processed as a return and new order.",
       },
       {
-        title: "5. Cancellation",
+        title: "6. Cancellation",
         body:
           "Orders can be cancelled within 2 hours of placing them. After dispatch, cancellation is not possible.",
       },
       {
-        title: "6. Contact",
+        title: "7. Contact",
         body:
           "For return or refund support: team@hrushe.in\n\nHRUSHABH BARDE",
       },
