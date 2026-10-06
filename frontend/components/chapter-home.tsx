@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { HomepageMediaFrame } from "@/components/homepage-media";
 import { OpenSupportButton } from "@/components/open-support-button";
 import { LookDots, LookPeek, LookStrip, useShopTheLook, type LookPiece } from "@/components/shop-the-look";
@@ -96,8 +96,7 @@ export function ChapterHome({
     bottom: string,
     media: React.ReactNode,
     below: React.ReactNode,
-    extraClass = "",
-    aside: React.ReactNode = null
+    extraClass = ""
   ) => (
     <section
       key={index}
@@ -106,9 +105,8 @@ export function ChapterHome({
       }}
       data-chapter={index}
       aria-label={`${n(index)} · ${rail[index]}`}
-      className={`chapter-room relative flex min-h-[calc(100svh-7.5rem)] snap-start flex-col justify-center py-4 lg:min-h-[calc(100svh-5.5rem)] lg:px-10 lg:py-8 lg:pr-[18rem] ${extraClass}`}
+      className={`chapter-room flex min-h-[calc(100svh-7.5rem)] snap-start flex-col justify-center py-4 lg:min-h-[calc(100svh-5.5rem)] lg:px-10 lg:py-8 lg:pr-[18rem] ${extraClass}`}
     >
-      {aside}
       <p className="fr-word relative z-[1] -mb-[0.14em] px-5 text-[clamp(3.5rem,16.5vw,5.5rem)] lg:-ml-[0.04em] lg:-mb-[0.2em] lg:px-0 lg:text-[clamp(5rem,8.5vw,8.5rem)]">
         {withMark(top)}
       </p>
@@ -165,9 +163,7 @@ export function ChapterHome({
               </button>
             ) : null}
           </div>
-          </>,
-          "",
-          <LookPeek look={look} room={index} pieces={chapter.look} />
+          </>
         )
       )}
 
@@ -215,8 +211,8 @@ export function ChapterHome({
       <nav aria-label="Chapters" className="pointer-events-none absolute inset-y-0 right-1 z-20 lg:right-10">
         <div className="pointer-events-auto sticky top-[45svh] flex flex-col gap-1 lg:gap-4">
         {rail.map((label, index) => (
+          <Fragment key={label + index}>
           <button
-            key={label + index}
             type="button"
             onClick={() => goTo(index)}
             aria-current={index === active ? "step" : undefined}
@@ -226,6 +222,9 @@ export function ChapterHome({
             <span className={index === active ? "fr-mark" : undefined}>{n(index)}</span>
             <span className="hidden max-w-[12rem] truncate lg:inline">{label}</span>
           </button>
+          {/* The piece a hovered dot points at sits under its own campaign's name. */}
+          {chapters[index] ? <LookPeek look={look} room={index} pieces={chapters[index].look} /> : null}
+          </Fragment>
         ))}
         {active < rail.length - 1 ? (
           <button type="button" onClick={() => goTo(active + 1)} className="fr-mono fr-choice mt-4 hidden text-left lg:block">
