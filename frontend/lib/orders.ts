@@ -67,7 +67,7 @@ export type OrderProductSnapshot = {
   image?: string;
 };
 
-export type ShippingAddressDetails = {
+type ShippingAddressDetails = {
   label?: "Home" | "Work" | "Other";
   fullName?: string;
   mobile?: string;
