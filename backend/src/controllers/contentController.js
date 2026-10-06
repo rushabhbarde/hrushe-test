@@ -729,8 +729,23 @@ const getSiteContent = async () => {
     content.homepageBanner = normalizedBanner;
   }
 
-  if (!Number.isInteger(content.adminWorkspaceVersion) || content.adminWorkspaceVersion < 1) {
-    content.adminWorkspaceVersion = 1;
+  // A record saved before versioning has no stored version: Mongoose fills in the default 1
+  // in memory only, so the version-checked update never matches and every save is refused
+  // as "updated by another administrator". Write the version down once.
+  const versionNeverStored =
+    typeof content.$isDefault === "function" && content.$isDefault("adminWorkspaceVersion");
+  if (
+    versionNeverStored ||
+    !Number.isInteger(content.adminWorkspaceVersion) ||
+    content.adminWorkspaceVersion < 1
+  ) {
+    content.adminWorkspaceVersion =
+      Number.isInteger(content.adminWorkspaceVersion) && content.adminWorkspaceVersion >= 1
+        ? content.adminWorkspaceVersion
+        : 1;
+    if (typeof content.markModified === "function") {
+      content.markModified("adminWorkspaceVersion");
+    }
     contentChanged = true;
   }
 
