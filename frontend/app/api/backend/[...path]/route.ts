@@ -110,9 +110,55 @@ function forwardResponseHeaders(response: Response) {
   return headers;
 }
 
+const PUBLIC_CATALOG_REVALIDATE_SECONDS = 30;
+
+/**
+ * The public product list and product details are the same for every shopper, so they can
+ * be reused for a few seconds instead of crossing to the backend on every visit. Atelier
+ * asks with `?admin=true` (drafts, live stock) and is never served from this cache.
+ */
+function isPublicCatalogRead(request: NextRequest, segments: string[]) {
+  return (
+    request.method.toUpperCase() === "GET" &&
+    segments[0] === "products" &&
+    segments.length <= 2 &&
+    !request.nextUrl.searchParams.has("admin")
+  );
+}
+
+async function proxyPublicCatalogRead(request: NextRequest, segments: string[]) {
+  // No cookies or credentials are forwarded: the cached answer is the anonymous one.
+  const response = await fetch(buildBackendUrl(request, segments), {
+    headers: { accept: "application/json" },
+    next: { revalidate: PUBLIC_CATALOG_REVALIDATE_SECONDS },
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (response.status >= 500) {
+    throw new Error("Backend error on a public catalog read");
+  }
+  const headers = new Headers({
+    "content-type": response.headers.get("content-type") || "application/json",
+    "cache-control": "private, no-store, max-age=0, must-revalidate",
+  });
+  ["x-pagination-page", "x-pagination-limit", "x-pagination-total-items", "x-pagination-total-pages"].forEach((name) => {
+    const value = response.headers.get(name);
+    if (value) headers.set(name, value);
+  });
+
+  return new Response(response.body, { status: response.status, headers });
+}
+
 async function proxyRequest(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
   const method = request.method.toUpperCase();
+
+  if (isPublicCatalogRead(request, path)) {
+    try {
+      return await proxyPublicCatalogRead(request, path);
+    } catch {
+      // Fall through to the uncached path below.
+    }
+  }
   const body =
     method === "GET" || method === "HEAD"
       ? undefined

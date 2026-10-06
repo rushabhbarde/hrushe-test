@@ -13,20 +13,33 @@ const BACKEND_API_URL = (
   "http://localhost:5001"
 ).replace(/\/+$/, "");
 
+/** How long a built storefront page is reused before it is rebuilt in the background. */
+export const STOREFRONT_REVALIDATE_SECONDS = 60;
+
+const isBuilding = process.env.NEXT_PHASE === "phase-production-build";
+
+/**
+ * Storefront pages are built once and reused for a minute. If the backend is unreachable
+ * when a page is rebuilt, throw: the last good page keeps being served instead of one
+ * built from fallbacks. Only the build itself (which may have no backend) falls back.
+ */
 async function storefrontFetch<T>(path: string, fallback: T): Promise<T> {
   try {
     const response = await fetch(`${BACKEND_API_URL}${path}`, {
-      cache: "no-store",
+      next: { revalidate: STOREFRONT_REVALIDATE_SECONDS },
       signal: AbortSignal.timeout(8_000),
     });
 
     if (!response.ok) {
-      return fallback;
+      throw new Error(`Storefront request ${path} failed with ${response.status}`);
     }
 
     return (await response.json()) as T;
-  } catch {
-    return fallback;
+  } catch (error) {
+    if (isBuilding || process.env.NODE_ENV !== "production") {
+      return fallback;
+    }
+    throw error;
   }
 }
 
