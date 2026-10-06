@@ -34,7 +34,8 @@ function getMetadataImage(product: Product) {
 
 const getProduct = cache(async (id: string) => {
   const response = await fetch(`${BACKEND_API_URL}/products/${encodeURIComponent(id)}`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
+    signal: AbortSignal.timeout(8_000),
   });
 
   if (!response.ok) {
@@ -43,6 +44,14 @@ const getProduct = cache(async (id: string) => {
 
   return (await response.json()) as Product;
 });
+
+// No pages at build time; each product page is built on its first visit, then reused
+// for a minute and rebuilt in the background.
+export const revalidate = 60;
+
+export function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,

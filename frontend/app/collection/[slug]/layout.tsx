@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 
+// The collection page shell is the same for every visit: build it on first visit and reuse it.
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {

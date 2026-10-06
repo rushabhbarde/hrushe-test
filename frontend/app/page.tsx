@@ -8,6 +8,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { Gateway } from "@/components/gateway";
 import { toGatewayOption } from "@/lib/gateway";
 
+// Built once, reused for a minute, rebuilt in the background.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Shop Women & Men",
   description: "Choose HRUSHE womenswear or menswear and shop the latest quiet uniforms.",

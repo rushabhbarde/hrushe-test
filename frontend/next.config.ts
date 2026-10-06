@@ -43,6 +43,12 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        // The New In page was removed; campaign buttons that still point at it land on the newest pieces.
+        source: "/new-in",
+        destination: "/shop?sort=newest",
+        permanent: false,
+      },
+      {
         source: "/product/begie-solid-tee-oversize",
         destination: "/product/beige-solid-tee-oversize",
         permanent: true,
