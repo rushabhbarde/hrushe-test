@@ -513,3 +513,26 @@ test("homepage save rejects shop-the-look dots outside the photo", async (t) => 
 
   assert.match(nextError?.message, /inside the photo/i);
 });
+
+test("a record saved before versioning gets its version written down so saves stop conflicting", async (t) => {
+  installSiteContentStubs(t);
+  const marked = [];
+  let saves = 0;
+  const legacy = {
+    ...buildContent(1),
+    // Mongoose filled the default in memory; nothing is stored yet.
+    $isDefault: (path) => path === "adminWorkspaceVersion",
+    markModified: (path) => marked.push(path),
+    save: async () => {
+      saves += 1;
+    },
+  };
+  SiteContent.findOne = async () => legacy;
+
+  const { res, nextError } = await callController(getAdminWorkspace, { headers: {}, socket: {} });
+
+  assert.ifError(nextError);
+  assert.equal(res.body.version, 1);
+  assert.deepEqual(marked, ["adminWorkspaceVersion"]);
+  assert.equal(saves, 1);
+});
