@@ -17,7 +17,7 @@ export const GATEWAY_AUTO_SWAP_MS = 4200;
 export const GATEWAY_SIDE_COOKIE = "hrushe_side";
 const GATEWAY_SIDE_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 
-export function isGatewaySide(value: unknown): value is GatewaySide {
+function isGatewaySide(value: unknown): value is GatewaySide {
   return value === "women" || value === "men";
 }
 

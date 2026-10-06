@@ -1,5 +1,5 @@
-export const COOKIE_CONSENT_VERSION = 1;
-export const COOKIE_CONSENT_CHANGED_EVENT = "hrushe_cookie_consent_changed";
+const COOKIE_CONSENT_VERSION = 1;
+const COOKIE_CONSENT_CHANGED_EVENT = "hrushe_cookie_consent_changed";
 export const OPEN_COOKIE_PREFERENCES_EVENT = "hrushe_open_cookie_preferences";
 
 const COOKIE_NAME = "hrushe-cookie-consent";
@@ -27,7 +27,7 @@ function readCookieValue(name: string) {
   return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : "";
 }
 
-export function readCookieConsent(): CookieConsent | null {
+function readCookieConsent(): CookieConsent | null {
   const value = readCookieValue(COOKIE_NAME);
 
   if (!value) {

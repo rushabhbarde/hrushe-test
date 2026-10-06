@@ -1,4 +1,3 @@
-import type { Product, ProductStatus } from "@/lib/catalog";
 import type { OrderRecord } from "@/lib/orders";
 import type { AdminPermission, AdminRoleId } from "@/lib/admin-workspace";
 import type { SupportCategory } from "@/lib/account";
@@ -15,13 +14,6 @@ export type AdminNavItem = {
   group: string;
   description?: string;
   permission?: AdminPermission;
-};
-
-export type AdminMetric = {
-  label: string;
-  value: string;
-  detail?: string;
-  tone?: "default" | "accent" | "success" | "warning";
 };
 
 export type AdminCustomer = {
@@ -157,46 +149,6 @@ export function formatAdminDate(value?: string | null, options?: Intl.DateTimeFo
     year: "numeric",
     ...options,
   }).format(new Date(value));
-}
-
-export function deriveProductStatus(product: Product, overrideStatus?: ProductStatus) {
-  if (overrideStatus) {
-    return overrideStatus;
-  }
-
-  if (product.status) {
-    return product.status;
-  }
-
-  if (product.sizes.length === 0) {
-    return "Sold Out";
-  }
-
-  const hasRequiredCatalogData =
-    Boolean(product.name?.trim()) &&
-    Boolean(product.category?.trim()) &&
-    Boolean(product.description?.trim()) &&
-    Boolean(product.images?.length) &&
-    product.price > 0;
-
-  if (!hasRequiredCatalogData) {
-    return "Draft";
-  }
-
-  return "Active";
-}
-
-export function productStatusTone(status: ProductStatus) {
-  switch (status) {
-    case "Active":
-      return "success";
-    case "Hidden":
-      return "accent";
-    case "Sold Out":
-      return "warning";
-    default:
-      return "default";
-  }
 }
 
 export function orderStatusTone(status: string) {

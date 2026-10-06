@@ -35,7 +35,7 @@ export type AdminDashboardRecentOrder = {
   createdAt: string;
 };
 
-export type AdminDashboardTopProduct = {
+type AdminDashboardTopProduct = {
   productId: string;
   name: string;
   quantity: number;

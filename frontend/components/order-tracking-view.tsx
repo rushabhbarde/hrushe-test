@@ -26,7 +26,7 @@ type TrackableOrder = {
 };
 
 /** Customers see the journey; "Out for delivery" and "Cancelled" etc. read as plain words. */
-export function deriveTimeline(status: OrderStatus): TrackingTimelineStep[] {
+function deriveTimeline(status: OrderStatus): TrackingTimelineStep[] {
   const currentIndex = activeFulfillmentStatuses.indexOf(status);
 
   const steps: TrackingTimelineStep[] = activeFulfillmentStatuses.map((step, index) => ({

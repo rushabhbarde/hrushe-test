@@ -2,22 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Product, ProductReview } from "@/lib/catalog";
-import {
-  defaultHomepageBanner,
-  type HomepageBanner,
-} from "@/lib/storefront-data";
 import { apiRequest } from "@/lib/api";
 import { getAdminAuthHeaders } from "@/lib/admin-auth";
 import { isPersistedMediaSource } from "@/lib/image-source";
-
-type HomepageBannerPayload = Partial<HomepageBanner>;
 type ProductReviewPayload = Omit<ProductReview, "id" | "createdAt">;
 type ProductCache = {
   products: Product[];
-  timestamp: number;
-};
-type BannerCache = {
-  homepageBanner: HomepageBanner;
   timestamp: number;
 };
 
@@ -29,8 +19,6 @@ let productCache: ProductCache | null = null;
 let productRequest: Promise<ProductCache> | null = null;
 let adminProductCache: ProductCache | null = null;
 let adminProductRequest: Promise<ProductCache> | null = null;
-let bannerCache: BannerCache | null = null;
-let bannerRequest: Promise<BannerCache> | null = null;
 
 function mergeProductsWithDefaults(products: Product[]) {
   return products.map((product) => ({
@@ -146,23 +134,6 @@ async function fetchProducts(admin = false, { force = false } = {}) {
   }
 
   return (admin ? adminProductRequest : productRequest) as Promise<ProductCache>;
-}
-
-async function fetchHomepageBanner() {
-  if (!bannerRequest) {
-    bannerRequest = apiRequest<HomepageBanner>("/content/homepage", {
-      cache: "no-store",
-    })
-      .then((homepageBanner) => {
-        bannerCache = { homepageBanner, timestamp: Date.now() };
-        return bannerCache;
-      })
-      .finally(() => {
-        bannerRequest = null;
-      });
-  }
-
-  return bannerRequest;
 }
 
 export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
@@ -320,67 +291,5 @@ export function useStorefrontData({ admin = false }: { admin?: boolean } = {}) {
     updateProduct,
     deleteProduct,
     addProductReview,
-  };
-}
-
-export function useHomepageBannerData() {
-  const [homepageBanner, setHomepageBannerState] = useState<HomepageBanner>(
-    defaultHomepageBanner
-  );
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    if (bannerCache) {
-      queueMicrotask(() => {
-        if (!active || !bannerCache) {
-          return;
-        }
-
-        setHomepageBannerState(bannerCache.homepageBanner);
-        setLoading(false);
-      });
-    }
-
-    fetchHomepageBanner()
-      .then((data) => {
-        if (active) {
-          setHomepageBannerState(data.homepageBanner);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setHomepageBannerState(defaultHomepageBanner);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const saveHomepageBanner = async (payload: HomepageBannerPayload) => {
-    const updated = await apiRequest<HomepageBanner>("/content/homepage", {
-      method: "PUT",
-      body: JSON.stringify(payload),
-      headers: getAdminAuthHeaders(),
-    });
-
-    setHomepageBannerState(updated);
-    bannerCache = { homepageBanner: updated, timestamp: Date.now() };
-    return updated;
-  };
-
-  return {
-    homepageBanner,
-    loading,
-    saveHomepageBanner,
-    setHomepageBannerState,
   };
 }

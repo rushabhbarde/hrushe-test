@@ -4,7 +4,7 @@ import type { ProductSizeMeasurement } from "@/lib/catalog";
 import { resolveProductSizeGuide } from "@/lib/size-guide";
 import { useDialogAccessibility } from "@/lib/use-dialog-accessibility";
 
-export function SizeGuideTable({ rows }: { rows?: ProductSizeMeasurement[] }) {
+function SizeGuideTable({ rows }: { rows?: ProductSizeMeasurement[] }) {
   const resolvedRows = resolveProductSizeGuide(rows);
 
   if (resolvedRows.length === 0) {

@@ -6,10 +6,6 @@ import {
 } from "@/lib/admin-workspace";
 import type { Product } from "@/lib/catalog";
 import { isPersistedMediaSource } from "@/lib/image-source";
-import {
-  defaultHomepageBanner,
-  type HomepageBanner,
-} from "@/lib/storefront-data";
 
 const BACKEND_API_URL = (
   process.env.API_URL ||
@@ -56,22 +52,6 @@ function normalizeProductSummary(product: Product): Product {
 export async function getStorefrontProducts() {
   const products = await storefrontFetch<Product[]>("/products", []);
   return products.map(normalizeProductSummary);
-}
-
-export async function getStorefrontProduct(id: string) {
-  const product = await storefrontFetch<Product | null>(
-    `/products/${encodeURIComponent(id)}`,
-    null
-  );
-  return product ? normalizeProductSummary(product) : null;
-}
-
-export async function getHomepageContent() {
-  const homepage = await storefrontFetch<HomepageBanner>("/content/homepage", defaultHomepageBanner);
-  const mediaUrl = isPersistedMediaSource(homepage.mediaUrl) ? homepage.mediaUrl : "";
-  const imageUrl = isPersistedMediaSource(homepage.imageUrl) ? homepage.imageUrl : "";
-  const posterImage = isPersistedMediaSource(homepage.posterImage) ? homepage.posterImage : "";
-  return { ...homepage, mediaUrl, imageUrl, posterImage };
 }
 
 export async function getHomepageManagement() {
