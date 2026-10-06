@@ -242,7 +242,7 @@ function PeekRow({ product, onOpen }: { product: LookProduct; onOpen: () => void
   );
 }
 
-/** Desktop: "In this look" beside the photo, only while a dot is hovered. */
+/** Desktop: "In this look" under the campaign's name in the chapter list, only while a dot is hovered. */
 export function LookPeek({ look, room, pieces }: { look: ShopTheLook; room: number; pieces: LookPiece[] }) {
   const { state } = look;
   const piece = state.room === room && state.peek >= 0 ? pieces[state.peek] : null;
@@ -250,7 +250,7 @@ export function LookPeek({ look, room, pieces }: { look: ShopTheLook; room: numb
 
   return (
     <div
-      className="fr-look-in absolute right-10 top-[12%] z-30 hidden w-[15rem] flex-col gap-[1.375rem] lg:flex"
+      className="fr-look-in hidden w-[15rem] flex-col gap-4 pb-3 pt-1 lg:flex"
       onMouseEnter={look.keep}
       onMouseLeave={look.leave}
       aria-live="polite"
