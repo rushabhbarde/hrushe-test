@@ -209,7 +209,8 @@ export function ChapterHome({
         : null}
 
       <nav aria-label="Chapters" className="pointer-events-none absolute inset-y-0 right-1 z-20 lg:right-10">
-        <div className="pointer-events-auto sticky top-[45svh] flex flex-col gap-1 lg:gap-4">
+        {/* Desktop: centred on the room (below the 5.5rem header), so it stays centred when "In this look" opens. */}
+        <div className="pointer-events-auto sticky top-[45svh] flex flex-col gap-1 lg:top-[calc(50svh+2.75rem)] lg:-translate-y-1/2 lg:gap-4">
         {rail.map((label, index) => (
           <Fragment key={label + index}>
           <button
