@@ -12,6 +12,19 @@ function captureError(error, context = {}) {
 
   if (statusCode >= 500) {
     markCriticalError(new Date());
+    // Tell the owner, unless the failing thing is the alert email itself.
+    if (context?.component !== "owner-alert") {
+      void require("./ownerAlerts").sendOwnerAlert({
+        key: "server-error",
+        subject: "The server hit an error",
+        lines: [
+          "The backend reported a server error. Shoppers may have seen something fail.",
+          `Error: ${error?.name || "Error"}: ${error?.message || "Unknown error"}`,
+          context?.component ? `Where: ${context.component}${context.operation ? ` / ${context.operation}` : ""}` : "",
+          "Details are in the Render logs (search for error.captured).",
+        ].filter(Boolean),
+      });
+    }
   }
 
   logEvent(

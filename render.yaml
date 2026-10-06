@@ -59,6 +59,12 @@ services:
         sync: false
       - key: R2_ENDPOINT
         sync: false
+      - key: ALERT_EMAIL
+        sync: false
+      - key: BACKUP_R2_BUCKET
+        sync: false
+      - key: SELLER_GSTIN
+        sync: false
       - key: ENABLE_COD
         value: "false"
       - key: OTP_DEV_MODE

@@ -77,10 +77,9 @@ export async function compressImageFile(file: File, maxDimension = 1600) {
   };
   let outputType = blob.type.toLowerCase();
 
-  // Safari may fall back to PNG when a requested canvas encoder is not
-  // available. Keep the MIME type and extension aligned with the bytes it
-  // actually produced instead of force-labelling the result as WebP.
-  if (!supportedOutputTypes[outputType]) {
+  // Safari cannot encode WebP from a canvas and silently hands back a PNG instead, which
+  // for a photo is several megabytes. Anything that is not WebP is re-encoded as JPEG.
+  if (outputType !== "image/webp") {
     blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/jpeg", 0.82)
     );
