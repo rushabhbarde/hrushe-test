@@ -1,14 +1,16 @@
 const env = require("../config/env");
 
+// The storefront's palette: ink on white, quiet greys, hairlines, burgundy only as the full stop.
 const COLORS = {
   surface: "#ffffff",
-  surfaceStrong: "#f7f7f7",
-  border: "#e7e1da",
+  border: "#e6e3de",
   text: "#111111",
-  muted: "#5f5f5f",
-  accent: "#111111",
-  danger: "#c43a35",
+  muted: "#6b6760",
+  mark: "#5e0110",
 };
+const MONO = "'SFMono-Regular',Menlo,Consolas,'Courier New',monospace";
+const SANS = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+const monoLabel = `font-family:${MONO};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${COLORS.muted};`;
 
 const siteBaseUrl = () => String(env.CLIENT_URL || "http://localhost:3000").trim().replace(/\/+$/, "");
 
@@ -39,14 +41,14 @@ const formatParagraphs = (...values) =>
     .filter(Boolean)
     .map(
       (value) =>
-        `<p style="margin:0 0 14px;color:${COLORS.muted};font-size:15px;line-height:1.8;">${escapeHtml(value)}</p>`
+        `<p style="margin:0 0 12px;color:${COLORS.text};font-size:15px;line-height:1.7;">${escapeHtml(value)}</p>`
     )
     .join("");
 
 const formatMultilineText = (value = "") => escapeHtml(value).replace(/\r?\n/g, "<br />");
 
 const formatCurrency = (value) =>
-  `Rs. ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
+  `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
     Number(value) || 0
   )}`;
 
@@ -78,51 +80,30 @@ const buildPreheader = (text) =>
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(text)}</div>`
     : "";
 
+// A title's closing full stop takes the logo's burgundy, as on the site.
+const withMark = (title) => {
+  const text = String(title || "");
+  return text.endsWith(".")
+    ? `${escapeHtml(text.slice(0, -1))}<span style="color:${COLORS.mark};">.</span>`
+    : escapeHtml(text);
+};
+
 const buildLeadBlock = ({ eyebrow, title, intro }) => `
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:28px 0 0;">
-    <tr>
-      <td style="padding:24px;border:1px solid ${COLORS.border};background:${COLORS.surfaceStrong};">
-        ${
-          eyebrow
-            ? `<div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${COLORS.muted};">${escapeHtml(
-                eyebrow
-              )}</div>`
-            : ""
-        }
-        <div style="margin-top:12px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.05;font-weight:700;letter-spacing:-0.04em;color:${COLORS.text};">
-          ${escapeHtml(title)}
-        </div>
-        ${
-          intro
-            ? `<div style="margin-top:12px;">${formatParagraphs(intro)}</div>`
-            : ""
-        }
-      </td>
-    </tr>
-  </table>
+  <div style="padding:36px 0 0;">
+    ${eyebrow ? `<div style="${monoLabel}">${escapeHtml(eyebrow)}</div>` : ""}
+    <div style="margin-top:14px;font-family:${SANS};font-size:38px;line-height:0.98;font-weight:700;letter-spacing:-0.045em;text-transform:uppercase;color:${COLORS.text};">
+      ${withMark(title)}
+    </div>
+    ${intro ? `<div style="margin-top:18px;">${formatParagraphs(intro)}</div>` : ""}
+  </div>
 `;
 
-const buildPanel = ({ title, body, tone = "default" }) => {
-  const background = tone === "subtle" ? COLORS.surfaceStrong : COLORS.surface;
-  const borderColor = tone === "alert" ? COLORS.danger : COLORS.border;
-
-  return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 0;">
-      <tr>
-        <td style="padding:20px;border:1px solid ${borderColor};background:${background};">
-          ${
-            title
-              ? `<div style="margin:0 0 10px;color:${COLORS.text};font-size:14px;font-weight:700;letter-spacing:0.02em;">${escapeHtml(
-                  title
-                )}</div>`
-              : ""
-          }
-          <div style="color:${COLORS.muted};font-size:15px;line-height:1.8;">${body}</div>
-        </td>
-      </tr>
-    </table>
-  `;
-};
+const buildPanel = ({ title, body }) => `
+  <div style="margin:12px 0 0;padding:18px 0 0;border-top:1px solid ${COLORS.border};">
+    ${title ? `<div style="margin:0 0 10px;${monoLabel}">${escapeHtml(title)}</div>` : ""}
+    <div style="color:${COLORS.text};font-size:15px;line-height:1.7;">${body}</div>
+  </div>
+`;
 
 const buildInfoTable = (rows = []) => {
   const normalizedRows = rows.filter(
@@ -134,15 +115,15 @@ const buildInfoTable = (rows = []) => {
   }
 
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 0;border:1px solid ${COLORS.border};border-collapse:collapse;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:24px 0 0;border-top:1px solid ${COLORS.border};border-collapse:collapse;">
       ${normalizedRows
         .map(
           (row, index) => `
             <tr>
-              <td style="width:34%;padding:14px 16px;border-bottom:${index < normalizedRows.length - 1 ? `1px solid ${COLORS.border}` : "0"};background:${COLORS.surfaceStrong};color:${COLORS.muted};font-size:12px;letter-spacing:0.12em;text-transform:uppercase;">
+              <td style="width:38%;padding:13px 12px 13px 0;${index < normalizedRows.length - 1 ? `border-bottom:1px solid ${COLORS.border};` : ""}vertical-align:top;${monoLabel}">
                 ${escapeHtml(row.label)}
               </td>
-              <td style="padding:14px 16px;border-bottom:${index < normalizedRows.length - 1 ? `1px solid ${COLORS.border}` : "0"};color:${COLORS.text};font-size:14px;line-height:1.6;">
+              <td style="padding:13px 0;${index < normalizedRows.length - 1 ? `border-bottom:1px solid ${COLORS.border};` : ""}color:${COLORS.text};font-size:14px;line-height:1.6;text-align:right;">
                 ${escapeHtml(row.value)}
               </td>
             </tr>
@@ -159,12 +140,12 @@ const buildButton = ({ label, url }) => {
   }
 
   return `
-    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 0;">
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0 0;">
       <tr>
-        <td style="background:${COLORS.accent};">
+        <td style="background:${COLORS.text};">
           <a
             href="${escapeHtml(url)}"
-            style="display:inline-block;padding:14px 24px;color:#ffffff;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;"
+            style="display:inline-block;padding:17px 30px;color:#ffffff;font-family:${MONO};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;text-decoration:none;"
           >
             ${escapeHtml(label)}
           </a>
@@ -175,18 +156,12 @@ const buildButton = ({ label, url }) => {
 };
 
 const buildCodeBlock = ({ label, code }) => `
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 0;">
-    <tr>
-      <td style="padding:18px;border:1px solid ${COLORS.border};background:${COLORS.surface};text-align:center;">
-        <div style="margin:0 0 8px;color:${COLORS.muted};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;">${escapeHtml(
-          label
-        )}</div>
-        <div style="color:${COLORS.text};font-size:34px;line-height:1;font-weight:700;letter-spacing:0.24em;">
-          ${escapeHtml(code)}
-        </div>
-      </td>
-    </tr>
-  </table>
+  <div style="margin:28px 0 0;padding:20px 0;border-top:1px solid ${COLORS.border};border-bottom:1px solid ${COLORS.border};">
+    <div style="${monoLabel}">${escapeHtml(label)}</div>
+    <div style="margin-top:12px;font-family:${SANS};color:${COLORS.text};font-size:44px;line-height:1;font-weight:700;letter-spacing:0.14em;">
+      ${escapeHtml(code)}
+    </div>
+  </div>
 `;
 
 const buildOrderItems = (items = []) => {
@@ -195,38 +170,22 @@ const buildOrderItems = (items = []) => {
   }
 
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:18px 0 0;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
       ${items
-        .map((item) => {
-          const meta = [
-            item.size ? `Size ${item.size}` : "",
-            item.color || "",
-            item.fit || "",
-          ]
+        .map((item, index) => {
+          const line = index < items.length - 1 ? `border-bottom:1px solid ${COLORS.border};` : "";
+          const meta = [item.size ? `Size ${item.size}` : "", item.color || "", item.fit || "", `Qty ${item.quantity}`]
             .filter(Boolean)
-            .join(" | ");
+            .join(" · ");
 
           return `
             <tr>
-              <td style="padding:16px 0;border-bottom:1px solid ${COLORS.border};vertical-align:top;">
-                <div style="color:${COLORS.text};font-size:15px;font-weight:700;line-height:1.5;">${escapeHtml(
-                  item.name
-                )}</div>
-                ${
-                  meta
-                    ? `<div style="margin-top:4px;color:${COLORS.muted};font-size:13px;line-height:1.6;">${escapeHtml(
-                        meta
-                      )}</div>`
-                    : ""
-                }
+              <td style="padding:12px 12px 12px 0;${line}vertical-align:top;">
+                <div style="color:${COLORS.text};font-size:15px;line-height:1.4;">${escapeHtml(item.name)}</div>
+                <div style="margin-top:5px;${monoLabel}">${escapeHtml(meta)}</div>
               </td>
-              <td style="padding:16px 0 16px 16px;border-bottom:1px solid ${COLORS.border};vertical-align:top;text-align:right;">
-                <div style="color:${COLORS.text};font-size:13px;line-height:1.6;">Qty ${escapeHtml(
-                  item.quantity
-                )}</div>
-                <div style="margin-top:4px;color:${COLORS.muted};font-size:13px;line-height:1.6;">${escapeHtml(
-                  formatCurrency(Number(item.price) * Number(item.quantity))
-                )}</div>
+              <td style="padding:12px 0;${line}vertical-align:top;text-align:right;color:${COLORS.text};font-size:15px;line-height:1.4;white-space:nowrap;">
+                ${escapeHtml(formatCurrency(Number(item.price) * Number(item.quantity)))}
               </td>
             </tr>
           `;
@@ -252,28 +211,24 @@ const renderEmailContent = ({
     ...sections.filter(Boolean),
     buildButton({ label: ctaLabel, url: ctaUrl }),
     closingNote
-      ? `<div style="margin:18px 0 0;color:${COLORS.muted};font-size:13px;line-height:1.7;">${escapeHtml(
+      ? `<div style="margin:22px 0 0;color:${COLORS.muted};font-size:13px;line-height:1.7;">${escapeHtml(
           closingNote
         )}</div>`
       : "",
   ].join("");
 
+const firstName = (name) => String(name || "").trim().split(/\s+/)[0] || "";
+
 const buildWelcomeEmail = ({ name }) =>
   renderEmailContent({
-    preheader: "Your HRUSHE account is ready.",
-    eyebrow: "Account Created",
-    title: `Welcome${name ? `, ${String(name).trim().split(/\s+/)[0]}` : ""}.`,
+    preheader: "Your HRUSHE wardrobe is ready.",
+    eyebrow: "Your wardrobe",
+    title: `Welcome${firstName(name) ? `, ${firstName(name)}` : ""}.`,
     intro:
-      "Your HRUSHE account has been created successfully. You can now sign in to track orders, save favourites, and move through checkout faster.",
-    sections: [
-      buildInfoTable([
-        { label: "What you can do", value: "Track orders and saved products" },
-        { label: "Account status", value: "Ready to use" },
-      ]),
-    ],
-    ctaLabel: "Open HRUSHE",
-    ctaUrl: buildSiteUrl("/login"),
-    closingNote: "Need help with your account? Contact team@hrushe.in.",
+      "Your HRUSHE wardrobe is ready. It keeps your orders, the pieces you save, and your details for a quicker checkout.",
+    ctaLabel: "Open your wardrobe",
+    ctaUrl: buildSiteUrl("/account"),
+    closingNote: "Questions? Write to team@hrushe.in.",
   });
 
 const buildOtpEmail = ({ purpose, otp, expiryMinutes, email }) => {
@@ -282,65 +237,82 @@ const buildOtpEmail = ({ purpose, otp, expiryMinutes, email }) => {
 
   return renderEmailContent({
     preheader: isSignup
-      ? "Your signup OTP is here."
+      ? "Your code to finish signing up."
       : isEmailChange
-        ? "Your email change OTP is here."
-        : "Your password reset OTP is here.",
-    eyebrow: isSignup || isEmailChange ? "Email Verification" : "Password Reset",
+        ? "Your code to confirm your new email."
+        : "Your code to reset your password.",
+    eyebrow: isSignup || isEmailChange ? "Email verification" : "Password reset",
     title: isSignup
       ? "Confirm your email."
       : isEmailChange
         ? "Confirm your new email."
         : "Reset your password.",
     intro: isSignup
-      ? "Use the one-time code below to finish creating your HRUSHE account."
+      ? "Enter this code to finish creating your HRUSHE account."
       : isEmailChange
-        ? "Use the one-time code below to confirm this new email for your HRUSHE account."
-        : "Use the one-time code below to continue resetting your HRUSHE password.",
+        ? "Enter this code to confirm this new email for your HRUSHE account."
+        : "Enter this code to reset your HRUSHE password.",
     sections: [
       buildCodeBlock({
         label: "One-time code",
         code: otp,
       }),
       buildInfoTable([
-        { label: "Email", value: email },
+        { label: "Sent to", value: email },
         { label: "Valid for", value: `${expiryMinutes} minutes` },
       ]),
       buildPanel({
-        title: "Security note",
-        body: "If you did not request this code, you can safely ignore this email.",
-        tone: "subtle",
+        title: "Did not ask for this?",
+        body: "Ignore this email. Nothing changes unless the code is entered.",
       }),
     ],
     ctaLabel: "Continue to HRUSHE",
     ctaUrl: buildSiteUrl(isSignup ? "/signup" : isEmailChange ? "/account" : "/login"),
-    closingNote: "For support, reply to this email or contact team@hrushe.in.",
+    closingNote: "Need help? Reply to this email or write to team@hrushe.in.",
   });
 };
 
 const buildPasswordChangedEmail = ({ name, email }) =>
   renderEmailContent({
     preheader: "Your HRUSHE password was updated.",
-    eyebrow: "Security Update",
+    eyebrow: "Security",
     title: "Password changed.",
     intro: name
-      ? `Hi ${String(name).trim().split(/\s+/)[0]}, your HRUSHE account password was changed successfully.`
-      : "Your HRUSHE account password was changed successfully.",
+      ? `Hi ${firstName(name)}, the password for your HRUSHE account was changed.`
+      : "The password for your HRUSHE account was changed.",
     sections: [
       buildInfoTable([
         { label: "Account", value: email },
-        { label: "Status", value: "Password updated successfully" },
       ]),
       buildPanel({
-        title: "Did not make this change?",
-        body: "Reset your password immediately and contact team@hrushe.in so we can help secure your account.",
-        tone: "alert",
+        title: "Was this not you?",
+        body: "Reset your password now, then write to team@hrushe.in so we can help secure your account.",
       }),
     ],
     ctaLabel: "Sign in to HRUSHE",
     ctaUrl: buildSiteUrl("/login"),
-    closingNote: "You are receiving this because a password change was completed on your account.",
+    closingNote: "Sent because the password on your account was changed.",
   });
+
+// Each stage of an order gets one big word and one plain line, as on the site.
+const ORDER_MOMENTS = {
+  Confirmed: {
+    title: "Thank you.",
+    line: "Your order is confirmed. We will write when it is packed, and again when it leaves.",
+  },
+  Packed: { title: "Packed.", line: "Your order is packed and waiting for the courier." },
+  Shipped: { title: "Shipped.", line: "Your order has left us. Use the tracking details below to follow it." },
+  "Out for delivery": { title: "Out for delivery.", line: "Your order is with the courier and should reach you today." },
+  Delivered: {
+    title: "Delivered.",
+    line: "Your order has arrived. If the size is not right, one size exchange is free, and returns are open for 7 days.",
+  },
+  Cancelled: {
+    title: "Cancelled.",
+    line: "Your order has been cancelled. Any payment made is refunded to the original payment method.",
+  },
+  Returned: { title: "Returned.", line: "We have received your return. An approved refund goes to the original payment method." },
+};
 
 const buildOrderStatusEmail = ({ order, summaryLine }) => {
   const reference = order.orderNumber || order._id?.toString?.() || "";
@@ -360,11 +332,13 @@ const buildOrderStatusEmail = ({ order, summaryLine }) => {
     : "";
   const address = detailedAddress || order.shippingAddress;
 
+  const moment = ORDER_MOMENTS[order.orderStatus];
+
   return renderEmailContent({
     preheader: `Order #${reference} is now ${order.orderStatus}.`,
-    eyebrow: "Order Update",
-    title: `Order #${reference}`,
-    intro: summaryLine,
+    eyebrow: `Order #${reference}`,
+    title: moment?.title || `${order.orderStatus || "Order update"}.`,
+    intro: moment?.line || summaryLine,
     sections: [
       buildInfoTable([
         { label: "Status", value: order.orderStatus },
@@ -374,29 +348,28 @@ const buildOrderStatusEmail = ({ order, summaryLine }) => {
         { label: "Courier", value: order.courierName || "" },
       ]),
       buildPanel({
-        title: "Items in this order",
+        title: "In this order",
         body: buildOrderItems(order.products),
       }),
       address
         ? buildPanel({
-            title: "Shipping address",
+            title: "Delivering to",
             body: formatMultilineText(address),
-            tone: "subtle",
           })
         : "",
     ],
     ctaLabel: order.trackingUrl ? "Track shipment" : "Track your order",
     ctaUrl: trackingLink,
-    closingNote: "Thank you for shopping with HRUSHE.",
+    closingNote: "Questions about this order? Reply to this email or write to team@hrushe.in.",
   });
 };
 
 const buildSupportStatusEmail = ({ request, customerName }) =>
   renderEmailContent({
     preheader: "Your HRUSHE support request has been updated.",
-    eyebrow: "Support Update",
-    title: `Hi ${customerName || "there"},`,
-    intro: "Your support request has been updated. Here is the latest status from the HRUSHE team.",
+    eyebrow: "Help",
+    title: "An update.",
+    intro: `Hi ${firstName(customerName) || "there"}, there is news on your request. The latest from the HRUSHE team is below.`,
     sections: [
       buildInfoTable([
         {
@@ -416,7 +389,7 @@ const buildSupportStatusEmail = ({ request, customerName }) =>
           })
         : "",
     ],
-    ctaLabel: "Contact HRUSHE",
+    ctaLabel: "Write to us",
     ctaUrl: buildSiteUrl("/contact"),
     closingNote: "Need more help? Reply to this email or write to team@hrushe.in.",
   });
@@ -436,7 +409,7 @@ const buildSupportRequestAdminEmail = ({
 }) =>
   renderEmailContent({
     preheader: "A new HRUSHE support request was submitted.",
-    eyebrow: "Customer Support",
+    eyebrow: "Help",
     title: ticketCode ? `New support ticket ${ticketCode}.` : "New support request.",
     intro: "A customer has submitted a support request from the storefront.",
     sections: [
@@ -463,7 +436,7 @@ const buildSupportRequestAdminEmail = ({
 const buildNewsletterSignupAdminEmail = ({ email, source, capturedAt }) =>
   renderEmailContent({
     preheader: "A new newsletter signup just came in.",
-    eyebrow: "Audience Growth",
+    eyebrow: "Newsletter",
     title: "New newsletter signup.",
     intro: "A visitor joined the HRUSHE newsletter list.",
     sections: [

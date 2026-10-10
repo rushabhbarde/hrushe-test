@@ -117,3 +117,30 @@ test("the invoice is a Tax Invoice only when the seller has a GSTIN", () => {
   assert.match(registered, /\(Tax Invoice\) Tj/);
   assert.match(registered, /GSTIN: 27ABCDE1234F1Z5/);
 });
+
+test("emails carry the brand frame, not the old slogans", () => {
+  const { buildOrderStatusEmail, buildOtpEmail } = require("../src/utils/emailTemplates");
+  const { buildMailHtml } = require("../src/utils/mailer");
+
+  const reset = buildMailHtml({
+    subject: "Your HRUSHE password reset OTP",
+    html: buildOtpEmail({ purpose: "password-reset", otp: "482913", expiryMinutes: 10, email: "a@example.com" }),
+  });
+  assert.match(reset, /Defined quietly<span[^>]*>\.<\/span>/);
+  assert.match(reset, /HRUSHELOGO\.png/);
+  assert.match(reset, /482913/);
+  assert.doesNotMatch(reset, /Quiet pieces|India wide delivery|everyday dressing/i);
+
+  const shipped = buildOrderStatusEmail({
+    order: { orderNumber: "HR-1042", orderStatus: "Shipped", paymentStatus: "paid", totalAmount: 599, products: [] },
+    summaryLine: "fallback",
+  });
+  assert.match(shipped, /Shipped<span[^>]*>\.<\/span>/);
+  assert.match(shipped, /Order #HR-1042/);
+
+  const unknown = buildOrderStatusEmail({
+    order: { orderNumber: "HR-7", orderStatus: "Pending", paymentStatus: "pending", totalAmount: 1, products: [] },
+    summaryLine: "We have your order.",
+  });
+  assert.match(unknown, /We have your order\./);
+});
