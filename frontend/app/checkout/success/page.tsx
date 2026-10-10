@@ -36,15 +36,16 @@ function CheckoutSuccessPageContent() {
         frame="mark"
         body={
           user
-            ? "Your order is available in your account. We will write when it is packed, and again when it leaves."
-            : "Your order is confirmed. Track this order using your order number below, with the email or phone you paid with."
+            ? "Your order is available in your account. Each piece is made to order: we will write when it is wrapped, and again when it leaves."
+            : "Your order is with the atelier, where each piece is made to order. Track this order using your order number below, with the email or phone you paid with."
         }
         reference={orderId}
         rows={[
-          { label: "Paid", value: "Done", done: true },
-          { label: "Confirmed", value: "Done", done: true },
-          { label: "Packed", value: "Next" },
-          { label: "Shipped", value: "Tracking follows" },
+          { label: "Received", value: "Done", done: true },
+          { label: "On the table", value: "Stitching starts next" },
+          { label: "Inspected", value: "Checked by hand" },
+          { label: "Wrapped", value: "Then it leaves" },
+          { label: "On its way", value: "Tracking follows" },
         ]}
         actions={[
           user ? { href: "/account#my-orders", label: "View my order" } : { href: trackingLookup, label: "Track this order" },

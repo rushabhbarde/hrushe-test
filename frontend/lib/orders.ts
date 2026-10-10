@@ -1,6 +1,13 @@
+/**
+ * The journey of a made-to-order piece. The status is what is stored and what the team sees
+ * in Atelier; customers read the atelier's word for it (see orderStageWords). The backend
+ * keeps the same list in backend/src/config/orderStages.js.
+ */
 export const orderStatuses = [
   "Pending",
   "Confirmed",
+  "Stitching",
+  "Quality check",
   "Packed",
   "Shipped",
   "Out for delivery",
@@ -14,20 +21,38 @@ export type OrderStatus = (typeof orderStatuses)[number];
 export const activeFulfillmentStatuses: OrderStatus[] = [
   "Pending",
   "Confirmed",
+  "Stitching",
+  "Quality check",
   "Packed",
   "Shipped",
   "Out for delivery",
   "Delivered",
 ];
 
-const cancellableStatuses: OrderStatus[] = ["Pending", "Confirmed", "Packed"];
-const paidFulfillmentStatuses: OrderStatus[] = [
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-];
+/** Paid and still in the atelier: not yet handed to the courier. */
+export const inAtelierStatuses: OrderStatus[] = ["Confirmed", "Stitching", "Quality check", "Packed"];
+
+/** What the customer reads for each stage. */
+export const orderStageWords: Record<OrderStatus, string> = {
+  Pending: "Placed",
+  Confirmed: "Received",
+  Stitching: "On the table",
+  "Quality check": "Inspected",
+  Packed: "Wrapped",
+  Shipped: "On its way",
+  "Out for delivery": "Nearly home",
+  Delivered: "Home",
+  Cancelled: "Cancelled",
+  Returned: "Returned",
+};
+
+export function getOrderStageWord(status: string) {
+  return orderStageWords[status as OrderStatus] || status;
+}
+
+// A made-to-order piece can still be cancelled until it is handed to the courier.
+const cancellableStatuses: OrderStatus[] = ["Pending", ...inAtelierStatuses];
+const paidFulfillmentStatuses: OrderStatus[] = activeFulfillmentStatuses.filter((status) => status !== "Pending");
 
 export function canTransitionOrderStatus(currentStatus: OrderStatus, nextStatus: OrderStatus) {
   if (!nextStatus || currentStatus === nextStatus) {

@@ -12,6 +12,15 @@ const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
+const {
+  ALL_ORDER_STATUSES,
+  FULFILLMENT_STATUSES,
+  IN_ATELIER_STATUSES,
+  ORDER_STAGES,
+  PAID_STATUSES,
+  getOrderStage,
+  shouldEmailOrderStage,
+} = require("../config/orderStages");
 const { hasAdminPermission } = require("../config/adminRoles");
 const WebhookEvent = require("../models/WebhookEvent");
 const { recordAuditLog } = require("../utils/auditLog");
@@ -60,31 +69,16 @@ const {
   assertCheckoutAttemptIndexReady,
 } = require("../services/checkoutAttemptIndex");
 
-const allowedStatuses = [
-  "Pending",
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-  "Cancelled",
-  "Returned",
-];
+const allowedStatuses = ALL_ORDER_STATUSES;
 
 const PAYMENT_CONFIRMATION_LOCK_WINDOW_MS = 2 * 60 * 1000;
 
-const activeFulfillmentStatuses = [
-  "Pending",
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-];
+const activeFulfillmentStatuses = FULFILLMENT_STATUSES;
 
 const PUBLIC_TRACKING_LOOKUP_ERROR = "Order not found or lookup details do not match";
 
-const cancellableStatuses = ["Pending", "Confirmed", "Packed"];
+// A made-to-order piece can still be cancelled until it is handed to the courier.
+const cancellableStatuses = ["Pending", ...IN_ATELIER_STATUSES];
 
 const canTransitionOrderStatus = (currentStatus, nextStatus) => {
   if (!nextStatus || currentStatus === nextStatus) {
@@ -109,45 +103,23 @@ const canTransitionOrderStatus = (currentStatus, nextStatus) => {
   return currentIndex >= 0 && nextIndex > currentIndex;
 };
 
+// The customer's journey, in the atelier's words (Received, On the table, Inspected, ...).
 const buildTrackingTimeline = (order) => {
-  const baseSteps = [
-    { key: "placed", label: "Order placed", status: "completed" },
-    { key: "confirmed", label: "Confirmed", status: "upcoming" },
-    { key: "packed", label: "Packed", status: "upcoming" },
-    { key: "shipped", label: "Shipped", status: "upcoming" },
-    { key: "out-for-delivery", label: "Out for delivery", status: "upcoming" },
-    { key: "delivered", label: "Delivered", status: "upcoming" },
-  ];
-
-  const statusIndexMap = {
-    Pending: 0,
-    Confirmed: 1,
-    Packed: 2,
-    Shipped: 3,
-    "Out for delivery": 4,
-    Delivered: 5,
-  };
-
-  if (order.orderStatus === "Cancelled") {
+  const closed = ["Cancelled", "Returned"].includes(order.orderStatus) ? getOrderStage(order.orderStatus) : null;
+  if (closed) {
     return [
-      { key: "placed", label: "Order placed", status: "completed" },
-      { key: "cancelled", label: "Cancelled", status: "current" },
+      { key: "placed", label: "Placed", status: "completed" },
+      { key: closed.key, label: closed.word, status: "current" },
     ];
   }
 
-  if (order.orderStatus === "Returned") {
-    return [
-      { key: "placed", label: "Order placed", status: "completed" },
-      { key: "returned", label: "Returned", status: "current" },
-    ];
-  }
+  const activeIndex = Math.max(FULFILLMENT_STATUSES.indexOf(order.orderStatus), 0);
 
-  const activeIndex = statusIndexMap[order.orderStatus] ?? 0;
-
-  return baseSteps.map((step, index) => ({
-    ...step,
+  return ORDER_STAGES.map((stage, index) => ({
+    key: stage.key,
+    label: stage.word,
     status:
-      index < activeIndex
+      index < activeIndex || (index === activeIndex && stage.status === "Delivered")
         ? "completed"
         : index === activeIndex
           ? "current"
@@ -922,6 +894,10 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
   }
 };
 
+// "HRUSHE order #1042: On its way"
+const orderEmailSubject = (order) =>
+  `HRUSHE order #${order.orderNumber || order._id.toString()}: ${getOrderStage(order.orderStatus)?.word || order.orderStatus}`;
+
 const safelySendOrderEmail = async (order, subject, summaryLine) => {
   try {
     await sendOrderEmail(order, subject, summaryLine);
@@ -1158,7 +1134,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  const paidFulfillmentStatuses = ["Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
+  const paidFulfillmentStatuses = PAID_STATUSES;
   if (
     orderStatus &&
     paidFulfillmentStatuses.includes(orderStatus) &&
@@ -1208,17 +1184,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     responseOrder = result.order || order;
   }
 
-  if (
-    orderStatus !== undefined ||
-    trackingId !== undefined ||
-    courierName !== undefined ||
-    trackingUrl !== undefined
-  ) {
-    await safelySendOrderEmail(
-      order,
-      `Your HRUSHE order is now ${order.orderStatus}`,
-      `Your order status has been updated to ${order.orderStatus}.`
-    );
+  // Email the customer at the moments worth a message (Received, Wrapped, On its way, Home,
+  // or a cancellation or return), and when tracking details arrive. The steps in between
+  // (On the table, Inspected, Nearly home) show on the tracking page without an email.
+  const stageChanged = orderStatus !== undefined && orderStatus !== existingOrder.orderStatus;
+  const trackingChanged = trackingId !== undefined || courierName !== undefined || trackingUrl !== undefined;
+  if ((stageChanged && shouldEmailOrderStage(order.orderStatus)) || (!stageChanged && trackingChanged)) {
+    await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage(order.orderStatus)?.line || "");
   }
 
   return res.json(responseOrder);
@@ -1300,7 +1272,7 @@ const sendToShiprocket = asyncHandler(async (req, res) => {
   if (!existing) {
     throw new AppError("Order not found", 404);
   }
-  if (!["Confirmed", "Packed"].includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
+  if (!IN_ATELIER_STATUSES.includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
     throw new AppError("Only paid, confirmed orders can be sent to Shiprocket.", 409);
   }
   if (!existing.callConfirmedAt) {
@@ -1314,7 +1286,7 @@ const sendToShiprocket = asyncHandler(async (req, res) => {
   return res.json(result.order);
 });
 
-const SHIPROCKET_STATUS_RANK = ["Pending", "Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
+const SHIPROCKET_STATUS_RANK = FULFILLMENT_STATUSES;
 
 /** Shiprocket tracking webhook: fills AWB / courier / tracking link and moves the order forward. */
 const shiprocketWebhook = asyncHandler(async (req, res) => {
@@ -1367,12 +1339,8 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
   if (updated?.orderStatus === "Delivered") {
     await issueReferralReward(updated);
   }
-  if (updated && movesForward) {
-    await safelySendOrderEmail(
-      updated,
-      `Your HRUSHE order is now ${updated.orderStatus}`,
-      `Your order status has been updated to ${updated.orderStatus}.`
-    );
+  if (updated && movesForward && shouldEmailOrderStage(updated.orderStatus)) {
+    await safelySendOrderEmail(updated, orderEmailSubject(updated), getOrderStage(updated.orderStatus)?.line || "");
   }
   return res.json({ ok: true, matched: true, orderStatus: updated?.orderStatus || order.orderStatus });
 });
@@ -1741,11 +1709,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
   }
 
   await coupons.recordCouponUse(confirmedOrder);
-  await safelySendOrderEmail(
-    confirmedOrder,
-    "Your HRUSHE order is confirmed",
-    "Thank you for shopping with HRUSHE. Your order has been confirmed."
-  );
+  await safelySendOrderEmail(confirmedOrder, orderEmailSubject(confirmedOrder), getOrderStage("Confirmed").line);
   recordMetric("payment.verified", {
     orderId: confirmedOrder._id.toString(),
     checkoutProvider: confirmedOrder.checkoutProvider,

@@ -20,12 +20,13 @@ function getInitialSearchParam(name: string) {
 
 type StatusGroup = { key: string; label: string; statuses: OrderStatus[] };
 
-// "Confirm" = paid, not yet confirmed with the customer by phone; "Ship" = confirmed, not shipped.
+// "Confirm" = paid, not yet confirmed with the customer by phone; "Make" = being stitched or
+// inspected; "Ship" = wrapped, waiting for the courier.
 function inGroup(group: StatusGroup, order: { orderStatus: OrderStatus; paymentStatus: string; callConfirmedAt?: string | null }) {
   if (group.key === "confirm") {
     return order.paymentStatus === "paid" && !order.callConfirmedAt && ["Pending", "Confirmed"].includes(order.orderStatus);
   }
-  if (group.key === "ship") {
+  if (group.key === "make" || group.key === "ship") {
     return Boolean(order.callConfirmedAt) && group.statuses.includes(order.orderStatus);
   }
   return group.statuses.includes(order.orderStatus);
@@ -33,7 +34,8 @@ function inGroup(group: StatusGroup, order: { orderStatus: OrderStatus; paymentS
 
 const statusGroups: StatusGroup[] = [
   { key: "confirm", label: "Confirm", statuses: ["Pending", "Confirmed"] },
-  { key: "ship", label: "Ship", statuses: ["Confirmed", "Packed"] },
+  { key: "make", label: "Make", statuses: ["Confirmed", "Stitching", "Quality check"] },
+  { key: "ship", label: "Ship", statuses: ["Packed"] },
   { key: "moving", label: "On the way", statuses: ["Shipped", "Out for delivery"] },
   { key: "done", label: "Done", statuses: ["Delivered"] },
   { key: "closed", label: "Closed", statuses: ["Cancelled", "Returned"] },

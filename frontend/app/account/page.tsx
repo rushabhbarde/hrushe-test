@@ -32,7 +32,7 @@ import type {
   WishlistProduct,
 } from "@/lib/account";
 import { compressSingleImage } from "@/lib/image-upload";
-import { formatOrderDate, type OrderRecord } from "@/lib/orders";
+import { formatOrderDate, getOrderStageWord, type OrderRecord } from "@/lib/orders";
 
 type WishlistResponse = {
   products: WishlistProduct[];
@@ -177,7 +177,8 @@ function OrderRow({
           #{order.orderNumber || order.id} · {formatOrderDate(order.createdAt)}
         </span>
         <Link href={`/my-orders/${order.id}`} className="fr-word text-[clamp(2rem,5vw,3.25rem)]">
-          {order.orderStatus}.
+          {getOrderStageWord(order.orderStatus)}
+          <span className="fr-mark">.</span>
         </Link>
         <span className="text-sm leading-6 text-[var(--muted)]">
           {names} · {formatRupees(order.totalAmount)}

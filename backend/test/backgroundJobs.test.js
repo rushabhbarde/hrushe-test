@@ -117,3 +117,50 @@ test("the invoice is a Tax Invoice only when the seller has a GSTIN", () => {
   assert.match(registered, /\(Tax Invoice\) Tj/);
   assert.match(registered, /GSTIN: 27ABCDE1234F1Z5/);
 });
+
+test("emails carry the brand frame, not the old slogans", () => {
+  const { buildOrderStatusEmail, buildOtpEmail } = require("../src/utils/emailTemplates");
+  const { buildMailHtml } = require("../src/utils/mailer");
+
+  const reset = buildMailHtml({
+    subject: "Your HRUSHE password reset OTP",
+    html: buildOtpEmail({ purpose: "password-reset", otp: "482913", expiryMinutes: 10, email: "a@example.com" }),
+  });
+  assert.match(reset, /Defined quietly<span[^>]*>\.<\/span>/);
+  assert.match(reset, /HRUSHELOGO\.png/);
+  assert.match(reset, /482913/);
+  assert.doesNotMatch(reset, /Quiet pieces|India wide delivery|everyday dressing/i);
+
+  const shipped = buildOrderStatusEmail({
+    order: { orderNumber: "HR-1042", orderStatus: "Shipped", paymentStatus: "paid", totalAmount: 599, products: [] },
+    summaryLine: "fallback",
+  });
+  assert.match(shipped, /On its way<span[^>]*>\.<\/span>/);
+  assert.match(shipped, /Order #HR-1042/);
+  assert.match(shipped, /left the atelier/);
+});
+
+test("a made-to-order piece moves through the atelier's stages in order", () => {
+  const stages = require("../src/config/orderStages");
+
+  assert.deepEqual(stages.FULFILLMENT_STATUSES, [
+    "Pending",
+    "Confirmed",
+    "Stitching",
+    "Quality check",
+    "Packed",
+    "Shipped",
+    "Out for delivery",
+    "Delivered",
+  ]);
+  assert.deepEqual(
+    stages.FULFILLMENT_STATUSES.slice(1).map((status) => stages.getOrderStage(status).word),
+    ["Received", "On the table", "Inspected", "Wrapped", "On its way", "Nearly home", "Home"]
+  );
+  // Four moments get an email, plus a cancellation or return; the steps in between do not.
+  assert.deepEqual(
+    stages.ALL_ORDER_STATUSES.filter(stages.shouldEmailOrderStage),
+    ["Confirmed", "Packed", "Shipped", "Delivered", "Cancelled", "Returned"]
+  );
+  assert.equal(stages.getOrderStage("Nonsense"), null);
+});

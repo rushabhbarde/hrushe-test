@@ -4,6 +4,7 @@ import { shouldBypassImageOptimization } from "@/lib/image-source";
 import {
   activeFulfillmentStatuses,
   formatOrderDate,
+  getOrderStageWord,
   type OrderProductSnapshot,
   type OrderStatus,
   type TrackingTimelineStep,
@@ -25,13 +26,13 @@ type TrackableOrder = {
   timeline?: TrackingTimelineStep[];
 };
 
-/** Customers see the journey; "Out for delivery" and "Cancelled" etc. read as plain words. */
+/** Customers see the journey in the atelier's words: Received, On the table, Inspected, Wrapped… */
 function deriveTimeline(status: OrderStatus): TrackingTimelineStep[] {
   const currentIndex = activeFulfillmentStatuses.indexOf(status);
 
   const steps: TrackingTimelineStep[] = activeFulfillmentStatuses.map((step, index) => ({
     key: step,
-    label: step,
+    label: getOrderStageWord(step),
     status:
       currentIndex < 0
         ? "upcoming"
@@ -43,7 +44,7 @@ function deriveTimeline(status: OrderStatus): TrackingTimelineStep[] {
   }));
 
   if (status === "Cancelled" || status === "Returned") {
-    return [{ key: status, label: status, status: "current" }];
+    return [{ key: status, label: getOrderStageWord(status), status: "current" }];
   }
 
   return steps;
@@ -65,7 +66,10 @@ export function OrderTrackingView({ order, actions }: { order: TrackableOrder; a
           <span className="fr-mono fr-muted">
             Order {reference} · Placed {formatOrderDate(order.createdAt)}
           </span>
-          <h2 className="fr-word text-[clamp(3.5rem,14vw,8rem)] lg:text-[clamp(4rem,7vw,8rem)]">{order.orderStatus}.</h2>
+          <h2 className="fr-word text-[clamp(3.5rem,14vw,8rem)] lg:text-[clamp(4rem,7vw,8rem)]">
+            {getOrderStageWord(order.orderStatus)}
+            <span className="fr-mark">.</span>
+          </h2>
         </div>
 
         {firstImage ? (

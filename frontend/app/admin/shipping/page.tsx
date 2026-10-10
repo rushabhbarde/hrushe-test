@@ -14,7 +14,7 @@ export default function AdminShippingPage() {
   const { orders } = useAdminData();
 
   const activeShipments = orders.filter((order) =>
-    ["Confirmed", "Packed", "Shipped", "Out for delivery"].includes(order.orderStatus)
+    ["Confirmed", "Stitching", "Quality check", "Packed", "Shipped", "Out for delivery"].includes(order.orderStatus)
   );
 
   return (
