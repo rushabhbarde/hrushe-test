@@ -1,4 +1,5 @@
 const env = require("../config/env");
+const { getOrderStage } = require("../config/orderStages");
 
 // The storefront's palette: ink on white, quiet greys, hairlines, burgundy only as the full stop.
 const COLORS = {
@@ -294,26 +295,6 @@ const buildPasswordChangedEmail = ({ name, email }) =>
     closingNote: "Sent because the password on your account was changed.",
   });
 
-// Each stage of an order gets one big word and one plain line, as on the site.
-const ORDER_MOMENTS = {
-  Confirmed: {
-    title: "Thank you.",
-    line: "Your order is confirmed. We will write when it is packed, and again when it leaves.",
-  },
-  Packed: { title: "Packed.", line: "Your order is packed and waiting for the courier." },
-  Shipped: { title: "Shipped.", line: "Your order has left us. Use the tracking details below to follow it." },
-  "Out for delivery": { title: "Out for delivery.", line: "Your order is with the courier and should reach you today." },
-  Delivered: {
-    title: "Delivered.",
-    line: "Your order has arrived. If the size is not right, one size exchange is free, and returns are open for 7 days.",
-  },
-  Cancelled: {
-    title: "Cancelled.",
-    line: "Your order has been cancelled. Any payment made is refunded to the original payment method.",
-  },
-  Returned: { title: "Returned.", line: "We have received your return. An approved refund goes to the original payment method." },
-};
-
 const buildOrderStatusEmail = ({ order, summaryLine }) => {
   const reference = order.orderNumber || order._id?.toString?.() || "";
   const trackingLink = order.trackingUrl || buildSiteUrl("/track-order");
@@ -332,16 +313,17 @@ const buildOrderStatusEmail = ({ order, summaryLine }) => {
     : "";
   const address = detailedAddress || order.shippingAddress;
 
-  const moment = ORDER_MOMENTS[order.orderStatus];
+  // Each stage of the journey is one big word and one plain line (config/orderStages.js).
+  const stage = getOrderStage(order.orderStatus);
 
   return renderEmailContent({
-    preheader: `Order #${reference} is now ${order.orderStatus}.`,
+    preheader: `Order #${reference}: ${stage?.word || order.orderStatus}.`,
     eyebrow: `Order #${reference}`,
-    title: moment?.title || `${order.orderStatus || "Order update"}.`,
-    intro: moment?.line || summaryLine,
+    title: `${stage?.word || order.orderStatus || "Order update"}.`,
+    intro: stage?.line || summaryLine,
     sections: [
       buildInfoTable([
-        { label: "Status", value: order.orderStatus },
+        { label: "Stage", value: stage?.word || order.orderStatus },
         { label: "Payment", value: humanize(order.paymentStatus) },
         { label: "Total", value: formatCurrency(order.totalAmount) },
         { label: "Tracking ID", value: order.trackingId || "" },

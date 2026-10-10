@@ -23,6 +23,8 @@ import { resolveOrderAdminMeta, type OrderAdminMeta } from "@/lib/admin-workspac
 import {
   canTransitionOrderStatus,
   orderStatuses,
+  getOrderStageWord,
+  inAtelierStatuses,
   requiresPaidOrderStatus,
   type OrderRecord,
   type OrderStatus,
@@ -383,7 +385,7 @@ export default function AdminOrderDetailPage() {
                   {order.shiprocket?.error ? (
                     <p className="border-l-2 border-[var(--danger)] pl-3 text-sm text-[var(--danger)]">{order.shiprocket.error}</p>
                   ) : null}
-                  {["Confirmed", "Packed"].includes(order.orderStatus) && order.paymentStatus === "paid" && order.callConfirmedAt ? (
+                  {inAtelierStatuses.includes(order.orderStatus) && order.paymentStatus === "paid" && order.callConfirmedAt ? (
                     <button
                       type="button"
                       onClick={() => void sendToShiprocket()}
@@ -419,7 +421,7 @@ export default function AdminOrderDetailPage() {
                   >
                     {orderStatuses.map((status) => (
                       <option key={status} value={status} disabled={!canSelectStatus(status)}>
-                        {status}
+                        {status === getOrderStageWord(status) ? status : `${status} · customer sees “${getOrderStageWord(status)}”`}
                       </option>
                     ))}
                   </AdminFilterSelect>
@@ -441,7 +443,7 @@ export default function AdminOrderDetailPage() {
                   >
                     {shippingStates.map((status) => (
                       <option key={status} value={status}>
-                        {status}
+                        {status === getOrderStageWord(status) ? status : `${status} · customer sees “${getOrderStageWord(status)}”`}
                       </option>
                     ))}
                   </AdminFilterSelect>

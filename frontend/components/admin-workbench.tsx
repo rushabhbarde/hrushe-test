@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast-provider";
 import { apiRequest } from "@/lib/api";
 import { formatAdminCurrency } from "@/lib/admin";
 import { shouldBypassImageOptimization } from "@/lib/image-source";
-import type { OrderRecord } from "@/lib/orders";
+import { inAtelierStatuses, type OrderRecord } from "@/lib/orders";
 import { useAdminData } from "@/lib/use-admin-data";
 
 function count(value: number) {
@@ -57,7 +57,7 @@ export function AdminWorkbench({
     [orders]
   );
   const toShip = orders.filter(
-    (order) => Boolean(order.callConfirmedAt) && ["Confirmed", "Packed"].includes(order.orderStatus)
+    (order) => Boolean(order.callConfirmedAt) && inAtelierStatuses.includes(order.orderStatus)
   ).length;
   const current = toConfirm.length > 0 ? toConfirm[position % toConfirm.length] : null;
   const image = current?.products.find((product) => product.image)?.image;

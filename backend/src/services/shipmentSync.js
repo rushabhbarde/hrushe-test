@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const { IN_ATELIER_STATUSES } = require("../config/orderStages");
 const shiprocket = require("./shiprocket");
 const { logEvent } = require("../utils/logger");
 
@@ -18,7 +19,7 @@ async function sendOrderToShiprocket(orderId) {
   const claimed = await Order.findOneAndUpdate(
     {
       _id: orderId,
-      orderStatus: { $in: ["Confirmed", "Packed"] },
+      orderStatus: { $in: IN_ATELIER_STATUSES },
       paymentStatus: "paid",
       callConfirmedAt: { $ne: null },
       $or: [

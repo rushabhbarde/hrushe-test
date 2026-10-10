@@ -135,12 +135,32 @@ test("emails carry the brand frame, not the old slogans", () => {
     order: { orderNumber: "HR-1042", orderStatus: "Shipped", paymentStatus: "paid", totalAmount: 599, products: [] },
     summaryLine: "fallback",
   });
-  assert.match(shipped, /Shipped<span[^>]*>\.<\/span>/);
+  assert.match(shipped, /On its way<span[^>]*>\.<\/span>/);
   assert.match(shipped, /Order #HR-1042/);
+  assert.match(shipped, /left the atelier/);
+});
 
-  const unknown = buildOrderStatusEmail({
-    order: { orderNumber: "HR-7", orderStatus: "Pending", paymentStatus: "pending", totalAmount: 1, products: [] },
-    summaryLine: "We have your order.",
-  });
-  assert.match(unknown, /We have your order\./);
+test("a made-to-order piece moves through the atelier's stages in order", () => {
+  const stages = require("../src/config/orderStages");
+
+  assert.deepEqual(stages.FULFILLMENT_STATUSES, [
+    "Pending",
+    "Confirmed",
+    "Stitching",
+    "Quality check",
+    "Packed",
+    "Shipped",
+    "Out for delivery",
+    "Delivered",
+  ]);
+  assert.deepEqual(
+    stages.FULFILLMENT_STATUSES.slice(1).map((status) => stages.getOrderStage(status).word),
+    ["Received", "On the table", "Inspected", "Wrapped", "On its way", "Nearly home", "Home"]
+  );
+  // Four moments get an email, plus a cancellation or return; the steps in between do not.
+  assert.deepEqual(
+    stages.ALL_ORDER_STATUSES.filter(stages.shouldEmailOrderStage),
+    ["Confirmed", "Packed", "Shipped", "Delivered", "Cancelled", "Returned"]
+  );
+  assert.equal(stages.getOrderStage("Nonsense"), null);
 });
