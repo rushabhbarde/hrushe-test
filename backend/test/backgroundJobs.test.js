@@ -152,7 +152,7 @@ test("emails carry the brand frame, not the old slogans", () => {
     html: buildOtpEmail({ purpose: "password-reset", otp: "482913", expiryMinutes: 10, email: "a@example.com" }),
   });
   assert.match(reset, /Defined quietly<span[^>]*>\.<\/span>/);
-  assert.match(reset, /HRUSHELOGO\.png/);
+  assert.match(reset, /HRUSHELOGO-email\.png/);
   assert.match(reset, /482913/);
   assert.doesNotMatch(reset, /Quiet pieces|India wide delivery|everyday dressing/i);
 

@@ -102,9 +102,11 @@ const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
           <td align="center">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;">
               <tr>
-                <td style="padding:32px 0 24px;border-bottom:1px solid #e6e3de;">
+                <td style="padding:20px 0 12px;border-bottom:1px solid #e6e3de;">
+                  <!-- The logo sits on its own white tile: mail apps that force dark mode recolour the
+                       page but not images, and burgundy on a dark page is hard to read. -->
                   <a href="${buildSiteUrl("")}" style="text-decoration:none;">
-                    <img src="${buildSiteUrl("/HRUSHELOGO.png")}" alt="HRUSHE" height="30" style="display:block;height:30px;width:auto;border:0;" />
+                    <img src="${buildSiteUrl("/HRUSHELOGO-email.png")}" alt="HRUSHE" height="52" style="display:block;height:52px;width:auto;border:0;margin-left:-10px;" />
                   </a>
                 </td>
               </tr>
