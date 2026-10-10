@@ -8,6 +8,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const shipmentSync = require("../services/shipmentSync");
 const coupons = require("../services/coupons");
+const whatsapp = require("../services/whatsapp");
 const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
@@ -923,6 +924,8 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
 };
 
 const safelySendOrderEmail = async (order, subject, summaryLine) => {
+  // WhatsApp goes alongside every order email; it sends once per status and never throws.
+  await whatsapp.sendOrderUpdate(order);
   try {
     await sendOrderEmail(order, subject, summaryLine);
   } catch (error) {
@@ -2100,6 +2103,12 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       }
 
       await coupons.recordCouponUse(confirmedOrder);
+      // The webhook confirms orders whose customer closed the tab after paying; tell them too.
+      await safelySendOrderEmail(
+        confirmedOrder,
+        "Your HRUSHE order is confirmed",
+        "Thank you for shopping with HRUSHE. Your order has been confirmed."
+      );
 
       webhookEvent.status = "completed";
       webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED;
