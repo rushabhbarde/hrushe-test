@@ -55,7 +55,7 @@ export const policyTabs = [
       {
         title: "10. Contact",
         body:
-          "For any questions, please contact us at: team@hrushe.in\n\nTrade name: HRUSHE (HRUSHABH BARDE)\nPhone number: +91 9112854988\nEmail: team@hrushe.in\nPhysical address: 1, Barde Farms, Near Primary Health Sub Centre, Ganeshpur, Wani, Maharashtra, 445304.",
+          "For any questions, please contact us at: team@hrushe.in\n\nTrade name: HRUSHE (HRUSHABH BARDE)\nGSTIN: 27DNXPB1001B1ZK\nPhone number: +91 9112854988\nEmail: team@hrushe.in\nPhysical address: 1, Barde Farms, Near Primary Health Sub Centre, Ganeshpur, Wani, Maharashtra, 445304.",
       },
     ],
   },
