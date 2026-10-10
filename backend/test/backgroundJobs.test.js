@@ -82,16 +82,41 @@ test("the stuck-payment check alerts only when it sets new orders aside", async 
   assert.match(alerts[0].lines.join(" "), /#HR-1042/);
 });
 
-test("a failed backup alerts the owner instead of crashing the job", async () => {
+test("a failing backup emails once a day, then once when it recovers", async () => {
   const alerts = [];
-  const result = await runBackup({
-    runDailyBackupIfDue: async () => {
-      throw new Error("AccessDenied");
-    },
-    sendOwnerAlert: async (alert) => alerts.push(alert),
-  });
+  const sendOwnerAlert = async (alert, options) => alerts.push({ ...alert, options });
+  const failing = { runDailyBackupIfDue: async () => { throw new Error("AccessDenied"); }, sendOwnerAlert };
+
+  const result = await runBackup(failing);
   assert.equal(result.reason, "failed");
   assert.equal(alerts[0].key, "backup-failed");
+  assert.equal(alerts[0].options.throttleMs, 24 * 60 * 60 * 1000);
+
+  // Already done today: not a recovery yet, so no email.
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: false, reason: "already-done" }), sendOwnerAlert });
+  assert.equal(alerts.length, 1);
+
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: true, key: "backups/hrushe-2026-10-11.json.gz" }), sendOwnerAlert });
+  assert.equal(alerts[1].key, "backup-recovered");
+
+  // Healthy backups stay silent.
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: true, key: "x" }), sendOwnerAlert });
+  assert.equal(alerts.length, 2);
+});
+
+test("an alert's own gap can be widened to a day", async () => {
+  resetOwnerAlertsForTests();
+  const sent = [];
+  const options = { enabled: true, recipient: "owner@example.com", send: async (mail) => sent.push(mail), throttleMs: 24 * 60 * 60 * 1000 };
+  const hour = 60 * 60 * 1000;
+
+  await sendOwnerAlert({ key: "backup-failed", subject: "a" }, { ...options, now: 0 });
+  const nextHour = await sendOwnerAlert({ key: "backup-failed", subject: "b" }, { ...options, now: hour });
+  const nextDay = await sendOwnerAlert({ key: "backup-failed", subject: "c" }, { ...options, now: 24 * hour });
+
+  assert.equal(nextHour.reason, "throttled");
+  assert.equal(nextDay.sent, true);
+  assert.equal(sent.length, 2);
 });
 
 test("the invoice is a Tax Invoice only when the seller has a GSTIN", () => {

@@ -13,7 +13,7 @@ const escapeHtml = (value) =>
 /**
  * Email the shop owner when something needs a human: a server error, a payment that needs a
  * manual check, a failed backup. One email per `key` every 30 minutes at most, so a burst of
- * the same problem is one message, not hundreds. Never throws.
+ * the same problem is one message, not hundreds (`throttleMs` widens that gap). Never throws.
  */
 async function sendOwnerAlert({ key, subject, lines = [] }, options = {}) {
   const now = options.now ?? Date.now();
@@ -25,7 +25,7 @@ async function sendOwnerAlert({ key, subject, lines = [] }, options = {}) {
   }
 
   const previous = lastSentAt.get(key);
-  if (previous && now - previous < ALERT_THROTTLE_MS) {
+  if (previous !== undefined && now - previous < (options.throttleMs ?? ALERT_THROTTLE_MS)) {
     return { sent: false, reason: "throttled" };
   }
   lastSentAt.set(key, now);
