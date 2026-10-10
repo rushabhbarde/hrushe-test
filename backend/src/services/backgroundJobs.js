@@ -39,22 +39,42 @@ async function runReconciliationScan(deps = {}) {
   return result;
 }
 
+const BACKUP_ALERT_GAP_MS = 24 * 60 * 60 * 1000;
+let backupFailing = false;
+
+/**
+ * Run the nightly backup. While it keeps failing the owner hears about it once a day, not on
+ * every hourly retry, and once more when it works again.
+ */
 async function runBackup(deps = {}) {
   const backup = deps.runDailyBackupIfDue || runDailyBackupIfDue;
   const alert = deps.sendOwnerAlert || sendOwnerAlert;
   try {
-    return await backup();
+    const result = await backup();
+    if (backupFailing && result?.ran) {
+      backupFailing = false;
+      await alert({
+        key: "backup-recovered",
+        subject: "Database backups are working again",
+        lines: ["The nightly database backup was written successfully after earlier failures.", `File: ${result.key || ""}`],
+      });
+    }
+    return result;
   } catch (error) {
+    backupFailing = true;
     logEvent("backup.failed", { message: error?.message, code: error?.name || "" }, "error");
-    await alert({
-      key: "backup-failed",
-      subject: "Tonight's database backup failed",
-      lines: [
-        "The nightly database backup could not be written.",
-        `Reason: ${error?.message || "unknown"}`,
-        "The shop keeps working; the backup will be retried within the hour.",
-      ],
-    });
+    await alert(
+      {
+        key: "backup-failed",
+        subject: "The database backup is failing",
+        lines: [
+          "The nightly database backup could not be written.",
+          `Reason: ${error?.message || "unknown"}`,
+          "The shop keeps working. The backup is retried every hour; you will get this email at most once a day while it fails, and another when it works again.",
+        ],
+      },
+      { throttleMs: BACKUP_ALERT_GAP_MS }
+    );
     return { ran: false, reason: "failed" };
   }
 }
