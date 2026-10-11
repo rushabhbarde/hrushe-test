@@ -1,12 +1,12 @@
 /**
- * The journey of a made-to-order piece. The status is what is stored and what the team sees
- * in Atelier; customers read the atelier's word for it (see orderStageWords). The backend
- * keeps the same list in backend/src/config/orderStages.js.
+ * The journey of an order through the atelier. The status is what is stored and what the
+ * team sees in Atelier; customers read the atelier's word for it (see orderStageWords). The
+ * backend keeps the same list in backend/src/config/orderStages.js.
  */
 export const orderStatuses = [
   "Pending",
   "Confirmed",
-  "Stitching",
+  "Preparing",
   "Quality check",
   "Packed",
   "Shipped",
@@ -21,7 +21,7 @@ export type OrderStatus = (typeof orderStatuses)[number];
 export const activeFulfillmentStatuses: OrderStatus[] = [
   "Pending",
   "Confirmed",
-  "Stitching",
+  "Preparing",
   "Quality check",
   "Packed",
   "Shipped",
@@ -30,13 +30,13 @@ export const activeFulfillmentStatuses: OrderStatus[] = [
 ];
 
 /** Paid and still in the atelier: not yet handed to the courier. */
-export const inAtelierStatuses: OrderStatus[] = ["Confirmed", "Stitching", "Quality check", "Packed"];
+export const inAtelierStatuses: OrderStatus[] = ["Confirmed", "Preparing", "Quality check", "Packed"];
 
 /** What the customer reads for each stage. */
 export const orderStageWords: Record<OrderStatus, string> = {
   Pending: "Placed",
   Confirmed: "Received",
-  Stitching: "On the table",
+  Preparing: "On the table",
   "Quality check": "Inspected",
   Packed: "Wrapped",
   Shipped: "On its way",
@@ -50,9 +50,17 @@ export function getOrderStageWord(status: string) {
   return orderStageWords[status as OrderStatus] || status;
 }
 
-// A made-to-order piece can still be cancelled until it is handed to the courier.
+// An order can be cancelled until it is handed to the courier.
 const cancellableStatuses: OrderStatus[] = ["Pending", ...inAtelierStatuses];
 const paidFulfillmentStatuses: OrderStatus[] = activeFulfillmentStatuses.filter((status) => status !== "Pending");
+
+/** Customers can cancel their own order until it ships. */
+export function canCustomerCancelOrder(status: OrderStatus) {
+  return cancellableStatuses.includes(status);
+}
+
+/** Returns and the free size exchange are open for 7 days after delivery. */
+export const RETURN_WINDOW_DAYS = 7;
 
 export function canTransitionOrderStatus(currentStatus: OrderStatus, nextStatus: OrderStatus) {
   if (!nextStatus || currentStatus === nextStatus) {

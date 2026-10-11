@@ -15,20 +15,20 @@ const order = {
 
 describe("order journey", () => {
   it("shows the atelier's word for the stage, not the internal status", () => {
-    render(<OrderTrackingView order={{ ...order, orderStatus: "Stitching" }} />);
+    render(<OrderTrackingView order={{ ...order, orderStatus: "Preparing" }} />);
 
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("On the table.");
-    expect(screen.queryByText("Stitching")).toBeNull();
+    expect(screen.queryByText("Preparing")).toBeNull();
     const steps = screen.getAllByRole("listitem").map((item) => item.textContent);
     expect(steps).toEqual(["Placed", "Received", "On the table", "Inspected", "Wrapped", "On its way", "Nearly home", "Home"]);
     expect(screen.getByText("On the table", { selector: "li span" }).closest("li")?.getAttribute("aria-current")).toBe("step");
   });
 
-  it("moves forward through stitching and inspection, never back", () => {
+  it("moves forward through preparing and inspection, never back", () => {
     expect(activeFulfillmentStatuses.map(getOrderStageWord)).toContain("Inspected");
-    expect(canTransitionOrderStatus("Confirmed", "Stitching")).toBe(true);
-    expect(canTransitionOrderStatus("Stitching", "Quality check")).toBe(true);
-    expect(canTransitionOrderStatus("Quality check", "Stitching")).toBe(false);
+    expect(canTransitionOrderStatus("Confirmed", "Preparing")).toBe(true);
+    expect(canTransitionOrderStatus("Preparing", "Quality check")).toBe(true);
+    expect(canTransitionOrderStatus("Quality check", "Preparing")).toBe(false);
     expect(canTransitionOrderStatus("Quality check", "Cancelled")).toBe(true);
     expect(canTransitionOrderStatus("Shipped", "Cancelled")).toBe(false);
   });

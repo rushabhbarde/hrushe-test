@@ -57,7 +57,9 @@ const {
   releaseInventoryItems,
   commitOrderInventory,
   releaseOrderInventory,
+  restockCancelledOrder,
 } = require("../services/checkoutInventory");
+const { sendOwnerAlert } = require("../utils/ownerAlerts");
 const {
   buildCheckoutCartHash,
   buildCheckoutIdentityHash,
@@ -77,7 +79,7 @@ const activeFulfillmentStatuses = FULFILLMENT_STATUSES;
 
 const PUBLIC_TRACKING_LOOKUP_ERROR = "Order not found or lookup details do not match";
 
-// A made-to-order piece can still be cancelled until it is handed to the courier.
+// An order can be cancelled until it is handed to the courier.
 const cancellableStatuses = ["Pending", ...IN_ATELIER_STATUSES];
 
 const canTransitionOrderStatus = (currentStatus, nextStatus) => {
@@ -939,6 +941,59 @@ const getMyOrders = asyncHandler(async (req, res) => {
   );
 });
 
+/**
+ * A customer cancels their own order. Allowed until it is handed to the courier; after that
+ * it is a return. Stock goes back on the shelf, the customer gets the Cancelled email, and
+ * the owner is told a refund is due (refunds are issued by hand in Razorpay).
+ */
+const cancelMyOrder = asyncHandler(async (req, res) => {
+  const existing = await Order.findById(req.params.id);
+  if (!existing || existing.userId?.toString() !== req.user._id.toString()) {
+    throw new AppError("Order not found", 404);
+  }
+  if (existing.orderStatus === "Cancelled") {
+    return res.json(existing);
+  }
+  if (!cancellableStatuses.includes(existing.orderStatus)) {
+    throw new AppError(
+      "This order has already shipped, so it can no longer be cancelled here. Write to team@hrushe.in and we will help.",
+      409
+    );
+  }
+
+  const order = await Order.findOneAndUpdate(
+    { _id: existing._id, orderStatus: existing.orderStatus },
+    { $set: { orderStatus: "Cancelled" } },
+    { new: true }
+  );
+  if (!order) {
+    throw new AppError("This order changed while you were cancelling it. Please refresh and try again.", 409);
+  }
+
+  await restockCancelledOrder(order._id);
+  await recordAuditLog(req, "order.customer-cancel", { type: "order", id: order._id }, {
+    previousStatus: existing.orderStatus,
+    paymentStatus: order.paymentStatus,
+  });
+  await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage("Cancelled").line);
+
+  const reference = order.orderNumber || order._id.toString();
+  const paid = order.paymentStatus === "paid";
+  await sendOwnerAlert({
+    key: `customer-cancel-${order._id}`,
+    subject: paid ? `Order #${reference} cancelled: refund ₹${order.totalAmount} due` : `Order #${reference} cancelled by the customer`,
+    lines: [
+      `The customer cancelled order #${reference} while it was at "${existing.orderStatus}".`,
+      paid
+        ? `It was paid. Refund ₹${order.totalAmount} from the Razorpay dashboard; the customer has been told it goes back to the original payment method.`
+        : "It was not paid, so no refund is needed.",
+      "Stock for its pieces has been put back.",
+    ],
+  });
+
+  return res.json(await Order.findById(order._id).select("-checkoutLogs"));
+});
+
 const getOrderById = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
     .select("-checkoutLogs")
@@ -1171,6 +1226,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   if (order.orderStatus === "Delivered") {
     await issueReferralReward(order);
+  }
+
+  if (order.orderStatus === "Cancelled" && existingOrder.orderStatus !== "Cancelled") {
+    await restockCancelledOrder(order._id);
   }
 
   // Moving a paid order Pending → Confirmed by hand counts as the team's call confirmation.
@@ -2712,6 +2771,7 @@ module.exports = {
   sendToShiprocket,
   shiprocketWebhook,
   getMyOrders,
+  cancelMyOrder,
   getOrderById,
   downloadInvoice,
   trackOrder,

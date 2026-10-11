@@ -122,7 +122,6 @@ export function ProductCard({
   const colourOptions = getProductColourOptions(product);
   const visibleColourOptions = colourOptions.slice(0, isEditorial ? 3 : 2);
   const compareAtPrice = getCompareAtPrice(product.price, product.compareAtPrice);
-  const hasDiscount = Boolean(compareAtPrice);
   const galleryImages = getProductGalleryImages(product, image, galleryDetailImages);
   const activeGalleryIndex = galleryImages.length > 0 ? galleryIndex % galleryImages.length : 0;
   const activeImage = isEditorial ? galleryImages[activeGalleryIndex] || image : image;
@@ -217,11 +216,6 @@ export function ProductCard({
           {!isEditorial && (product.newIn || product.newArrival) ? (
             <span className="absolute left-3 top-3 bg-[var(--surface)] px-2 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[var(--foreground)]">
               New
-            </span>
-          ) : null}
-          {isEditorial && hasDiscount ? (
-            <span className="absolute right-5 top-5 z-10 text-[0.68rem] font-medium uppercase leading-none text-[var(--accent)]">
-              Sale
             </span>
           ) : null}
         </Link>

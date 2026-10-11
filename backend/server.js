@@ -141,6 +141,8 @@ async function startDatabaseBackedTasks() {
     checkoutReadinessInterval.unref();
   }
   await ensureAdminUser();
+  // "Stitching" was renamed "Preparing" (pieces are finished stock, not made per order).
+  await mongoose.connection.collection("orders").updateMany({ orderStatus: "Stitching" }, { $set: { orderStatus: "Preparing" } });
   const cleanupInventory = () =>
     cleanupExpiredInventoryReservations({ source: "interval" })
       .then((result) => {

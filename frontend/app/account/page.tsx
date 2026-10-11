@@ -234,7 +234,23 @@ function AccountPageContent() {
   const [notifications, setNotifications] =
     useState<CommunicationPreferences>(emptyNotifications);
   const [addressForm, setAddressForm] = useState(emptyAddressForm);
-  const [supportForm, setSupportForm] = useState(emptySupportForm);
+  const [supportForm, setSupportForm] = useState(() => {
+    // "Exchange the size" / "Return this order" on an order open this form already filled in.
+    const category = searchParams.get("category");
+    const orderReference = (searchParams.get("order") || "").slice(0, 40);
+    const preset = supportOptions.find((option) => option.value === category);
+    if (!preset) {
+      return emptySupportForm;
+    }
+    return {
+      ...emptySupportForm,
+      category: preset.value,
+      orderId: orderReference,
+      subject: orderReference
+        ? `${preset.value === "exchange-request" ? "Size exchange" : preset.label} for order #${orderReference}`
+        : "",
+    };
+  });
   const phoneSignInEnabled = isPhoneSignInEnabled();
   const [emailChange, setEmailChange] = useState({ open: false, newEmail: "", otp: "", sent: false, busy: false });
   const [passwordForm, setPasswordForm] = useState({

@@ -168,7 +168,7 @@ export const policyTabs = [
       {
         title: "6. Cancellation",
         body:
-          "Orders can be cancelled within 2 hours of placing them. After dispatch, cancellation is not possible.",
+          "You can cancel an order any time before it ships: open the order in your account and choose Cancel order, or write to us. A paid order is refunded to the original payment method, usually within 5–7 business days. Once an order has shipped it can no longer be cancelled; use a return instead.",
       },
       {
         title: "7. Contact",

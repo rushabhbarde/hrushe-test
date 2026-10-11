@@ -80,10 +80,11 @@ const nextConfig: NextConfig = {
       "media-src 'self' blob: https:",
       "font-src 'self' data: https:",
       "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://cloudflareinsights.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.google.com",
-      "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com",
+      "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com https://www.facebook.com",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      // The Meta Pixel falls back to a hidden form post to facebook.com for larger events.
+      "form-action 'self' https://www.facebook.com",
       "frame-ancestors 'none'",
       "upgrade-insecure-requests",
     ].join("; ");
