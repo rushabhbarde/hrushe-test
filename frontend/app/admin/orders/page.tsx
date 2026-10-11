@@ -20,7 +20,7 @@ function getInitialSearchParam(name: string) {
 
 type StatusGroup = { key: string; label: string; statuses: OrderStatus[] };
 
-// "Confirm" = paid, not yet confirmed with the customer by phone; "Make" = being stitched or
+// "Confirm" = paid, not yet confirmed with the customer by phone; "Make" = being prepared or
 // inspected; "Ship" = wrapped, waiting for the courier.
 function inGroup(group: StatusGroup, order: { orderStatus: OrderStatus; paymentStatus: string; callConfirmedAt?: string | null }) {
   if (group.key === "confirm") {
@@ -34,7 +34,7 @@ function inGroup(group: StatusGroup, order: { orderStatus: OrderStatus; paymentS
 
 const statusGroups: StatusGroup[] = [
   { key: "confirm", label: "Confirm", statuses: ["Pending", "Confirmed"] },
-  { key: "make", label: "Make", statuses: ["Confirmed", "Stitching", "Quality check"] },
+  { key: "make", label: "Make", statuses: ["Confirmed", "Preparing", "Quality check"] },
   { key: "ship", label: "Ship", statuses: ["Packed"] },
   { key: "moving", label: "On the way", statuses: ["Shipped", "Out for delivery"] },
   { key: "done", label: "Done", statuses: ["Delivered"] },

@@ -165,13 +165,13 @@ test("emails carry the brand frame, not the old slogans", () => {
   assert.match(shipped, /left the atelier/);
 });
 
-test("a made-to-order piece moves through the atelier's stages in order", () => {
+test("an order moves through the atelier's stages in order", () => {
   const stages = require("../src/config/orderStages");
 
   assert.deepEqual(stages.FULFILLMENT_STATUSES, [
     "Pending",
     "Confirmed",
-    "Stitching",
+    "Preparing",
     "Quality check",
     "Packed",
     "Shipped",
@@ -188,4 +188,11 @@ test("a made-to-order piece moves through the atelier's stages in order", () => 
     ["Confirmed", "Packed", "Shipped", "Delivered", "Cancelled", "Returned"]
   );
   assert.equal(stages.getOrderStage("Nonsense"), null);
+});
+
+test("no stage tells the customer a finished piece is being made for them", () => {
+  const { ORDER_STAGES } = require("../src/config/orderStages");
+  for (const stage of ORDER_STAGES) {
+    assert.doesNotMatch(`${stage.word} ${stage.line}`, /made to order|made for the order|stitch|being cut|tailor/i, stage.status);
+  }
 });

@@ -1,7 +1,9 @@
 /**
- * The journey of a made-to-order piece. `status` is the value stored on the order and shown
- * to the team in Atelier; `word` and `line` are what the customer reads on the tracking page
- * and in emails. The frontend keeps the same words in frontend/lib/orders.ts.
+ * The journey of an order through the atelier. `status` is the value stored on the order and
+ * shown to the team in Atelier; `word` and `line` are what the customer reads on the tracking
+ * page and in emails. Every line must be true of a finished piece being prepared and sent:
+ * nothing here may say the piece is being made for the order. The frontend keeps the same
+ * words in frontend/lib/orders.ts.
  */
 const ORDER_STAGES = [
   { status: "Pending", key: "placed", word: "Placed", line: "We have your order and are waiting for the payment to confirm." },
@@ -9,10 +11,15 @@ const ORDER_STAGES = [
     status: "Confirmed",
     key: "received",
     word: "Received",
-    line: "Your order is with the atelier. Each piece is made to order, so stitching starts next.",
+    line: "Your order is with the atelier. We will write when it is wrapped, and again when it leaves.",
     email: true,
   },
-  { status: "Stitching", key: "on-the-table", word: "On the table", line: "Your piece is being cut and stitched." },
+  {
+    status: "Preparing",
+    key: "on-the-table",
+    word: "On the table",
+    line: "Your piece is on the table: laid out, pressed and prepared for your order.",
+  },
   {
     status: "Quality check",
     key: "inspected",
@@ -68,7 +75,7 @@ const ALL_ORDER_STATUSES = ALL_STAGES.map((stage) => stage.status);
 /** Stages that only happen once the order is paid. */
 const PAID_STATUSES = FULFILLMENT_STATUSES.filter((status) => status !== "Pending");
 /** Paid and still in the atelier: not yet handed to the courier. */
-const IN_ATELIER_STATUSES = ["Confirmed", "Stitching", "Quality check", "Packed"];
+const IN_ATELIER_STATUSES = ["Confirmed", "Preparing", "Quality check", "Packed"];
 
 const getOrderStage = (status) => stageByStatus.get(status) || null;
 /** Customers hear about four moments, plus a cancellation or return, not every step. */

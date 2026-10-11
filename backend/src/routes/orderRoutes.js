@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getMyOrders,
+  cancelMyOrder,
   getOrderById,
   downloadInvoice,
   trackOrder,
@@ -64,6 +65,7 @@ router.post("/reconciliation/bulk", protect, requireCsrf, requireAdminPermission
 router.post("/reconciliation/scan", protect, requireCsrf, requireAdminPermission("orders.manage"), scanPaymentReconciliation);
 router.post("/:id/reconcile", protect, requireCsrf, requireAdminPermission("orders.manage"), reconcileOrderPayment);
 router.post("/:id/reorder", protect, requireCsrf, reorderOrder);
+router.post("/:id/cancel", protect, requireCsrf, cancelMyOrder);
 router.post("/:id/shiprocket", protect, requireCsrf, requireAdminPermission("orders.manage"), sendToShiprocket);
 router.post("/:id/confirm-call", protect, requireCsrf, requireAdminPermission("orders.manage"), confirmOrderAfterCall);
 router.get("/:id/invoice", protect, downloadInvoice);

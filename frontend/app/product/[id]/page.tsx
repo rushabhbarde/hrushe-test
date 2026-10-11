@@ -16,6 +16,7 @@ import type { Product } from "@/lib/catalog";
 import { isPersistedMediaSource, shouldBypassImageOptimization } from "@/lib/image-source";
 import { useStorefrontData } from "@/lib/use-storefront";
 import {
+  formatGsm,
   getProductDisplayName,
   getProductFabricLine,
   getProductFitLine,
@@ -66,7 +67,7 @@ function getProductFit(product: Product) {
 function getProductDetailRows(product: Product) {
   return [
     { label: "Composition", value: product.fabric || product.cottonType },
-    { label: "GSM", value: product.gsm },
+    { label: "Fabric weight", value: formatGsm(product.gsm) },
     { label: "Fit", value: getProductFit(product) },
     { label: "Feel", value: product.feel },
     { label: "Weight", value: product.weight },
