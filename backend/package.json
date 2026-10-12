@@ -13,7 +13,8 @@
     "verify:razorpay-production-testmode": "node scripts/verify-razorpay-production-testmode.js",
     "test:final-item-concurrency": "node scripts/test-final-item-concurrency.js",
     "scheduler:inventory-cleanup": "node scripts/run-internal-scheduler.js /internal/inventory/cleanup",
-    "scheduler:reconciliation-scan": "node scripts/run-internal-scheduler.js /internal/reconciliation/scan"
+    "scheduler:reconciliation-scan": "node scripts/run-internal-scheduler.js /internal/reconciliation/scan",
+    "data:remove-test": "node scripts/remove-test-data.js"
   },
   "keywords": [],
   "author": "",
