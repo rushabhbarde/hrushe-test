@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { trackShopEvent } from "@/lib/tracking";
 import { apiRequest } from "@/lib/api";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 
@@ -205,6 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       accent,
       image,
     }: AddCartItemInput) => {
+      trackShopEvent("add_to_cart", [{ productId, name, price, quantity, size }]);
       const nextLine: CartLine = {
         productId,
         name,

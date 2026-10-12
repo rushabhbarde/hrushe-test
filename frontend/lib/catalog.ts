@@ -110,12 +110,6 @@ export const categories = [
   "Accessories",
 ];
 
-export const brandHighlights = [
-  "Clear proportions",
-  "Honest materials",
-  "Repeat-wear construction",
-];
-
 export function toCollectionSlug(value: string) {
   return value
     .toLowerCase()
@@ -135,7 +129,7 @@ export function isVisibleStorefrontProduct(product: Product) {
   return product.status !== "Draft" && product.status !== "Hidden";
 }
 
-export function productRecencyTime(product: Product) {
+function productRecencyTime(product: Product) {
   const dateValue = product.createdAt || product.updatedAt || "";
   const parsedTime = dateValue ? new Date(dateValue).getTime() : 0;
 

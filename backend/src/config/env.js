@@ -77,6 +77,16 @@ const env = {
   RAZORPAY_CURRENCY: process.env.RAZORPAY_CURRENCY || "INR",
   RAZORPAY_WEBHOOK_SECRET,
   INTERNAL_SCHEDULER_SECRET: process.env.INTERNAL_SCHEDULER_SECRET || "",
+  // Seller details printed on invoices. With a GSTIN the document is a "Tax Invoice".
+  SELLER_LEGAL_NAME: process.env.SELLER_LEGAL_NAME || "HRUSHE (Hrushabh Barde)",
+  SELLER_ADDRESS:
+    process.env.SELLER_ADDRESS ||
+    "1, Barde Farms, Near Primary Health Sub Centre, Ganeshpur, Wani, Maharashtra, 445304",
+  SELLER_GSTIN: String(process.env.SELLER_GSTIN || "").trim().toUpperCase(),
+  // Where "something needs you" emails go (server errors, payments to check, failed backups).
+  ALERT_EMAIL: process.env.ALERT_EMAIL || process.env.ADMIN_EMAIL || "",
+  // A private R2 bucket for nightly database backups. Empty = backups off.
+  BACKUP_R2_BUCKET: process.env.BACKUP_R2_BUCKET || "",
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "",
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "",
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || "",

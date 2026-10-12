@@ -88,37 +88,3 @@ export type SupportCategory =
   | "website-issue"
   | "contact-support"
   | "other";
-
-export type SupportRequestRecord = {
-  id?: string;
-  _id?: string;
-  userId?: {
-    id?: string;
-    _id?: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
-  ticketNumber?: number;
-  ticketCode?: string;
-  category: SupportCategory;
-  source?: "chatbot" | "account" | "admin";
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  orderId?: string;
-  subject: string;
-  message: string;
-  status: "open" | "in-progress" | "waiting-customer" | "resolved";
-  priority?: "low" | "normal" | "high" | "urgent";
-  assignedRole?: "" | "super-admin" | "brand-growth-manager" | "operations-manager" | "catalog-manager";
-  resolutionNote?: string;
-  transcript?: Array<{
-    role: "bot" | "customer" | "system";
-    message: string;
-    createdAt?: string;
-    updatedAt?: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-};

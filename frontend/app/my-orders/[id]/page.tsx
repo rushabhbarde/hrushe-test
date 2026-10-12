@@ -7,6 +7,7 @@ import { AccountGuard } from "@/components/account-guard";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { apiRequest } from "@/lib/api";
+import { OrderActions } from "@/components/order-actions";
 import { OrderTrackingView } from "@/components/order-tracking-view";
 import { LoadingState } from "@/components/loading-state";
 import type { OrderRecord } from "@/lib/orders";
@@ -116,13 +117,7 @@ export default function OrderDetailPage() {
                     >
                       {reordering ? "Adding to bag…" : "Order these again"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => pushToast("Invoice download will be connected next")}
-                      className="fr-mono fr-choice fr-link self-start"
-                    >
-                      Download invoice
-                    </button>
+                    <OrderActions order={order} onChange={setOrder} />
                   </>
                 }
               />

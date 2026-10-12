@@ -1,6 +1,13 @@
+/**
+ * The journey of an order through the atelier. The status is what is stored and what the
+ * team sees in Atelier; customers read the atelier's word for it (see orderStageWords). The
+ * backend keeps the same list in backend/src/config/orderStages.js.
+ */
 export const orderStatuses = [
   "Pending",
   "Confirmed",
+  "Preparing",
+  "Quality check",
   "Packed",
   "Shipped",
   "Out for delivery",
@@ -14,20 +21,46 @@ export type OrderStatus = (typeof orderStatuses)[number];
 export const activeFulfillmentStatuses: OrderStatus[] = [
   "Pending",
   "Confirmed",
+  "Preparing",
+  "Quality check",
   "Packed",
   "Shipped",
   "Out for delivery",
   "Delivered",
 ];
 
-const cancellableStatuses: OrderStatus[] = ["Pending", "Confirmed", "Packed"];
-const paidFulfillmentStatuses: OrderStatus[] = [
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-];
+/** Paid and still in the atelier: not yet handed to the courier. */
+export const inAtelierStatuses: OrderStatus[] = ["Confirmed", "Preparing", "Quality check", "Packed"];
+
+/** What the customer reads for each stage. */
+export const orderStageWords: Record<OrderStatus, string> = {
+  Pending: "Placed",
+  Confirmed: "Received",
+  Preparing: "On the table",
+  "Quality check": "Inspected",
+  Packed: "Wrapped",
+  Shipped: "On its way",
+  "Out for delivery": "Nearly home",
+  Delivered: "Home",
+  Cancelled: "Cancelled",
+  Returned: "Returned",
+};
+
+export function getOrderStageWord(status: string) {
+  return orderStageWords[status as OrderStatus] || status;
+}
+
+// An order can be cancelled until it is handed to the courier.
+const cancellableStatuses: OrderStatus[] = ["Pending", ...inAtelierStatuses];
+const paidFulfillmentStatuses: OrderStatus[] = activeFulfillmentStatuses.filter((status) => status !== "Pending");
+
+/** Customers can cancel their own order until it ships. */
+export function canCustomerCancelOrder(status: OrderStatus) {
+  return cancellableStatuses.includes(status);
+}
+
+/** Returns and the free size exchange are open for 7 days after delivery. */
+export const RETURN_WINDOW_DAYS = 7;
 
 export function canTransitionOrderStatus(currentStatus: OrderStatus, nextStatus: OrderStatus) {
   if (!nextStatus || currentStatus === nextStatus) {
@@ -67,7 +100,7 @@ export type OrderProductSnapshot = {
   image?: string;
 };
 
-export type ShippingAddressDetails = {
+type ShippingAddressDetails = {
   label?: "Home" | "Work" | "Other";
   fullName?: string;
   mobile?: string;

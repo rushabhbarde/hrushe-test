@@ -130,7 +130,7 @@ export function AdminShell({
               alt="HRUSHE"
               width={HRUSHE_SYMBOL_LOGO_DIMENSIONS.width}
               height={HRUSHE_SYMBOL_LOGO_DIMENSIONS.height}
-              className="h-7 w-7 object-contain"
+              className="h-10 w-10 object-contain lg:h-12 lg:w-12"
             />
             <span className="fr-mono">Atelier</span>
           </Link>

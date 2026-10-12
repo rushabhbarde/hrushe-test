@@ -1,5 +1,7 @@
 # Render Scheduler Configuration
 
+> Since 2026-10-07 the web service runs these jobs itself (`backend/src/services/backgroundJobs.js`): stock-reservation cleanup every 5 minutes, the stuck-payment scan every 10 minutes, and the nightly backup. Separate Render Cron Jobs are optional; the signed endpoints below still work if you add them.
+
 Reviewed on: 2026-07-24
 
 ## Required Environment

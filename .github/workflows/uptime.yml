@@ -1,0 +1,33 @@
+name: Uptime check
+
+# Every 15 minutes: is the shop up? If a check fails, GitHub emails the repository owner.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Website, backend and database respond
+        run: |
+          check() {
+            # Two tries, so one slow answer does not raise a false alarm.
+            for attempt in 1 2; do
+              code=$(curl -s -o /dev/null -m 30 -w "%{http_code}" "$1" || true)
+              if [ "$code" = "200" ]; then echo "ok   $1"; return 0; fi
+              sleep 20
+            done
+            echo "FAIL $1 (last status: $code)"; return 1
+          }
+          failed=0
+          check https://hrushe.in/women || failed=1
+          check https://hrushe.in/shop || failed=1
+          check https://hrushe.in/api/backend/healthz || failed=1
+          check https://hrushe.in/api/backend/readyz || failed=1
+          check https://hrushe.in/api/backend/products || failed=1
+          exit $failed

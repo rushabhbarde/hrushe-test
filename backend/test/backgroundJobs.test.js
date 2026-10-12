@@ -1,0 +1,198 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const mongoose = require("mongoose");
+
+const {
+  backupKeyForDate,
+  deserializeBackup,
+  selectExpiredBackupKeys,
+  serializeBackup,
+} = require("../src/services/databaseBackup");
+const { runBackup, runReconciliationScan } = require("../src/services/backgroundJobs");
+const { ALERT_THROTTLE_MS, resetOwnerAlertsForTests, sendOwnerAlert } = require("../src/utils/ownerAlerts");
+
+test("a backup round-trips ObjectIds and dates exactly", () => {
+  const id = new mongoose.Types.ObjectId();
+  const placedAt = new Date("2026-10-07T04:30:00.000Z");
+  const buffer = serializeBackup({ orders: [{ _id: id, placedAt, total: 599 }], products: [] }, placedAt);
+  const restored = deserializeBackup(buffer);
+
+  assert.equal(restored.collections.orders[0]._id.toHexString(), id.toHexString());
+  assert.equal(restored.collections.orders[0].placedAt.getTime(), placedAt.getTime());
+  // Numbers come back as exact BSON types (Int32 here), so a restore keeps int vs double.
+  assert.equal(Number(restored.collections.orders[0].total), 599);
+  assert.deepEqual(restored.collections.products, []);
+});
+
+test("a file that is not a backup is refused", () => {
+  const zlib = require("zlib");
+  assert.throws(() => deserializeBackup(zlib.gzipSync(Buffer.from("{}"))), /Not a HRUSHE backup/);
+});
+
+test("backups are named by day and expire after the retention window", () => {
+  const now = new Date("2026-10-07T12:00:00Z");
+  assert.equal(backupKeyForDate(now), "backups/hrushe-2026-10-07.json.gz");
+  assert.deepEqual(
+    selectExpiredBackupKeys(
+      ["backups/hrushe-2026-08-30.json.gz", "backups/hrushe-2026-09-07.json.gz", "backups/hrushe-2026-10-06.json.gz", "backups/notes.txt"],
+      now
+    ),
+    ["backups/hrushe-2026-08-30.json.gz"]
+  );
+});
+
+test("the owner is emailed once per problem, not on every repeat", async () => {
+  resetOwnerAlertsForTests();
+  const sent = [];
+  const options = { enabled: true, recipient: "owner@example.com", send: async (mail) => sent.push(mail) };
+
+  const first = await sendOwnerAlert({ key: "server-error", subject: "The server hit an error", lines: ["a"] }, { ...options, now: 1_000 });
+  const repeat = await sendOwnerAlert({ key: "server-error", subject: "again", lines: ["b"] }, { ...options, now: 2_000 });
+  const later = await sendOwnerAlert({ key: "server-error", subject: "later", lines: ["c"] }, { ...options, now: 1_000 + ALERT_THROTTLE_MS });
+  const off = await sendOwnerAlert({ key: "other", subject: "x" }, { ...options, enabled: false });
+
+  assert.equal(first.sent, true);
+  assert.equal(repeat.reason, "throttled");
+  assert.equal(later.sent, true);
+  assert.equal(off.reason, "disabled");
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0].to, "owner@example.com");
+  assert.match(sent[0].subject, /^\[HRUSHE\] /);
+});
+
+test("the stuck-payment check alerts only when it sets new orders aside", async () => {
+  const alerts = [];
+  const quiet = await runReconciliationScan({
+    scanStuckOrders: async () => ({ scanned: 2, flagged: 1, markedManualReview: 0, orders: [] }),
+    sendOwnerAlert: async (alert) => alerts.push(alert),
+  });
+  assert.equal(quiet.scanned, 2);
+  assert.equal(alerts.length, 0);
+
+  await runReconciliationScan({
+    scanStuckOrders: async () => ({
+      scanned: 1,
+      flagged: 1,
+      markedManualReview: 1,
+      orders: [{ id: "abc", orderNumber: "HR-1042", reviewRequired: true }],
+    }),
+    sendOwnerAlert: async (alert) => alerts.push(alert),
+  });
+  assert.equal(alerts.length, 1);
+  assert.match(alerts[0].lines.join(" "), /#HR-1042/);
+});
+
+test("a failing backup emails once a day, then once when it recovers", async () => {
+  const alerts = [];
+  const sendOwnerAlert = async (alert, options) => alerts.push({ ...alert, options });
+  const failing = { runDailyBackupIfDue: async () => { throw new Error("AccessDenied"); }, sendOwnerAlert };
+
+  const result = await runBackup(failing);
+  assert.equal(result.reason, "failed");
+  assert.equal(alerts[0].key, "backup-failed");
+  assert.equal(alerts[0].options.throttleMs, 24 * 60 * 60 * 1000);
+
+  // Already done today: not a recovery yet, so no email.
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: false, reason: "already-done" }), sendOwnerAlert });
+  assert.equal(alerts.length, 1);
+
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: true, key: "backups/hrushe-2026-10-11.json.gz" }), sendOwnerAlert });
+  assert.equal(alerts[1].key, "backup-recovered");
+
+  // Healthy backups stay silent.
+  await runBackup({ runDailyBackupIfDue: async () => ({ ran: true, key: "x" }), sendOwnerAlert });
+  assert.equal(alerts.length, 2);
+});
+
+test("an alert's own gap can be widened to a day", async () => {
+  resetOwnerAlertsForTests();
+  const sent = [];
+  const options = { enabled: true, recipient: "owner@example.com", send: async (mail) => sent.push(mail), throttleMs: 24 * 60 * 60 * 1000 };
+  const hour = 60 * 60 * 1000;
+
+  await sendOwnerAlert({ key: "backup-failed", subject: "a" }, { ...options, now: 0 });
+  const nextHour = await sendOwnerAlert({ key: "backup-failed", subject: "b" }, { ...options, now: hour });
+  const nextDay = await sendOwnerAlert({ key: "backup-failed", subject: "c" }, { ...options, now: 24 * hour });
+
+  assert.equal(nextHour.reason, "throttled");
+  assert.equal(nextDay.sent, true);
+  assert.equal(sent.length, 2);
+});
+
+test("the invoice is a Tax Invoice only when the seller has a GSTIN", () => {
+  const { buildInvoicePdf } = require("../src/utils/invoicePdf");
+  const order = {
+    orderNumber: "HR-1042",
+    createdAt: new Date("2026-10-07T00:00:00Z"),
+    paymentStatus: "paid",
+    orderStatus: "Confirmed",
+    customerName: "A Customer",
+    shippingAddress: "Somewhere",
+    totalAmount: 599,
+    products: [{ name: "Olive Grove Tee", size: "M", quantity: 1, price: 599 }],
+  };
+  const seller = { legalName: "HRUSHE (Hrushabh Barde)", address: "1, Barde Farms, Wani" };
+
+  const plain = buildInvoicePdf(order, { ...seller, gstin: "" }).toString("utf8");
+  assert.match(plain, /\(Invoice\) Tj/);
+  assert.doesNotMatch(plain, /Tax Invoice|GSTIN/);
+  assert.match(plain, /Sold by/);
+
+  const registered = buildInvoicePdf(order, { ...seller, gstin: "27ABCDE1234F1Z5" }).toString("utf8");
+  assert.match(registered, /\(Tax Invoice\) Tj/);
+  assert.match(registered, /GSTIN: 27ABCDE1234F1Z5/);
+});
+
+test("emails carry the brand frame, not the old slogans", () => {
+  const { buildOrderStatusEmail, buildOtpEmail } = require("../src/utils/emailTemplates");
+  const { buildMailHtml } = require("../src/utils/mailer");
+
+  const reset = buildMailHtml({
+    subject: "Your HRUSHE password reset OTP",
+    html: buildOtpEmail({ purpose: "password-reset", otp: "482913", expiryMinutes: 10, email: "a@example.com" }),
+  });
+  assert.match(reset, /Defined quietly<span[^>]*>\.<\/span>/);
+  assert.match(reset, /HRUSHELOGO\.png/);
+  assert.match(reset, /482913/);
+  assert.doesNotMatch(reset, /Quiet pieces|India wide delivery|everyday dressing/i);
+
+  const shipped = buildOrderStatusEmail({
+    order: { orderNumber: "HR-1042", orderStatus: "Shipped", paymentStatus: "paid", totalAmount: 599, products: [] },
+    summaryLine: "fallback",
+  });
+  assert.match(shipped, /On its way<span[^>]*>\.<\/span>/);
+  assert.match(shipped, /Order #HR-1042/);
+  assert.match(shipped, /left the atelier/);
+});
+
+test("an order moves through the atelier's stages in order", () => {
+  const stages = require("../src/config/orderStages");
+
+  assert.deepEqual(stages.FULFILLMENT_STATUSES, [
+    "Pending",
+    "Confirmed",
+    "Preparing",
+    "Quality check",
+    "Packed",
+    "Shipped",
+    "Out for delivery",
+    "Delivered",
+  ]);
+  assert.deepEqual(
+    stages.FULFILLMENT_STATUSES.slice(1).map((status) => stages.getOrderStage(status).word),
+    ["Received", "On the table", "Inspected", "Wrapped", "On its way", "Nearly home", "Home"]
+  );
+  // Four moments get an email, plus a cancellation or return; the steps in between do not.
+  assert.deepEqual(
+    stages.ALL_ORDER_STATUSES.filter(stages.shouldEmailOrderStage),
+    ["Confirmed", "Packed", "Shipped", "Delivered", "Cancelled", "Returned"]
+  );
+  assert.equal(stages.getOrderStage("Nonsense"), null);
+});
+
+test("no stage tells the customer a finished piece is being made for them", () => {
+  const { ORDER_STAGES } = require("../src/config/orderStages");
+  for (const stage of ORDER_STAGES) {
+    assert.doesNotMatch(`${stage.word} ${stage.line}`, /made to order|made for the order|stitch|being cut|tailor/i, stage.status);
+  }
+});

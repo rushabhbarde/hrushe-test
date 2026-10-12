@@ -31,7 +31,7 @@ function stripUrlNoise(value: string) {
   return value.split("#")[0]?.split("?")[0] || value;
 }
 
-export function normalizeHomepageMediaUrl(value?: string) {
+function normalizeHomepageMediaUrl(value?: string) {
   return String(value || "").trim();
 }
 
@@ -39,7 +39,7 @@ export function isLegacyMissingHomepageMedia(value?: string) {
   return LEGACY_MISSING_BANNER_PATHS.has(stripUrlNoise(normalizeHomepageMediaUrl(value)).toLowerCase());
 }
 
-export function isSafeHomepageMediaUrl(value?: string) {
+function isSafeHomepageMediaUrl(value?: string) {
   const url = normalizeHomepageMediaUrl(value);
 
   if (!url || isLegacyMissingHomepageMedia(url)) {

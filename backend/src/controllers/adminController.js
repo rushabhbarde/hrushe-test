@@ -731,9 +731,10 @@ const getDashboardOverview = asyncHandler(async (req, res) => {
       ],
     },
   };
+  // Paid and being prepared: received, on the table, or being inspected.
   const awaitingFulfillmentQuery = {
     paymentStatus: "paid",
-    orderStatus: "Confirmed",
+    orderStatus: { $in: ["Confirmed", "Preparing", "Quality check"] },
   };
   const awaitingShipmentQuery = {
     paymentStatus: "paid",

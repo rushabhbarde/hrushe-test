@@ -18,6 +18,12 @@ const configuredImageHosts = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
+    // A resized photo never changes (new uploads get new addresses), so keep each resized
+    // copy for a month instead of redoing the slow resize of a multi-megabyte original.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+    // The widest frame on the site is 1040px; 2048 covers it on sharp screens. Dropping the
+    // 3840 size stops phones and laptops asking for giant versions.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     remotePatterns: [
       { protocol: "https", hostname: "hrushe.in" },
       { protocol: "https", hostname: "www.hrushe.in" },
@@ -40,6 +46,12 @@ const nextConfig: NextConfig = {
       {
         source: "/signup",
         destination: "/login?mode=signup",
+        permanent: false,
+      },
+      {
+        // The New In page was removed; campaign buttons that still point at it land on the newest pieces.
+        source: "/new-in",
+        destination: "/shop?sort=newest",
         permanent: false,
       },
       {
@@ -68,10 +80,11 @@ const nextConfig: NextConfig = {
       "media-src 'self' blob: https:",
       "font-src 'self' data: https:",
       "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://cloudflareinsights.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://www.google.com",
-      "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com",
+      "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://recaptcha.google.com https://*.firebaseapp.com https://www.facebook.com",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      // The Meta Pixel falls back to a hidden form post to facebook.com for larger events.
+      "form-action 'self' https://www.facebook.com",
       "frame-ancestors 'none'",
       "upgrade-insecure-requests",
     ].join("; ");

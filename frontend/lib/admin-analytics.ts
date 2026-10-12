@@ -1,5 +1,4 @@
 import type { Product } from "@/lib/catalog";
-import type { AdminCustomer } from "@/lib/admin";
 import type { OrderRecord } from "@/lib/orders";
 
 type SalesPeriod = "daily" | "weekly" | "monthly";
@@ -69,27 +68,5 @@ export function buildTopSellingProducts(orders: OrderRecord[], products: Product
   });
 
   return Array.from(tally.values()).sort((left, right) => right.quantity - left.quantity).slice(0, 6);
-}
-
-export function buildRecentCustomerActivity(orders: OrderRecord[], customers: AdminCustomer[]) {
-  const orderActivity = orders.map((order) => ({
-    id: `order-${order.id}`,
-    label: `${order.customerName} placed an order`,
-    detail: `#${order.orderNumber || order.id.slice(-6)} · Rs. ${Math.round(order.totalAmount).toLocaleString("en-IN")}`,
-    date: order.createdAt,
-    href: `/admin/orders/${order.id}`,
-  }));
-
-  const customerActivity = customers.map((customer) => ({
-    id: `customer-${customer.id}`,
-    label: `${customer.name} created an account`,
-    detail: `${customer.orderCount} orders · ${customer.wishlist.length} wishlist items`,
-    date: customer.createdAt,
-    href: `/admin/customers/${customer.id}`,
-  }));
-
-  return [...orderActivity, ...customerActivity]
-    .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime())
-    .slice(0, 10);
 }
 

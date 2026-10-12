@@ -1,21 +1,19 @@
 import type { Product } from "@/lib/catalog";
 
-export function getProductColour(product: Product) {
-  const rawColour = product.colour || product.colors[0]?.trim() || "";
-  const correctedColour = rawColour.replace(/\bBegie\b/gi, "Beige");
-  return correctedColour
-    ? correctedColour.charAt(0).toUpperCase() + correctedColour.slice(1).toLowerCase()
-    : "";
-}
-
 export function getProductDisplayName(product: Product) {
   return (product.displayName || product.name || "").replace(/\bBegie\b/gi, "Beige");
 }
 
+/** Fabric weight with its unit: "240" becomes "240 GSM"; a value that already names it is kept. */
+export function formatGsm(gsm?: string) {
+  const value = String(gsm || "").trim();
+  if (!value) return "";
+  return /gsm/i.test(value) ? value : `${value} GSM`;
+}
+
 export function getProductFabricLine(product: Product) {
   const fabric = product.fabric || product.cottonType || "";
-  const gsm = product.gsm?.trim();
-  return [fabric, gsm].filter(Boolean).join(" · ");
+  return [fabric, formatGsm(product.gsm)].filter(Boolean).join(" · ");
 }
 
 export function getProductFitLine(product: Product) {

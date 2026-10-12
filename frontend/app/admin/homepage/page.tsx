@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ChangeEvent } from "react";
+import { AdminLookEditor } from "@/components/admin-look-editor";
 import { AdminShell } from "@/components/admin-shell";
 import {
   AdminBadge,
@@ -41,6 +42,7 @@ import {
   type HomepageTitleFontSize,
 } from "@/lib/admin-workspace";
 import { useAdminWorkspace } from "@/lib/use-admin-workspace";
+import { useStorefrontData } from "@/lib/use-storefront";
 
 const sectionTypeOptions = Object.entries(homepageSectionTypeLabels) as Array<
   [HomepageSectionType, string]
@@ -215,6 +217,7 @@ function HomepageSectionPreview({ section }: { section: HomepageSection }) {
 export default function AdminHomepagePage() {
   const { workspace, saveWorkspace } = useAdminWorkspace();
   const { pushToast } = useToast();
+  const { products } = useStorefrontData({ admin: true });
   const [draftSections, setDraftSections] = useState<HomepageSection[] | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState("");
   const [selectedCardId, setSelectedCardId] = useState("");
@@ -819,6 +822,23 @@ export default function AdminHomepagePage() {
                 <p className="text-sm text-[var(--muted)]">Select a section to edit.</p>
               )}
             </AdminPanel>
+
+            {selectedSection &&
+            !sectionSupportsCards(selectedSection.sectionType) &&
+            selectedSection.audience !== "home" ? (
+              <AdminPanel>
+                <AdminSubhead
+                  title="Shop the look"
+                  description="Dots on the campaign photo. Hovering one shows the piece under In this look; clicking opens it with sizes and Add to bag."
+                />
+                <AdminLookEditor
+                  section={selectedSection}
+                  products={products}
+                  mediaLibrary={workspace.mediaLibrary}
+                  onChange={(lookTags) => updateSelectedSection({ lookTags })}
+                />
+              </AdminPanel>
+            ) : null}
 
             {selectedSection && sectionSupportsCards(selectedSection.sectionType) ? (
               <AdminPanel>

@@ -283,3 +283,7 @@ What already exists in this workspace:
 4. Replace the default frontend homepage with the clothing brand landing page
 5. Build user pages and admin dashboard pages
 6. Connect frontend forms and pages to backend APIs
+
+## Operations docs
+
+Runbooks live in `docs/`: deployment, go-live checklist, monitoring, alert catalog, backup and restore, rollback, migration, and the Render scheduler.

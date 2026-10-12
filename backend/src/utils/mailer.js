@@ -81,54 +81,53 @@ const sanitizeMailError = (error) => ({
   usedTemplate: Boolean(error?.meta?.usedTemplate),
 });
 
+const MONO = "'SFMono-Regular',Menlo,Consolas,'Courier New',monospace";
+const SANS = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+
+// The frame every email sits in: white ground, the wordmark, then the brand line with the
+// burgundy full stop. Matches the storefront; kept light even in dark-mode mail apps.
 const buildMailHtml = ({ subject = "HRUSHE", html = "" }) => `
   <!doctype html>
-  <html>
+  <html lang="en">
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="color-scheme" content="light only" />
+      <meta name="supported-color-schemes" content="light only" />
       <title>${subject}</title>
     </head>
-    <body style="margin:0;background:#f3f1ed;color:#111111;font-family:Arial,Helvetica,sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f1ed;padding:28px 16px;">
+    <body style="margin:0;background:#ffffff;color:#111111;font-family:${SANS};">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ffffff;padding:0 16px;">
         <tr>
           <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #e7e1da;background:#ffffff;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;">
               <tr>
-                <td style="padding:14px 28px;border-bottom:1px solid #e7e1da;color:#5f5f5f;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;">
-                  India wide delivery
+                <td style="padding:32px 0 24px;border-bottom:1px solid #e6e3de;">
+                  <a href="${buildSiteUrl("")}" style="text-decoration:none;">
+                    <img src="${buildSiteUrl("/HRUSHELOGO.png")}" alt="HRUSHE" height="30" style="display:block;height:30px;width:auto;border:0;" />
+                  </a>
                 </td>
               </tr>
               <tr>
-                <td style="border-bottom:1px solid #e7e1da;padding:28px;background:#f7f7f7;">
-                  <div style="font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:#5f5f5f;">HRUSHE</div>
-                  <div style="margin-top:14px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.02;font-weight:700;letter-spacing:-0.04em;color:#111111;">
-                    Quiet pieces.<br />
-                    Everyday ease.
-                  </div>
-                  <div style="margin-top:12px;color:#5f5f5f;font-size:14px;line-height:1.75;">
-                    Designed for everyday dressing.
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:0 28px 32px;font-size:15px;line-height:1.75;color:#222222;">
+                <td style="padding:0 0 40px;font-size:15px;line-height:1.7;color:#111111;">
                   ${html}
                 </td>
               </tr>
               <tr>
-                <td style="border-top:1px solid #e7e1da;padding:24px 28px;background:#2f2d2b;color:#f8f8f5;">
-                  <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#d7d2cc;">Stay connected</div>
-                  <div style="margin-top:10px;font-size:13px;line-height:1.8;">
-                    <a href="${buildSiteUrl("/shop")}" style="color:#f8f8f5;text-decoration:none;">Shop</a>
-                    &nbsp;&nbsp;|&nbsp;&nbsp;
-                    <a href="${buildSiteUrl("/track-order")}" style="color:#f8f8f5;text-decoration:none;">Track order</a>
-                    &nbsp;&nbsp;|&nbsp;&nbsp;
-                    <a href="${buildSiteUrl("/contact")}" style="color:#f8f8f5;text-decoration:none;">Contact</a>
+                <td style="border-top:1px solid #e6e3de;padding:28px 0 40px;">
+                  <div style="font-family:${SANS};font-size:22px;line-height:1;font-weight:700;letter-spacing:-0.04em;text-transform:uppercase;color:#111111;">
+                    Defined quietly<span style="color:#5e0110;">.</span>
                   </div>
-                  <div style="margin-top:12px;font-size:12px;line-height:1.7;color:#d7d2cc;">
-                    HRUSHE support: team@hrushe.in<br />
-                    This is an automated brand notification.
+                  <div style="margin-top:18px;font-family:${MONO};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;">
+                    <a href="${buildSiteUrl("/shop")}" style="color:#111111;text-decoration:none;">Shop</a>
+                    <span style="color:#8e8981;">&nbsp;&middot;&nbsp;</span>
+                    <a href="${buildSiteUrl("/track-order")}" style="color:#111111;text-decoration:none;">Track order</a>
+                    <span style="color:#8e8981;">&nbsp;&middot;&nbsp;</span>
+                    <a href="${buildSiteUrl("/contact")}" style="color:#111111;text-decoration:none;">Help</a>
+                  </div>
+                  <div style="margin-top:14px;font-size:12px;line-height:1.7;color:#6b6760;">
+                    HRUSHE &middot; <a href="mailto:team@hrushe.in" style="color:#6b6760;">team@hrushe.in</a> &middot; +91 91128 54988<br />
+                    Sent because of activity on your HRUSHE account or order.
                   </div>
                 </td>
               </tr>
@@ -266,4 +265,4 @@ const sendEmail = async ({ to, subject, html, text, templateKey, mergeInfo }) =>
   }
 };
 
-module.exports = { sendEmail };
+module.exports = { buildMailHtml, sendEmail };

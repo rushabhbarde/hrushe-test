@@ -322,6 +322,34 @@ async function runExpiredInventoryReservationCleanup(options = {}) {
   return result;
 }
 
+/**
+ * Put a cancelled order's pieces back on the shelf. Only orders whose stock was committed
+ * (paid) are restocked, and the claim on the order makes sure it happens once.
+ */
+const restockCancelledOrder = async (orderId) => {
+  const claimed = await Order.findOneAndUpdate(
+    { _id: orderId, orderStatus: "Cancelled", inventoryReservationStatus: "committed" },
+    { $set: { inventoryReservationStatus: "released", inventoryReservationExpiresAt: null } },
+    { new: true }
+  );
+  if (!claimed) {
+    return { restocked: 0 };
+  }
+
+  const tracked = claimed.products.filter((item) => item.inventoryTracked && item.sku);
+  await Promise.all(
+    tracked.map((item) =>
+      Product.updateOne(
+        { _id: item.productId, "variants.sku": item.sku },
+        { $inc: { "variants.$[variant].stock": Number(item.quantity) || 0 } },
+        { arrayFilters: [{ "variant.sku": item.sku }] }
+      )
+    )
+  );
+  recordMetric("inventory.restocked", { orderId: String(orderId), items: tracked.length });
+  return { restocked: tracked.length };
+};
+
 const cleanupExpiredInventoryReservations = async (options = {}) => {
   if (expiredReservationCleanupInFlight) {
     return {
@@ -351,5 +379,6 @@ module.exports = {
   releaseInventoryItems,
   commitOrderInventory,
   releaseOrderInventory,
+  restockCancelledOrder,
   cleanupExpiredInventoryReservations,
 };

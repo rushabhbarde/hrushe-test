@@ -1,23 +1,31 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/cart-provider";
 import { useCustomerAuth } from "@/components/customer-auth-provider";
 import { FrameStatement } from "@/components/frame-statement";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { trackShopEvent } from "@/lib/tracking";
 
 function CheckoutSuccessPageContent() {
   const searchParams = useSearchParams();
-  const { clearCart } = useCart();
+  const { clearCart, items, isReady } = useCart();
+  const purchaseTracked = useRef(false);
   const { user } = useCustomerAuth();
   const orderId = searchParams.get("orderId");
   const trackingLookup = orderId ? `/track-order?orderId=${encodeURIComponent(orderId)}` : "/track-order";
 
   useEffect(() => {
+    if (!isReady || purchaseTracked.current) {
+      return;
+    }
+    // Report the purchase once, from the bag as it was paid for, then empty the bag.
+    purchaseTracked.current = true;
+    trackShopEvent("purchase", items, { orderId: orderId || undefined });
     clearCart();
-  }, [clearCart]);
+  }, [clearCart, isReady, items, orderId]);
 
   return (
     <div className="page-shell">
@@ -28,15 +36,16 @@ function CheckoutSuccessPageContent() {
         frame="mark"
         body={
           user
-            ? "Your order is available in your account. We will write when it is packed, and again when it leaves."
-            : "Your order is confirmed. Track this order using your order number below, with the email or phone you paid with."
+            ? "Your order is available in your account. We will write when it is wrapped, and again when it leaves."
+            : "Your order is with the atelier. Track this order using your order number below, with the email or phone you paid with."
         }
         reference={orderId}
         rows={[
-          { label: "Paid", value: "Done", done: true },
-          { label: "Confirmed", value: "Done", done: true },
-          { label: "Packed", value: "Next" },
-          { label: "Shipped", value: "Tracking follows" },
+          { label: "Received", value: "Done", done: true },
+          { label: "On the table", value: "Pressed and prepared" },
+          { label: "Inspected", value: "Checked by hand" },
+          { label: "Wrapped", value: "Then it leaves" },
+          { label: "On its way", value: "Tracking follows" },
         ]}
         actions={[
           user ? { href: "/account#my-orders", label: "View my order" } : { href: trackingLookup, label: "Track this order" },

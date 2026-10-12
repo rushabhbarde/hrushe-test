@@ -7,7 +7,7 @@ import { apiRequest } from "@/lib/api";
 import type { Product } from "@/lib/catalog";
 import { getProductDisplayName } from "@/lib/product-presentation";
 
-function getAvailableSizes(product: Product) {
+export function getAvailableSizes(product: Product) {
   const sizes = product.sizes || [];
 
   if (!product.trackInventory) {

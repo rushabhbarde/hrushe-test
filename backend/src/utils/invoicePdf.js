@@ -46,11 +46,17 @@ const formatDate = (value) =>
 
 const formatCurrency = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
-const buildInvoicePdf = (order) => {
+const defaultSeller = () => {
+  const env = require("../config/env");
+  return { legalName: env.SELLER_LEGAL_NAME, address: env.SELLER_ADDRESS, gstin: env.SELLER_GSTIN };
+};
+
+// Only a GST-registered seller may issue a "Tax Invoice"; without a GSTIN it is an "Invoice".
+const buildInvoicePdf = (order, seller = defaultSeller()) => {
   const orderReference = order.orderNumber || order._id.toString();
   const lines = [
     buildTextLine("HRUSHE", 48, 790, "F2", 26),
-    buildTextLine("Tax Invoice", 48, 765, "F2", 16),
+    buildTextLine(seller.gstin ? "Tax Invoice" : "Invoice", 48, 765, "F2", 16),
     buildTextLine(`Invoice for Order #${orderReference}`, 48, 742, "F1", 11),
     buildTextLine(`Invoice Date: ${formatDate(order.createdAt)}`, 400, 790, "F1", 11),
     buildTextLine(`Payment Status: ${order.paymentStatus}`, 400, 774, "F1", 11),
@@ -100,7 +106,21 @@ const buildInvoicePdf = (order) => {
   lines.push(buildTextLine("Shipping: Included", 390, y, "F1", 11));
   y -= 18;
   lines.push(buildTextLine(`Total: ${formatCurrency(order.totalAmount)}`, 390, y, "F2", 14));
+  y -= 18;
+  lines.push(
+    buildTextLine(seller.gstin ? "Prices are inclusive of GST." : "Prices are inclusive of all taxes.", 390, y, "F1", 9)
+  );
   y -= 40;
+  lines.push(buildTextLine("Sold by", 48, y, "F2", 11));
+  y -= 16;
+  lines.push(buildTextLine(seller.legalName, 48, y, "F1", 10));
+  y -= 14;
+  lines.push(buildTextLine(seller.address, 48, y, "F1", 10));
+  if (seller.gstin) {
+    y -= 14;
+    lines.push(buildTextLine(`GSTIN: ${seller.gstin}`, 48, y, "F1", 10));
+  }
+  y -= 26;
   lines.push(
     buildTextLine(
       "This is a system-generated invoice for your HRUSHE order.",

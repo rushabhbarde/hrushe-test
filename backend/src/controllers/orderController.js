@@ -13,6 +13,15 @@ const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
 const { buildInvoicePdf } = require("../utils/invoicePdf");
+const {
+  ALL_ORDER_STATUSES,
+  FULFILLMENT_STATUSES,
+  IN_ATELIER_STATUSES,
+  ORDER_STAGES,
+  PAID_STATUSES,
+  getOrderStage,
+  shouldEmailOrderStage,
+} = require("../config/orderStages");
 const { hasAdminPermission } = require("../config/adminRoles");
 const WebhookEvent = require("../models/WebhookEvent");
 const { recordAuditLog } = require("../utils/auditLog");
@@ -49,7 +58,9 @@ const {
   releaseInventoryItems,
   commitOrderInventory,
   releaseOrderInventory,
+  restockCancelledOrder,
 } = require("../services/checkoutInventory");
+const { sendOwnerAlert } = require("../utils/ownerAlerts");
 const {
   buildCheckoutCartHash,
   buildCheckoutIdentityHash,
@@ -61,31 +72,16 @@ const {
   assertCheckoutAttemptIndexReady,
 } = require("../services/checkoutAttemptIndex");
 
-const allowedStatuses = [
-  "Pending",
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-  "Cancelled",
-  "Returned",
-];
+const allowedStatuses = ALL_ORDER_STATUSES;
 
 const PAYMENT_CONFIRMATION_LOCK_WINDOW_MS = 2 * 60 * 1000;
 
-const activeFulfillmentStatuses = [
-  "Pending",
-  "Confirmed",
-  "Packed",
-  "Shipped",
-  "Out for delivery",
-  "Delivered",
-];
+const activeFulfillmentStatuses = FULFILLMENT_STATUSES;
 
 const PUBLIC_TRACKING_LOOKUP_ERROR = "Order not found or lookup details do not match";
 
-const cancellableStatuses = ["Pending", "Confirmed", "Packed"];
+// An order can be cancelled until it is handed to the courier.
+const cancellableStatuses = ["Pending", ...IN_ATELIER_STATUSES];
 
 const canTransitionOrderStatus = (currentStatus, nextStatus) => {
   if (!nextStatus || currentStatus === nextStatus) {
@@ -110,45 +106,23 @@ const canTransitionOrderStatus = (currentStatus, nextStatus) => {
   return currentIndex >= 0 && nextIndex > currentIndex;
 };
 
+// The customer's journey, in the atelier's words (Received, On the table, Inspected, ...).
 const buildTrackingTimeline = (order) => {
-  const baseSteps = [
-    { key: "placed", label: "Order placed", status: "completed" },
-    { key: "confirmed", label: "Confirmed", status: "upcoming" },
-    { key: "packed", label: "Packed", status: "upcoming" },
-    { key: "shipped", label: "Shipped", status: "upcoming" },
-    { key: "out-for-delivery", label: "Out for delivery", status: "upcoming" },
-    { key: "delivered", label: "Delivered", status: "upcoming" },
-  ];
-
-  const statusIndexMap = {
-    Pending: 0,
-    Confirmed: 1,
-    Packed: 2,
-    Shipped: 3,
-    "Out for delivery": 4,
-    Delivered: 5,
-  };
-
-  if (order.orderStatus === "Cancelled") {
+  const closed = ["Cancelled", "Returned"].includes(order.orderStatus) ? getOrderStage(order.orderStatus) : null;
+  if (closed) {
     return [
-      { key: "placed", label: "Order placed", status: "completed" },
-      { key: "cancelled", label: "Cancelled", status: "current" },
+      { key: "placed", label: "Placed", status: "completed" },
+      { key: closed.key, label: closed.word, status: "current" },
     ];
   }
 
-  if (order.orderStatus === "Returned") {
-    return [
-      { key: "placed", label: "Order placed", status: "completed" },
-      { key: "returned", label: "Returned", status: "current" },
-    ];
-  }
+  const activeIndex = Math.max(FULFILLMENT_STATUSES.indexOf(order.orderStatus), 0);
 
-  const activeIndex = statusIndexMap[order.orderStatus] ?? 0;
-
-  return baseSteps.map((step, index) => ({
-    ...step,
+  return ORDER_STAGES.map((stage, index) => ({
+    key: stage.key,
+    label: stage.word,
     status:
-      index < activeIndex
+      index < activeIndex || (index === activeIndex && stage.status === "Delivered")
         ? "completed"
         : index === activeIndex
           ? "current"
@@ -923,6 +897,10 @@ const sendOrderEmail = async (order, subject, summaryLine) => {
   }
 };
 
+// "HRUSHE order #1042: On its way"
+const orderEmailSubject = (order) =>
+  `HRUSHE order #${order.orderNumber || order._id.toString()}: ${getOrderStage(order.orderStatus)?.word || order.orderStatus}`;
+
 const safelySendOrderEmail = async (order, subject, summaryLine) => {
   // WhatsApp goes alongside every order email; it sends once per status and never throws.
   await whatsapp.sendOrderUpdate(order);
@@ -964,6 +942,59 @@ const getMyOrders = asyncHandler(async (req, res) => {
     orders.map(buildCustomerOrderResponse),
     pagination
   );
+});
+
+/**
+ * A customer cancels their own order. Allowed until it is handed to the courier; after that
+ * it is a return. Stock goes back on the shelf, the customer gets the Cancelled email, and
+ * the owner is told a refund is due (refunds are issued by hand in Razorpay).
+ */
+const cancelMyOrder = asyncHandler(async (req, res) => {
+  const existing = await Order.findById(req.params.id);
+  if (!existing || existing.userId?.toString() !== req.user._id.toString()) {
+    throw new AppError("Order not found", 404);
+  }
+  if (existing.orderStatus === "Cancelled") {
+    return res.json(existing);
+  }
+  if (!cancellableStatuses.includes(existing.orderStatus)) {
+    throw new AppError(
+      "This order has already shipped, so it can no longer be cancelled here. Write to team@hrushe.in and we will help.",
+      409
+    );
+  }
+
+  const order = await Order.findOneAndUpdate(
+    { _id: existing._id, orderStatus: existing.orderStatus },
+    { $set: { orderStatus: "Cancelled" } },
+    { new: true }
+  );
+  if (!order) {
+    throw new AppError("This order changed while you were cancelling it. Please refresh and try again.", 409);
+  }
+
+  await restockCancelledOrder(order._id);
+  await recordAuditLog(req, "order.customer-cancel", { type: "order", id: order._id }, {
+    previousStatus: existing.orderStatus,
+    paymentStatus: order.paymentStatus,
+  });
+  await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage("Cancelled").line);
+
+  const reference = order.orderNumber || order._id.toString();
+  const paid = order.paymentStatus === "paid";
+  await sendOwnerAlert({
+    key: `customer-cancel-${order._id}`,
+    subject: paid ? `Order #${reference} cancelled: refund ₹${order.totalAmount} due` : `Order #${reference} cancelled by the customer`,
+    lines: [
+      `The customer cancelled order #${reference} while it was at "${existing.orderStatus}".`,
+      paid
+        ? `It was paid. Refund ₹${order.totalAmount} from the Razorpay dashboard; the customer has been told it goes back to the original payment method.`
+        : "It was not paid, so no refund is needed.",
+      "Stock for its pieces has been put back.",
+    ],
+  });
+
+  return res.json(await Order.findById(order._id).select("-checkoutLogs"));
 });
 
 const getOrderById = asyncHandler(async (req, res) => {
@@ -1161,7 +1192,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     );
   }
 
-  const paidFulfillmentStatuses = ["Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
+  const paidFulfillmentStatuses = PAID_STATUSES;
   if (
     orderStatus &&
     paidFulfillmentStatuses.includes(orderStatus) &&
@@ -1200,6 +1231,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     await issueReferralReward(order);
   }
 
+  if (order.orderStatus === "Cancelled" && existingOrder.orderStatus !== "Cancelled") {
+    await restockCancelledOrder(order._id);
+  }
+
   // Moving a paid order Pending → Confirmed by hand counts as the team's call confirmation.
   let responseOrder = order;
   if (orderStatus === "Confirmed" && existingOrder.orderStatus === "Pending" && !order.callConfirmedAt) {
@@ -1211,17 +1246,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     responseOrder = result.order || order;
   }
 
-  if (
-    orderStatus !== undefined ||
-    trackingId !== undefined ||
-    courierName !== undefined ||
-    trackingUrl !== undefined
-  ) {
-    await safelySendOrderEmail(
-      order,
-      `Your HRUSHE order is now ${order.orderStatus}`,
-      `Your order status has been updated to ${order.orderStatus}.`
-    );
+  // Email the customer at the moments worth a message (Received, Wrapped, On its way, Home,
+  // or a cancellation or return), and when tracking details arrive. The steps in between
+  // (On the table, Inspected, Nearly home) show on the tracking page without an email.
+  const stageChanged = orderStatus !== undefined && orderStatus !== existingOrder.orderStatus;
+  const trackingChanged = trackingId !== undefined || courierName !== undefined || trackingUrl !== undefined;
+  if ((stageChanged && shouldEmailOrderStage(order.orderStatus)) || (!stageChanged && trackingChanged)) {
+    await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage(order.orderStatus)?.line || "");
   }
 
   return res.json(responseOrder);
@@ -1303,7 +1334,7 @@ const sendToShiprocket = asyncHandler(async (req, res) => {
   if (!existing) {
     throw new AppError("Order not found", 404);
   }
-  if (!["Confirmed", "Packed"].includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
+  if (!IN_ATELIER_STATUSES.includes(existing.orderStatus) || existing.paymentStatus !== "paid") {
     throw new AppError("Only paid, confirmed orders can be sent to Shiprocket.", 409);
   }
   if (!existing.callConfirmedAt) {
@@ -1317,7 +1348,7 @@ const sendToShiprocket = asyncHandler(async (req, res) => {
   return res.json(result.order);
 });
 
-const SHIPROCKET_STATUS_RANK = ["Pending", "Confirmed", "Packed", "Shipped", "Out for delivery", "Delivered"];
+const SHIPROCKET_STATUS_RANK = FULFILLMENT_STATUSES;
 
 /** Shiprocket tracking webhook: fills AWB / courier / tracking link and moves the order forward. */
 const shiprocketWebhook = asyncHandler(async (req, res) => {
@@ -1370,12 +1401,8 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
   if (updated?.orderStatus === "Delivered") {
     await issueReferralReward(updated);
   }
-  if (updated && movesForward) {
-    await safelySendOrderEmail(
-      updated,
-      `Your HRUSHE order is now ${updated.orderStatus}`,
-      `Your order status has been updated to ${updated.orderStatus}.`
-    );
+  if (updated && movesForward && shouldEmailOrderStage(updated.orderStatus)) {
+    await safelySendOrderEmail(updated, orderEmailSubject(updated), getOrderStage(updated.orderStatus)?.line || "");
   }
   return res.json({ ok: true, matched: true, orderStatus: updated?.orderStatus || order.orderStatus });
 });
@@ -1744,11 +1771,7 @@ const verifyCheckout = asyncHandler(async (req, res) => {
   }
 
   await coupons.recordCouponUse(confirmedOrder);
-  await safelySendOrderEmail(
-    confirmedOrder,
-    "Your HRUSHE order is confirmed",
-    "Thank you for shopping with HRUSHE. Your order has been confirmed."
-  );
+  await safelySendOrderEmail(confirmedOrder, orderEmailSubject(confirmedOrder), getOrderStage("Confirmed").line);
   recordMetric("payment.verified", {
     orderId: confirmedOrder._id.toString(),
     checkoutProvider: confirmedOrder.checkoutProvider,
@@ -2757,6 +2780,7 @@ module.exports = {
   sendToShiprocket,
   shiprocketWebhook,
   getMyOrders,
+  cancelMyOrder,
   getOrderById,
   downloadInvoice,
   trackOrder,

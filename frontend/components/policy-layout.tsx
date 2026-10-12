@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-export type PolicySection = {
+type PolicySection = {
   title: string;
   body: string;
 };
 
-export type PolicyTab = {
+type PolicyTab = {
   key: string;
   label: string;
   sections: readonly PolicySection[];

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { HomepageMediaFrame } from "@/components/homepage-media";
 import { OpenSupportButton } from "@/components/open-support-button";
+import { LookDots, LookPeek, LookStrip, useShopTheLook, type LookPiece } from "@/components/shop-the-look";
 
 export type Chapter = {
   id: string;
@@ -16,6 +17,8 @@ export type Chapter = {
   objectPosition: string;
   ctaText: string;
   ctaLink: string;
+  /** Shop the look: dots on this photo, each pointing at a piece. */
+  look: LookPiece[];
 };
 
 export type EditCard = {
@@ -44,6 +47,7 @@ export function ChapterHome({
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const [active, setActive] = useState(0);
   const [card, setCard] = useState(0);
+  const look = useShopTheLook();
   const hasEdit = edit.length > 0;
   const rail = [...chapters.map((chapter) => chapter.label), ...(hasEdit ? ["The edit"] : [])];
 
@@ -86,7 +90,14 @@ export function ChapterHome({
     );
   const currentCard = edit[card] || edit[0];
 
-  const room = (index: number, top: string, bottom: string, media: React.ReactNode, below: React.ReactNode, extraClass = "") => (
+  const room = (
+    index: number,
+    top: string,
+    bottom: string,
+    media: React.ReactNode,
+    below: React.ReactNode,
+    extraClass = ""
+  ) => (
     <section
       key={index}
       ref={(element) => {
@@ -129,7 +140,19 @@ export function ChapterHome({
               className="h-full w-full object-cover"
               objectPosition={chapter.objectPosition}
             />
+            {chapter.look.length > 0 ? (
+              <LookDots
+                look={look}
+                room={index}
+                pieces={chapter.look}
+                image={chapter.image}
+                mobileImage={chapter.mobileImage}
+                objectPosition={chapter.objectPosition}
+              />
+            ) : null}
           </div>,
+          <>
+          <LookStrip look={look} room={index} pieces={chapter.look} />
           <div className="flex items-baseline justify-between gap-4">
             <Link href={chapter.ctaLink} className="fr-mono fr-link">
               {chapter.ctaText} →
@@ -140,6 +163,7 @@ export function ChapterHome({
               </button>
             ) : null}
           </div>
+          </>
         )
       )}
 
@@ -185,10 +209,11 @@ export function ChapterHome({
         : null}
 
       <nav aria-label="Chapters" className="pointer-events-none absolute inset-y-0 right-1 z-20 lg:right-10">
-        <div className="pointer-events-auto sticky top-[45svh] flex flex-col gap-1 lg:gap-4">
+        {/* Desktop: centred on the room (below the 5.5rem header), so it stays centred when "In this look" opens. */}
+        <div className="pointer-events-auto sticky top-[45svh] flex flex-col gap-1 lg:top-[calc(50svh+2.75rem)] lg:-translate-y-1/2 lg:gap-4">
         {rail.map((label, index) => (
+          <Fragment key={label + index}>
           <button
-            key={label + index}
             type="button"
             onClick={() => goTo(index)}
             aria-current={index === active ? "step" : undefined}
@@ -198,6 +223,9 @@ export function ChapterHome({
             <span className={index === active ? "fr-mark" : undefined}>{n(index)}</span>
             <span className="hidden max-w-[12rem] truncate lg:inline">{label}</span>
           </button>
+          {/* The piece a hovered dot points at sits under its own campaign's name. */}
+          {chapters[index] ? <LookPeek look={look} room={index} pieces={chapters[index].look} /> : null}
+          </Fragment>
         ))}
         {active < rail.length - 1 ? (
           <button type="button" onClick={() => goTo(active + 1)} className="fr-mono fr-choice mt-4 hidden text-left lg:block">

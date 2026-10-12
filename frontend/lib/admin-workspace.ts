@@ -4,7 +4,6 @@ import type {
   ProductFitType,
   ProductGender,
   ProductStatus,
-  ProductReview,
 } from "@/lib/catalog";
 import { categories as defaultCatalogCategories } from "@/lib/catalog";
 import type { AdminCustomer } from "@/lib/admin";
@@ -14,7 +13,7 @@ import {
   HRUSHE_SYMBOL_LOGO_PATH,
 } from "@/lib/brand-assets";
 
-export type AdminBanner = {
+type AdminBanner = {
   id: string;
   label: string;
   title: string;
@@ -62,6 +61,17 @@ export type HomepageCard = {
   isVisible: boolean;
 };
 
+/** A "Shop the look" dot on a campaign photo: x/y are fractions of the desktop photo,
+ * mobileX/mobileY of the phone photo when the section has a separate one. */
+export type HomepageLookTag = {
+  id: string;
+  productId: string;
+  x: number;
+  y: number;
+  mobileX?: number | null;
+  mobileY?: number | null;
+};
+
 export type HomepageSection = {
   id: string;
   audience: HomepageAudience;
@@ -84,6 +94,7 @@ export type HomepageSection = {
   titlePosition: HomepageTextPosition;
   textAlign: HomepageTextAlign;
   cards: HomepageCard[];
+  lookTags?: HomepageLookTag[];
   displayOrder: number;
   isVisible: boolean;
   publishStart: string | null;
@@ -125,7 +136,7 @@ export type CustomerAdminMeta = {
   note: string;
 };
 
-export type CouponRecord = {
+type CouponRecord = {
   id: string;
   code: string;
   title: string;
@@ -138,7 +149,7 @@ export type CouponRecord = {
   customerEmail: string;
 };
 
-export const contentPageKeys = [
+const contentPageKeys = [
   "aboutUs",
   "contactUs",
   "faq",
@@ -149,9 +160,9 @@ export const contentPageKeys = [
   "sizeGuide",
 ] as const;
 
-export type ContentPageKey = (typeof contentPageKeys)[number];
+type ContentPageKey = (typeof contentPageKeys)[number];
 
-export type ContentPageRecord = {
+type ContentPageRecord = {
   title: string;
   excerpt: string;
   body: string;
@@ -169,9 +180,9 @@ export type MediaAsset = {
   createdAt: string;
 };
 
-export type ReviewModerationStatus = "approved" | "rejected" | "hidden";
+type ReviewModerationStatus = "approved" | "rejected" | "hidden";
 
-export type ReviewModerationRecord = {
+type ReviewModerationRecord = {
   reviewKey: string;
   productId: string;
   status: ReviewModerationStatus;
@@ -280,7 +291,7 @@ export const adminRoleDefinitions: AdminRoleRecord[] = [
   },
 ];
 
-export type ShippingSettings = {
+type ShippingSettings = {
   defaultCourierPartner: string;
   supportEmail: string;
   returnPickupPartner: string;
@@ -822,56 +833,12 @@ export function resolveCustomerAdminMeta(workspace: AdminWorkspace, customer: Ad
   );
 }
 
-export function buildReviewKey(productId: string, review: ProductReview, index: number) {
-  return `${productId}:${review.id || review.createdAt || index}`;
-}
-
-export function resolveReviewModeration(
-  workspace: AdminWorkspace,
-  productId: string,
-  review: ProductReview,
-  index: number
-): ReviewModerationRecord {
-  const reviewKey = buildReviewKey(productId, review, index);
-
-  return (
-    workspace.reviewModeration[reviewKey] || {
-      reviewKey,
-      productId,
-      status: "approved",
-    }
-  );
-}
-
 export function resolveCatalogCategories(workspace: AdminWorkspace, seededCategories: string[] = []) {
   const merged = [...(workspace.catalogCategories || []), ...seededCategories]
     .map((category) => String(category || "").trim())
     .filter(Boolean);
 
   return Array.from(new Set(merged));
-}
-
-export function getActiveHomepageBanners(workspace: AdminWorkspace) {
-  const now = Date.now();
-
-  return workspace.homeManagement.banners.filter((banner) => {
-    if (!banner.enabled) {
-      return false;
-    }
-
-    const startsAt = banner.scheduleStart ? new Date(banner.scheduleStart).getTime() : null;
-    const endsAt = banner.scheduleEnd ? new Date(banner.scheduleEnd).getTime() : null;
-
-    if (Number.isFinite(startsAt) && (startsAt as number) > now) {
-      return false;
-    }
-
-    if (Number.isFinite(endsAt) && (endsAt as number) < now) {
-      return false;
-    }
-
-    return true;
-  });
 }
 
 export function sortHomepageRecords<T extends { displayOrder?: number; id?: string }>(records: T[]) {
@@ -885,7 +852,7 @@ export function sortHomepageRecords<T extends { displayOrder?: number; id?: stri
   });
 }
 
-export function isHomepageSectionActive(section: HomepageSection, now = Date.now()) {
+function isHomepageSectionActive(section: HomepageSection, now = Date.now()) {
   if (!section.isVisible) {
     return false;
   }

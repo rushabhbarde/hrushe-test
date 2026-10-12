@@ -561,3 +561,67 @@
     object-fit: contain;
   }
 }
+
+/* Shop the look: a quiet dot on the garment, a slow ring so it's found, a 44px target. */
+.fr-look-dot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.fr-look-dot::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  transition: background 0.3s ease;
+}
+
+.fr-look-dot::after {
+  content: "";
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: fr-look-ring 2.6s ease-out infinite;
+}
+
+.fr-look-dot.is-active::before {
+  background: #111111;
+}
+
+.fr-look-dot:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -6px;
+}
+
+@keyframes fr-look-ring {
+  0% { transform: scale(0.6); opacity: 1; }
+  70%, 100% { transform: scale(1.4); opacity: 0; }
+}
+
+.fr-look-in {
+  animation: fr-look-in 0.35s ease both;
+}
+
+@keyframes fr-look-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-look-dot::after,
+  .fr-look-in {
+    animation: none;
+  }
+}

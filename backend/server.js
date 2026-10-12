@@ -27,6 +27,7 @@ const { installProcessErrorHandlers } = require("./src/utils/errorMonitoring");
 const {
   cleanupExpiredInventoryReservations,
 } = require("./src/services/checkoutInventory");
+const { startBackgroundJobs } = require("./src/services/backgroundJobs");
 const {
   getCheckoutAttemptIndexReadiness,
   refreshCheckoutAttemptIndexReadiness,
@@ -140,6 +141,8 @@ async function startDatabaseBackedTasks() {
     checkoutReadinessInterval.unref();
   }
   await ensureAdminUser();
+  // "Stitching" was renamed "Preparing" (pieces are finished stock, not made per order).
+  await mongoose.connection.collection("orders").updateMany({ orderStatus: "Stitching" }, { $set: { orderStatus: "Preparing" } });
   const cleanupInventory = () =>
     cleanupExpiredInventoryReservations({ source: "interval" })
       .then((result) => {
@@ -169,6 +172,7 @@ async function startDatabaseBackedTasks() {
     cleanupInterval = setInterval(cleanupInventory, 5 * 60 * 1000);
     cleanupInterval.unref();
   }
+  startBackgroundJobs();
 }
 
 app.listen(env.PORT, () => {

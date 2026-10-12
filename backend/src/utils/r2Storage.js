@@ -87,6 +87,7 @@ const uploadR2Object = async ({
 
 module.exports = {
   getPublicObjectUrl,
+  getR2Client,
   hasR2Config,
   uploadR2Object,
 };
