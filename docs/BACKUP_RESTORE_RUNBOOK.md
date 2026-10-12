@@ -39,7 +39,7 @@ Backup/restore is accepted only when a real restore into an isolated database ha
 
 ## Nightly automatic backup (added 2026-10-07)
 
-The backend writes one backup a day to a **private** R2 bucket when `BACKUP_R2_BUCKET` is set on Render (it reuses the existing R2 credentials, which must be allowed to write to that bucket). Files are `backups/hrushe-YYYY-MM-DD.json.gz`, kept for 30 days. A failed backup emails `ALERT_EMAIL` and is retried within the hour. Look for `backup.completed` or `backup.failed` in the Render logs.
+The backend writes one backup a day to a **private** R2 bucket when `BACKUP_R2_BUCKET` is set on Render (it reuses the existing R2 credentials, which must be allowed to write to that bucket). Files are `backups/hrushe-YYYY-MM-DD.json.gz`, kept for 30 days. A failed backup emails `ALERT_EMAIL` and is retried within the hour. Each backup is read back and counted before it is accepted (`backup.completed` with `verified: true`); a file that cannot be opened or is short of documents counts as a failure. Look for `backup.completed` or `backup.failed` in the Render logs.
 
 To rehearse or perform a restore:
 

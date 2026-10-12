@@ -6,6 +6,7 @@ const {
   createProduct,
   updateProduct,
   addProductReview,
+  requestProductStockAlert,
   getAdminProductReviews,
   updateProductReviewStatus,
   deleteProduct,
@@ -38,6 +39,12 @@ router.put(
   updateProductReviewStatus
 );
 router.get("/:id", attachUserIfAuthenticated, getProductById);
+router.post(
+  "/:id/stock-alerts",
+  createRateLimiter({ name: "stock-alerts", max: 20, windowMs: 60 * 60 * 1000 }),
+  attachUserIfAuthenticated,
+  requestProductStockAlert
+);
 router.post(
   "/:id/reviews",
   createRateLimiter({ name: "product-reviews", max: 8, windowMs: 60 * 60 * 1000 }),

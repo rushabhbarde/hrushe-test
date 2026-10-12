@@ -2,6 +2,7 @@ const zlib = require("zlib");
 const mongoose = require("mongoose");
 const {
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -64,6 +65,23 @@ async function restoreCollections(db, collections) {
   return restored;
 }
 
+/** Does a stored backup open, and does it hold every collection with every document? */
+function verifyBackup(buffer, expectedCollections) {
+  let backup;
+  try {
+    backup = deserializeBackup(buffer);
+  } catch (error) {
+    return { ok: false, reason: `cannot be opened (${error.message})` };
+  }
+  for (const [name, documents] of Object.entries(expectedCollections)) {
+    const restored = backup.collections[name];
+    if (!Array.isArray(restored) || restored.length !== documents.length) {
+      return { ok: false, reason: `${name} has ${restored ? restored.length : 0} of ${documents.length} documents` };
+    }
+  }
+  return { ok: true };
+}
+
 const isBackupConfigured = () => Boolean(env.BACKUP_R2_BUCKET && getR2Client());
 
 /**
@@ -97,6 +115,13 @@ async function runDailyBackupIfDue(now = new Date()) {
     new PutObjectCommand({ Bucket, Key, Body: body, ContentType: "application/gzip", CacheControl: "private, no-store" })
   );
 
+  // Read the file back and count what is in it: a backup that cannot be opened is no backup.
+  const stored = await client.send(new GetObjectCommand({ Bucket, Key }));
+  const verification = verifyBackup(Buffer.from(await stored.Body.transformToByteArray()), collections);
+  if (!verification.ok) {
+    throw new Error(`Backup ${Key} failed its read-back check: ${verification.reason}`);
+  }
+
   const listed = await client.send(new ListObjectsV2Command({ Bucket, Prefix: BACKUP_PREFIX }));
   const expired = selectExpiredBackupKeys((listed.Contents || []).map((item) => item.Key), now);
   for (const expiredKey of expired) {
@@ -104,6 +129,7 @@ async function runDailyBackupIfDue(now = new Date()) {
   }
 
   logEvent("backup.completed", {
+    verified: true,
     key: Key,
     collections: Object.keys(collections).length,
     documents,
@@ -124,4 +150,5 @@ module.exports = {
   runDailyBackupIfDue,
   selectExpiredBackupKeys,
   serializeBackup,
+  verifyBackup,
 };

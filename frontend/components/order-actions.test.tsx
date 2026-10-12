@@ -27,6 +27,13 @@ describe("what a customer can do with an order", () => {
     expect(isWithinReturnWindow({ orderStatus: "Delivered", updatedAt: new Date(now - 6 * DAY).toISOString() }, now)).toBe(true);
     expect(isWithinReturnWindow({ orderStatus: "Delivered", updatedAt: new Date(now - 8 * DAY).toISOString() }, now)).toBe(false);
     expect(isWithinReturnWindow({ orderStatus: "Shipped", updatedAt: new Date(now).toISOString() }, now)).toBe(false);
+    // The recorded delivery date wins over a later edit to the order.
+    expect(
+      isWithinReturnWindow(
+        { orderStatus: "Delivered", deliveredAt: new Date(now - 9 * DAY).toISOString(), updatedAt: new Date(now).toISOString() },
+        now
+      )
+    ).toBe(false);
   });
 });
 

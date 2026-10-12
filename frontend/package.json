@@ -18,7 +18,8 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:list": "playwright test --list"
+    "test:e2e:list": "playwright test --list",
+    "policies:sync": "node scripts/sync-policies.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

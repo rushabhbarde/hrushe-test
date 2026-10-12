@@ -1,6 +1,7 @@
 /**
  * Store policies. The backend keeps a copy for the help assistant
  * (backend/src/data/policies.json); lib/policies-sync.test.ts fails if they drift.
+ * After editing, run: npm run policies:sync
  */
 export const policyTabs = [
   {
@@ -81,7 +82,7 @@ export const policyTabs = [
       {
         title: "4. Cookies",
         body:
-          "HRUSHE uses essential cookies and similar local-storage technologies for secure login, fraud prevention, cart, checkout, theme, and privacy preferences. These are required for the website to function. Optional analytics and marketing technologies are disabled unless you choose to enable them through the cookie banner. You can review or change that choice at any time using Cookie preferences in the footer.",
+          "HRUSHE uses essential cookies and similar local-storage technologies for secure login, fraud prevention, cart, checkout, theme, and privacy preferences. These are required for the website to function. Optional analytics and marketing technologies are disabled unless you choose to enable them through the cookie banner. If you accept, we use Google Analytics to understand how the shop is used and the Meta Pixel to measure and improve our advertising on Facebook and Instagram; both receive pages you view and shop actions such as adding to the bag or completing a purchase. You can review or change that choice at any time using Cookie preferences in the footer.",
       },
       {
         title: "5. Data Security",

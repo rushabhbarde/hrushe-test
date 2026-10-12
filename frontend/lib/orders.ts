@@ -137,6 +137,7 @@ export type OrderRecord = {
   products: OrderProductSnapshot[];
   createdAt: string;
   updatedAt?: string;
+  deliveredAt?: string | null;
   callConfirmedAt?: string | null;
   callConfirmedBy?: string;
   couponCode?: string;
