@@ -1250,6 +1250,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   // or a cancellation or return), and when tracking details arrive. The steps in between
   // (On the table, Inspected, Nearly home) show on the tracking page without an email.
   const stageChanged = orderStatus !== undefined && orderStatus !== existingOrder.orderStatus;
+  if (stageChanged) {
+    // WhatsApp has its own short list of stages (it includes Nearly home, which email skips).
+    await whatsapp.sendOrderUpdate(order);
+  }
   const trackingChanged = trackingId !== undefined || courierName !== undefined || trackingUrl !== undefined;
   if ((stageChanged && shouldEmailOrderStage(order.orderStatus)) || (!stageChanged && trackingChanged)) {
     await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage(order.orderStatus)?.line || "");
@@ -1400,6 +1404,9 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
   const updated = await Order.findOneAndUpdate({ _id: order._id, orderStatus: order.orderStatus }, { $set: update }, { new: true });
   if (updated?.orderStatus === "Delivered") {
     await issueReferralReward(updated);
+  }
+  if (updated && movesForward) {
+    await whatsapp.sendOrderUpdate(updated);
   }
   if (updated && movesForward && shouldEmailOrderStage(updated.orderStatus)) {
     await safelySendOrderEmail(updated, orderEmailSubject(updated), getOrderStage(updated.orderStatus)?.line || "");

@@ -9,10 +9,13 @@ Category **Utility**, language **English (en)**. Use these names exactly.
 
 | Name | Body | Sample values |
 | --- | --- | --- |
-| `hrushe_order_confirmed` | Hi {{1}}, your HRUSHE order {{2}} is confirmed, {{3}} paid. We'll call you to check the details, then pack it by hand. We'll message you here when it ships. | Asha · #1024 · ₹599 |
-| `hrushe_order_shipped` | Hi {{1}}, your HRUSHE order {{2}} is on its way with {{3}}. Track it here: {{4}} Thank you for choosing HRUSHE. | Asha · #1024 · Delhivery · https://hrushe.in/track-order |
-| `hrushe_order_out_for_delivery` | Hi {{1}}, your HRUSHE order {{2}} is out for delivery today. Please keep your phone nearby for the courier. | Asha · #1024 |
-| `hrushe_order_delivered` | Hi {{1}}, your HRUSHE order {{2}} has been delivered. We hope it wears well. Need a different size? Visit hrushe.in/account within 7 days. | Asha · #1024 |
+| `hrushe_order_confirmed` | Hi {{1}}, we have received your HRUSHE order {{2}}, {{3}} paid. It will be prepared and checked by hand, then wrapped. We'll message you here when it is on its way. | Asha · #1024 · ₹599 |
+| `hrushe_order_shipped` | Hi {{1}}, your HRUSHE order {{2}} is on its way with {{3}}. Follow it here: {{4}} Thank you for choosing HRUSHE. | Asha · #1024 · Delhivery · https://hrushe.in/track-order |
+| `hrushe_order_out_for_delivery` | Hi {{1}}, your HRUSHE order {{2}} is nearly home: it is out for delivery today. Please keep your phone nearby for the courier. | Asha · #1024 |
+| `hrushe_order_delivered` | Hi {{1}}, your HRUSHE order {{2}} is home. We hope it wears well. Need a different size? Open the order at hrushe.in/account within 7 days; one size exchange is free. | Asha · #1024 |
+
+The wording follows the order journey on the site (Received, On its way, Nearly home, Home).
+Do not describe a piece as made or stitched for the order; the pieces are finished stock.
 
 Footer (optional, all four): `HRUSHE · Defined quietly.`
 
@@ -37,7 +40,7 @@ Save; Render redeploys. To switch updates off, set `WHATSAPP_ENABLED=false`.
 
 ## How it behaves
 
-- Sent on: payment confirmed, Shipped, Out for delivery, Delivered (from the Atelier or Shiprocket).
+- Sent on four stages: Received (payment confirmed), On its way (Shipped), Nearly home (Out for delivery), Home (Delivered), whether the stage is set in Atelier or by Shiprocket.
 - Each update is sent once per order, even if a status is saved twice.
 - Customers who turn off "WhatsApp order updates" in their Wardrobe don't get them.
 - A WhatsApp failure never blocks payment, shipping or email; it is logged as `whatsapp.send.failed`.
