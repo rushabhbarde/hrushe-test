@@ -846,6 +846,10 @@ const getPublicWebsiteSettings = asyncHandler(async (req, res) => {
       return "";
     }
   };
+  // The seeded Facebook and Pinterest addresses were placeholders for accounts that do not
+  // exist. Until a real address is saved in Atelier, the footer shows no link.
+  const realSocialUrl = (value, placeholder) =>
+    String(value || "").replace(/\/$/, "") === placeholder ? "" : safeHttpsUrl(value);
   const safePhone = (value, fallback) => {
     const normalized = String(value || "").trim();
     const digits = normalized.replace(/\D/g, "");
@@ -866,8 +870,8 @@ const getPublicWebsiteSettings = asyncHandler(async (req, res) => {
       String(settings.instagramUrl || "").replace(/\/$/, "") === "https://instagram.com/hrushe"
         ? PUBLIC_WEBSITE_SETTINGS_DEFAULTS.instagramUrl
         : safeHttpsUrl(settings.instagramUrl) || PUBLIC_WEBSITE_SETTINGS_DEFAULTS.instagramUrl,
-    facebookUrl: safeHttpsUrl(settings.facebookUrl),
-    pinterestUrl: safeHttpsUrl(settings.pinterestUrl),
+    facebookUrl: realSocialUrl(settings.facebookUrl, "https://facebook.com/hrushe"),
+    pinterestUrl: realSocialUrl(settings.pinterestUrl, "https://pinterest.com/hrushe"),
   });
 });
 
