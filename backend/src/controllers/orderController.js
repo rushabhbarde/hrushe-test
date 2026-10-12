@@ -8,6 +8,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const shipmentSync = require("../services/shipmentSync");
 const coupons = require("../services/coupons");
+const whatsapp = require("../services/whatsapp");
 const shiprocket = require("../services/shiprocket");
 const { sendEmail } = require("../utils/mailer");
 const { buildOrderStatusEmail } = require("../utils/emailTemplates");
@@ -901,6 +902,8 @@ const orderEmailSubject = (order) =>
   `HRUSHE order #${order.orderNumber || order._id.toString()}: ${getOrderStage(order.orderStatus)?.word || order.orderStatus}`;
 
 const safelySendOrderEmail = async (order, subject, summaryLine) => {
+  // WhatsApp goes alongside every order email; it sends once per status and never throws.
+  await whatsapp.sendOrderUpdate(order);
   try {
     await sendOrderEmail(order, subject, summaryLine);
   } catch (error) {
@@ -1247,6 +1250,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   // or a cancellation or return), and when tracking details arrive. The steps in between
   // (On the table, Inspected, Nearly home) show on the tracking page without an email.
   const stageChanged = orderStatus !== undefined && orderStatus !== existingOrder.orderStatus;
+  if (stageChanged) {
+    // WhatsApp has its own short list of stages (it includes Nearly home, which email skips).
+    await whatsapp.sendOrderUpdate(order);
+  }
   const trackingChanged = trackingId !== undefined || courierName !== undefined || trackingUrl !== undefined;
   if ((stageChanged && shouldEmailOrderStage(order.orderStatus)) || (!stageChanged && trackingChanged)) {
     await safelySendOrderEmail(order, orderEmailSubject(order), getOrderStage(order.orderStatus)?.line || "");
@@ -1397,6 +1404,9 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
   const updated = await Order.findOneAndUpdate({ _id: order._id, orderStatus: order.orderStatus }, { $set: update }, { new: true });
   if (updated?.orderStatus === "Delivered") {
     await issueReferralReward(updated);
+  }
+  if (updated && movesForward) {
+    await whatsapp.sendOrderUpdate(updated);
   }
   if (updated && movesForward && shouldEmailOrderStage(updated.orderStatus)) {
     await safelySendOrderEmail(updated, orderEmailSubject(updated), getOrderStage(updated.orderStatus)?.line || "");
@@ -2123,6 +2133,12 @@ const razorpayWebhook = asyncHandler(async (req, res) => {
       }
 
       await coupons.recordCouponUse(confirmedOrder);
+      // The webhook confirms orders whose customer closed the tab after paying; tell them too.
+      await safelySendOrderEmail(
+        confirmedOrder,
+        "Your HRUSHE order is confirmed",
+        "Thank you for shopping with HRUSHE. Your order has been confirmed."
+      );
 
       webhookEvent.status = "completed";
       webhookEvent.resultCode = RECONCILIATION_RESULT_CODES.PAYMENT_CAPTURED_ORDER_CONFIRMED;

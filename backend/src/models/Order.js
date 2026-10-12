@@ -306,6 +306,11 @@ const orderSchema = new mongoose.Schema(
     // Payment confirmation sets orderStatus "Confirmed" automatically; this records the team's
     // phone confirmation with the customer, which is what releases the order to Shiprocket.
     callConfirmedAt: { type: Date, default: null },
+    // WhatsApp updates already sent for this order (e.g. "Confirmed", "Shipped"), so none repeats.
+    whatsappNotified: {
+      type: [String],
+      default: [],
+    },
     callConfirmedBy: { type: String, default: "", trim: true },
     // Discount code applied at checkout (WELCOME10, a friend's HRU- code, or a stored coupon).
     couponCode: { type: String, default: "", uppercase: true, trim: true },
