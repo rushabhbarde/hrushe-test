@@ -196,3 +196,40 @@ test("no stage tells the customer a finished piece is being made for them", () =
     assert.doesNotMatch(`${stage.word} ${stage.line}`, /made to order|made for the order|stitch|being cut|tailor/i, stage.status);
   }
 });
+
+test("a stored backup is checked by opening it and counting what is inside", () => {
+  const { serializeBackup, verifyBackup } = require("../src/services/databaseBackup");
+  const collections = { orders: [{ n: 1 }, { n: 2 }], users: [{ n: 1 }] };
+  const file = serializeBackup(collections);
+
+  assert.deepEqual(verifyBackup(file, collections), { ok: true });
+  assert.match(verifyBackup(file, { ...collections, orders: [{ n: 1 }, { n: 2 }, { n: 3 }] }).reason, /orders has 2 of 3/);
+  assert.match(verifyBackup(file.subarray(0, 20), collections).reason, /cannot be opened/);
+});
+
+test("back-in-stock: which sizes can be bought decides who may wait and who is told", () => {
+  const { availableSizes } = require("../src/services/stockAlerts");
+  const tee = {
+    status: "Active",
+    trackInventory: true,
+    sizes: ["S", "M", "L"],
+    variants: [
+      { size: "S", stock: 0, active: true },
+      { size: "M", stock: 2, active: true },
+      { size: "L", stock: 5, active: false },
+    ],
+  };
+
+  assert.deepEqual(availableSizes(tee), ["M"]);
+  assert.deepEqual(availableSizes({ ...tee, trackInventory: false }), ["S", "M", "L"]);
+  assert.deepEqual(availableSizes({ ...tee, status: "Draft" }), []);
+});
+
+test("the back-in-stock email names the piece and size and promises one message", () => {
+  const { buildBackInStockEmail } = require("../src/utils/emailTemplates");
+  const html = buildBackInStockEmail({ product: { name: "Olive Grove Tee", slug: "green-solid-tee-oversize", price: 599 }, size: "M" });
+  assert.match(html, /Back<span[^>]*>\.<\/span>/);
+  assert.match(html, /Olive Grove Tee in size M is available again/);
+  assert.match(html, /product\/green-solid-tee-oversize/);
+  assert.match(html, /will not email you about it again/);
+});

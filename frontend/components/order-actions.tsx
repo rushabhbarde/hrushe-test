@@ -9,12 +9,16 @@ import { canCustomerCancelOrder, RETURN_WINDOW_DAYS, type OrderProductSnapshot, 
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Delivered within the return window? The order's last update stands in for the delivery date. */
-export function isWithinReturnWindow(order: Pick<OrderRecord, "orderStatus" | "updatedAt">, now = Date.now()) {
+/** Delivered within the return window? Orders delivered before the date was recorded fall back to their last update. */
+export function isWithinReturnWindow(
+  order: Pick<OrderRecord, "orderStatus" | "updatedAt" | "deliveredAt">,
+  now = Date.now()
+) {
   if (order.orderStatus !== "Delivered") {
     return false;
   }
-  const deliveredAt = order.updatedAt ? new Date(order.updatedAt).getTime() : now;
+  const delivered = order.deliveredAt || order.updatedAt;
+  const deliveredAt = delivered ? new Date(delivered).getTime() : now;
   return now - deliveredAt <= RETURN_WINDOW_DAYS * DAY_MS;
 }
 

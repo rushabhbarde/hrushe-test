@@ -346,6 +346,26 @@ const buildOrderStatusEmail = ({ order, summaryLine }) => {
   });
 };
 
+const buildBackInStockEmail = ({ product, size }) => {
+  const name = product.displayName || product.name || "Your piece";
+  return renderEmailContent({
+    preheader: `${name}${size ? ` in ${size}` : ""} is back.`,
+    eyebrow: "You asked us to tell you",
+    title: "Back.",
+    intro: `${name}${size ? ` in size ${size}` : ""} is available again. Quantities are small, so it may not stay long.`,
+    sections: [
+      buildInfoTable([
+        { label: "Piece", value: name },
+        { label: "Size", value: size || "" },
+        { label: "Price", value: formatCurrency(product.price) },
+      ]),
+    ],
+    ctaLabel: "See the piece",
+    ctaUrl: buildSiteUrl(`/product/${product.slug || product._id}`),
+    closingNote: "You asked for this one message. We will not email you about it again.",
+  });
+};
+
 const buildSupportStatusEmail = ({ request, customerName }) =>
   renderEmailContent({
     preheader: "Your HRUSHE support request has been updated.",
@@ -432,6 +452,7 @@ const buildNewsletterSignupAdminEmail = ({ email, source, capturedAt }) =>
   });
 
 module.exports = {
+  buildBackInStockEmail,
   buildNewsletterSignupAdminEmail,
   buildOrderStatusEmail,
   buildOtpEmail,

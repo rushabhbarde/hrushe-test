@@ -344,6 +344,8 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "Pending",
     },
+    // When the order reached the customer; the 7-day return window counts from here.
+    deliveredAt: { type: Date, default: null },
     checkoutLogs: {
       type: [checkoutLogSchema],
       default: [],

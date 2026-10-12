@@ -536,3 +536,20 @@ test("a record saved before versioning gets its version written down so saves st
   assert.deepEqual(marked, ["adminWorkspaceVersion"]);
   assert.equal(saves, 1);
 });
+
+test("placeholder Facebook and Pinterest links are not shown; real ones are", async (t) => {
+  installSiteContentStubs(t);
+  const { getPublicWebsiteSettings } = require("../src/controllers/contentController");
+
+  SiteContent.findOne = async () =>
+    buildContent(3, { websiteSettings: { facebookUrl: "https://facebook.com/hrushe", pinterestUrl: "https://pinterest.com/hrushe/" } });
+  const placeholders = await callController(getPublicWebsiteSettings, { headers: {}, socket: {} });
+  assert.equal(placeholders.res.body.facebookUrl, "");
+  assert.equal(placeholders.res.body.pinterestUrl, "");
+
+  SiteContent.findOne = async () =>
+    buildContent(3, { websiteSettings: { facebookUrl: "https://facebook.com/hrushe.in", pinterestUrl: "" } });
+  const real = await callController(getPublicWebsiteSettings, { headers: {}, socket: {} });
+  assert.equal(real.res.body.facebookUrl, "https://facebook.com/hrushe.in");
+  assert.equal(real.res.body.pinterestUrl, "");
+});

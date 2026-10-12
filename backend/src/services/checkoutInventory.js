@@ -347,6 +347,11 @@ const restockCancelledOrder = async (orderId) => {
     )
   );
   recordMetric("inventory.restocked", { orderId: String(orderId), items: tracked.length });
+  // Required here, not at the top, to keep this module free of the mailer at load time.
+  const { notifyBackInStock } = require("./stockAlerts");
+  for (const productId of new Set(tracked.map((item) => String(item.productId)))) {
+    void notifyBackInStock(productId);
+  }
   return { restocked: tracked.length };
 };
 

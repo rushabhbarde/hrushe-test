@@ -2,6 +2,7 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const SiteContent = require("../models/SiteContent");
 const AppError = require("../utils/AppError");
+const { notifyBackInStock, requestStockAlert } = require("../services/stockAlerts");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const { hasAdminPermission } = require("../config/adminRoles");
@@ -818,7 +819,39 @@ const updateProduct = asyncHandler(async (req, res) => {
     });
   }
 
+  // Stock may have gone up: tell anyone waiting on a size that is back.
+  void notifyBackInStock(product._id);
+
   return res.json(await getProductDetailResponse(product, { includePrivate: true }));
+});
+
+/** "Tell me when it's back" for a size that is out of stock. */
+const requestProductStockAlert = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const query = mongoose.Types.ObjectId.isValid(id)
+    ? { $or: [{ _id: id }, { slug: id.toLowerCase() }] }
+    : { slug: id.toLowerCase() };
+  const product = await Product.findOne({ $and: [query, ...publicProductConditions] });
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  const result = await requestStockAlert({
+    product,
+    size: req.body?.size,
+    email: req.body?.email || req.user?.email,
+    userId: req.user?._id,
+  });
+  if (!result.ok) {
+    const messages = {
+      "invalid-email": "Enter a valid email address.",
+      "unknown-size": "That size is not offered for this piece.",
+      "in-stock": "Good news: that size is available now.",
+    };
+    throw new AppError(messages[result.reason] || "Could not save this request.", result.reason === "in-stock" ? 409 : 400);
+  }
+
+  return res.status(201).json({ ok: true });
 });
 
 const addProductReview = asyncHandler(async (req, res) => {
@@ -1072,6 +1105,7 @@ module.exports = {
   createProduct,
   updateProduct,
   addProductReview,
+  requestProductStockAlert,
   getAdminProductReviews,
   updateProductReviewStatus,
   deleteProduct,

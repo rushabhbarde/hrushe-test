@@ -1177,6 +1177,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     update.trackingUrl = normalizedTrackingUrl.slice(0, 500);
   }
 
+  if (orderStatus === "Delivered") {
+    update.deliveredAt = new Date();
+  }
+
   const existingOrder = await Order.findById(req.params.id);
   if (!existingOrder) {
     throw new AppError("Order not found", 404);
@@ -1392,6 +1396,9 @@ const shiprocketWebhook = asyncHandler(async (req, res) => {
     SHIPROCKET_STATUS_RANK.indexOf(order.orderStatus) >= 1;
   if (movesForward) {
     update.orderStatus = mapped;
+    if (mapped === "Delivered") {
+      update.deliveredAt = new Date();
+    }
   }
 
   const updated = await Order.findOneAndUpdate({ _id: order._id, orderStatus: order.orderStatus }, { $set: update }, { new: true });
